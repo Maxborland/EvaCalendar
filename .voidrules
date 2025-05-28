@@ -1,0 +1,29 @@
+# Agent Coding Best Practices
+
+## Core Principles
+1. 🤖 **Always declare variables** - Never allow implicit globals
+2. 🔍 **Strict type checking** - Use === instead of ==
+3. 📏 **Limit function size** to 20 lines max
+4. ⚖️ **Balance cyclomatic complexity** below 10
+5. 📁 **Single responsibility per file/function**
+
+## JavaScript Specifics
+6. ✅ **Use const/let** - Never use var
+7. 🗃 **No dead code** - Remove unused imports/variables
+8. 🔄 **Avoid deep nesting** over 3 levels
+9. 🛡 **Validate input** - All external data must be validated
+10. 💣 **No console.log** in production code
+
+## Error Handling
+11. 🛑 **Never swallow errors** - Always handle catches
+12. 🧯 **Specific error types** - Use custom error classes
+13. 🧠 **Defensive programming** - Guard clauses before operations
+
+## React Practices
+14. 🌐 **Hooks order** - Maintain consistent hook order
+15. 🧷 **No inline styles** - Use CSS-in-JS solutions
+16. 🧪 **Prop type validation** - Always define PropTypes
+
+## Version Control
+17. ✒️ **Atomic commits** - Clean single-purpose changes
+18. 📝 **Good commit messages** - Use conventional commits
