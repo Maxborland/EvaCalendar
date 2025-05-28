@@ -1,0 +1,104 @@
+.week-view-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.page-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.page-navigation button {
+  padding: 8px 15px;
+  background-color: #e0e0e0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.page-navigation button:disabled {
+  background-color: #f0f0f0;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.week-pages {
+  display: flex;
+  overflow: hidden; /* Hide pages that are not active */
+  position: relative;
+  height: auto; /* Adjust height based on content */
+}
+
+.week-page {
+  display: flex;
+  flex-wrap: wrap; /* Allow columns to wrap on smaller screens */
+  justify-content: space-around;
+  width: 100%;
+  transition: transform 0.3s ease-in-out;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+@media (max-width: 768px) {
+  .week-page {
+    flex-direction: column; /* Stack columns vertically on smaller screens */
+    align-items: center; /* Center items when stacked */
+  }
+}
+
+.week-page:not(.active) {
+  position: absolute;
+  left: 100%; /* Move inactive page out of view */
+  opacity: 0;
+  pointer-events: none;
+}
+
+.week-page.active {
+  transform: translateX(0);
+  opacity: 1;
+  position: static; /* Bring active page back to normal flow */
+}
+
+.notes-column {
+  flex: 1;
+  border: 1px solid #eee;
+  padding: 10px;
+  margin: 5px;
+  background-color: #fdfdfd;
+  border-radius: 5px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.02);
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .notes-column {
+    width: 95%; /* Take more width when stacked */
+    margin: 10px auto; /* Center and add vertical margin */
+  }
+}
+
+.notes-column h3 {
+  margin-top: 0;
+  color: #444;
+  font-size: 1.1em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.notes-column textarea {
+  width: calc(100% - 20px);
+  flex-grow: 1;
+  min-height: 150px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 0.9em;
+  resize: vertical;
+  box-sizing: border-box;
+}

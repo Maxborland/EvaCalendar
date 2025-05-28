@@ -1,9 +1,50 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+#app {
+  max-width: 600px; /* Mobile-first approach */
+  margin: 10px auto; /* Reduced margin */
+  padding: 10px; /* Reduced padding */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: #fff; /* White background for the notebook page */
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  position: relative; /* For absolute positioning of elements */
 }
+
+/* Styles for the notebook lines */
+#app::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(to bottom, transparent, transparent 24px, #e0e0e0 25px, #e0e0e0 26px); /* Horizontal lines */
+  background-size: 100% 26px;
+  z-index: 0;
+  pointer-events: none; /* Allow clicks to pass through */
+}
+
+/* Red vertical line on the left, like in a notebook */
+#app::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 40px; /* Adjust as needed for margin */
+  width: 1px;
+  height: 100%;
+  background-color: #ff0000; /* Red color */
+  z-index: 1;
+  pointer-events: none;
+}
+
+@media (max-width: 400px) {
+  #app::after {
+    left: 20px; /* Adjust for smaller screens */
+  }
+} /* Close the media query */
 
 .logo {
   height: 6em;
