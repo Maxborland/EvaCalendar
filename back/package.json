@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "migrate:latest": "npx knex migrate:latest",
+    "migrate:rollback": "npx knex migrate:rollback",
+    "seed": "npx knex seed:run"
   },
   "keywords": [],
   "author": "",
@@ -13,7 +17,11 @@
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "knex": "^3.1.0",
+    "knex-migrate": "^1.7.4",
+    "moment": "^2.30.1",
     "nodemon": "^3.1.10",
     "sqlite3": "^5.1.7"
   }

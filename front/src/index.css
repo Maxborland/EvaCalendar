@@ -1,11 +1,11 @@
 :root {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: #333;
-  background-color: #f8f8f8; /* Light background for notebook feel */
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,27 +13,22 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  justify-content: center; /* Центрируем по горизонтали */
+  align-items: center; /* Центрируем по вертикали */
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f0f0f0; /* Slightly darker background for the page */
-}
-
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-  width: 100%;
-}
-
-@media (max-width: 600px) {
-  #root {
-    padding: 1rem; /* Smaller padding on mobile */
-  }
 }
 
 h1 {
@@ -48,7 +43,7 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #e0e0e0;
+  background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -58,4 +53,223 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+/* WeekView Component Styles */
+.week-view {
+  width: 100%;
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.navigation-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.navigation-buttons button {
+  padding: 10px 20px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: 1px solid #646cff;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.navigation-buttons button:hover {
+  background-color: #646cff;
+  color: #fff;
+}
+
+h2 {
+  color: #ffffff;
+  font-size: 1.8em;
+  margin-bottom: 20px;
+}
+
+.half-navigation {
+  margin-bottom: 20px; /* Добавляем отступ */
+}
+
+.week-days-container {
+  display: flex;
+  justify-content: space-around; /* Центрируем, но теперь колонки будут в одном столбце */
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* Разрешаем перенос на следующую строку, если не хватает места */
+  flex-direction: row; /* Дни недели остаются в ряд */
+}
+
+/* Стили для контейнера дней, который теперь вертикален */
+.day-columns-container {
+  display: flex;
+  flex-direction: column; /* Делаем колонки вертикальными */
+  gap: 10px; /* Пространство между колонками дней */
+  width: 100%; /* Занимаем всю доступную ширину */
+}
+
+.first-half-of-week,
+.second-half-of-week {
+  flex: 1; /* Останется для возможности деления на две половины, если потребуется */
+  padding: 10px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  margin: 0 10px;
+  display: flex; /* Делаем контент внутри flex-контейнером */
+  flex-direction: column; /* Вертикально */
+  align-items: center; /* Выравнивание по центру */
+}
+
+/* Стили для обёртки колонки дня, чтобы она занимала всю ширину */
+.day-column-wrapper {
+  width: 100%;
+}
+
+.day-column {
+  flex: 1;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 120px; /* Минимальная ширина колонки для лучшей адаптивности */
+  text-align: center;
+}
+
+.day-column.today-highlight {
+  background-color: #3a3a3a; /* Более темный фон для выделения */
+  border: 1px solid #007bff; /* Синяя рамка */
+}
+
+@media (prefers-color-scheme: light) {
+  .day-column.today-highlight {
+    background-color: #e0e0e0; /* Светлее для светлой темы */
+    border: 1px solid #007bff;
+  }
+}
+
+.day-column h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #646cff; /* Цвет заголовка дня */
+}
+
+.day-cells {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.day-cell-empty, .task-item {
+  background-color: #2a2a2a;
+  border: 1px dashed #555;
+  border-radius: 4px;
+  min-height: 40px; /* Высота для пустых ячеек и элементов дел */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 0.9em;
+}
+
+@media (prefers-color-scheme: light) {
+  .navigation-buttons button {
+    background-color: #f0f0f0;
+    color: #213547;
+    border-color: #747bff;
+  }
+
+  .navigation-buttons button:hover {
+    background-color: #747bff;
+    color: #fff;
+  }
+
+  h2 {
+    color: #213547;
+  }
+
+  .first-half-of-week,
+  .second-half-of-week {
+    border: 1px solid #ccc;
+  }
+
+  .day-column {
+    background-color: #f5f5f5;
+  }
+
+  .day-column h3 {
+    color: #747bff;
+  }
+
+  .day-cell-empty, .task-item {
+    background-color: #e0e0e0;
+    border: 1px dashed #bbb;
+    color: #555;
+  }
+}
+
+/* NoteField specific styles */
+.note-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background-color: #2a2a2a;
+  color: #ccc;
+  min-height: 120px;
+  resize: vertical;
+}
+
+.note-field-container button {
+  /* Стили для кнопки сохранения внутри NoteField */
+  margin-top: 10px;
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: 1px solid #646cff;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 0.9em;
+}
+
+.note-field-container button:hover {
+  background-color: #646cff;
+  color: #fff;
+}
+
+@media (prefers-color-scheme: light) {
+  .note-textarea {
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    color: #333;
+  }
+
+  .note-field-container button {
+    background-color: #f0f0f0;
+    color: #213547;
+    border-color: #747bff;
+  }
+
+  .note-field-container button:hover {
+    background-color: #747bff;
+    color: #fff;
+  }
 }
