@@ -78,13 +78,22 @@ button:focus-visible {
   text-align: center;
   padding: 20px;
   box-sizing: border-box;
+  margin-top: 50px; /* Отступ сверху для фиксированного верхнего элемента, если таковой будет */
+  padding-bottom: 80px; /* Отступ снизу для фиксированных кнопок */
 }
 
 .navigation-buttons {
   display: flex;
   justify-content: center;
   gap: 15px;
-  margin-bottom: 20px;
+  position: fixed; /* Фиксированное позиционирование */
+  bottom: 0; /* Прикрепить к низу экрана */
+  left: 0;
+  width: 100%; /* Занять всю ширину */
+  background-color: #242424; /* Фон для кнопок */
+  padding: 10px 0; /* Отступы сверху и снизу */
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3); /* Тень сверху */
+  z-index: 1000; /* Убедиться, что кнопки находятся поверх другого контента */
 }
 
 .navigation-buttons button {
@@ -198,6 +207,10 @@ h2 {
     border-color: #747bff;
   }
 
+  .navigation-buttons {
+    background-color: #ffffff; /* Светлый фон для кнопок навигации */
+  }
+
   .navigation-buttons button:hover {
     background-color: #747bff;
     color: #fff;
@@ -276,4 +289,66 @@ h2 {
     background-color: #747bff;
     color: #fff;
   }
+}
+/* Summary Block Styles */
+.summary-block {
+    background-color: #2a2a2a; /* Темный фон для контраста */
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Небольшая тень для глубины */
+}
+
+.summary-block p {
+    margin: 8px 0; /* Отступы между строками */
+    color: #ccc; /* Светлый цвет текста для читаемости */
+    font-size: 1.1em;
+}
+
+.summary-block .summary-block-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #ffffff; /* Белый цвет для заголовка */
+    margin-bottom: 15px;
+}
+
+.summary-block .summary-block-week {
+    font-size: 1em;
+    color: #aaa;
+    margin-top: 15px;
+}
+
+.summary-block .summary-block-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px; /* Пространство между элементами в строке */
+}
+
+.summary-block .summary-block-row span {
+    white-space: nowrap; /* Чтобы значения не переносились */
+}
+
+.summary-block .summary-block-value {
+    font-weight: bold;
+    color: #ffffff; /* Белый цвет для значений */
+    font-size: 1.2em;
+}
+
+@media (prefers-color-scheme: light) {
+    .summary-block {
+        background-color: #f0f0f0; /* Светлый фон для светлой темы */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .summary-block p {
+        color: #333;
+    }
+    .summary-block .summary-block-title,
+    .summary-block .summary-block-value {
+        color: #000;
+    }
+    .summary-block .summary-block-week {
+        color: #555;
+    }
 }
