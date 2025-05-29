@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 interface TaskItemProps {
-  id: string;
+  id?: string;
   type: 'income' | 'expense';
   title?: string;
   time?: string;
@@ -15,7 +15,7 @@ interface TaskItemProps {
   expenseComments?: string;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
-  onMove: (id: string) => void;
+  onMove: (taskId: string, newWeekId: string, newDayOfWeek: string) => Promise<void>;
   onEdit: (task: any) => void;
 }
 
@@ -108,6 +108,16 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   };
 
+  // Временно для отображения, пока не будут переданы правильные данные для onMove
+  const handleMoveClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Здесь мы должны были бы передать `weekId` и `dayOfWeek`,
+    // но в текущем контексте TaskItem их нет.
+    // Это будет реализовано через drag-and-drop в будущем,
+    // тогда эти данные будут доступны из контекста перетаскивания.
+    await onMove(id || '', '', '');
+  }
+
   return (
     <TaskItemContainer onClick={handleEditClick}>
       {type === 'income' ? (
@@ -127,13 +137,21 @@ const TaskItem: React.FC<TaskItemProps> = ({
         </>
       )}
       <ButtonContainer>
-        <ActionButton className="delete" onClick={(e) => { e.stopPropagation(); onDelete(id); }}>
+        <ActionButton className="delete" onClick={(e) => { e.stopPropagation(); onDelete(id || ''); }}>
           Удалить
         </ActionButton>
-        <ActionButton className="duplicate" onClick={(e) => { e.stopPropagation(); onDuplicate(id); }}>
+        <ActionButton className="duplicate" onClick={(e) => { e.stopPropagation(); onDuplicate(id || ''); }}>
           Дублировать
         </ActionButton>
-        <ActionButton className="move" onClick={(e) => { e.stopPropagation(); onMove(id); }}>
+        <ActionButton className="move" onClick={async (e) => {
+          e.stopPropagation();
+          // Поскольку на фронтенде DayColumn.tsx handleMoveTask не принимает newWeekId and newDayOfWeek,
+          // они не должны быть переданы здесь в TaskItem.
+          // Но так как TaskItemProps.onMove теперь ожидает 3 аргументов, я временно передам пустые строки.
+          // В реальном приложении, этот функционал будет реализован с помощью drag and drop,
+          // и тогда эти данные будут доступны.
+          await onMove(id || '', '', '');
+        }}>
           Переместить
         </ActionButton>
       </ButtonContainer>
