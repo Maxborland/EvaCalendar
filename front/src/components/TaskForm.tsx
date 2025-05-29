@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createTask, updateTask } from '../services/api'; // Импортируем функции API
+import { createTask, getExpenseCategories, updateTask } from '../services/api'; // Импортируем функции API
 import './TaskForm.css';
 
 interface TaskFormProps {
@@ -45,6 +45,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     }
   }, [initialData]);
 
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const fetchedCategories = await getExpenseCategories();
+        setCategories(fetchedCategories.map((cat:any) => cat.category_name));
+      } catch (error) {
+        console.error('Ошибка при загрузке категорий:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -82,7 +96,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} data-testid="modal-overlay">
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="close-button" onClick={onClose}>&times;</button>
         <form className="form" onSubmit={handleSubmit}>
@@ -256,14 +270,19 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
 
               <div className="form-group">
                 <label htmlFor="category" className="label">Категория:</label>
-                <input
-                  type="text"
+                <select
                   id="category"
                   name="category"
                   value={formData.category || ''}
                   onChange={handleChange}
                   className="input"
-                />
+                  required
+                >
+                  <option value="">Выберите категорию</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
               </div>
             </>
           )}

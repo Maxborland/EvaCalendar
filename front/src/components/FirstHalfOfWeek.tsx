@@ -27,7 +27,7 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, weekId, today, 
             />
           </div>
         ))}
-        {weekId && <NoteField weekId={Number(weekId)} />}
+        {weekId && <NoteField weekId={weekId} />}
       </div>
     </div>
   );

@@ -7,7 +7,9 @@ class TaskService {
 
   async createTask(task) {
     const processedTask = this.processTaskData(task);
+    console.log('Attempting to insert task:', processedTask);
     const insertedRows = await knex('tasks').insert(processedTask).returning('id');
+    console.log('Insert result:', insertedRows);
     // Для SQLite с .returning('id'), Knex обычно возвращает массив объектов, например: [{ id: 1 }]
     // Убедимся, что primary key в таблице 'tasks' действительно называется 'id'.
     // Предполагая, что это так:
@@ -25,6 +27,7 @@ class TaskService {
 
   async updateTask(id, task) {
     const processedTask = this.processTaskData(task);
+    console.log('Attempting to update task with data:', processedTask); // Лог для update
     await knex('tasks').where({ id }).update(processedTask);
     return knex('tasks').where({ id }).first();
   }
@@ -87,11 +90,8 @@ class TaskService {
       incomeSpecificFields.forEach(field => {
         processed[field] = null;
       });
-      // Убеждаемся, что специфичные для расхода поля установлены или обнулены, если они не предоставлены
-      expenseSpecificFields.forEach(field => {
-        processed[field] = processed[field] || null;
-      });
       processed.amountEarned = null; // Убедимся, что amountEarned обнуляется для expense
+      processed.amountSpent = processed.amountSpent || null; // Обновлено: используем amountSpent напрямую
 
       // Важно: на фронтенде what теперь отображается как title, amount как amountSpent.
       // На бэкенде нам нужно убедиться, что title (который мы ожидаем для expense)
@@ -110,7 +110,6 @@ class TaskService {
     if (processed.what !== undefined) { delete processed.what; }
     if (processed.amount !== undefined) { delete processed.amount; }
     if (processed.expenseComments !== undefined) { delete processed.expenseComments; }
-
     return processed;
   }
 }

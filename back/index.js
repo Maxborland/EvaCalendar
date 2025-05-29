@@ -22,29 +22,39 @@ app.get('/', (req, res) => {
   res.send('API работает!');
 });
 
-import weekController from './controllers/weekController.js';
-app.get('/weeks', weekController.getWeek);
-app.post('/weeks', weekController.createWeek);
+import weekController, { validateWeek } from './controllers/weekController.js';
+app.get('/weeks', validateWeek.getWeek, weekController.getWeek);
+app.post('/weeks', validateWeek.createWeek, weekController.createWeek);
 
-import taskController from './controllers/taskController.js';
-app.get('/tasks/:weekId/:dayOfWeek', taskController.getTasksByWeekAndDay);
-app.post('/tasks', taskController.createTask);
+import taskController, { validateTask } from './controllers/taskController.js';
+app.get(
+  '/tasks/:weekId/:dayOfWeek',
+  validateTask.getTasksByWeekAndDay,
+  taskController.getTasksByWeekAndDay,
+);
+app.post('/tasks', validateTask.createTask, taskController.createTask);
 // Маршрут для перемещения должен быть определен ДО более общего маршрута /tasks/:id
-app.put('/tasks/move', taskController.moveTask); // Возвращаем PUT, как было изначально
-app.put('/tasks/:id', taskController.updateTask);
-app.delete('/tasks/:id', taskController.deleteTask);
-app.post('/tasks/:id/duplicate', taskController.duplicateTask);
+app.put('/tasks/move', validateTask.moveTask, taskController.moveTask); // Возвращаем PUT, как было изначально
+app.put('/tasks/:id', validateTask.updateTask, taskController.updateTask);
+app.delete('/tasks/:id', validateTask.deleteTask, taskController.deleteTask);
+app.post('/tasks/:id/duplicate', validateTask.duplicateTask, taskController.duplicateTask);
 
-import noteController from './controllers/noteController.js';
-app.get('/notes/:weekId', noteController.getNoteByWeekId);
-app.post('/notes', noteController.createOrUpdateNote);
-app.delete('/notes/:weekId', noteController.deleteNote);
+import noteController, { validateNote } from './controllers/noteController.js';
+app.get('/notes/:weekId', validateNote.getNoteByWeekId, noteController.getNoteByWeekId);
+app.post('/notes', validateNote.createOrUpdateNote, noteController.createOrUpdateNote);
+app.delete('/notes/:weekId', validateNote.deleteNote, noteController.deleteNote);
 
-// Обработчик ошибок
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Произошла внутренняя ошибка сервера.' });
-});
+import expenseCategoryController from './controllers/expenseCategoryController.js';
+app.get('/expense-categories', expenseCategoryController.getExpenseCategories);
+
+import summaryController, { validateSummary } from './controllers/summaryController.js';
+app.get('/summary/:weekId', validateSummary.getWeeklySummary, summaryController.getWeeklySummary);
+app.get('/summary/:weekId/:dayOfWeek', validateSummary.getDailySummary, summaryController.getDailySummary);
+
+import errorHandler from './middleware/errorHandler.js';
+
+// Обработчик ошибок (должен быть последним middleware)
+app.use(errorHandler);
 
 // Запуск сервера
 const server = app.listen(port, () => {

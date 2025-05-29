@@ -1,114 +1,152 @@
+import asyncHandler from 'express-async-handler';
+import { body, param, validationResult } from 'express-validator';
 import taskService from '../services/taskService.js';
+import ApiError from '../utils/ApiError.js';
 
 class TaskController {
-  async getTasksByWeekAndDay(req, res) {
+  getTasksByWeekAndDay = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
     const { weekId, dayOfWeek } = req.params;
-    try {
-      const tasks = await taskService.findTasksByWeekAndDay(weekId, dayOfWeek);
-      res.status(200).json(tasks);
-    } catch (error) {
-      console.error('Ошибка при получении задач:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
-    }
-  }
+    const tasks = await taskService.findTasksByWeekAndDay(weekId, dayOfWeek);
+    res.status(200).json(tasks);
+  });
 
-  async createTask(req, res) {
+  createTask = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
     const task = req.body;
-    // TODO: Добавить валидацию входящих данных
-    try {
-      const newTask = await taskService.createTask(task);
-      res.status(201).json(newTask);
-    } catch (error) {
-      console.error('Ошибка при создании задачи:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
-    }
-  }
+    console.log('Данные задачи, полученные в контроллере createTask:', task); // Добавлен лог
+    const newTask = await taskService.createTask(task);
+    res.status(201).json(newTask);
+  });
 
-  async updateTask(req, res) {
+  updateTask = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
     const task = req.body;
-    // TODO: Добавить валидацию входящих данных
-    try {
-      const updatedTask = await taskService.updateTask(id, task);
-      if (updatedTask) {
-        res.status(200).json(updatedTask);
-      } else {
-        res.status(404).json({ message: 'Задача не найдена.' });
-      }
-    } catch (error) {
-      console.error('Ошибка при обновлении задачи:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
+    console.log('Данные задачи, полученные в контроллере updateTask:', task); // Добавлен лог
+    const updatedTask = await taskService.updateTask(id, task);
+    if (updatedTask) {
+      res.status(200).json(updatedTask);
+    } else {
+      return next(ApiError.notFound('Задача не найдена.'));
     }
-  }
+  });
 
-  async deleteTask(req, res) {
+  deleteTask = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
     const { id } = req.params;
-    try {
-      const deletedCount = await taskService.deleteTask(id);
-      if (deletedCount > 0) {
-        res.status(204).send(); // No Content
-      } else {
-        res.status(404).json({ message: 'Задача не найдена.' });
-      }
-    } catch (error) {
-      console.error('Ошибка при удалении задачи:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
+    const deletedCount = await taskService.deleteTask(id);
+    if (deletedCount > 0) {
+      res.status(204).send(); // No Content
+    } else {
+      return next(ApiError.notFound('Задача не найдена.'));
     }
-  }
+  });
 
-  async duplicateTask(req, res) {
+  duplicateTask = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
     const { id } = req.params;
-    try {
-      const originalTask = await taskService.findTaskById(id);
-      if (!originalTask) {
-        return res.status(404).json({ message: 'Оригинальная задача не найдена.' });
-      }
-
-      // Создаем копию задачи, исключая id и обновляя дату создания
-      const duplicatedTask = {
-        ...originalTask,
-        id: undefined, // Knex автоматически сгенерирует новый ID
-      };
-
-      const newTask = await taskService.createTask(duplicatedTask);
-      res.status(201).json(newTask);
-    } catch (error) {
-      console.error('Ошибка при дублировании задачи:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
+    const originalTask = await taskService.findTaskById(id);
+    if (!originalTask) {
+      return next(ApiError.notFound('Оригинальная задача не найдена.'));
     }
-  }
 
-  async moveTask(req, res) {
-    const { taskId, newWeekId, newDayOfWeek } = req.body; // taskId приходит из тела запроса
+    // Создаем копию задачи, исключая id и обновляя дату создания
+    const duplicatedTask = {
+      ...originalTask,
+      id: undefined, // Knex автоматически сгенерирует новый ID
+    };
+
+    const newTask = await taskService.createTask(duplicatedTask);
+    res.status(201).json(newTask);
+  });
+
+  moveTask = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
+    const { taskId, newWeekId, newDayOfWeek } = req.body;
     if (!taskId || newWeekId === undefined || !newDayOfWeek) {
-      return res.status(400).json({ message: 'Отсутствуют обязательные поля: taskId, newWeekId, newDayOfWeek.' });
+      return next(ApiError.badRequest('Отсутствуют обязательные поля: taskId, newWeekId, newDayOfWeek.'));
     }
-    try {
-      // Убедимся, что задача существует перед попыткой обновления
-      const taskExists = await taskService.findTaskById(taskId);
-      if (!taskExists) {
-        return res.status(404).json({ message: 'Задача не найдена.' });
-      }
-
-      // Передаем taskId как идентификатор задачи и новые weekId/dayOfWeek для обновления
-      // processTaskData в taskService должен корректно обработать newWeekId и newDayOfWeek,
-      // если они передаются напрямую, или weekId и dayOfWeek, если они уже так названы.
-      // Для ясности и соответствия с processTaskData, передадим их как newWeekId и newDayOfWeek.
-      const updatedTaskResult = await taskService.updateTask(taskId, { newWeekId, newDayOfWeek });
-
-      // taskService.updateTask уже возвращает обновленную задачу
-      if (updatedTaskResult) {
-        res.status(200).json(updatedTaskResult);
-      } else {
-        // Этого не должно произойти, если findTaskById выше вернул задачу,
-        // но на всякий случай обработаем.
-        res.status(404).json({ message: 'Задача не найдена после попытки обновления.' });
-      }
-    } catch (error) {
-      console.error('Ошибка при перемещении задачи:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
+    const taskExists = await taskService.findTaskById(taskId);
+    if (!taskExists) {
+      return next(ApiError.notFound('Задача не найдена.'));
     }
-  }
+
+    const updatedTaskResult = await taskService.updateTask(taskId, { newWeekId, newDayOfWeek });
+
+    if (updatedTaskResult) {
+      res.status(200).json(updatedTaskResult);
+    } else {
+      return next(ApiError.notFound('Задача не найдена после попытки обновления.'));
+    }
+  });
 }
 
 export default new TaskController();
+
+export const validateTask = {
+  getTasksByWeekAndDay: [
+    param('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    param('dayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
+  ],
+  createTask: [
+    body('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    body('dayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
+    body('type').isIn(['income', 'expense', 'babysitting', 'work']).withMessage('Неверный тип задачи.'),
+    body('title').isString().notEmpty().withMessage('Заголовок обязателен.'),
+    body('time').optional({ nullable: true }).isString().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Неверный формат времени. Используйте HH:MM.'),
+    body('address').optional({ nullable: true }).isString().withMessage('Адрес должен быть строкой.'),
+    body('childName').optional({ nullable: true }).isString().withMessage('Имя ребенка должно быть строкой.'),
+    body('hourlyRate').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Ставка должна быть положительным числом.'),
+    body('comments').optional({ nullable: true }).isString().withMessage('Комментарии должны быть строкой.'),
+    body('category').optional({ nullable: true }).isString().withMessage('Категория должна быть строкой.'),
+    body('amountEarned').optional().isFloat({ min: 0 }).withMessage('AmountEarned должен быть положительным числом.'),
+    body('amountSpent').optional().isFloat({ min: 0 }).withMessage('AmountSpent должен быть положительным числом.'),
+    body('hoursWorked').optional().isFloat({ min: 0 }).withMessage('HoursWorked должен быть положительным числом.'),
+  ],
+  updateTask: [
+    param('id').isInt({ min: 1 }).withMessage('ID задачи должен быть положительным числом.'),
+    body('weekId').optional().isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    body('dayOfWeek').optional().isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
+    body('type').optional().isIn(['income', 'expense', 'babysitting', 'work']).withMessage('Неверный тип задачи.'),
+    body('title').optional().isString().notEmpty().withMessage('Заголовок обязателен.'),
+    body('time').optional({ nullable: true }).isString().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Неверный формат времени. Используйте HH:MM.'),
+    body('address').optional({ nullable: true }).isString().withMessage('Адрес должен быть строкой.'),
+    body('childName').optional({ nullable: true }).isString().withMessage('Имя ребенка должно быть строкой.'),
+    body('hourlyRate').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Ставка должна быть положительным числом.'),
+    body('comments').optional({ nullable: true }).isString().withMessage('Комментарии должны быть строкой.'),
+    body('category').optional({ nullable: true }).isString().withMessage('Категория должна быть строкой.'),
+    body('amountEarned').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('AmountEarned должен быть положительным числом.'),
+    body('amountSpent').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('AmountSpent должен быть положительным числом.'),
+    body('hoursWorked').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('HoursWorked должен быть положительным числом.'),
+  ],
+  deleteTask: [
+    param('id').isInt({ min: 1 }).withMessage('ID задачи должен быть положительным числом.'),
+  ],
+  duplicateTask: [
+    param('id').isInt({ min: 1 }).withMessage('ID задачи должен быть положительным числом.'),
+  ],
+  moveTask: [
+    body('taskId').isInt({ min: 1 }).withMessage('ID задачи должен быть положительным числом.'),
+    body('newWeekId').isInt({ min: 1 }).withMessage('Новый weekId должен быть положительным числом.'),
+    body('newDayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для newDayOfWeek.'),
+  ],
+};

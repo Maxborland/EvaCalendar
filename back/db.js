@@ -1,8 +1,8 @@
 import knex from 'knex';
-import knexConfig from './knexfile.js';
+import knexfile from './knexfile.js';
 
 const environment = process.env.NODE_ENV || 'development';
-const db = knex(knexConfig[environment]);
+const db = knex(knexfile[environment]);
 
 db.raw('SELECT 1')
   .then(() => {

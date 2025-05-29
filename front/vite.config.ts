@@ -6,8 +6,10 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
+    mockReset: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
+    include: ['**/*.test.{ts,tsx}'],
   },
   server: {
   proxy: {

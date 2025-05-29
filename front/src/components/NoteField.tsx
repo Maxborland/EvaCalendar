@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 interface NoteFieldProps {
-  weekId: number;
+  weekId: string; // Изменено на string, так как API ожидает UUID
 }
 
 const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
@@ -11,6 +11,7 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
   useEffect(() => {
     const fetchNote = async () => {
       try {
+        // weekId уже строка (UUID)
         const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/notes/${weekId}`;
         console.log('Fetching note from:', apiUrl); // Добавляем логирование
         const response = await fetch(apiUrl);
@@ -42,7 +43,7 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ weekId, content: noteContent }),
+        body: JSON.stringify({ weekId, content: noteContent }), // weekId уже строка (UUID)
       });
 
       if (response.ok) {

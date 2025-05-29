@@ -1,6 +1,7 @@
 import type { Moment } from 'moment';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
+import { getDailySummary, getWeeklySummary } from '../services/api';
 import FirstHalfOfWeek from './FirstHalfOfWeek';
 import SecondHalfOfWeek from './SecondHalfOfWeek';
 
@@ -9,6 +10,8 @@ const WeekView: React.FC = () => {
   const [weekInfo, setWeekInfo] = useState<{ id: string | null; startDate: string; endDate: string }>({ id: null, startDate: '', endDate: '' });
   const [today] = useState(moment()); // Состояние для получения текущего дня
   const [weekDays, setWeekDays] = useState<Moment[]>([]); // Добавляем состояние для дней недели
+  const [dailySummary, setDailySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для дневной сводки
+  const [weeklySummary, setWeeklySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для недельной сводки
 
   const fetchWeekInfo = useCallback(async () => {
     try {
@@ -48,6 +51,25 @@ const WeekView: React.FC = () => {
     fetchWeekInfo();
   }, [fetchWeekInfo]);
 
+  const fetchSummary = useCallback(async () => {
+    if (weekInfo.id) {
+      const dayOfWeekNumber = today.isoWeekday(); // День недели по ISO (1-7), как и ожидает summaryController
+
+      // Получаем сводку за день
+      // weekInfo.id это UUID недели, который ожидает API
+      const daily = await getDailySummary(weekInfo.id, dayOfWeekNumber.toString());
+      setDailySummary(daily);
+
+      // Получаем сводку за неделю
+      const weekly = await getWeeklySummary(weekInfo.id);
+      setWeeklySummary(weekly);
+    }
+  }, [weekInfo, today]);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary]);
+
   useEffect(() => {
     const startOfWeek = currentDate.clone().startOf('isoWeek');
     const days: Moment[] = [];
@@ -75,8 +97,11 @@ const WeekView: React.FC = () => {
         <button onClick={goToPreviousWeek}>Предыдущая неделя</button>
         <button onClick={goToNextWeek}>Следующая неделя</button>
       </div>
-      <h2>
-        Неделя: {moment(weekInfo.startDate).format('D MMMM YY')} - {moment(weekInfo.endDate).format('D MMMM YY')}
+      <h2 style={{ padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px', textAlign: 'center' }}>
+        <p>Сегодня: {today.format('D MMMM YYYY')}</p>
+        <p>Заработано сегодня: {dailySummary.totalIncome.toFixed(2)}₽ | Потрачено сегодня: {dailySummary.totalExpense.toFixed(2)}₽</p>
+        <p>Заработано за неделю: {weeklySummary.totalIncome.toFixed(2)}₽ | Потрачено за неделю: {weeklySummary.totalExpense.toFixed(2)}₽</p>
+        <p>Неделя: {moment(weekInfo.startDate).format('D MMMM YY')} - {moment(weekInfo.endDate).format('D MMMM YY')}</p>
       </h2>
       <div className="week-days-container">
         {weekInfo.id !== null && <FirstHalfOfWeek days={firstHalfDays} weekId={weekInfo.id} today={today} onTaskMove={fetchWeekInfo} />}

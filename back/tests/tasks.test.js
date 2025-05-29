@@ -1,27 +1,20 @@
-import knex from 'knex';
 import request from 'supertest';
-import knexConfig from '../knexfile';
-// Импортируем app и server после установки NODE_ENV
-let app;
-let server;
+import db from '../db.js'; // Импортируем db напрямую
+import { app, server } from '../index.js'; // Импортируем app и server напрямую
 
-let db;
+// Устанавливаем NODE_ENV до всех импортов, которые могут от него зависеть
+process.env.NODE_ENV = 'test';
+
 
 beforeAll(async () => {
-  process.env.NODE_ENV = 'test';
-  // Важно импортировать app и server после установки NODE_ENV (иначе они могут быть инициализированы с 'development' конфигом)
-  const api = await import('../index.js');
-  app = api.app;
-  server = api.server;
-
-  db = knex(knexConfig.test); // Используем тестовый конфиг
-  await db.migrate.latest(); // Применяем миграции к тестовой БД
+  // Миграции должны применяться к импортированному db
+  await db.migrate.latest();
 });
 
 afterAll(async () => {
   await db.migrate.rollback();
-  await db.destroy();
-  server.close();
+  await db.destroy(); // Закрываем соединение с БД
+  return new Promise(resolve => server.close(resolve)); // Убедимся, что сервер закрыт
 });
 
 describe('Task API', () => {
@@ -29,12 +22,21 @@ describe('Task API', () => {
   let weekId;
 
   // Создаем неделю для тестирования
+  // Этот блок beforeAll должен выполняться после основного beforeAll,
+  // чтобы миграции уже были применены
   beforeAll(async () => {
+    // Очистим таблицы перед тестами, чтобы избежать конфликтов от предыдущих запусков
+    await db('tasks').del();
+    await db('weeks').del();
+
     const week = await db('weeks').insert({
       startDate: '2025-01-01',
       endDate: '2025-01-07',
     }).returning('id');
-    weekId = week[0].id || week[0]; // SQLite returns an array of objects with id, PostgreSQL directly returns id
+    // В SQLite `returning` может не работать как ожидается или возвращать массив ID.
+    // Если week[0] объект, то id в нем. Если просто ID, то week[0] и есть ID.
+    const resultId = week[0];
+    weekId = typeof resultId === 'object' ? resultId.id : resultId;
   });
 
   it('should create a new task', async () => {
@@ -42,7 +44,7 @@ describe('Task API', () => {
       .post('/tasks')
       .send({
         weekId: weekId,
-        dayOfWeek: 'Monday',
+        dayOfWeek: 'Понедельник',
         type: 'babysitting',
         title: 'Test Task',
         time: '10:00',
@@ -60,7 +62,7 @@ describe('Task API', () => {
 
   it('should fetch tasks by week and day', async () => {
     const res = await request(app)
-      .get(`/tasks/${weekId}/Monday`);
+      .get(`/tasks/${weekId}/Понедельник`); // Исправлено
     expect(res.statusCode).toEqual(200);
     expect(res.body.length).toBeGreaterThan(0);
     expect(res.body[0].title).toEqual('Test Task');
@@ -93,17 +95,17 @@ describe('Task API', () => {
       .send({
         taskId: taskId,
         newWeekId: weekId, // Same week for simplicity, can be a new weekId
-        newDayOfWeek: 'Tuesday',
+        newDayOfWeek: 'Вторник', // Исправлено
       });
     expect(res.statusCode).toEqual(200);
-    expect(res.body.dayOfWeek).toEqual('Tuesday');
+    expect(res.body.dayOfWeek).toEqual('Вторник'); // Исправлено
 
     // Проверим, что задача переместилась
-    const tasksRes = await request(app).get(`/tasks/${weekId}/Tuesday`);
+    const tasksRes = await request(app).get(`/tasks/${weekId}/Вторник`); // Исправлено
     expect(tasksRes.body.length).toBeGreaterThan(0);
     expect(tasksRes.body.some(task => task.id === taskId)).toBe(true);
 
-    const oldDayTasksRes = await request(app).get(`/tasks/${weekId}/Monday`);
+    const oldDayTasksRes = await request(app).get(`/tasks/${weekId}/Понедельник`); // Исправлено
     expect(oldDayTasksRes.body.some(task => task.id === taskId)).toBe(false);
   });
 
@@ -113,7 +115,7 @@ describe('Task API', () => {
     expect(res.statusCode).toEqual(204);
 
     const checkRes = await request(app)
-      .get(`/tasks/${weekId}/Tuesday`); // Проверяем в новом дне
+      .get(`/tasks/${weekId}/Вторник`); // Проверяем в новом дне, используем русское название
     expect(checkRes.statusCode).toEqual(200);
     expect(checkRes.body.find(task => task.id === taskId)).toBeUndefined();
   });

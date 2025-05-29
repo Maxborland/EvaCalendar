@@ -44,17 +44,18 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onT
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
-  const currentWeekId = fullDate.week().toString();
-  const dayOfWeekFormatted = fullDate.clone().locale('ru').format('dddd'); // Форматируем fullDate в название дня недели (e.g., "понедельник")
+  const dayOfWeekFormattedRu = fullDate.clone().locale('ru').format('dddd');
+  const dayOfWeekForApi = dayOfWeekFormattedRu.charAt(0).toUpperCase() + dayOfWeekFormattedRu.slice(1); // Форматируем для API (e.g., "Понедельник")
 
+  // weekId из props уже является UUID, который ожидает API
   const fetchTasks = useCallback(async () => {
     try {
-      const response = await getTasksByWeekAndDay(currentWeekId, dayOfWeekFormatted); // Используем форматированный день недели
+      const response = await getTasksByWeekAndDay(weekId, dayOfWeekForApi); // Используем weekId из props
       setTasks(response.data as Task[]);
     } catch (error) {
       console.error('Ошибка при загрузке задач:', error);
     }
-  }, [currentWeekId, dayOfWeekFormatted]); // Зависимость от dayOfWeekFormatted
+  }, [weekId, dayOfWeekForApi]); // Зависимость от weekId и dayOfWeekForApi
 
   useEffect(() => {
     fetchTasks();
@@ -123,13 +124,13 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onT
     accept: ItemTypes.TASK,
     drop: (item: Task, monitor: DropTargetMonitor) => {
       if (!monitor.didDrop()) {
-        handleMoveTask(item.id!, weekId, dayOfWeekFormatted); // Используем форматированный день недели
+        handleMoveTask(item.id!, weekId, dayOfWeekForApi); // Используем форматированный день недели для API
       }
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
-  }), [weekId, dayOfWeekFormatted]); // Зависимость от dayOfWeekFormatted
+  }), [weekId, dayOfWeekForApi]); // Зависимость от dayOfWeekForApi
 
   drop(dropRef);
 
@@ -157,8 +158,8 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onT
       {showForm && (
         <TaskForm
           initialData={editingTask}
-          weekId={currentWeekId}
-          dayOfWeek={dayOfWeekFormatted} // Передаем форматированный день недели
+          weekId={weekId} // Используем weekId из props
+          dayOfWeek={dayOfWeekForApi} // Передаем форматированный день недели для API
           onTaskSaved={fetchTasks}
           onClose={handleCloseForm}
         />
