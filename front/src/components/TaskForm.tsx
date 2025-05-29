@@ -1,3 +1,4 @@
+import axios from 'axios'; // Импортируем axios для проверки ошибок
 import React, { useEffect, useState } from 'react';
 import { createTask, getExpenseCategories, updateTask } from '../services/api'; // Импортируем функции API
 import './TaskForm.css';
@@ -114,9 +115,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
       onClose();
     } catch (error) {
       console.error('Ошибка при сохранении задачи:', error);
-      if (error.response) {
+      if (axios.isAxiosError(error) && error.response) {
         console.error('Статус ответа:', error.response.status);
         console.error('Данные ответа:', error.response.data);
+      } else {
+        console.error('Неизвестная ошибка:', error);
       }
       // Возможно, добавить сообщение об ошибке для пользователя
     }

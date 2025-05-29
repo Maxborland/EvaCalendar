@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-const API_URL = 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
 
 export interface ExpenseCategory {
   id: number;

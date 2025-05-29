@@ -18,7 +18,7 @@ const WeekView: React.FC = () => {
     setIsLoading(true); // Начинаем загрузку
     try {
       const formattedDate = currentDate.format('YYYY-MM-DD');
-      const baseUrl = import.meta.env.VITE_API_BASE_URL;
+      const baseUrl = import.meta.env.VITE_API_URL;
       const response = await fetch(`${baseUrl}/weeks?date=${formattedDate}`);
 
       if (response.status === 404) {

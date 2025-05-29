@@ -10,7 +10,10 @@
     "start": "node index.js",
     "migrate:latest": "npx knex migrate:latest",
     "migrate:rollback": "npx knex migrate:rollback",
-    "seed": "npx knex seed:run"
+    "seed": "npx knex seed:run",
+    "start:pm2": "pm2 start pm2.config.js",
+    "stop:pm2": "pm2 stop eva-calendar-backend",
+    "delete:pm2": "pm2 delete eva-calendar-backend"
   },
   "keywords": [],
   "author": "",

@@ -31,5 +31,18 @@ export default {
     seeds: {
       directory: path.resolve(__dirname, 'seeds')
     }
+  },
+  production: {
+    client: 'sqlite3',
+    connection: {
+      filename: path.resolve(__dirname, './data/database.sqlite')
+    },
+    useNullAsDefault: true,
+    migrations: {
+      directory: path.resolve(__dirname, 'migrations')
+    },
+    seeds: {
+      directory: path.resolve(__dirname, 'seeds')
+    }
   }
 };
