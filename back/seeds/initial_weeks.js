@@ -1,6 +1,6 @@
-const moment = require('moment');
+import moment from 'moment';
 
-module.exports.seed = async function seed(knex) {
+export async function seed(knex) {
   // Deletes ALL existing entries
   await knex('weeks').del();
 

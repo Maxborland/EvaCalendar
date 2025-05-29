@@ -1,16 +1,16 @@
-const request = require('supertest');
+import knex from 'knex';
+import request from 'supertest';
+import knexConfig from '../knexfile';
 // Импортируем app и server после установки NODE_ENV
 let app;
 let server;
-const knex = require('knex');
-const knexConfig = require('../knexfile');
 
 let db;
 
 beforeAll(async () => {
   process.env.NODE_ENV = 'test';
   // Важно импортировать app и server после установки NODE_ENV (иначе они могут быть инициализированы с 'development' конфигом)
-  const api = require('../index');
+  const api = await import('../index.js');
   app = api.app;
   server = api.server;
 
@@ -80,7 +80,7 @@ describe('Task API', () => {
 
   it('should duplicate a task', async () => {
     const res = await request(app)
-      .post(`/tasks/duplicate/${taskId}`);
+      .post(`/tasks/${taskId}/duplicate`);
     expect(res.statusCode).toEqual(201);
     expect(res.body).toHaveProperty('id');
     expect(res.body.id).not.toEqual(taskId);

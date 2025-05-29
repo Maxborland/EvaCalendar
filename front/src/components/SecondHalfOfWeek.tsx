@@ -12,7 +12,6 @@ interface SecondHalfOfWeekProps {
 const SecondHalfOfWeek: React.FC<SecondHalfOfWeekProps> = ({ days, weekId, today, onTaskMove }) => {
   return (
     <div className="second-half-of-week">
-      <h3>Вторая половина недели</h3>
       <div className="day-columns-container">
         {days.map((dayMoment, index) => (
           <div key={index} className="day-column-wrapper">

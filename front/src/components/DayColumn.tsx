@@ -8,15 +8,18 @@ import TaskItem from './TaskItem';
 interface Task {
   id?: string;
   type: 'income' | 'expense';
-  title?: string;
-  time?: string;
-  address?: string;
-  childName?: string;
-  hourlyRate?: number;
-  comments?: string;
-  category?: string; // Добавляем поле category для трат
-  amountEarned?: number; // Добавляем поле amountEarned
-  amountSpent?: number; // Добавляем поле amountSpent
+  title?: string; // Для income
+  time?: string; // Для income
+  address?: string; // Для income
+  childName?: string; // Для income
+  hourlyRate?: number; // Для income
+  comments?: string; // Для income
+  what?: string; // Для expense
+  amount?: number; // Для expense
+  expenseComments?: string; // Для expense
+  category?: string; // Для expense
+  amountEarned?: number; // Для income
+  amountSpent?: number; // Для expense
   weekId?: string;
   dayOfWeek?: string;
 }
@@ -42,7 +45,7 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onT
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
   const currentWeekId = fullDate.week().toString();
-  const dayOfWeekFormatted = fullDate.format('dddd'); // Форматируем fullDate в название дня недели (e.g., "Monday")
+  const dayOfWeekFormatted = fullDate.clone().locale('ru').format('dddd'); // Форматируем fullDate в название дня недели (e.g., "понедельник")
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -58,9 +61,10 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onT
   }, [fetchTasks, onTaskMove]);
 
   const handleOpenForm = (task?: Task) => {
-    if (task) {
+    if (task && task.id) { // Проверяем, что task и его id существуют
       setEditingTask(task);
     } else {
+      // Инициализируем все поля, подходящие для создания новой задачи
       setEditingTask({
         id: undefined,
         type: 'income',
@@ -70,9 +74,12 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onT
         childName: '',
         hourlyRate: 0,
         comments: '',
-        category: '', // Инициализируем category
-        amountEarned: 0, // Инициализируем amountEarned
-        amountSpent: 0, // Инициализируем amountSpent
+        what: '', // Для expense
+        amount: 0, // Для expense
+        expenseComments: '', // Для expense
+        category: '', // Для expense
+        amountEarned: 0, // Для income
+        amountSpent: 0, // Для expense
       });
     }
     setShowForm(true);
@@ -129,7 +136,7 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onT
   return (
     <div ref={dropRef} className={`${dayColumnClassName} ${isOver ? 'highlighted-drop-zone' : ''}`}>
       <h3>{day}</h3>
-      <div className="day-cells" onClick={() => handleOpenForm()}>
+      <div className="day-cells"> {/* Удаляем onClick отсюда */}
         {tasks.map((task) => (
           task.id ? (
             <TaskItem
@@ -142,6 +149,7 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onT
             />
           ) : null
         ))}
+        {/* Оставляем onClick только на пустых ячейках */}
         {Array.from({ length: Math.max(0, 5 - tasks.length) }).map((_, index) => (
           <div key={index} className="day-cell-empty" onClick={() => handleOpenForm()}></div>
         ))}

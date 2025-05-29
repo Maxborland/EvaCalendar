@@ -1,4 +1,4 @@
-const knex = require('../db');
+import knex from '../db.js';
 
 class NoteService {
   async getNoteByWeekId(weekId) {
@@ -21,4 +21,4 @@ class NoteService {
   }
 }
 
-module.exports = new NoteService();
+export default new NoteService();

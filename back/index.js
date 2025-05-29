@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config(); // Загружаем переменные окружения из .env файла
-const db = require('./db'); // Подключаем db.js для инициализации базы данных
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+dotenv.config(); // Загружаем переменные окружения из .env файла
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -22,20 +22,20 @@ app.get('/', (req, res) => {
   res.send('API работает!');
 });
 
-const weekController = require('./controllers/weekController');
+import weekController from './controllers/weekController.js';
 app.get('/weeks', weekController.getWeek);
 app.post('/weeks', weekController.createWeek);
 
-const taskController = require('./controllers/taskController');
+import taskController from './controllers/taskController.js';
 app.get('/tasks/:weekId/:dayOfWeek', taskController.getTasksByWeekAndDay);
 app.post('/tasks', taskController.createTask);
 // Маршрут для перемещения должен быть определен ДО более общего маршрута /tasks/:id
-app.put('/tasks/move', taskController.moveTask);
+app.put('/tasks/move', taskController.moveTask); // Возвращаем PUT, как было изначально
 app.put('/tasks/:id', taskController.updateTask);
 app.delete('/tasks/:id', taskController.deleteTask);
-app.post('/tasks/duplicate/:id', taskController.duplicateTask);
+app.post('/tasks/:id/duplicate', taskController.duplicateTask);
 
-const noteController = require('./controllers/noteController');
+import noteController from './controllers/noteController.js';
 app.get('/notes/:weekId', noteController.getNoteByWeekId);
 app.post('/notes', noteController.createOrUpdateNote);
 app.delete('/notes/:weekId', noteController.deleteNote);
@@ -51,4 +51,5 @@ const server = app.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
 });
 
-module.exports = { app, server };
+export { app, server };
+

@@ -7,7 +7,6 @@ import SecondHalfOfWeek from './SecondHalfOfWeek';
 const WeekView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(moment());
   const [weekInfo, setWeekInfo] = useState<{ id: string | null; startDate: string; endDate: string }>({ id: null, startDate: '', endDate: '' });
-  const [displayFirstHalf, setDisplayFirstHalf] = useState(true);
   const [today] = useState(moment()); // Состояние для получения текущего дня
   const [weekDays, setWeekDays] = useState<Moment[]>([]); // Добавляем состояние для дней недели
 
@@ -57,12 +56,6 @@ const WeekView: React.FC = () => {
     }
     setWeekDays(days);
 
-    const currentDayOfWeek = today.isoWeekday();
-    if (currentDayOfWeek >= 1 && currentDayOfWeek <= 3) {
-      setDisplayFirstHalf(true);
-    } else {
-      setDisplayFirstHalf(false);
-    }
   }, [currentDate, today]);
 
   const goToPreviousWeek = () => {
@@ -85,13 +78,9 @@ const WeekView: React.FC = () => {
       <h2>
         Неделя: {moment(weekInfo.startDate).format('D MMMM YY')} - {moment(weekInfo.endDate).format('D MMMM YY')}
       </h2>
-      <div className="half-navigation">
-        <button onClick={() => setDisplayFirstHalf(true)}>Показать первую половину</button>
-        <button onClick={() => setDisplayFirstHalf(false)}>Показать вторую половину</button>
-      </div>
       <div className="week-days-container">
-        {displayFirstHalf && weekInfo.id !== null && <FirstHalfOfWeek days={firstHalfDays} weekId={weekInfo.id} today={today} onTaskMove={fetchWeekInfo} />}
-        {!displayFirstHalf && weekInfo.id !== null && <SecondHalfOfWeek days={secondHalfDays} weekId={weekInfo.id} today={today} onTaskMove={fetchWeekInfo} />}
+        {weekInfo.id !== null && <FirstHalfOfWeek days={firstHalfDays} weekId={weekInfo.id} today={today} onTaskMove={fetchWeekInfo} />}
+        {weekInfo.id !== null && <SecondHalfOfWeek days={secondHalfDays} weekId={weekInfo.id} today={today} onTaskMove={fetchWeekInfo} />}
       </div>
     </div>
   );

@@ -15,7 +15,6 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, weekId, today, 
 
   return (
     <div className="first-half-of-week">
-      <h3>Первая половина недели</h3>
       <div className="day-columns-container">
         {daysToShow.map((dayMoment, index) => (
           <div key={index} className="day-column-wrapper">

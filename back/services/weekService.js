@@ -1,4 +1,4 @@
-const db = require('../db');
+import db from '../db.js';
 
 class WeekService {
   async findWeekByDate(date) {
@@ -16,4 +16,4 @@ class WeekService {
   }
 }
 
-module.exports = new WeekService();
+export default new WeekService();

@@ -2,7 +2,7 @@
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-exports.up = function(knex) {
+export function up(knex) {
   return knex.schema.createTable('tasks', (table) => {
     table.increments('id').primary();
     table.integer('weekId').unsigned().notNullable(); // Связь с таблицей weeks
@@ -26,6 +26,6 @@ exports.up = function(knex) {
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-exports.down = function(knex) {
+export function down(knex) {
   return knex.schema.dropTable('tasks');
 };

@@ -11,9 +11,10 @@ interface TaskItemProps {
   childName?: string;
   hourlyRate?: number;
   comments?: string;
-  what?: string;
-  amount?: number;
-  expenseComments?: string;
+  category?: string;
+  amountEarned?: number;
+  amountSpent?: number;
+  hoursWorked?: number; // Новое поле для часов работы
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onEdit: (task: any) => void;
@@ -23,36 +24,47 @@ const ItemTypes = {
   TASK: 'task',
 };
 
-const TaskItemContainer = styled.div.attrs<{ isDragging: boolean }>(props => ({
+const TaskItemContainer = styled.div.attrs<{ isDragging: boolean; itemType: 'income' | 'expense' }>(props => ({
   style: {
     opacity: props.isDragging ? 0.5 : 1,
+    borderColor: props.itemType === 'income' ? '#28a745' : '#dc3545', // Зеленый для дохода, красный для расхода
   },
 }))`
   background-color: #f9f9f9;
-  border: 1px solid #ddd;
+  border: 2px solid; /* Изменяем толщину border */
   border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 5px; /* Уменьшаем padding */
+  margin-bottom: 5px; /* Уменьшаем margin-bottom */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: grab;
 `;
 
 const TaskTitle = styled.h4`
-  margin: 0 0 5px 0;
+  margin: 0; /* Убираем все отступы */
   color: #333;
+  display: inline-block; /* Для лучшего контроля выравнивания */
+  line-height: 1; /* Для более точного выравнивания */
 `;
 
 const TaskDetail = styled.p`
-  margin: 0 0 3px 0;
+  margin: 0; /* Убираем все отступы */
   color: #555;
   font-size: 0.9em;
+`;
+
+const TaskInfoContainer = styled.div`
+  display: flex;
+  align-items: center; /* Выравнивание по центру по вертикали */
+  gap: 5px; /* Пространство между элементами */
+  flex-grow: 1; /* Позволяет занимать доступное пространство */
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
+  align-items: center; /* Выравнивание кнопок по центру */
   gap: 5px;
-  margin-top: 10px;
+  margin-top: 0; /* Отступы не нужны, так как все в одной строке */
 `;
 
 const ActionButton = styled.button`
@@ -60,9 +72,9 @@ const ActionButton = styled.button`
   color: white;
   border: none;
   border-radius: 5px;
-  padding: 5px 10px;
+  padding: 3px 6px; /* Уменьшаем padding для кнопок */
   cursor: pointer;
-  font-size: 0.8em;
+  font-size: 0.7em; /* Уменьшаем размер шрифта для кнопок */
 
   &:hover {
     background-color: #0056b3;
@@ -93,9 +105,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
   childName,
   hourlyRate,
   comments,
-  what,
-  amount,
-  expenseComments,
+  category,
+  amountEarned,
+  amountSpent,
+  hoursWorked, // Добавлено
   onDelete,
   onDuplicate,
   onEdit,
@@ -104,7 +117,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.TASK,
-    item: { id, type, title, time, address, childName, hourlyRate, comments, what, amount, expenseComments },
+    item: { id, type, title, time, address, childName, hourlyRate, comments, category, amountEarned, amountSpent, hoursWorked },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -113,39 +126,41 @@ const TaskItem: React.FC<TaskItemProps> = ({
   drag(ref); // Применяем drag-источник к ref
 
   const handleEditClick = () => {
-    if (type === 'income') {
-      onEdit({ id, type, title, time, address, childName, hourlyRate, comments });
-    } else {
-      onEdit({ id, type, what, amount, expenseComments });
-    }
+    // Передаем всеProps задачи для редактирования
+    onEdit({
+      id,
+      type,
+      title,
+      time,
+      address,
+      childName,
+      hourlyRate,
+      comments,
+      category,
+      amountEarned,
+      amountSpent,
+      hoursWorked,
+    });
   };
 
   return (
-    <TaskItemContainer ref={ref} isDragging={isDragging} onClick={handleEditClick}>
-      {type === 'income' ? (
-        <>
+    <TaskItemContainer ref={ref} isDragging={isDragging} itemType={type} onClick={handleEditClick}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <TaskInfoContainer>
           <TaskTitle>{title}</TaskTitle>
-          <TaskDetail>Время: {time}</TaskDetail>
-          <TaskDetail>Адрес: {address}</TaskDetail>
-          <TaskDetail>Имя ребенка: {childName}</TaskDetail>
-          <TaskDetail>Ставка: ${hourlyRate}/час</TaskDetail>
-          <TaskDetail>Комментарии: {comments}</TaskDetail>
-        </>
-      ) : (
-        <>
-          <TaskTitle>{what}</TaskTitle>
-          <TaskDetail>Сумма: ${amount}</TaskDetail>
-          <TaskDetail>Комментарий: {expenseComments}</TaskDetail>
-        </>
-      )}
-      <ButtonContainer>
-        <ActionButton className="delete" onClick={(e) => { e.stopPropagation(); onDelete(id || ''); }}>
-          Удалить
-        </ActionButton>
-        <ActionButton className="duplicate" onClick={(e) => { e.stopPropagation(); onDuplicate(id || ''); }}>
-          Дублировать
-        </ActionButton>
-      </ButtonContainer>
+          <TaskDetail>
+            {type === 'income' ? `Заработано: ${amountEarned || 0}₽` : `Потрачено: ${amountSpent || 0}₽`}
+          </TaskDetail>
+        </TaskInfoContainer>
+        <ButtonContainer>
+          <ActionButton className="delete" onClick={(e) => { e.stopPropagation(); onDelete(id || ''); }}>
+            🗑️
+          </ActionButton>
+          <ActionButton className="duplicate" onClick={(e) => { e.stopPropagation(); onDuplicate(id || ''); }}>
+            📄
+          </ActionButton>
+        </ButtonContainer>
+      </div>
     </TaskItemContainer>
   );
 };

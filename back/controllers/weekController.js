@@ -1,4 +1,4 @@
-const weekService = require('../services/weekService');
+import weekService from '../services/weekService.js';
 
 class WeekController {
   async getWeek(req, res) {
@@ -46,4 +46,4 @@ class WeekController {
   }
 }
 
-module.exports = new WeekController();
+export default new WeekController();

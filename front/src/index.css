@@ -13,6 +13,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+#root {
+  max-width: 1200px; /* Максимальная ширина контента */
+  margin: 0 auto; /* Центрирование контента */
+  padding: 0 20px; /* Отступы по бокам */
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -24,9 +30,7 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  justify-content: center; /* Центрируем по горизонтали */
-  align-items: center; /* Центрируем по вертикали */
+  display: block;
   min-width: 320px;
   min-height: 100vh;
 }

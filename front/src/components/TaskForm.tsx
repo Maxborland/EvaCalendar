@@ -12,12 +12,10 @@ interface TaskFormProps {
     childName?: string; // Для income
     hourlyRate?: number; // Для income
     comments?: string; // Для income
-    what?: string; // Для expense
-    amount?: number; // Для expense
-    expenseComments?: string; // Для expense
-    category?: string; // Для expense
-    amountEarned?: number; // Для income
-    amountSpent?: number; // Для expense
+    category?: string;
+    amountEarned?: number;
+    amountSpent?: number;
+    hoursWorked?: number; // Новое поле для часов работы
   };
   weekId: string;
   dayOfWeek: string;
@@ -33,14 +31,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     time: '',
     address: '',
     childName: '',
-    hourlyRate: 0, // Для income
-    comments: '', // Для income
-    what: '', // Для expense
-    amount: 0, // Для expense
-    expenseComments: '', // Для expense
-    category: '', // Для expense
-    amountEarned: 0, // Для income
-    amountSpent: 0, // Для expense
+    hourlyRate: undefined, // Изменено на undefined
+    comments: '',
+    category: '',
+    amountEarned: undefined, // Изменено на undefined
+    amountSpent: undefined, // Изменено на undefined
+    hoursWorked: undefined, // Изменено на undefined
   });
 
   useEffect(() => {
@@ -53,7 +49,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: (name === 'hourlyRate' || name === 'amount') ? parseFloat(value) || 0 : value,
+      [name]: (name === 'hourlyRate' || name === 'amountEarned' || name === 'amountSpent' || name === 'hoursWorked') ? parseFloat(value) || 0 : value,
     }));
   };
 
@@ -62,10 +58,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     try {
       if (formData.id) {
         // Обновление существующей задачи
-        await updateTask(formData.id, { ...formData, weekId, dayOfWeek });
+        const dataToSave = { ...formData, weekId, dayOfWeek };
+        // Рассчитываем amountEarned перед отправкой, если это доход
+        if (dataToSave.type === 'income' && dataToSave.hourlyRate && dataToSave.hoursWorked) {
+          dataToSave.amountEarned = dataToSave.hourlyRate * dataToSave.hoursWorked;
+        }
+        await updateTask(formData.id, dataToSave);
       } else {
         // Создание новой задачи
-        await createTask({ ...formData, weekId, dayOfWeek });
+        const dataToSave = { ...formData, weekId, dayOfWeek };
+        // Рассчитываем amountEarned перед отправкой, если это доход
+        if (dataToSave.type === 'income' && dataToSave.hourlyRate && dataToSave.hoursWorked) {
+          dataToSave.amountEarned = dataToSave.hourlyRate * dataToSave.hoursWorked;
+        }
+        await createTask(dataToSave);
       }
       onTaskSaved(); // Вызываем обратный вызов после сохранения
       onClose();
@@ -149,29 +155,47 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
               </div>
 
               <div className="form-group">
-                <label htmlFor="hourlyRate" className="label">Ставка (рублей/час):</label>
+                <label htmlFor="hourlyRate" className="label">Ставка (₽/час):</label>
                 <input
                   type="number"
                   id="hourlyRate"
                   name="hourlyRate"
-                  value={formData.hourlyRate || 0}
+                  value={formData.hourlyRate ?? ''}
                   onChange={handleChange}
                   step="0.01"
                   min="0"
+                  placeholder="0"
                   className="input"
                 />
               </div>
+
               <div className="form-group">
-                <label htmlFor="amountEarned" className="label">Заработано:</label>
+                <label htmlFor="hoursWorked" className="label">Часов отработано:</label>
+                <input
+                  type="number"
+                  id="hoursWorked"
+                  name="hoursWorked"
+                  value={formData.hoursWorked ?? ''}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="0"
+                  className="input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="amountEarned" className="label">Заработано (расчетное):</label>
                 <input
                   type="number"
                   id="amountEarned"
                   name="amountEarned"
-                  value={formData.amountEarned || 0}
-                  onChange={handleChange}
+                  value={formData.amountEarned ?? ''}
                   step="0.01"
                   min="0"
+                  placeholder="0"
                   className="input"
+                  readOnly // Поле только для чтения, т.к. оно расчетное
                 />
               </div>
 
@@ -191,12 +215,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
           {formData.type === 'expense' && (
             <>
               <div className="form-group">
-                <label htmlFor="what" className="label">Что:</label>
+                <label htmlFor="title" className="label">Описание расхода:</label>
                 <input
                   type="text"
-                  id="what"
-                  name="what"
-                  value={formData.what || ''}
+                  id="title"
+                  name="title"
+                  value={formData.title || ''} // Используем title для описания расхода
                   onChange={handleChange}
                   required
                   className="input"
@@ -204,26 +228,27 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
               </div>
 
               <div className="form-group">
-                <label htmlFor="amount" className="label">Сколько:</label>
+                <label htmlFor="amountSpent" className="label">Потрачено:</label>
                 <input
                   type="number"
-                  id="amount"
-                  name="amount"
-                  value={formData.amount || 0}
+                  id="amountSpent"
+                  name="amountSpent"
+                  value={formData.amountSpent ?? ''} // Используем amountSpent
                   onChange={handleChange}
                   step="0.01"
                   min="0"
                   required
+                  placeholder="0"
                   className="input"
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="expenseComments" className="label">Комментарий:</label>
+                <label htmlFor="comments" className="label">Комментарии:</label>
                 <textarea
-                  id="expenseComments"
-                  name="expenseComments"
-                  value={formData.expenseComments || ''}
+                  id="comments"
+                  name="comments"
+                  value={formData.comments || ''} // Используем comments для расходов
                   onChange={handleChange}
                   className="textarea"
                 />

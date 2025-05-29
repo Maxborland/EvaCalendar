@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api'; // Убедитесь, что это соответствует вашему бэкенду
+const API_URL = 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
 
 const api = axios.create({
   baseURL: API_URL,
