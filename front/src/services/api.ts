@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const API_URL = 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
 
@@ -18,6 +19,29 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+api.interceptors.response.use(
+  response => response,
+  error => {
+    let errorMessage = 'Произошла неизвестная ошибка!';
+    if (error.response) {
+      // Сервер ответил со статусом, отличным от 2xx
+      if (error.response.data && error.response.data.message) {
+        errorMessage = error.response.data.message;
+      } else {
+        errorMessage = `Ошибка: ${error.response.status} - ${error.response.statusText}`;
+      }
+    } else if (error.request) {
+      // Запрос был сделан, но ответа не получено
+      errorMessage = 'Нет ответа от сервера. Проверьте ваше сетевое подключение.';
+    } else {
+      // Что-то пошло не так при настройке запроса
+      errorMessage = error.message;
+    }
+    toast.error(errorMessage);
+    return Promise.reject(error);
+  }
+);
 
 export const getTasksByWeekAndDay = (weekId: string, dayOfWeek: string) => {
   return api.get(`/tasks/${weekId}/${dayOfWeek}`);

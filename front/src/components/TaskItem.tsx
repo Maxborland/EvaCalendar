@@ -24,9 +24,11 @@ const ItemTypes = {
   TASK: 'task',
 };
 
-const TaskItemContainer = styled.div.attrs<{ isDragging: boolean; itemType: 'income' | 'expense' }>(props => ({
+const TaskItemContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['isDragging', 'itemType'].includes(prop as string)
+}).attrs<{ $isDragging: boolean; itemType: 'income' | 'expense' }>(props => ({
   style: {
-    opacity: props.isDragging ? 0.5 : 1,
+    opacity: props.$isDragging ? 0.5 : 1,
     borderColor: props.itemType === 'income' ? '#28a745' : '#dc3545', // Зеленый для дохода, красный для расхода
   },
 }))`
@@ -96,23 +98,25 @@ const ActionButton = styled.button`
   }
 `;
 
-const TaskItem: React.FC<TaskItemProps> = ({
-  id,
-  type,
-  title,
-  time,
-  address,
-  childName,
-  hourlyRate,
-  comments,
-  category,
-  amountEarned,
-  amountSpent,
-  hoursWorked, // Добавлено
-  onDelete,
-  onDuplicate,
-  onEdit,
-}) => {
+const TaskItem: React.FC<TaskItemProps> = (props) => {
+  const {
+    id,
+    type,
+    title,
+    time,
+    address,
+    childName,
+    hourlyRate,
+    comments,
+    category,
+    amountEarned,
+    amountSpent,
+    hoursWorked,
+    onDelete,
+    onDuplicate,
+    onEdit,
+  } = props;
+
   const ref = useRef<HTMLDivElement>(null);
 
   const [{ isDragging }, drag] = useDrag(() => ({
@@ -121,7 +125,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  }));
+  }), [id, type, title, time, address, childName, hourlyRate, comments, category, amountEarned, amountSpent, hoursWorked]); // Добавил зависимости для useCallback
 
   drag(ref); // Применяем drag-источник к ref
 
@@ -144,7 +148,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   };
 
   return (
-    <TaskItemContainer ref={ref} isDragging={isDragging} itemType={type} onClick={handleEditClick}>
+    <TaskItemContainer ref={ref} $isDragging={isDragging} itemType={type} onClick={handleEditClick}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         <TaskInfoContainer>
           <TaskTitle>{title}</TaskTitle>
@@ -165,4 +169,4 @@ const TaskItem: React.FC<TaskItemProps> = ({
   );
 };
 
-export default TaskItem;
+export default React.memo(TaskItem);

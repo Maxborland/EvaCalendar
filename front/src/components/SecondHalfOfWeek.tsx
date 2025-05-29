@@ -9,7 +9,8 @@ interface SecondHalfOfWeekProps {
   onTaskMove: () => void;
 }
 
-const SecondHalfOfWeek: React.FC<SecondHalfOfWeekProps> = ({ days, weekId, today, onTaskMove }) => {
+const SecondHalfOfWeek: React.FC<SecondHalfOfWeekProps> = (props) => {
+  const { days, weekId, today, onTaskMove } = props;
   return (
     <div className="second-half-of-week">
       <div className="day-columns-container">
@@ -29,4 +30,4 @@ const SecondHalfOfWeek: React.FC<SecondHalfOfWeekProps> = ({ days, weekId, today
   );
 };
 
-export default SecondHalfOfWeek;
+export default React.memo(SecondHalfOfWeek);

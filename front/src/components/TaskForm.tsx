@@ -11,10 +11,10 @@ interface TaskFormProps {
     address?: string; // Для income
     childName?: string; // Для income
     hourlyRate?: number; // Для income
-    comments?: string; // Для income
-    category?: string;
-    amountEarned?: number;
-    amountSpent?: number;
+    comments?: string; // Для income, А ТАКЖЕ для expense
+    category?: string; // Для expense
+    amountEarned?: number; // Для income
+    amountSpent?: number; // Для expense
     hoursWorked?: number; // Новое поле для часов работы
   };
   weekId: string;
@@ -31,12 +31,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     time: '',
     address: '',
     childName: '',
-    hourlyRate: undefined, // Изменено на undefined
+    hourlyRate: 0,
     comments: '',
     category: '',
-    amountEarned: undefined, // Изменено на undefined
-    amountSpent: undefined, // Изменено на undefined
-    hoursWorked: undefined, // Изменено на undefined
+    amountEarned: 0,
+    amountSpent: 0,
+    hoursWorked: 0,
   });
 
   useEffect(() => {
@@ -63,34 +63,61 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: (name === 'hourlyRate' || name === 'amountEarned' || name === 'amountSpent' || name === 'hoursWorked') ? parseFloat(value) || 0 : value,
+      [name]: (name === 'hourlyRate' || name === 'amountEarned' || name === 'amountSpent' || name === 'hoursWorked')
+        ? (value === '' ? 0 : parseFloat(value)) // Преобразуем пустую строку в 0 для числовых полей
+        : value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let dataToSave: any = {
+        id: formData.id,
+        weekId,
+        dayOfWeek,
+        type: formData.type,
+      };
+
+      if (formData.type === 'income') {
+        dataToSave = {
+          ...dataToSave,
+          title: formData.title,
+          time: formData.time === '' ? null : formData.time,
+          address: formData.address === '' ? null : formData.address,
+          childName: formData.childName === '' ? null : formData.childName,
+          hourlyRate: formData.hourlyRate,
+          hoursWorked: formData.hoursWorked,
+          comments: formData.comments,
+          amountEarned: formData.hourlyRate && formData.hoursWorked ? formData.hourlyRate * formData.hoursWorked : 0,
+        };
+      } else if (formData.type === 'expense') {
+        dataToSave = {
+          ...dataToSave,
+          title: formData.title, // 'Описание расхода' на фронтенде
+          comments: formData.comments, // 'Комментарии' на фронтенде
+          category: formData.category === '' ? null : formData.category,
+          amountSpent: formData.amountSpent,
+        };
+      }
+
+      console.log('Sending data:', dataToSave); // Логируем отправляемые данные
+
       if (formData.id) {
         // Обновление существующей задачи
-        const dataToSave = { ...formData, weekId, dayOfWeek };
-        // Рассчитываем amountEarned перед отправкой, если это доход
-        if (dataToSave.type === 'income' && dataToSave.hourlyRate && dataToSave.hoursWorked) {
-          dataToSave.amountEarned = dataToSave.hourlyRate * dataToSave.hoursWorked;
-        }
         await updateTask(formData.id, dataToSave);
       } else {
         // Создание новой задачи
-        const dataToSave = { ...formData, weekId, dayOfWeek };
-        // Рассчитываем amountEarned перед отправкой, если это доход
-        if (dataToSave.type === 'income' && dataToSave.hourlyRate && dataToSave.hoursWorked) {
-          dataToSave.amountEarned = dataToSave.hourlyRate * dataToSave.hoursWorked;
-        }
         await createTask(dataToSave);
       }
       onTaskSaved(); // Вызываем обратный вызов после сохранения
       onClose();
     } catch (error) {
       console.error('Ошибка при сохранении задачи:', error);
+      if (error.response) {
+        console.error('Статус ответа:', error.response.status);
+        console.error('Данные ответа:', error.response.data);
+      }
       // Возможно, добавить сообщение об ошибке для пользователя
     }
   };

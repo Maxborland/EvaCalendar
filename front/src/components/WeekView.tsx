@@ -12,8 +12,10 @@ const WeekView: React.FC = () => {
   const [weekDays, setWeekDays] = useState<Moment[]>([]); // Добавляем состояние для дней недели
   const [dailySummary, setDailySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для дневной сводки
   const [weeklySummary, setWeeklySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для недельной сводки
+  const [isLoading, setIsLoading] = useState(true); // Состояние для отслеживания загрузки
 
   const fetchWeekInfo = useCallback(async () => {
+    setIsLoading(true); // Начинаем загрузку
     try {
       const formattedDate = currentDate.format('YYYY-MM-DD');
       const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -44,6 +46,8 @@ const WeekView: React.FC = () => {
       }
     } catch (error) {
            console.error('Error fetching or creating week info: ', error);
+     } finally {
+        setIsLoading(false); // Заканчиваем загрузку вне зависимости от результата
     }
   }, [currentDate]);
 
@@ -52,17 +56,24 @@ const WeekView: React.FC = () => {
   }, [fetchWeekInfo]);
 
   const fetchSummary = useCallback(async () => {
-    if (weekInfo.id) {
-      const dayOfWeekNumber = today.isoWeekday(); // День недели по ISO (1-7), как и ожидает summaryController
+    setIsLoading(true); // Начинаем загрузку
+    try {
+      if (weekInfo.id) {
+        const dayOfWeekNumber = today.isoWeekday(); // День недели по ISO (1-7), как и ожидает summaryController
 
-      // Получаем сводку за день
-      // weekInfo.id это UUID недели, который ожидает API
-      const daily = await getDailySummary(weekInfo.id, dayOfWeekNumber.toString());
-      setDailySummary(daily);
+        // Получаем сводку за день
+        // weekInfo.id это UUID недели, который ожидает API
+        const daily = await getDailySummary(weekInfo.id, dayOfWeekNumber.toString());
+        setDailySummary(daily);
 
-      // Получаем сводку за неделю
-      const weekly = await getWeeklySummary(weekInfo.id);
-      setWeeklySummary(weekly);
+        // Получаем сводку за неделю
+        const weekly = await getWeeklySummary(weekInfo.id);
+        setWeeklySummary(weekly);
+      }
+    } catch (error) {
+      console.error('Error fetching summary:', error);
+    } finally {
+      setIsLoading(false); // Заканчиваем загрузку
     }
   }, [weekInfo, today]);
 
@@ -77,42 +88,56 @@ const WeekView: React.FC = () => {
       days.push(startOfWeek.clone().add(i, 'days'));
     }
     setWeekDays(days);
-
-  }, [currentDate, today]);
+  }, [currentDate]);
 
   const goToPreviousWeek = () => {
     setCurrentDate(currentDate.clone().subtract(1, 'week'));
+    fetchWeekInfo();
+    fetchSummary();
   };
 
   const goToNextWeek = () => {
     setCurrentDate(currentDate.clone().add(1, 'week'));
+    fetchWeekInfo();
+    fetchSummary();
   };
 
   const firstHalfDays = weekDays.slice(0, 3);
   const secondHalfDays = [weekDays[3], ...weekDays.slice(4, 7)];
 
+  const handleTaskMove = useCallback(() => {
+    fetchWeekInfo();
+    fetchSummary();
+  }, [fetchWeekInfo, fetchSummary]);
+
   return (
     <div className="week-view">
-      <div className="summary-block">
-        <p className="summary-block-title">Сегодня: {today.format('D MMMM YYYY')}</p>
-        <div className="summary-block-row">
-          <p>Заработано сегодня: <span className="summary-block-value">{dailySummary.totalIncome.toFixed(2)}₽</span></p>
-          <p>Потрачено сегодня: <span className="summary-block-value">{dailySummary.totalExpense.toFixed(2)}₽</span></p>
-        </div>
-        <div className="summary-block-row">
-          <p>Заработано за неделю: <span className="summary-block-value">{weeklySummary.totalIncome.toFixed(2)}₽</span></p>
-          <p>Потрачено за неделю: <span className="summary-block-value">{weeklySummary.totalExpense.toFixed(2)}₽</span></p>
-        </div>
-        <p className="summary-block-week">Неделя: {moment(weekInfo.startDate).format('D MMM YY')} - {moment(weekInfo.endDate).format('D MMM YY')}</p>
-      </div>
-      <div className="week-days-container">
-        {weekInfo.id !== null && <FirstHalfOfWeek days={firstHalfDays} weekId={weekInfo.id} today={today} onTaskMove={fetchWeekInfo} />}
-        {weekInfo.id !== null && <SecondHalfOfWeek days={secondHalfDays} weekId={weekInfo.id} today={today} onTaskMove={fetchWeekInfo} />}
-      </div>
-      <div className="navigation-buttons">
-        <button onClick={goToPreviousWeek}>Предыдущая неделя</button>
-        <button onClick={goToNextWeek}>Следующая неделя</button>
-      </div>
+      {isLoading ? (
+        <div className="loading-indicator">Загрузка данных...</div>
+      ) : (
+        <>
+          <div className="summary-block">
+            <p className="summary-block-title">Сегодня: {today.format('D MMMM YYYY')}</p>
+            <div className="summary-block-row">
+              <p>Заработано сегодня: <span className="summary-block-value">{dailySummary.totalIncome.toFixed(2)}₽</span></p>
+              <p>Потрачено сегодня: <span className="summary-block-value">{dailySummary.totalExpense.toFixed(2)}₽</span></p>
+            </div>
+            <div className="summary-block-row">
+              <p>Заработано за неделю: <span className="summary-block-value">{weeklySummary.totalIncome.toFixed(2)}₽</span></p>
+              <p>Потрачено за неделю: <span className="summary-block-value">{weeklySummary.totalExpense.toFixed(2)}₽</span></p>
+            </div>
+            <p className="summary-block-week">Неделя: {moment(weekInfo.startDate).format('D MMM YY')} - {moment(weekInfo.endDate).format('D MMM YY')}</p>
+          </div>
+          <div className="week-days-container">
+            {weekInfo.id !== null && <FirstHalfOfWeek days={firstHalfDays} weekId={weekInfo.id} today={today} onTaskMove={handleTaskMove} />}
+            {weekInfo.id !== null && <SecondHalfOfWeek days={secondHalfDays} weekId={weekInfo.id} today={today} onTaskMove={handleTaskMove} />}
+          </div>
+          <div className="navigation-buttons">
+            <button onClick={goToPreviousWeek}>Предыдущая неделя</button>
+            <button onClick={goToNextWeek}>Следующая неделя</button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

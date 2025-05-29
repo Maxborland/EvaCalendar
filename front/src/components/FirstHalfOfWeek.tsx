@@ -33,4 +33,4 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, weekId, today, 
   );
 };
 
-export default FirstHalfOfWeek;
+export default React.memo(FirstHalfOfWeek);

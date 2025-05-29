@@ -351,4 +351,53 @@ h2 {
     .summary-block .summary-block-week {
         color: #555;
     }
+
+    /* No Tasks Message Styles */
+    .no-tasks-message {
+        text-align: center;
+        padding: 15px;
+        color: #888;
+        font-style: italic;
+        font-size: 0.9em;
+        border: 1px dashed #444;
+        border-radius: 4px;
+        margin-top: 10px;
+    }
+
+    @media (prefers-color-scheme: light) {
+        .no-tasks-message {
+            color: #666;
+            border: 1px dashed #ccc;
+        }
+    }
+}
+
+/* Loading Indicator Styles */
+.loading-indicator {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2em;
+    color: #646cff; /* Цвет текста загрузки */
+    animation: pulse 1.5s infinite ease-in-out; /* Анимация пульсации */
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .loading-indicator {
+        color: #747bff; /* Цвет текста загрузки для светлой темы */
+    }
 }

@@ -13,7 +13,6 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
       try {
         // weekId уже строка (UUID)
         const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/notes/${weekId}`;
-        console.log('Fetching note from:', apiUrl); // Добавляем логирование
         const response = await fetch(apiUrl);
         if (response.ok) {
           const data = await response.json();
