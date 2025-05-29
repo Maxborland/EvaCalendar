@@ -5,11 +5,12 @@ import NoteField from './NoteField.tsx';
 
 interface FirstHalfOfWeekProps {
   days: Moment[];
-  weekId: number | null;
-  today: Moment; // Добавляем today в пропсы
+  weekId: string;
+  today: Moment;
+  onTaskMove: () => void;
 }
 
-const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, weekId, today }) => {
+const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, weekId, today, onTaskMove }) => {
   const daysToShow = days.slice(0, 3); // Понедельник, Вторник, Среда
 
   return (
@@ -18,10 +19,16 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, weekId, today }
       <div className="day-columns-container">
         {daysToShow.map((dayMoment, index) => (
           <div key={index} className="day-column-wrapper">
-            <DayColumn day={dayMoment.format('D MMMM')} fullDate={dayMoment} today={today} />
+            <DayColumn
+              day={dayMoment.format('D MMMM')}
+              fullDate={dayMoment}
+              today={today}
+              weekId={weekId}
+              onTaskMove={onTaskMove}
+            />
           </div>
         ))}
-        {weekId && <NoteField weekId={weekId} />}
+        {weekId && <NoteField weekId={Number(weekId)} />}
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
 import type { Moment } from 'moment';
-import React, { useEffect, useState } from 'react';
-import { createTask, deleteTask, duplicateTask, getTasksByWeekAndDay, moveTask, updateTask } from '../services/api';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useDrop, type DropTargetMonitor } from 'react-dnd';
+import { deleteTask, duplicateTask, getTasksByWeekAndDay, moveTask } from '../services/api';
 import TaskForm from './TaskForm';
 import TaskItem from './TaskItem';
 
 interface Task {
-  id?: string; // id может быть необязательным для новых задач
+  id?: string;
   type: 'income' | 'expense';
   title?: string;
   time?: string;
@@ -13,18 +14,26 @@ interface Task {
   childName?: string;
   hourlyRate?: number;
   comments?: string;
-  what?: string;
-  amount?: number;
-  expenseComments?: string;
+  category?: string; // Добавляем поле category для трат
+  amountEarned?: number; // Добавляем поле amountEarned
+  amountSpent?: number; // Добавляем поле amountSpent
+  weekId?: string;
+  dayOfWeek?: string;
 }
+
+const ItemTypes = {
+  TASK: 'task',
+};
 
 interface DayColumnProps {
-  day: string;
+  day: string; // Это общее название дня (например, "Пн", "Вт")
   fullDate: Moment;
   today: Moment;
+  weekId: string;
+  onTaskMove: () => void;
 }
 
-const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today }) => {
+const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today, weekId, onTaskMove }) => {
   const isToday = fullDate.isSame(today, 'day');
   const dayColumnClassName = `day-column ${isToday ? 'today-highlight' : ''}`;
 
@@ -32,46 +41,38 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
-  // Для получения недели из Moment, пока weekId не определен в бэкенде
-  // Предположим, что weekId - это номер недели в году
   const currentWeekId = fullDate.week().toString();
+  const dayOfWeekFormatted = fullDate.format('dddd'); // Форматируем fullDate в название дня недели (e.g., "Monday")
 
-  // Загрузка задач при монтировании компонента и при изменении дня/недели
+  const fetchTasks = useCallback(async () => {
+    try {
+      const response = await getTasksByWeekAndDay(currentWeekId, dayOfWeekFormatted); // Используем форматированный день недели
+      setTasks(response.data as Task[]);
+    } catch (error) {
+      console.error('Ошибка при загрузке задач:', error);
+    }
+  }, [currentWeekId, dayOfWeekFormatted]); // Зависимость от dayOfWeekFormatted
+
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await getTasksByWeekAndDay(currentWeekId, day);
-        setTasks(response.data as Task[]); // Явная привязка типа
-      } catch (error) {
-        console.error('Ошибка при загрузке задач:', error);
-      }
-    };
     fetchTasks();
-  }, [currentWeekId, day]); // Зависимости
+  }, [fetchTasks, onTaskMove]);
 
   const handleOpenForm = (task?: Task) => {
     if (task) {
       setEditingTask(task);
     } else {
-      // Инициализация данных для новой задачи, включая weekId и dayOfWeek
       setEditingTask({
         id: undefined,
-        type: 'income', // Дефолтный тип
-        // Эти поля будут добавлены в качестве weekId и dayOfWeek при отправке на бэкенд
-        // в handleSaveTask, поэтому они не являются частью интерфейса Task.
-        // Здесь они инициализируются для передачи в TaskForm.
-        // fullDate: fullDate.toISOString(),
-        // dayOfWeek: day,
-
+        type: 'income',
         title: '',
         time: '',
         address: '',
         childName: '',
         hourlyRate: 0,
         comments: '',
-        what: '',
-        amount: 0,
-        expenseComments: '',
+        category: '', // Инициализируем category
+        amountEarned: 0, // Инициализируем amountEarned
+        amountSpent: 0, // Инициализируем amountSpent
       });
     }
     setShowForm(true);
@@ -82,33 +83,10 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today }) => {
     setEditingTask(undefined);
   };
 
-  const handleSaveTask = async (newTaskData: Task & { id?: string }) => {
-    try {
-      let savedTask: Task; // Явная привязка типа
-      const dataToSend = { ...newTaskData, weekId: currentWeekId, dayOfWeek: day };
-
-      if (newTaskData.id) {
-        // Обновляем существующую задачу
-        const response = await updateTask(newTaskData.id, dataToSend);
-        savedTask = response.data as Task; // Явная привязка типа
-        setTasks(tasks.map((task) => (task.id === savedTask.id ? savedTask : task)));
-      } else {
-        // Создаем новую задачу
-        const response = await createTask(dataToSend);
-        savedTask = response.data as Task; // Явная привязка типа
-        setTasks([...tasks, savedTask]);
-      }
-      handleCloseForm();
-    } catch (error) {
-      console.error('Ошибка при сохранении задачи:', error);
-      // Здесь можно добавить обработку ошибок, например, показать сообщение пользователю
-    }
-  };
-
   const handleDeleteTask = async (id: string) => {
     try {
       await deleteTask(id);
-      setTasks(tasks.filter((task) => task.id !== id));
+      fetchTasks();
     } catch (error) {
       console.error('Ошибка при удалении задачи:', error);
     }
@@ -116,37 +94,53 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today }) => {
 
   const handleDuplicateTask = async (id: string) => {
     try {
-      const response = await duplicateTask(id);
-      setTasks([...tasks, response.data as Task]);
+      await duplicateTask(id);
+      fetchTasks();
     } catch (error) {
       console.error('Ошибка при дублировании задачи:', error);
     }
   };
 
-  const handleMoveTask = async (taskId: string, newWeekId: string, newDayOfWeek: string) => {
+  const handleMoveTask = async (taskId: string, targetWeekId: string, targetDayOfWeek: string) => {
     try {
-      await moveTask(taskId, newWeekId, newDayOfWeek);
-      // После перемещения, задача будет загружена снова через useEffect или удалена локально
-      setTasks(tasks.filter(task => task.id !== taskId)); // Удаляем из текущего дня
+      await moveTask(taskId, targetWeekId, targetDayOfWeek);
+      onTaskMove();
     } catch (error) {
       console.error('Ошибка при перемещении задачи:', error);
     }
   };
 
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ItemTypes.TASK,
+    drop: (item: Task, monitor: DropTargetMonitor) => {
+      if (!monitor.didDrop()) {
+        handleMoveTask(item.id!, weekId, dayOfWeekFormatted); // Используем форматированный день недели
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  }), [weekId, dayOfWeekFormatted]); // Зависимость от dayOfWeekFormatted
+
+  drop(dropRef);
 
   return (
-    <div className={dayColumnClassName}>
+    <div ref={dropRef} className={`${dayColumnClassName} ${isOver ? 'highlighted-drop-zone' : ''}`}>
       <h3>{day}</h3>
-      <div className="day-cells">
+      <div className="day-cells" onClick={() => handleOpenForm()}>
         {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            {...task}
-            onDelete={handleDeleteTask}
-            onDuplicate={handleDuplicateTask}
-            onMove={handleMoveTask}
-            onEdit={handleOpenForm} // Add onEdit prop
-          />
+          task.id ? (
+            <TaskItem
+              key={task.id}
+              id={task.id}
+              {...task}
+              onDelete={handleDeleteTask}
+              onDuplicate={handleDuplicateTask}
+              onEdit={handleOpenForm}
+            />
+          ) : null
         ))}
         {Array.from({ length: Math.max(0, 5 - tasks.length) }).map((_, index) => (
           <div key={index} className="day-cell-empty" onClick={() => handleOpenForm()}></div>
@@ -155,7 +149,9 @@ const DayColumn: React.FC<DayColumnProps> = ({ day, fullDate, today }) => {
       {showForm && (
         <TaskForm
           initialData={editingTask}
-          onSave={handleSaveTask}
+          weekId={currentWeekId}
+          dayOfWeek={dayOfWeekFormatted} // Передаем форматированный день недели
+          onTaskSaved={fetchTasks}
           onClose={handleCloseForm}
         />
       )}

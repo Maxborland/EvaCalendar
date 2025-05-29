@@ -79,16 +79,31 @@ class TaskController {
   }
 
   async moveTask(req, res) {
-    const { taskId, newWeekId, newDayOfWeek } = req.body;
+    const { taskId, newWeekId, newDayOfWeek } = req.body; // taskId приходит из тела запроса
+    if (!taskId || newWeekId === undefined || !newDayOfWeek) {
+      return res.status(400).json({ message: 'Отсутствуют обязательные поля: taskId, newWeekId, newDayOfWeek.' });
+    }
     try {
-      const task = await taskService.findTaskById(taskId);
-      if (!task) {
+      // Убедимся, что задача существует перед попыткой обновления
+      const taskExists = await taskService.findTaskById(taskId);
+      if (!taskExists) {
         return res.status(404).json({ message: 'Задача не найдена.' });
       }
 
-      await taskService.updateTask(taskId, { weekId: newWeekId, dayOfWeek: newDayOfWeek });
-      const updatedTask = await taskService.findTaskById(taskId);
-      res.status(200).json(updatedTask);
+      // Передаем taskId как идентификатор задачи и новые weekId/dayOfWeek для обновления
+      // processTaskData в taskService должен корректно обработать newWeekId и newDayOfWeek,
+      // если они передаются напрямую, или weekId и dayOfWeek, если они уже так названы.
+      // Для ясности и соответствия с processTaskData, передадим их как newWeekId и newDayOfWeek.
+      const updatedTaskResult = await taskService.updateTask(taskId, { newWeekId, newDayOfWeek });
+
+      // taskService.updateTask уже возвращает обновленную задачу
+      if (updatedTaskResult) {
+        res.status(200).json(updatedTaskResult);
+      } else {
+        // Этого не должно произойти, если findTaskById выше вернул задачу,
+        // но на всякий случай обработаем.
+        res.status(404).json({ message: 'Задача не найдена после попытки обновления.' });
+      }
     } catch (error) {
       console.error('Ошибка при перемещении задачи:', error);
       res.status(500).json({ error: 'Внутренняя ошибка сервера.' });

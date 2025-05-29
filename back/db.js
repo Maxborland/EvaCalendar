@@ -1,23 +1,19 @@
 const knex = require('knex');
-const path = require('path');
+const knexConfig = require('./knexfile');
 
-const dbPath = path.resolve(__dirname, 'database.sqlite');
+const environment = process.env.NODE_ENV || 'development';
+const db = knex(knexConfig[environment]);
 
-const db = knex({
-  client: 'sqlite3',
-  connection: {
-    filename: dbPath
-  },
-  useNullAsDefault: true // Указываем, что значения "null" будут использоваться по умолчанию для необязательных полей
-});
-
-(async () => {
-  try {
-    await db.raw('SELECT 1+1 AS result');
+db.raw('SELECT 1')
+  .then(() => {
     console.log('Подключение к базе данных SQLite3 успешно установлено.');
-  } catch (error) {
-    console.error('Ошибка при подключении к базе данных SQLite3:', error);
-  }
-})();
+  })
+  .catch((err) => {
+    console.error('Ошибка подключения к базе данных:', err);
+    if (process.env.NODE_ENV === 'test') { // Не вызываем exit в тестовой среде
+      return;
+    }
+    process.exit(1);
+  });
 
 module.exports = db;

@@ -29,10 +29,11 @@ app.post('/weeks', weekController.createWeek);
 const taskController = require('./controllers/taskController');
 app.get('/tasks/:weekId/:dayOfWeek', taskController.getTasksByWeekAndDay);
 app.post('/tasks', taskController.createTask);
+// Маршрут для перемещения должен быть определен ДО более общего маршрута /tasks/:id
+app.put('/tasks/move', taskController.moveTask);
 app.put('/tasks/:id', taskController.updateTask);
 app.delete('/tasks/:id', taskController.deleteTask);
 app.post('/tasks/duplicate/:id', taskController.duplicateTask);
-app.put('/tasks/move', taskController.moveTask);
 
 const noteController = require('./controllers/noteController');
 app.get('/notes/:weekId', noteController.getNoteByWeekId);
@@ -46,6 +47,8 @@ app.use((err, req, res, next) => {
 });
 
 // Запуск сервера
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
 });
+
+module.exports = { app, server };

@@ -1,37 +1,46 @@
 import React, { useEffect, useState } from 'react';
+import { createTask, updateTask } from '../services/api'; // Импортируем функции API
 import './TaskForm.css';
 
 interface TaskFormProps {
   initialData?: {
     id?: string;
-    type: 'income' | 'expense'; // 'Доход' или 'Расход'
-    title?: string; // Для дохода
-    time?: string; // Для дохода
-    address?: string; // Для дохода
-    childName?: string; // Для дохода
-    hourlyRate?: number; // Для дохода
-    comments?: string; // Для дохода
-    what?: string; // Для расхода
-    amount?: number; // Для расхода
-    expenseComments?: string; // Для расхода
+    type: 'income' | 'expense';
+    title?: string; // Для income
+    time?: string; // Для income
+    address?: string; // Для income
+    childName?: string; // Для income
+    hourlyRate?: number; // Для income
+    comments?: string; // Для income
+    what?: string; // Для expense
+    amount?: number; // Для expense
+    expenseComments?: string; // Для expense
+    category?: string; // Для expense
+    amountEarned?: number; // Для income
+    amountSpent?: number; // Для expense
   };
-  onSave: (data: any) => void;
+  weekId: string;
+  dayOfWeek: string;
+  onTaskSaved: () => void;
   onClose: () => void;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ initialData, onSave, onClose }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onTaskSaved, onClose }) => {
   const [formData, setFormData] = useState(initialData || {
     id: undefined,
-    type: 'income', // По умолчанию "Доход"
+    type: 'income',
     title: '',
     time: '',
     address: '',
     childName: '',
-    hourlyRate: 0,
-    comments: '',
-    what: '',
-    amount: 0,
-    expenseComments: '',
+    hourlyRate: 0, // Для income
+    comments: '', // Для income
+    what: '', // Для expense
+    amount: 0, // Для expense
+    expenseComments: '', // Для expense
+    category: '', // Для expense
+    amountEarned: 0, // Для income
+    amountSpent: 0, // Для expense
   });
 
   useEffect(() => {
@@ -48,9 +57,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onSave, onClose }) => 
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    try {
+      if (formData.id) {
+        // Обновление существующей задачи
+        await updateTask(formData.id, { ...formData, weekId, dayOfWeek });
+      } else {
+        // Создание новой задачи
+        await createTask({ ...formData, weekId, dayOfWeek });
+      }
+      onTaskSaved(); // Вызываем обратный вызов после сохранения
+      onClose();
+    } catch (error) {
+      console.error('Ошибка при сохранении задачи:', error);
+      // Возможно, добавить сообщение об ошибке для пользователя
+    }
   };
 
   return (
@@ -139,6 +161,19 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onSave, onClose }) => 
                   className="input"
                 />
               </div>
+              <div className="form-group">
+                <label htmlFor="amountEarned" className="label">Заработано:</label>
+                <input
+                  type="number"
+                  id="amountEarned"
+                  name="amountEarned"
+                  value={formData.amountEarned || 0}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  className="input"
+                />
+              </div>
 
               <div className="form-group">
                 <label htmlFor="comments" className="label">Комментарии:</label>
@@ -191,6 +226,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onSave, onClose }) => 
                   value={formData.expenseComments || ''}
                   onChange={handleChange}
                   className="textarea"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="category" className="label">Категория:</label>
+                <input
+                  type="text"
+                  id="category"
+                  name="category"
+                  value={formData.category || ''}
+                  onChange={handleChange}
+                  className="input"
                 />
               </div>
             </>
