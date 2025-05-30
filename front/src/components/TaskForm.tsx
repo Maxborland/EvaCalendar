@@ -1,5 +1,6 @@
 import axios from 'axios'; // Импортируем axios для проверки ошибок
 import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom'; // Импортируем ReactDOM для Portal
 import { createTask, getExpenseCategories, updateTask } from '../services/api'; // Импортируем функции API
 import './TaskForm.css';
 
@@ -125,7 +126,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     }
   };
 
-  return (
+  const modalContent = (
     <div className="modal-overlay" onClick={onClose} data-testid="modal-overlay">
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="close-button" onClick={onClose}>&times;</button>
@@ -324,6 +325,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
       </div>
     </div>
   );
+
+  const modalRoot = document.getElementById('modal-root');
+  if (!modalRoot) {
+    return null; // Или выбросить ошибку, если modal-root не найден
+  }
+
+  return ReactDOM.createPortal(modalContent, modalRoot);
 };
 
 export default TaskForm;

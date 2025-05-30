@@ -15,10 +15,14 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
 }) => {
   return (
     <div className="navigation-buttons">
-      <button onClick={goToPreviousWeek}>Предыдущая неделя</button>
-      <button onClick={goToNextWeek}>Следующая неделя</button>
-      <button onClick={showFirstHalf}>Первая половина</button>
-      <button onClick={showSecondHalf}>Вторая половина</button>
+      <div className="week-navigation">
+        <button onClick={goToPreviousWeek}>&lt; Неделя</button>
+        <button onClick={goToNextWeek}>Неделя &gt;</button>
+      </div>
+      <div className="half-week-navigation">
+        <button onClick={showFirstHalf}>1-я пол.</button>
+        <button onClick={showSecondHalf}>2-я пол.</button>
+      </div>
     </div>
   );
 };
