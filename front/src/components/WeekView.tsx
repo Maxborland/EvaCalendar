@@ -2,8 +2,9 @@ import type { Moment } from 'moment';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
 import { getDailySummary, getWeeklySummary } from '../services/api';
-import FirstHalfOfWeek from './FirstHalfOfWeek';
-import SecondHalfOfWeek from './SecondHalfOfWeek';
+import SummaryBlock from './SummaryBlock';
+import WeekDaysScroller from './WeekDaysScroller';
+import WeekNavigator from './WeekNavigator';
 
 const WeekView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(moment());
@@ -102,6 +103,8 @@ const WeekView: React.FC = () => {
     fetchSummary();
   };
 
+  const [isFirstHalfVisible, setIsFirstHalfVisible] = useState(true);
+
   const firstHalfDays = weekDays.slice(0, 3);
   const secondHalfDays = [weekDays[3], ...weekDays.slice(4, 7)];
 
@@ -110,32 +113,37 @@ const WeekView: React.FC = () => {
     fetchSummary();
   }, [fetchWeekInfo, fetchSummary]);
 
+  const showFirstHalf = () => setIsFirstHalfVisible(true);
+  const showSecondHalf = () => setIsFirstHalfVisible(false);
+
   return (
     <div className="week-view">
       {isLoading ? (
         <div className="loading-indicator">Загрузка данных...</div>
       ) : (
         <>
-          <div className="summary-block">
-            <p className="summary-block-title">Сегодня: {today.format('D MMMM YYYY')}</p>
-            <div className="summary-block-row">
-              <p>Заработано сегодня: <span className="summary-block-value">{dailySummary.totalIncome.toFixed(2)}₽</span></p>
-              <p>Потрачено сегодня: <span className="summary-block-value">{dailySummary.totalExpense.toFixed(2)}₽</span></p>
-            </div>
-            <div className="summary-block-row">
-              <p>Заработано за неделю: <span className="summary-block-value">{weeklySummary.totalIncome.toFixed(2)}₽</span></p>
-              <p>Потрачено за неделю: <span className="summary-block-value">{weeklySummary.totalExpense.toFixed(2)}₽</span></p>
-            </div>
-            <p className="summary-block-week">Неделя: {moment(weekInfo.startDate).format('D MMM YY')} - {moment(weekInfo.endDate).format('D MMM YY')}</p>
+          <div className="summary-wrap">
+            <SummaryBlock
+              today={today}
+              dailySummary={dailySummary}
+              weeklySummary={weeklySummary}
+              weekInfo={weekInfo}
+            />
           </div>
-          <div className="week-days-container">
-            {weekInfo.id !== null && <FirstHalfOfWeek days={firstHalfDays} weekId={weekInfo.id} today={today} onTaskMove={handleTaskMove} />}
-            {weekInfo.id !== null && <SecondHalfOfWeek days={secondHalfDays} weekId={weekInfo.id} today={today} onTaskMove={handleTaskMove} />}
-          </div>
-          <div className="navigation-buttons">
-            <button onClick={goToPreviousWeek}>Предыдущая неделя</button>
-            <button onClick={goToNextWeek}>Следующая неделя</button>
-          </div>
+          <WeekDaysScroller
+            weekInfo={weekInfo}
+            firstHalfDays={firstHalfDays}
+            secondHalfDays={secondHalfDays}
+            today={today}
+            onTaskMove={handleTaskMove}
+            isFirstHalfVisible={isFirstHalfVisible}
+          />
+          <WeekNavigator
+            goToPreviousWeek={goToPreviousWeek}
+            goToNextWeek={goToNextWeek}
+            showFirstHalf={showFirstHalf}
+            showSecondHalf={showSecondHalf}
+          />
         </>
       )}
     </div>

@@ -14,9 +14,7 @@
 }
 
 #root {
-  max-width: 1200px; /* Максимальная ширина контента */
   margin: 0 auto; /* Центрирование контента */
-  padding: 0 20px; /* Отступы по бокам */
 }
 
 a {
@@ -76,7 +74,6 @@ button:focus-visible {
 .week-view {
   width: 100%;
   text-align: center;
-  padding: 20px;
   box-sizing: border-box;
   margin-top: 50px; /* Отступ сверху для фиксированного верхнего элемента, если таковой будет */
   padding-bottom: 80px; /* Отступ снизу для фиксированных кнопок */
@@ -85,26 +82,32 @@ button:focus-visible {
 .navigation-buttons {
   display: flex;
   justify-content: center;
-  gap: 15px;
+  gap: 10px; /* Уменьшаем расстояние между кнопками */
+  flex-wrap: wrap; /* Разрешаем кнопкам переноситься на новую строку */
   position: fixed; /* Фиксированное позиционирование */
   bottom: 0; /* Прикрепить к низу экрана */
   left: 0;
   width: 100%; /* Занять всю ширину */
   background-color: #242424; /* Фон для кнопок */
-  padding: 10px 0; /* Отступы сверху и снизу */
+  padding: 10px; /* Добавляем горизонтальный padding */
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3); /* Тень сверху */
   z-index: 1000; /* Убедиться, что кнопки находятся поверх другого контента */
+  box-sizing: border-box; /* Учитываем padding в общей ширине */
 }
 
 .navigation-buttons button {
-  padding: 10px 20px;
-  font-size: 1em;
+  padding: 8px 15px; /* Уменьшаем padding кнопок */
+  font-size: 0.9em; /* Уменьшаем размер шрифта */
   border-radius: 5px;
   border: 1px solid #646cff;
   background-color: #1a1a1a;
   color: #ffffff;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  flex-grow: 1; /* Кнопки будут равномерно распределять доступное пространство */
+  min-width: 120px; /* Минимальная ширина для каждой кнопки, чтобы избежать слишком узких кнопок */
+  max-width: 48%; /* Максимальная ширина для двух кнопок в строке с небольшим отступом */
+  box-sizing: border-box; /* Учитываем padding и border в общей ширине */
 }
 
 .navigation-buttons button:hover {
@@ -124,10 +127,16 @@ h2 {
 
 .week-days-container {
   display: flex;
-  justify-content: space-around; /* Центрируем, но теперь колонки будут в одном столбце */
+  justify-content: flex-start;
   margin-bottom: 20px;
-  flex-wrap: wrap; /* Разрешаем перенос на следующую строку, если не хватает места */
-  flex-direction: row; /* Дни недели остаются в ряд */
+  flex-wrap: nowrap;
+  flex-direction: row;
+  overflow-x: hidden; /* Отключить горизонтальную прокрутку, но сохранить 'скрытый' оверфлоу' */
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+  transition: transform 0.3s ease-in-out; /* Плавный переход при перемещении */
+  width: 200%; /* Увеличиваем ширину контейнера, чтобы обе половины помещались рядом */
 }
 
 /* Стили для контейнера дней, который теперь вертикален */
@@ -140,7 +149,7 @@ h2 {
 
 .first-half-of-week,
 .second-half-of-week {
-  flex: 1; /* Останется для возможности деления на две половины, если потребуется */
+  flex: 0 0 50%; /* Каждая половина занимает 50% от ширины week-days-container (т.е. 100% видимой области) */
   padding: 10px;
   border: 1px solid #333;
   border-radius: 8px;
@@ -148,6 +157,8 @@ h2 {
   display: flex; /* Делаем контент внутри flex-контейнером */
   flex-direction: column; /* Вертикально */
   align-items: center; /* Выравнивание по центру */
+  box-sizing: border-box; /* Учитываем padding и border в ширине */
+  /* Remove scroll-snap-align as we are controlling scroll via JS transform */
 }
 
 /* Стили для обёртки колонки дня, чтобы она занимала всю ширину */
@@ -299,6 +310,14 @@ h2 {
     margin-bottom: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Небольшая тень для глубины */
 }
+.summary-block.compact-summary {
+  margin: 0 10px 20px;
+  padding: 10px;
+}
+
+.summary-wrap {
+  margin: 0 10px;
+}
 
 .summary-block p {
     margin: 8px 0; /* Отступы между строками */
@@ -400,4 +419,57 @@ h2 {
     .loading-indicator {
         color: #747bff; /* Цвет текста загрузки для светлой темы */
     }
+}
+
+/* Mobile styles for 2-column layout */
+@media (max-width: 768px) { /* Adjust breakpoint as needed for mobile devices */
+  .navigation-buttons button {
+    font-size: 0.85em; /* Еще уменьшаем размер шрифта на маленьких экранах */
+    padding: 6px 12px; /* Еще уменьшаем padding */
+  }
+
+  /* Скрываем скроллбар, если вдруг появится (в идеале, он не должен появляться) */
+  .week-days-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .column-half {
+    flex: 0 0 50%; /* Каждая колонка занимает 50% ширины mobile-scroll-container */
+    box-sizing: border-box; /* Include padding and border in width */
+    padding: 0 10px; /* Reduce padding for mobile */
+  }
+}
+
+/* Adjust padding for root and week-view on mobile */
+@media (max-width: 768px) {
+  #root, .week-view {
+    padding: 0; /* Remove padding from root and week-view to allow overflow */
+    max-width: none; /* Remove max-width to allow overflow */
+  }
+  body, html {
+    overflow-x: hidden; /* Prevent horizontal scrolling of the entire page */
+  }
+}
+
+@media (min-width: 769px) {
+  #root {
+    max-width: 1200px; /* Max width for desktop */
+    padding: 0 20px;
+  }
+  .week-view {
+    padding: 20px; /* Padding for desktop */
+  }
+  .week-days-container {
+    justify-content: center; /* Центрируем содержимое на десктопе */
+    flex-wrap: nowrap; /* Prevent wrapping on desktop */
+  }
+  .column-half {
+    flex: 0 0 50%; /* На десктопе каждая половина также занимает 50% контейнера */
+    padding: 10px; /* Reset padding for desktop */
+  }
+  .first-half-of-week,
+  .second-half-of-week {
+    flex: 1;
+    /* На десктопе у них уже будет 50% из column-half */
+  }
 }
