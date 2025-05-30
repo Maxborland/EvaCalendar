@@ -153,7 +153,7 @@ const TaskItem: React.FC<TaskItemProps> = (props) => {
         <TaskInfoContainer>
           <TaskTitle>{title}</TaskTitle>
           <TaskDetail>
-            {type === 'income' ? `Заработано: ${amountEarned || 0}₽` : `Потрачено: ${amountSpent || 0}₽`}
+            {type === 'income' ? `+${amountEarned || 0}₽` : `-${amountSpent || 0}₽`}
           </TaskDetail>
         </TaskInfoContainer>
         <ButtonContainer>

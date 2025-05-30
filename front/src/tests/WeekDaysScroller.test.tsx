@@ -3,6 +3,7 @@ import moment from 'moment';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import WeekDaysScroller from '../components/WeekDaysScroller';
+import { NavProvider } from '../context/NavContext'; // Импортируем NavProvider
 
 // Mock the scrollWidth and scrollLeft for the div element
 Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
@@ -48,9 +49,11 @@ describe('WeekDaysScroller', () => {
 
   it('скроллит влево, когда отображается первая половина недели', () => {
     render(
-      <DndProvider backend={HTML5Backend}>
-        <WeekDaysScroller {...commonProps} isFirstHalfVisible={true} />
-      </DndProvider>
+      <NavProvider> {/* Оборачиваем в NavProvider */}
+        <DndProvider backend={HTML5Backend}>
+          <WeekDaysScroller {...commonProps} isFirstHalfVisible={true} />
+        </DndProvider>
+      </NavProvider>
     );
     const scrollContainer = screen.getByTestId('week-days-container');
     expect(scrollContainer.style.transform).toBe('translateX(0)');
@@ -58,9 +61,11 @@ describe('WeekDaysScroller', () => {
 
   it('скроллит вправо, когда отображается вторая половина недели', () => {
     render(
-      <DndProvider backend={HTML5Backend}>
-        <WeekDaysScroller {...commonProps} isFirstHalfVisible={false} />
-      </DndProvider>
+      <NavProvider> {/* Оборачиваем в NavProvider */}
+        <DndProvider backend={HTML5Backend}>
+          <WeekDaysScroller {...commonProps} isFirstHalfVisible={false} />
+        </DndProvider>
+      </NavProvider>
     );
     const scrollContainer = screen.getByTestId('week-days-container');
     expect(scrollContainer.style.transform).toBe('translateX(-50%)');

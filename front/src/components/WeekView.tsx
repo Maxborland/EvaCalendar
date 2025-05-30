@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNav } from '../context/NavContext';
 import { getDailySummary, getMonthlySummary, type SummaryData } from '../services/api';
 import SummaryBlock from './SummaryBlock';
+import TopNavigator from './TopNavigator';
 import WeekDaysScroller from './WeekDaysScroller';
 import WeekNavigator from './WeekNavigator';
 
@@ -143,6 +144,7 @@ const WeekView: React.FC = () => {
         <div className="loading-indicator">Загрузка данных...</div>
       ) : (
         <>
+          <TopNavigator isNavVisible= {isNavVisible} />
           <div className="summary-wrap">
             <SummaryBlock
               today={today}

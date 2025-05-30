@@ -1,0 +1,110 @@
+/* Styles for SummaryBlock component */
+.summary-block-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background-color: #f7f9fc;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Мягкая тень */
+}
+
+.summary-today {
+    text-align: center;
+    font-size: 0.9em;
+    color: #555;
+    background-color: #eef2f7;
+    padding: 5px 8px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.summary-cards-wrapper {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap; /* Позволяет карточкам переноситься на новую строку при нехватке места */
+    justify-content: center;
+}
+
+.summary-card {
+    flex: 1;
+    min-width: 200px; /* Минимальная ширина карточки */
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: transform 0.2s ease-in-out; /* Плавный эффект при наведении */
+}
+
+.summary-card:hover {
+    transform: translateY(-3px); /* Небольшой подъем при наведении */
+}
+
+.summary-card h3 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-size: 1em;
+    color: #333;
+}
+
+.income-card {
+    background-color: #e8f5e9; /* Светло-зеленый фон */
+    border: 1px solid #a5d6a7;
+}
+
+.expense-card {
+    background-color: #ffe0e0; /* Светло-красный фон */
+    border: 1px solid #ef9a9a;
+}
+
+.summary-item-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Легкий разделитель между элементами */
+}
+
+.summary-item-group:last-child {
+    border-bottom: none; /* Убираем разделитель у последнего элемента */
+}
+
+.summary-item-label {
+    font-size: 0.85em;
+    color: #666;
+    margin: 0;
+}
+
+.income-value {
+    color: #2e7d32; /* Темно-зеленый */
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.expense-value {
+    color: #c62828; /* Темно-красный */
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.summary-balance {
+    text-align: center;
+    font-size: 1em;
+    font-weight: bold;
+    color: #2196f3; /* Синий для баланса */
+    background-color: #e3f2fd;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #90caf9;
+    margin-top: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.summary-item {
+    margin: 0; /* Убираем стандартные отступы вокруг p */
+}

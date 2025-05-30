@@ -1,6 +1,7 @@
 import type { Moment } from 'moment';
 import React from 'react';
 import type { SummaryData } from '../services/api';
+import './SummaryBlock.css';
 
 interface SummaryBlockProps {
   today: Moment;
@@ -13,48 +14,46 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
     dailySummary,
     monthlySummary,
 }) => {
+    const formatCurrency = (amount: number | undefined) => {
+        return (amount ?? 0).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' });
+    };
+
     return (
-        <div className="summary-block compact-summary">
-    <p className="summary-block-title">
-      Сегодня: {today.format('D MMMM YYYY')}
-    </p>
-    <div className="summary-block-row">
-      <p>
-        Заработано сегодня:{' '}
-        <span className="summary-block-value">
-          {dailySummary.totalIncome.toFixed(2)}₽
-        </span>
-      </p>
-      <p>
-        Потрачено сегодня:{' '}
-        <span className="summary-block-value">
-          {dailySummary.totalExpense.toFixed(2)}₽
-        </span>
-      </p>
-    </div>
-   <div className="summary-block-row">
-     <p>
-       Заработано за месяц:{' '}
-       <span className="summary-block-value">
-         {monthlySummary.totalIncome.toFixed(2)}₽
-       </span>
-     </p>
-     <p>
-       Потрачено за месяц:{' '}
-       <span className="summary-block-value">
-         {monthlySummary.totalExpense.toFixed(2)}₽
-       </span>
-     </p>
-   </div>
-  <div className="summary-block-row">
-    <p>
-      Остаток средств:{' '}
-      <span className="summary-block-value">
-        {monthlySummary.balance?.toFixed(2) ?? '0.00'}₽
-      </span>
-    </p>
-  </div>
- </div>
+        <div className="summary-block-container">
+            <div className="summary-today">
+                <p className="summary-item">Сегодня: {today.format('DD MMMM YYYY')}</p>
+            </div>
+
+            <div className="summary-cards-wrapper">
+                <div className="summary-card income-card">
+                    <h3>Доходы</h3>
+                    <div className="summary-item-group">
+                        <p className="summary-item-label">За сегодня:</p>
+                        <p className="summary-item income-value">{formatCurrency(dailySummary.totalIncome)}</p>
+                    </div>
+                    <div className="summary-item-group">
+                        <p className="summary-item-label">За месяц:</p>
+                        <p className="summary-item income-value">{formatCurrency(monthlySummary.totalIncome)}</p>
+                    </div>
+                </div>
+
+                <div className="summary-card expense-card">
+                    <h3>Расходы</h3>
+                    <div className="summary-item-group">
+                        <p className="summary-item-label">За сегодня:</p>
+                        <p className="summary-item expense-value">{formatCurrency(dailySummary.totalExpense)}</p>
+                    </div>
+                    <div className="summary-item-group">
+                        <p className="summary-item-label">За месяц:</p>
+                        <p className="summary-item expense-value">{formatCurrency(monthlySummary.totalExpense)}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="summary-balance">
+                <p className="summary-item">Баланс: {formatCurrency(monthlySummary.balance)}</p>
+            </div>
+        </div>
    );
 };
 

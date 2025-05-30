@@ -57,7 +57,7 @@ describe('TaskItem', () => {
       </DndProvider>
     );
     expect(screen.getByText('Урок английского')).toBeInTheDocument();
-    expect(screen.getByText('Заработано: 1400₽')).toBeInTheDocument();
+    expect(screen.getByText('+1400₽')).toBeInTheDocument();
     expect(screen.queryByText('Потрачено:')).not.toBeInTheDocument();
   });
 
@@ -69,7 +69,7 @@ describe('TaskItem', () => {
       </DndProvider>
     );
     expect(screen.getByText('Покупка книг')).toBeInTheDocument();
-    expect(screen.getByText('Потрачено: 500₽')).toBeInTheDocument();
+    expect(screen.getByText('-500₽')).toBeInTheDocument();
     expect(screen.queryByText('Заработано:')).not.toBeInTheDocument();
   });
 
