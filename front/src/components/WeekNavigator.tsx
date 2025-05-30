@@ -21,6 +21,10 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
 
   return (
     <div className={navClasses}>
+      <div className="half-week-navigation">
+        <button onClick={showFirstHalf}>1-я пол.</button>
+        <button onClick={showSecondHalf}>2-я пол.</button>
+      </div>
       <div className="week-navigation">
         <button onClick={goToPreviousWeek}>
           <FontAwesomeIcon icon={faChevronLeft} /> Неделя
@@ -28,10 +32,6 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
         <button onClick={goToNextWeek}>
           Неделя <FontAwesomeIcon icon={faChevronRight} />
         </button>
-      </div>
-      <div className="half-week-navigation">
-        <button onClick={showFirstHalf}>1-я пол.</button>
-        <button onClick={showSecondHalf}>2-я пол.</button>
       </div>
     </div>
   );

@@ -393,13 +393,12 @@ h2 {
     margin-bottom: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Небольшая тень для глубины */
 }
-.summary-block.compact-summary {
-  margin: 0 10px 20px;
-  padding: 10px;
-}
+
 
 .summary-wrap {
-  margin: 0 10px;
+  margin: 10px;
+  margin-top: 70px;
+  padding: 10px;
 }
 
 .summary-block p {
