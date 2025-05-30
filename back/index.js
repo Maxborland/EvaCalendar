@@ -44,8 +44,13 @@ app.get('/notes/:weekId', validateNote.getNoteByWeekId, noteController.getNoteBy
 app.post('/notes', validateNote.createOrUpdateNote, noteController.createOrUpdateNote);
 app.delete('/notes/:weekId', validateNote.deleteNote, noteController.deleteNote);
 
-import expenseCategoryController from './controllers/expenseCategoryController.js';
-app.get('/expense-categories', expenseCategoryController.getExpenseCategories);
+import expenseCategoryController, { validateExpenseCategory } from './controllers/expenseCategoryController.js';
+app.get('/expense-categories', validateExpenseCategory.getExpenseCategories, expenseCategoryController.getExpenseCategories);
+app.post('/expense-categories', validateExpenseCategory.addExpenseCategory, expenseCategoryController.addExpenseCategory);
+app.put('/expense-categories/:id', validateExpenseCategory.updateExpenseCategory, expenseCategoryController.updateExpenseCategory);
+app.delete('/expense-categories/:id', validateExpenseCategory.deleteExpenseCategory, expenseCategoryController.deleteExpenseCategory);
+
+app.get('/tasks/category', validateTask.getTasksByCategory, taskController.getTasksByCategory);
 
 import summaryController, { validateSummary } from './controllers/summaryController.js';
 app.get('/summary/:weekId', validateSummary.getWeeklySummary, summaryController.getWeeklySummary);

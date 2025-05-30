@@ -82,4 +82,23 @@ export const getExpenseCategories = async () => {
     return response.data as ExpenseCategory[];
 };
 
+export const createExpenseCategory = async (category_name: string) => {
+    const response = await api.post('/expense-categories', { category_name });
+    return response.data;
+};
+
+export const updateExpenseCategory = async (id: number, category_name: string) => {
+    const response = await api.put(`/expense-categories/${id}`, { category_name });
+    return response.data;
+};
+
+export const deleteExpenseCategory = async (id: number) => {
+    const response = await api.delete(`/expense-categories/${id}`);
+    return response.data;
+};
+
+export const getTasksByCategory = async (category: string) => {
+  return api.get(`/tasks/category?name=${encodeURIComponent(category)}`);
+};
+
 export default api;

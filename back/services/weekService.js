@@ -1,4 +1,4 @@
-import db from '../db.js';
+import db from '../db.cjs';
 
 class WeekService {
   async findWeekByDate(date) {

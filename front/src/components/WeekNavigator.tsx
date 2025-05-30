@@ -1,4 +1,7 @@
+import { faChevronLeft, faChevronRight, faCog } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface WeekNavigatorProps {
   goToPreviousWeek: () => void;
@@ -15,13 +18,25 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
   showSecondHalf,
   isNavVisible, // Деструктурируем новое свойство
 }) => {
+  const navigate = useNavigate();
   const navClasses = `navigation-buttons ${isNavVisible ? '' : 'navigation-buttons--hidden'}`;
+
+  const goToSettings = () => {
+    navigate('/settings');
+  };
 
   return (
     <div className={navClasses}>
       <div className="week-navigation">
-        <button onClick={goToPreviousWeek}>&lt; Неделя</button>
-        <button onClick={goToNextWeek}>Неделя &gt;</button>
+        <button onClick={goToPreviousWeek}>
+          <FontAwesomeIcon icon={faChevronLeft} /> Неделя
+        </button>
+        <button onClick={goToNextWeek}>
+          Неделя <FontAwesomeIcon icon={faChevronRight} />
+        </button>
+        <button onClick={goToSettings} className="settings-button">
+            <FontAwesomeIcon icon={faCog} />
+        </button>
       </div>
       <div className="half-week-navigation">
         <button onClick={showFirstHalf}>1-я пол.</button>

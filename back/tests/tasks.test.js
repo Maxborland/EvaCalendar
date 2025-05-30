@@ -1,21 +1,11 @@
 import request from 'supertest';
 import db from '../db.js'; // Импортируем db напрямую
-import { app, server } from '../index.js'; // Импортируем app и server напрямую
+import { app } from '../index.js'; // Импортируем app и server напрямую
 
 // Устанавливаем NODE_ENV до всех импортов, которые могут от него зависеть
 process.env.NODE_ENV = 'test';
 
 
-beforeAll(async () => {
-  // Миграции должны применяться к импортированному db
-  await db.migrate.latest();
-});
-
-afterAll(async () => {
-  await db.migrate.rollback();
-  await db.destroy(); // Закрываем соединение с БД
-  return new Promise(resolve => server.close(resolve)); // Убедимся, что сервер закрыт
-});
 
 describe('Task API', () => {
   let taskId;

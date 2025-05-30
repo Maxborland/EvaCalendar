@@ -1,11 +1,6 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+const path = require('path');
 
-// Get __filename and __dirname for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-export default {
+module.exports = {
   development: {
     client: 'sqlite3',
     connection: {
@@ -13,11 +8,11 @@ export default {
     },
     useNullAsDefault: true,
     migrations: {
-      directory: path.resolve(__dirname, 'migrations')
+      directory: path.resolve(__dirname, 'migrations'),
     },
     seeds: {
-      directory: path.resolve(__dirname, 'seeds')
-    }
+      directory: path.resolve(__dirname, 'seeds'),
+    },
   },
   test: {
     client: 'sqlite3',
@@ -26,11 +21,11 @@ export default {
     },
     useNullAsDefault: true,
     migrations: {
-      directory: path.resolve(__dirname, 'migrations')
+      directory: path.resolve(__dirname, 'migrations'),
     },
     seeds: {
-      directory: path.resolve(__dirname, 'seeds')
-    }
+      directory: path.resolve(__dirname, 'seeds'),
+    },
   },
   production: {
     client: 'sqlite3',
@@ -39,10 +34,10 @@ export default {
     },
     useNullAsDefault: true,
     migrations: {
-      directory: path.resolve(__dirname, 'migrations')
+      directory: path.resolve(__dirname, 'migrations'),
     },
     seeds: {
-      directory: path.resolve(__dirname, 'seeds')
-    }
-  }
+      directory: path.resolve(__dirname, 'seeds'),
+    },
+  },
 };

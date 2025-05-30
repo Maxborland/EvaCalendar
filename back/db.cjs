@@ -1,5 +1,5 @@
-import knex from 'knex';
-import knexfile from './knexfile.js';
+const knex = require('knex');
+const knexfile = require('./knexfile.cjs');
 
 const environment = process.env.NODE_ENV || 'development';
 const db = knex(knexfile[environment]);
@@ -16,4 +16,4 @@ db.raw('SELECT 1')
     process.exit(1);
   });
 
-export default db;
+module.exports = db;

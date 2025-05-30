@@ -1,5 +1,5 @@
 import asyncHandler from 'express-async-handler';
-import { body, param, validationResult } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 import taskService from '../services/taskService.js';
 import ApiError from '../utils/ApiError.js';
 
@@ -11,6 +11,39 @@ class TaskController {
     }
     const { weekId, dayOfWeek } = req.params;
     const tasks = await taskService.findTasksByWeekAndDay(weekId, dayOfWeek);
+    res.status(200).json(tasks);
+  });
+
+  getTasksByCategory = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
+    const { name: categoryName } = req.query;
+    let decodedCategory = categoryName;
+
+    // Пробуем декодировать, если это строка, что важно для кириллицы
+    if (typeof categoryName === 'string') {
+        try {
+            decodedCategory = decodeURIComponent(categoryName);
+        } catch (e) {
+            // Если декодирование не удалось, логируем ошибку, но продолжаем
+            // Возможно, это не URI-кодированная строка, а просто название
+            console.error(`Ошибка декодирования URI для категории "${categoryName}":`, e.message);
+        }
+    }
+
+    console.log(`Получена категория: ${categoryName}, Декодированная категория: ${decodedCategory}`);
+
+    let tasks;
+    // Проверяем, является ли декодированная категория числом
+    if (!isNaN(decodedCategory) && !isNaN(parseFloat(decodedCategory))) {
+        // Если это число, передаем его как ID
+        tasks = await taskService.findTasksByCategory(parseInt(decodedCategory, 10));
+    } else {
+        // Если это строка, используем как название категории
+        tasks = await taskService.findTasksByCategory(decodedCategory);
+    }
     res.status(200).json(tasks);
   });
 
@@ -106,6 +139,25 @@ export const validateTask = {
   getTasksByWeekAndDay: [
     param('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
     param('dayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
+  ],
+  getTasksByCategory: [
+    query('name').custom(value => {
+      // Проверяем, является ли значение числом
+      if (!isNaN(value) && !isNaN(parseFloat(value))) {
+        return true; // Это число, валидно
+      }
+
+      // Если это не число, пробуем декодировать как строку
+      try {
+        const decodedValue = decodeURIComponent(value);
+        if (typeof decodedValue !== 'string' || decodedValue.trim() === '') {
+            throw new Error('Категория должна быть непустой строкой.');
+        }
+        return true;
+      } catch (e) {
+        throw new Error('Некорректный формат категории или неверное URI-кодирование.');
+      }
+    }).withMessage('Категория должна быть корректной строкой или числовым ID.'),
   ],
   createTask: [
     body('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),

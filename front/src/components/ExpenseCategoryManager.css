@@ -1,0 +1,173 @@
+.expense-category-manager {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Легкая тень для объема */
+}
+
+.expense-category-manager h2 {
+  color: #333;
+  margin-bottom: 20px; /* Увеличенный отступ снизу */
+  text-align: center;
+  font-size: 1.5rem; /* Увеличенный размер заголовка */
+  border-bottom: 1px solid #eee; /* Разделитель под заголовком */
+  padding-bottom: 15px; /* Отступ от разделителя */
+}
+
+/* Общие стили для полей ввода */
+.expense-category-manager input[type="text"] {
+  width: 100%;
+  padding: 10px 15px; /* Увеличенные отступы */
+  border: 1px solid #ccc;
+  border-radius: 5px; /* Слегка скругленные углы */
+  font-size: 1rem;
+  box-sizing: border-box; /* Включает padding и border в общую ширину */
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.expense-category-manager input[type="text"]:focus {
+  border-color: #007bff; /* Подсветка рамки при фокусе */
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.2); /* Легкая тень при фокусе */
+  outline: none; /* Убрать стандартный outline */
+}
+
+/* Общие стили для кнопок */
+.expense-category-manager button {
+  padding: 10px 20px; /* Увеличенные отступы */
+  border: none;
+  border-radius: 5px; /* Скругленные углы */
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.expense-category-manager button:hover {
+  transform: translateY(-1px); /* Небольшой подъем при наведении */
+}
+
+.category-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.category-form button {
+  background-color: #6200ea;
+  color: white;
+}
+
+.category-form button:hover {
+  background-color: #4b00ad; /* Темнее при наведении */
+}
+
+.category-list {
+  list-style: none;
+  padding: 0;
+  border: 1px solid #eee; /* Общие границы для списка */
+  border-radius: 5px;
+  max-height: 300px; /* Ограничение высоты, если категорий много */
+  overflow-y: auto; /* Прокрутка, если категорий много */
+  margin-top: 20px;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between; /* Распределение пространства */
+  align-items: center; /* Выравнивание по центру по вертикали */
+  padding: 10px 15px; /* Увеличенный внутренний отступ */
+  border-bottom: 1px solid #eee; /* Разделитель */
+  background-color: #fff; /* Фон элемента */
+  transition: background-color 0.2s ease-in-out; /* Плавное изменение фона */
+}
+
+.category-item:last-child {
+  border-bottom: none; /* Убрать границу у последнего элемента */
+}
+
+.category-item:hover {
+  background-color: #f5f5f5; /* Изменение фона при наведении */
+}
+
+.category-item span {
+  flex-grow: 1; /* Позволяет названию категории занимать доступное пространство */
+  margin-right: 15px; /* Отступ справа от названия до кнопок */
+  font-size: 1rem; /* Размер шрифта */
+  color: #333; /* Цвет текста */
+}
+
+.category-item .actions {
+  display: flex; /* Для выравнивания кнопок действий */
+  gap: 8px; /* Расстояние между кнопками */
+  flex-shrink: 0; /* Чтобы кнопки не сжимались */
+}
+
+.icon-button {
+  background-color: transparent; /* Прозрачный фон */
+  border: 1px solid #ccc; /* Легкая рамка для видимости */
+  cursor: pointer;
+  padding: 5px; /* Увеличенный паддинг для легкого нажатия */
+  border-radius: 4px;
+  display: flex; /* Для центрирования SVG */
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, border-color 0.2s ease-in-out;
+  width: 34px; /* Фиксированная ширина для выравнивания */
+  height: 34px; /* Фиксированная высота */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Легкая тень */
+}
+
+.icon-button:hover {
+  background-color: #e0e0e0; /* Легкий фон при наведении */
+  transform: translateY(-1px); /* Небольшой подъем при наведении */
+}
+
+.icon-button svg {
+  width: 18px; /* Размер иконки */
+  height: 18px; /* Размер иконки */
+  color: #000; /* Цвет иконки (черный) */
+}
+
+.edit-button svg {
+   color: #007bff; /* Синий цвет для иконки редактирования */
+}
+
+.edit-button:hover svg {
+   color: #0056b3; /* Чуть темнее синий при наведении */
+}
+
+.delete-button svg {
+   color: #dc3545; /* Красный цвет для иконки удаления */
+}
+
+.delete-button:hover svg {
+   color: #c82333; /* Чуть темнее красный при наведении */
+}
+
+.edit-form {
+  display: flex;
+  gap: 10px;
+  flex-grow: 1;
+}
+
+.edit-form input[type="text"] {
+  flex-grow: 1;
+}
+
+.edit-form button {
+  background-color: #28a745;
+  color: white;
+}
+
+.edit-form button:hover {
+  background-color: #218838;
+}
+
+.edit-form button[type="button"] {
+  background-color: #6c757d;
+}
+
+.edit-form button[type="button"]:hover {
+  background-color: #5a6268;
+}

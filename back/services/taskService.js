@@ -1,8 +1,31 @@
-import knex from '../db.js';
+import knex from '../db.cjs';
 
 class TaskService {
   async findTasksByWeekAndDay(weekId, dayOfWeek) {
     return knex('tasks').where({ weekId, dayOfWeek }).select('*');
+  }
+
+  async findTasksByCategory(categoryParam) {
+    let categoryToSearch = categoryParam;
+
+    // Проверяем, является ли переданный параметр числом
+    if (typeof categoryParam === 'number' && !isNaN(categoryParam)) {
+      // Если это число, ищем название категории по ID из таблицы expense_categories
+      const expenseCategory = await knex('expense_categories')
+                                    .where({ id: categoryParam })
+                                    .select('category_name')
+                                    .first();
+
+      if (expenseCategory && expenseCategory.category_name) {
+        categoryToSearch = expenseCategory.category_name;
+      } else {
+        // Если категория по ID не найдена, возвращаем пустой массив, так как нет задач для несуществующей категории
+        console.warn(`Категория с ID ${categoryParam} не найдена. Возвращаем пустой список задач.`);
+        return [];
+      }
+    }
+    // Используем categoryToSearch (строковое название категории или исходное строковое название)
+    return knex('tasks').where({ category: categoryToSearch }).select('*');
   }
 
   async createTask(task) {

@@ -1,4 +1,4 @@
-import knex from '../db.js';
+import knex from '../db.cjs';
 
 class SummaryService {
   async getWeeklySummary(weekId) {
