@@ -64,7 +64,7 @@ export const duplicateTask = (id: string) => {
 };
 
 export const moveTask = (taskId: string, newWeekId: string, newDayOfWeek: string) => {
-  return api.post(`/tasks/move`, { taskId, newWeekId, newDayOfWeek });
+  return api.put(`/tasks/move`, { taskId, newWeekId, newDayOfWeek });
 };
 
 export const getWeeklySummary = async (weekId: string) => {

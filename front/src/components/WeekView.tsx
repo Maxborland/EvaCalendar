@@ -14,6 +14,7 @@ const WeekView: React.FC = () => {
   const [dailySummary, setDailySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для дневной сводки
   const [weeklySummary, setWeeklySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для недельной сводки
   const [isLoading, setIsLoading] = useState(true); // Состояние для отслеживания загрузки
+  const [isNavVisible, setIsNavVisible] = useState(true); // Состояние для видимости навигации
 
   const fetchWeekInfo = useCallback(async () => {
     setIsLoading(true); // Начинаем загрузку
@@ -82,6 +83,22 @@ const WeekView: React.FC = () => {
     fetchSummary();
   }, [fetchSummary]);
 
+  // Эффект для отслеживания прокрутки и скрытия/показа навигации
+  useEffect(() => {
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      // Если прокручена донизу, то скрыть навигацию, иначе показать
+      if (scrollTop + clientHeight >= scrollHeight - 20) { // -20 для небольшого отступа снизу
+        setIsNavVisible(false);
+      } else {
+        setIsNavVisible(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => {
     const startOfWeek = currentDate.clone().startOf('isoWeek');
     const days: Moment[] = [];
@@ -143,6 +160,7 @@ const WeekView: React.FC = () => {
             goToNextWeek={goToNextWeek}
             showFirstHalf={showFirstHalf}
             showSecondHalf={showSecondHalf}
+            isNavVisible={isNavVisible} // Передаем состояние видимости навигации
           />
         </>
       )}

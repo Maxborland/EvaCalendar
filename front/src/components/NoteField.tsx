@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 interface NoteFieldProps {
-  weekId: string; // Изменено на string, так как API ожидает UUID
+  weekId: number; // weekId должен быть числом, соответствующим id недели в БД
 }
 
 const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
@@ -11,8 +11,8 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
   useEffect(() => {
     const fetchNote = async () => {
       try {
-        // weekId уже строка (UUID)
-        const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/notes/${weekId}`;
+        // weekId должен быть числом
+        const apiUrl = `${import.meta.env.VITE_API_URL}/notes/${weekId}`;
         const response = await fetch(apiUrl);
         if (response.ok) {
           const data = await response.json();
@@ -35,14 +35,14 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
 
   const handleSave = async () => {
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/notes`;
+      const apiUrl = `${import.meta.env.VITE_API_URL}/notes`;
       console.log('Posting note to:', apiUrl); // Добавляем логирование
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ weekId, content: noteContent }), // weekId уже строка (UUID)
+        body: JSON.stringify({ weekId, content: noteContent }), // weekId должен быть числом
       });
 
       if (response.ok) {

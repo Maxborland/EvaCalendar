@@ -92,6 +92,11 @@ button:focus-visible {
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   box-sizing: border-box;
+  transition: transform 0.3s ease-in-out; /* Добавляем плавность перехода */
+}
+
+.navigation-buttons--hidden {
+  transform: translateY(100%); /* Полное скрытие кнопки */
 }
 
 .navigation-buttons button {

@@ -5,6 +5,7 @@ interface WeekNavigatorProps {
   goToNextWeek: () => void;
   showFirstHalf: () => void;
   showSecondHalf: () => void;
+  isNavVisible: boolean; // Добавляем новое свойство
 }
 
 const WeekNavigator: React.FC<WeekNavigatorProps> = ({
@@ -12,9 +13,12 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
   goToNextWeek,
   showFirstHalf,
   showSecondHalf,
+  isNavVisible, // Деструктурируем новое свойство
 }) => {
+  const navClasses = `navigation-buttons ${isNavVisible ? '' : 'navigation-buttons--hidden'}`;
+
   return (
-    <div className="navigation-buttons">
+    <div className={navClasses}>
       <div className="week-navigation">
         <button onClick={goToPreviousWeek}>&lt; Неделя</button>
         <button onClick={goToNextWeek}>Неделя &gt;</button>
