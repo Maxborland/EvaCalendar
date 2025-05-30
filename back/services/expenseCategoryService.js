@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import knex from '../db.cjs';
 import ApiError from '../utils/ApiError.js';
 
@@ -13,9 +14,9 @@ class ExpenseCategoryService {
       throw ApiError.badRequest('Category with this name already exists');
     }
 
-    const result = await knex('expense_categories').insert({ category_name }).returning('id');
-    const id = result[0].id;
-    return { id, category_name };
+    const newId = uuidv4();
+    await knex('expense_categories').insert({ id: newId, category_name });
+    return { id: newId, category_name };
   }
 
   async updateCategory(id, category_name) {

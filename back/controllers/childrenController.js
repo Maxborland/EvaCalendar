@@ -1,40 +1,89 @@
 import asyncHandler from 'express-async-handler';
-import Joi from 'joi';
+import { body, param, validationResult } from 'express-validator';
 import childService from '../services/childrenService.js';
 import ApiError from '../utils/ApiError.js';
 
-const childSchema = Joi.object({
-  childName: Joi.string().required(),
-  parentName: Joi.string().required(),
-  parentPhone: Joi.string().allow('', null),
-  address: Joi.string().allow('', null),
-  hourlyRate: Joi.number().min(0).allow(null),
-  comment: Joi.string().allow('', null),
-});
+class ChildController {
+  getAllChildren = asyncHandler(async (req, res) => {
+    const children = await childService.getAllChildren();
+    res.json(children);
+  });
 
-const updateChildSchema = Joi.object({
-  childName: Joi.string().required(),
-  parentName: Joi.string().required(),
-  parentPhone: Joi.string().allow('', null).optional(),
-  address: Joi.string().allow('', null).optional(),
-  hourlyRate: Joi.number().min(0).allow(null).optional(),
-  comment: Joi.string().allow('', null).optional(),
-}).min(1);
+  getChildById = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
+    const { id } = req.params;
+    const child = await childService.getChildById(id);
+    if (!child) {
+      throw ApiError.notFound('Child not found');
+    }
+    res.json(child);
+  });
 
-// Middleware для валидации
-const validateChild = (req, res, next) => {
-  let schema;
-  if (req.method === 'PUT') {
-    schema = updateChildSchema;
-  } else {
-    schema = childSchema;
-  }
+  addChild = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
+    const newChild = await childService.addChild(req.body);
+    res.status(201).json(newChild);
+  });
 
-  const { error } = schema.validate(req.body, { abortEarly: false });
-  if (error) {
-    throw ApiError.badRequest(error.details[0].message.replace(/"/g, ''));
-  }
-  next();
+  updateChild = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
+    const { id } = req.params;
+    const updatedChild = await childService.updateChild(id, req.body);
+    if (!updatedChild) {
+      throw ApiError.notFound('Child not found');
+    }
+    res.json({ message: 'Child updated successfully' });
+  });
+
+  deleteChild = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+    }
+    const { id } = req.params;
+    const deleted = await childService.deleteChild(id);
+    if (!deleted) {
+      throw ApiError.notFound('Child not found');
+    }
+    res.status(200).json({ message: 'Child deleted successfully' });
+  });
+}
+
+export default new ChildController();
+
+export const validateChild = {
+  getChildById: [
+    param('id').isUUID().withMessage('ID ребенка должен быть валидным UUID.'),
+  ],
+  addChild: [
+    body('childName').optional().isString().notEmpty().withMessage('Имя ребенка обязательно.'),
+    body('parentName').isString().notEmpty().withMessage('Имя родителя обязательно.'),
+    body('parentPhone').optional({ nullable: true }).isString().withMessage('Телефон родителя должен быть строкой.'),
+    body('address').optional({ nullable: true }).isString().withMessage('Адрес должен быть строкой.'),
+    body('hourlyRate').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Ставка должна быть положительным числом.'),
+    body('comment').optional({ nullable: true }).isString().withMessage('Комментарии должны быть строкой.'),
+  ],
+  updateChild: [
+    param('id').isUUID().withMessage('ID ребенка должен быть валидным UUID.'),
+    body('childName').optional().isString().withMessage('Имя ребенка должно быть строкой.'),
+    body('parentName').optional().isString().notEmpty().withMessage('Имя родителя обязательно.'),
+    body('parentPhone').optional({ nullable: true }).isString().withMessage('Телефон родителя должен быть строкой.'),
+    body('address').optional({ nullable: true }).isString().withMessage('Адрес должен быть строкой.'),
+    body('hourlyRate').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Ставка должна быть положительным числом.'),
+    body('comment').optional({ nullable: true }).isString().withMessage('Комментарии должны быть строкой.'),
+  ],
+  deleteChild: [
+    param('id').isUUID().withMessage('ID ребенка должен быть валидным UUID.'),
+  ],
 };
 
 const getAllChildren = asyncHandler(async (req, res) => {
@@ -76,6 +125,6 @@ const deleteChild = asyncHandler(async (req, res) => {
 
 export {
   addChild, deleteChild, getAllChildren,
-  getChildById, updateChild, validateChild
+  getChildById, updateChild
 };
 

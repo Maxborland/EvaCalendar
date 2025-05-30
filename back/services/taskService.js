@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import knex from '../db.cjs';
 
 class TaskService {
@@ -8,14 +9,15 @@ class TaskService {
   async findTasksByCategory(categoryParam) {
     let categoryToSearch = categoryParam;
 
-    // Проверяем, является ли переданный параметр числом
-    if (typeof categoryParam === 'number' && !isNaN(categoryParam)) {
-      // Если это число, ищем название категории по ID из таблицы expense_categories
+    // Проверяем, является ли переданный параметр UUID (для ID категории)
+    const isUUID = (str) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(str);
+
+    if (typeof categoryParam === 'string' && isUUID(categoryParam)) {
+      // Если это UUID, ищем название категории по ID из таблицы expense_categories
       const expenseCategory = await knex('expense_categories')
                                     .where({ id: categoryParam })
                                     .select('category_name')
                                     .first();
-
       if (expenseCategory && expenseCategory.category_name) {
         categoryToSearch = expenseCategory.category_name;
       } else {
@@ -30,21 +32,15 @@ class TaskService {
 
   async createTask(task) {
     const processedTask = this.processTaskData(task);
+    // Если ID уже предоставлен (например, фронтендом), используем его. Иначе генерируем новый.
+    const newId = processedTask.id || uuidv4();
+    processedTask.id = newId; // Присваиваем сгенерированный UUID задаче
+
     console.log('Attempting to insert task:', processedTask);
-    const insertedRows = await knex('tasks').insert(processedTask).returning('id');
-    console.log('Insert result:', insertedRows);
-    // Для SQLite с .returning('id'), Knex обычно возвращает массив объектов, например: [{ id: 1 }]
-    // Убедимся, что primary key в таблице 'tasks' действительно называется 'id'.
-    // Предполагая, что это так:
-    if (!insertedRows || insertedRows.length === 0 || !insertedRows[0] || typeof insertedRows[0].id === 'undefined') {
-      console.error('Ошибка: .returning("id") не вернул ожидаемый ID или вернул неожиданный формат.', insertedRows);
-      // Если ID не получен, возвращаем пустой объект, чтобы тесты упали на проверке свойств,
-      // что поможет выявить проблему, если она не в этом.
-      return {};
-    }
-    const id = insertedRows[0].id;
-    const result = await knex('tasks').where({ id }).first();
-    console.log('Созданная задача (исправлено):', result);
+    await knex('tasks').insert(processedTask); // Удаляем .returning('id')
+
+    const result = await knex('tasks').where({ id: newId }).first(); // Ищем по новому ID
+    console.log('Созданная задача:', result);
     return result;
   }
 
@@ -86,7 +82,7 @@ class TaskService {
       'category', 'amountSpent'
     ];
     const incomeSpecificFields = [ // Поля, специфичные для доходов
-      'time', 'address', 'childName', 'hourlyRate', 'hoursWorked'
+      'time', 'address', 'childId', 'hourlyRate', 'hoursWorked'
     ];
 
 
@@ -125,9 +121,8 @@ class TaskService {
       // Knex сам проигнорирует неизвестные поля.
     }
 
-    // Удаляем поле 'id', если оно присутствует, чтобы Knex не пытался его обновить
-    // Knex автоматически управляет ID при создании новой записи
-    if (processed.id !== undefined) { delete processed.id; }
+    // Нам не нужно удалять id, так как он теперь генерируется и/или передается с фронтенда.
+    // Knex будет использовать переданный id.
 
     // Удаляем поля, которых нет в базе данных
     if (processed.what !== undefined) { delete processed.what; }

@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import knex from '../db.cjs';
 
 class ChildService {
@@ -6,21 +7,22 @@ class ChildService {
   }
 
   async getChildById(id) {
-    return knex('children').where({ id }).first();
+    return knex('children').where({ childId: id }).first();
   }
 
   async addChild(child) {
-    const [newChildId] = await knex('children').insert(child);
-    return knex('children').where({ id: newChildId }).first();
+    const newChildId = uuidv4();
+    await knex('children').insert({ childId: newChildId, ...child });
+    return knex('children').where({ childId: newChildId }).first();
   }
 
   async updateChild(id, child) {
-    await knex('children').where({ id }).update(child);
-    return knex('children').where({ id }).first();
+    await knex('children').where({ childId: id }).update(child);
+    return knex('children').where({ childId: id }).first();
   }
 
   async deleteChild(id) {
-    return knex('children').where({ id }).del();
+    return knex('children').where({ childId: id }).del();
   }
 }
 

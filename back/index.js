@@ -63,8 +63,8 @@ import {
 
 app.get('/children', getAllChildren);
 app.get('/children/:id', getChildById);
-app.post('/children', validateChild, addChild);
-app.put('/children/:id', validateChild, updateChild);
+app.post('/children', validateChild.addChild, addChild);
+app.put('/children/:id', validateChild.updateChild, updateChild);
 app.delete('/children/:id', deleteChild);
 
 import summaryController, { validateSummary } from './controllers/summaryController.js';

@@ -12,13 +12,12 @@
 
 .summary-today {
     text-align: center;
-    font-size: 0.9em;
+    font-size: 1em;
     color: var(--color-text-tertiary);
     background-color: var(--color-light-grey);
     padding: 5px 8px;
     border-radius: 8px;
-    margin-bottom: 10px;
-    font-weight: 600;
+    font-weight: 800;
 }
 
 .summary-cards-wrapper {

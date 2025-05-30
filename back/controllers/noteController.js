@@ -43,13 +43,13 @@ export default new NoteController();
 
 export const validateNote = {
   getNoteByWeekId: [
-    param('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
   ],
   createOrUpdateNote: [
-    body('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    body('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
     body('content').isString().withMessage('Содержимое заметки должно быть строкой.'),
   ],
   deleteNote: [
-    param('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
   ],
 };

@@ -61,7 +61,7 @@ export const validateExpenseCategory = {
     body('category_name').isString().notEmpty().withMessage('Category name is required'),
   ],
   updateExpenseCategory: [
-    param('id').isInt({ min: 1 }).withMessage('ID категории должен быть положительным числом.'),
+    param('id').isUUID().withMessage('ID категории должен быть валидным UUID.'),
     body('category_name')
       .isString().withMessage('Category name must be a string')
       .notEmpty().withMessage('Category name is required')
@@ -74,7 +74,7 @@ export const validateExpenseCategory = {
       }),
   ],
   deleteExpenseCategory: [
-    param('id').isInt({ min: 1 }).withMessage('ID категории должен быть положительным числом.'),
+    param('id').isUUID().withMessage('ID категории должен быть валидным UUID.'),
   ],
 };
 

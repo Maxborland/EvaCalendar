@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import knex from '../db.cjs';
 
 class NoteService {
@@ -11,8 +12,9 @@ class NoteService {
       await knex('notes').where({ weekId }).update({ content });
       return { id: existingNote.id, weekId, content };
     } else {
-      const [id] = await knex('notes').insert({ weekId, content });
-      return { id, weekId, content };
+      const newId = uuidv4();
+      await knex('notes').insert({ id: newId, weekId, content });
+      return { id: newId, weekId, content };
     }
   }
 

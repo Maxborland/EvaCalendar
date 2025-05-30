@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import db from '../db.cjs';
 
 class WeekService {
@@ -11,8 +12,9 @@ class WeekService {
 
   async createWeek(weekData) {
     // Логика создания новой недели в БД
-    const [id] = await db('weeks').insert(weekData); // Пример
-    return { id, ...weekData };
+    const newId = uuidv4();
+    await db('weeks').insert({ id: newId, ...weekData });
+    return { id: newId, ...weekData };
   }
 }
 

@@ -156,13 +156,7 @@ const { setIsNavVisible, setIsModalOpen } = useNav();
               />
             ) : null
           ))
-        ) : (
-          <div className="no-tasks-message"></div>
-        )}
-        {/* Оставляем onClick только на пустых ячейках */}
-        {tasks.length < 5 && Array.from({ length: Math.max(0, 5 - tasks.length) }).map((_, index) => (
-          <div key={index} className="day-cell-empty" onClick={() => handleOpenForm()}></div>
-        ))}
+        ) : null}
       </div>
       {showForm && (
         <TaskForm

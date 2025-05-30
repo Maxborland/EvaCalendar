@@ -7,6 +7,8 @@ class TaskController {
   getTasksByWeekAndDay = asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      // Debugging: Log validation errors
+      console.log('Ошибки валидации:', errors.array());
       return next(ApiError.badRequest('Ошибки валидации', errors.array()));
     }
     const { weekId, dayOfWeek } = req.params;
@@ -137,36 +139,42 @@ export default new TaskController();
 
 export const validateTask = {
   getTasksByWeekAndDay: [
-    param('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
     param('dayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
   ],
   getTasksByCategory: [
     query('name').custom(value => {
-      // Проверяем, является ли значение числом
-      if (!isNaN(value) && !isNaN(parseFloat(value))) {
-        return true; // Это число, валидно
+      // Пробуем декодировать на случай, если это URI-кодированная строка
+      let decodedValue = value;
+      if (typeof value === 'string') {
+        try {
+          decodedValue = decodeURIComponent(value);
+        } catch (e) {
+          throw new Error('Некорректное URI-кодирование для категории.');
+        }
       }
 
-      // Если это не число, пробуем декодировать как строку
-      try {
-        const decodedValue = decodeURIComponent(value);
-        if (typeof decodedValue !== 'string' || decodedValue.trim() === '') {
-            throw new Error('Категория должна быть непустой строкой.');
-        }
+      // Если это UUID, это валидно
+      if (typeof decodedValue === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(decodedValue)) {
         return true;
-      } catch (e) {
-        throw new Error('Некорректный формат категории или неверное URI-кодирование.');
       }
-    }).withMessage('Категория должна быть корректной строкой или числовым ID.'),
+
+      // Если это строка, и она непустая, это валидно (название категории)
+      if (typeof decodedValue === 'string' && decodedValue.trim() !== '') {
+        return true;
+      }
+
+      throw new Error('Категория должна быть валидным UUID или непустой строкой.');
+    }).withMessage('Категория должна быть корректным UUID или непустой строкой.'),
   ],
   createTask: [
-    body('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    body('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
     body('dayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
     body('type').isIn(['income', 'expense', 'babysitting', 'work']).withMessage('Неверный тип задачи.'),
     body('title').isString().notEmpty().withMessage('Заголовок обязателен.'),
     body('time').optional({ nullable: true }).isString().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Неверный формат времени. Используйте HH:MM.'),
     body('address').optional({ nullable: true }).isString().withMessage('Адрес должен быть строкой.'),
-    body('childName').optional({ nullable: true }).isString().withMessage('Имя ребенка должно быть строкой.'),
+    body('childId').optional({ nullable: true }).isUUID().withMessage('ID ребенка должен быть валидным UUID.'),
     body('hourlyRate').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Ставка должна быть положительным числом.'),
     body('comments').optional({ nullable: true }).isString().withMessage('Комментарии должны быть строкой.'),
     body('category').optional({ nullable: true }).isString().withMessage('Категория должна быть строкой.'),
@@ -175,14 +183,14 @@ export const validateTask = {
     body('hoursWorked').optional().isFloat({ min: 0 }).withMessage('HoursWorked должен быть положительным числом.'),
   ],
   updateTask: [
-    param('id').isInt({ min: 1 }).withMessage('ID задачи должен быть положительным числом.'),
-    body('weekId').optional().isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    param('id').isUUID().withMessage('ID задачи должен быть валидным UUID.'),
+    body('weekId').optional().isUUID().withMessage('weekId должен быть валидным UUID.'),
     body('dayOfWeek').optional().isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
     body('type').optional().isIn(['income', 'expense', 'babysitting', 'work']).withMessage('Неверный тип задачи.'),
     body('title').optional().isString().notEmpty().withMessage('Заголовок обязателен.'),
     body('time').optional({ nullable: true }).isString().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Неверный формат времени. Используйте HH:MM.'),
     body('address').optional({ nullable: true }).isString().withMessage('Адрес должен быть строкой.'),
-    body('childName').optional({ nullable: true }).isString().withMessage('Имя ребенка должно быть строкой.'),
+    body('childId').optional({ nullable: true }).isUUID().withMessage('ID ребенка должен быть валидным UUID.'),
     body('hourlyRate').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Ставка должна быть положительным числом.'),
     body('comments').optional({ nullable: true }).isString().withMessage('Комментарии должны быть строкой.'),
     body('category').optional({ nullable: true }).isString().withMessage('Категория должна быть строкой.'),
@@ -191,14 +199,14 @@ export const validateTask = {
     body('hoursWorked').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('HoursWorked должен быть положительным числом.'),
   ],
   deleteTask: [
-    param('id').isInt({ min: 1 }).withMessage('ID задачи должен быть положительным числом.'),
+    param('id').isUUID().withMessage('ID задачи должен быть валидным UUID.'),
   ],
   duplicateTask: [
-    param('id').isInt({ min: 1 }).withMessage('ID задачи должен быть положительным числом.'),
+    param('id').isUUID().withMessage('ID задачи должен быть валидным UUID.'),
   ],
   moveTask: [
-    body('taskId').isInt({ min: 1 }).withMessage('ID задачи должен быть положительным числом.'),
-    body('newWeekId').isInt({ min: 1 }).withMessage('Новый weekId должен быть положительным числом.'),
+    body('taskId').isUUID().withMessage('ID задачи должен быть валидным UUID.'),
+    body('newWeekId').isUUID().withMessage('Новый weekId должен быть валидным UUID.'),
     body('newDayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для newDayOfWeek.'),
   ],
 };

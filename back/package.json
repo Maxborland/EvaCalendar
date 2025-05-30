@@ -11,7 +11,7 @@
     "migrate:latest": "npx knex migrate:latest --knexfile knexfile.cjs",
     "migrate:rollback": "npx knex migrate:rollback --knexfile knexfile.cjs",
     "migrate:make": "npx knex migrate:make --knexfile knexfile.cjs",
-    "seed": "npx knex seed:run",
+    "seed": "npx knex seed:run --knexfile knexfile.cjs",
     "start:pm2": "pm2 start pm2.config.js",
     "stop:pm2": "pm2 stop eva-calendar-backend",
     "delete:pm2": "pm2 delete eva-calendar-backend"
@@ -32,7 +32,8 @@
     "knex-migrate": "^1.7.4",
     "moment": "^2.30.1",
     "nodemon": "^3.1.10",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

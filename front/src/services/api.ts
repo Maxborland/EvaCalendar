@@ -15,7 +15,7 @@ export interface SummaryData {
 }
 
 export interface Child {
-  id: number;
+  id: string;
   childName: string;
   parentName: string;
   parentPhone: string | null;
@@ -123,7 +123,7 @@ export const getAllChildren = async () => {
     return response.data as Child[];
 };
 
-export const getChildById = async (id: number) => {
+export const getChildById = async (id: string) => {
     const response = await api.get(`/children/${id}`);
     return response.data as Child;
 };
@@ -133,7 +133,7 @@ export const addChild = async (child: Omit<Child, 'id'>) => {
     return response.data as Child;
 };
 
-export const updateChild = async (id: number, child: Child) => {
+export const updateChild = async (id: string, child: Child) => {
     // Деструктурируем объект child, чтобы исключить поле 'id' из тела запроса
     // При этом, childIdToExclude будет содержать значение id, но не будет отправлено в childDataToSend
     const { id: childIdToExclude, ...childDataToSend } = child;
@@ -141,7 +141,7 @@ export const updateChild = async (id: number, child: Child) => {
     return response.data as Child;
 };
 
-export const deleteChild = async (id: number) => {
+export const deleteChild = async (id: string) => {
     const response = await api.delete(`/children/${id}`);
     return response.data;
 };

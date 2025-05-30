@@ -1,0 +1,102 @@
+.TaskItemContainer {
+  background-color: #f9f9f9;
+  border: 2px solid;
+  border-radius: 8px;
+  padding: 8px;
+  min-height: 60px;
+  margin-bottom: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: grab;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.TaskItemContainer.dragging {
+  opacity: 0.5;
+}
+
+.TaskItemContainer.income {
+  border-color: #28a745;
+}
+
+.TaskItemContainer.expense {
+  border-color: #dc3545;
+}
+
+.TaskTitle {
+  margin: 0;
+  color: #333;
+  display: inline-block;
+  line-height: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.TaskDetail {
+  margin: 0;
+  color: #555;
+  font-size: 0.9em;
+}
+
+.TaskInfoContainer {
+  display: flex;
+  flex-direction: column; /* Изменяем на column, чтобы заголовок и детали были по вертикали */
+  align-items: flex-start; /* Выравниваем по левому краю */
+  gap: 2px; /* Уменьшаем зазор между элементами */
+  flex-grow: 1;
+  min-width: 0; /* Разрешаем контейнеру сжиматься */
+}
+
+.ButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  margin-top: 0;
+}
+
+.ActionButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 0; /* Удалить padding, чтобы width/height работали как ожидалось */
+  width: 32px; /* Увеличить ширину */
+  height: 32px; /* Увеличить высоту */
+  display: flex; /* Для центрирования иконок */
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1.2em; /* Увеличить размер шрифта для иконок */
+}
+
+.ActionButton:hover {
+  background-color: #0056b3;
+}
+
+.ActionButton.delete {
+  background-color: #dc3545;
+}
+
+.ActionButton.delete:hover {
+  background-color: #c82333;
+}
+
+.ActionButton.duplicate {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.ActionButton.duplicate:hover {
+  background-color: #e0a800;
+}
+
+.TaskItemMainContent {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: space-between;
+}

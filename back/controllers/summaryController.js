@@ -39,10 +39,10 @@ export default new SummaryController();
 
 export const validateSummary = {
   getWeeklySummary: [
-    param('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
   ],
   getDailySummary: [
-    param('weekId').isInt({ min: 1 }).withMessage('weekId должен быть положительным числом.'),
+    param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
     param('dayOfWeek').isInt({ min: 1, max: 7 }).withMessage('dayOfWeek должен быть числом от 1 до 7.'),
   ],
   getMonthlySummary: [

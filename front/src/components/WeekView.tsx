@@ -1,6 +1,6 @@
 import type { Moment } from 'moment';
 import moment from 'moment';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNav } from '../context/NavContext';
 import { getDailySummary, getMonthlySummary, type SummaryData } from '../services/api';
 import SummaryBlock from './SummaryBlock';
@@ -12,7 +12,15 @@ const WeekView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(moment());
   const [weekInfo, setWeekInfo] = useState<{ id: string | null; startDate: string; endDate: string }>({ id: null, startDate: '', endDate: '' });
   const [today] = useState(moment()); // Состояние для получения текущего дня
-  const [weekDays, setWeekDays] = useState<Moment[]>([]); // Добавляем состояние для дней недели
+  // Используем useMemo для мемоизации дней недели
+  const weekDays = useMemo<Moment[]>(() => {
+    const startOfWeek = currentDate.clone().startOf('isoWeek');
+    const days: Moment[] = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(startOfWeek.clone().add(i, 'days'));
+    }
+    return days;
+  }, [currentDate]);
   const [dailySummary, setDailySummary] = useState<SummaryData>({ totalIncome: 0, totalExpense: 0, balance: 0 }); // Добавляем состояние для дневной сводки
   const [monthlySummary, setMonthlySummary] = useState<SummaryData>({ totalIncome: 0, totalExpense: 0, balance: 0 }); // Добавляем состояние для месячной сводки
   const [isLoading, setIsLoading] = useState(true); // Состояние для отслеживания загрузки
@@ -104,14 +112,6 @@ const WeekView: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [setIsNavVisible, isModalOpen]);
 
-  useEffect(() => {
-    const startOfWeek = currentDate.clone().startOf('isoWeek');
-    const days: Moment[] = [];
-    for (let i = 0; i < 7; i++) {
-      days.push(startOfWeek.clone().add(i, 'days'));
-    }
-    setWeekDays(days);
-  }, [currentDate]);
 
   const goToPreviousWeek = () => {
     setCurrentDate(currentDate.clone().subtract(1, 'week'));

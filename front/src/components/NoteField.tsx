@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 interface NoteFieldProps {
-  weekId: number; // weekId должен быть числом, соответствующим id недели в БД
+  weekId: string; // weekId должен быть строкой (UUID), соответствующей id недели в БД
 }
 
 const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
@@ -11,7 +11,7 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
   useEffect(() => {
     const fetchNote = async () => {
       try {
-        // weekId должен быть числом
+        // weekId должен быть строкой (UUID)
         const apiUrl = `${import.meta.env.VITE_API_URL}/notes/${weekId}`;
         const response = await fetch(apiUrl);
         if (response.ok) {
@@ -42,7 +42,7 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ weekId, content: noteContent }), // weekId должен быть числом
+        body: JSON.stringify({ weekId, content: noteContent }), // weekId должен быть строкой (UUID)
       });
 
       if (response.ok) {
