@@ -1,0 +1,42 @@
+:root {
+  --theme-primary: #44b340;
+  --theme-secondary: #44b340;
+  --theme-success: #44b340;
+  --theme-danger: #c03947;
+  --theme-info: #2196F3;
+
+  --theme-light: #ffffff;
+  --theme-dark: #242424; /* Может использоваться как основной темный текст или фон */
+
+  --theme-gray-light: #F0F0F0; /* Для светлых фонов, границ */
+  --theme-gray-medium: #888888; /* Для второстепенного текста, placeholder */
+  --theme-gray-dark: #3A3A3A; /* Для более темных элементов интерфейса, границ */
+
+  /* Производные для удобства (можно генерировать или определять по необходимости) */
+  /* Например, для текста на основных цветах */
+  --theme-primary-text: var(--theme-light);
+  --theme-secondary-text: var(--theme-light);
+  --theme-success-text: var(--theme-light);
+  --theme-danger-text: var(--theme-light);
+  --theme-info-text: var(--theme-light);
+
+  /* RGB версии для прозрачности, если нужно */
+  --theme-primary-rgb: 83, 91, 242;
+  --theme-secondary-rgb: 0, 86, 179;
+  --theme-success-rgb: 40, 167, 69;
+  --theme-danger-rgb: 220, 53, 69;
+  --theme-info-rgb: 33, 150, 243;
+  --theme-light-rgb: 255, 255, 255;
+  --theme-dark-rgb: 36, 36, 36;
+  --theme-gray-light-rgb: 240, 240, 240;
+  --theme-gray-medium-rgb: 136, 136, 136;
+  --theme-gray-dark-rgb: 58, 58, 58;
+}
+/* Стили для полей ввода только для чтения */
+input[readonly] {
+  background-color: var(--theme-gray-light);
+  border: 1px solid var(--theme-gray-medium);
+  color: var(--theme-gray-dark);
+  cursor: default;
+  opacity: 0.8; /* Немного уменьшим прозрачность для большей заметности */
+}

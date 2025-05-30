@@ -1,4 +1,6 @@
 import { faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faFloppyDisk } from '@fortawesome/free-solid-svg-icons/faFloppyDisk';
+import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useEffect, useState } from 'react';
 import type { ExpenseCategory } from '../services/api';
@@ -110,14 +112,15 @@ const ExpenseCategoryManager: React.FC = () => {
               <form onSubmit={handleUpdateCategory} className="edit-form">
                 <input
                   type="text"
+                  style={{ color: "black" }}
                   value={editingCategory.category_name}
                   onChange={(e) => {
                     setEditingCategory({ ...editingCategory, category_name: e.target.value });
                   }}
                 />
-                <button type="submit">Сохранить</button>
+                <button type="submit">{<FontAwesomeIcon icon={faFloppyDisk} />}</button>
                 <button type="button" onClick={() => setEditingCategory(null)}>
-                  Отмена
+                  <FontAwesomeIcon icon={faXmark} />
                 </button>
               </form>
             ) : (

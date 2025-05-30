@@ -1,18 +1,18 @@
 .expense-category-manager {
   margin-top: 20px;
   padding: 20px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-medium);
   border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Легкая тень для объема */
+  background-color: var(--color-light-background);
+  box-shadow: 0 2px 4px var(--color-shadow-dark); /* Обновлено на общую переменную тени */
 }
 
 .expense-category-manager h2 {
-  color: #333;
+  color: var(--color-text-tertiary);
   margin-bottom: 20px; /* Увеличенный отступ снизу */
   text-align: center;
   font-size: 1.5rem; /* Увеличенный размер заголовка */
-  border-bottom: 1px solid #eee; /* Разделитель под заголовком */
+  border-bottom: 1px solid var(--color-border-light);
   padding-bottom: 15px; /* Отступ от разделителя */
 }
 
@@ -20,16 +20,19 @@
 .expense-category-manager input[type="text"] {
   width: 100%;
   padding: 10px 15px; /* Увеличенные отступы */
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-light);
   border-radius: 5px; /* Слегка скругленные углы */
   font-size: 1rem;
   box-sizing: border-box; /* Включает padding и border в общую ширину */
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  background-color: var(--color-light-background);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 4px var(--color-shadow-light); /* Обновлено на общую переменную тени */
 }
 
 .expense-category-manager input[type="text"]:focus {
-  border-color: #007bff; /* Подсветка рамки при фокусе */
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.2); /* Легкая тень при фокусе */
+  border-color: var(--color-blue-accent);
+  box-shadow: 0 0 5px var(--color-blue-accent-shadow-light);
   outline: none; /* Убрать стандартный outline */
 }
 
@@ -54,19 +57,17 @@
 }
 
 .category-form button {
-  background-color: #6200ea;
-  color: white;
+  background-color: var(--color-purple-primary);
+  color: var(--color-accent);
 }
 
 .category-form button:hover {
-  background-color: #4b00ad; /* Темнее при наведении */
+  background-color: var(--color-purple-hover);
 }
 
 .category-list {
   list-style: none;
-  padding: 0;
-  border: 1px solid #eee; /* Общие границы для списка */
-  border-radius: 5px;
+  padding: 1px;
   max-height: 300px; /* Ограничение высоты, если категорий много */
   overflow-y: auto; /* Прокрутка, если категорий много */
   margin-top: 20px;
@@ -77,24 +78,21 @@
   justify-content: space-between; /* Распределение пространства */
   align-items: center; /* Выравнивание по центру по вертикали */
   padding: 10px 15px; /* Увеличенный внутренний отступ */
-  border-bottom: 1px solid #eee; /* Разделитель */
-  background-color: #fff; /* Фон элемента */
-  transition: background-color 0.2s ease-in-out; /* Плавное изменение фона */
+  margin: 15px 0;
+  border-radius: 5px;
+  transition: background-color 0.2s ease-in-out;
+  box-shadow: 0 1px 4px var(--color-shadow-light); /* Обновлено на общую переменную тени */
 }
 
 .category-item:last-child {
   border-bottom: none; /* Убрать границу у последнего элемента */
 }
 
-.category-item:hover {
-  background-color: #f5f5f5; /* Изменение фона при наведении */
-}
-
 .category-item span {
   flex-grow: 1; /* Позволяет названию категории занимать доступное пространство */
   margin-right: 15px; /* Отступ справа от названия до кнопок */
   font-size: 1rem; /* Размер шрифта */
-  color: #333; /* Цвет текста */
+  color: var(--color-text-tertiary);
 }
 
 .category-item .actions {
@@ -105,7 +103,7 @@
 
 .icon-button {
   background-color: transparent; /* Прозрачный фон */
-  border: 1px solid #ccc; /* Легкая рамка для видимости */
+  border: 1px solid var(--color-border-dark);
   cursor: pointer;
   padding: 5px; /* Увеличенный паддинг для легкого нажатия */
   border-radius: 4px;
@@ -115,34 +113,34 @@
   transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, border-color 0.2s ease-in-out;
   width: 34px; /* Фиксированная ширина для выравнивания */
   height: 34px; /* Фиксированная высота */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Легкая тень */
+  box-shadow: 0 1px 2px var(--color-shadow-light); /* Обновлено на общую переменную тени */
 }
 
 .icon-button:hover {
-  background-color: #e0e0e0; /* Легкий фон при наведении */
+  background-color: var(--color-highlight);
   transform: translateY(-1px); /* Небольшой подъем при наведении */
 }
 
 .icon-button svg {
   width: 18px; /* Размер иконки */
   height: 18px; /* Размер иконки */
-  color: #000; /* Цвет иконки (черный) */
+  color: var(--color-text-primary);
 }
 
 .edit-button svg {
-   color: #007bff; /* Синий цвет для иконки редактирования */
+   color: var(--color-blue-accent);
 }
 
 .edit-button:hover svg {
-   color: #0056b3; /* Чуть темнее синий при наведении */
+   color: var(--color-blue-accent-hover);
 }
 
 .delete-button svg {
-   color: #dc3545; /* Красный цвет для иконки удаления */
+   color: var(--theme-danger); /* Заменено на theme переменную */
 }
 
 .delete-button:hover svg {
-   color: #c82333; /* Чуть темнее красный при наведении */
+   color: var(--color-danger-hover);
 }
 
 .edit-form {
@@ -156,18 +154,18 @@
 }
 
 .edit-form button {
-  background-color: #28a745;
-  color: white;
+  background-color: var(--theme-success); /* Заменено на theme переменную */
+  color: var(--color-accent);
 }
 
 .edit-form button:hover {
-  background-color: #218838;
+  background-color: var(--color-success-hover);
 }
 
 .edit-form button[type="button"] {
-  background-color: #6c757d;
+  background-color: var(--color-secondary-button);
 }
 
 .edit-form button[type="button"]:hover {
-  background-color: #5a6268;
+  background-color: var(--color-secondary-button-hover);
 }

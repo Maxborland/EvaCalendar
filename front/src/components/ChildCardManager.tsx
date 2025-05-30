@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
 import { addChild, type Child, deleteChild, getAllChildren, updateChild } from '../services/api';
 import './ChildCardManager.css';
@@ -48,7 +49,7 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
 
   return (
     <form onSubmit={handleSubmit} className="child-form">
-      <h3>{initialChild ? 'Редактировать карточку ребенка' : 'Добавить новую карточку ребенка'}</h3>
+      <h3>{initialChild ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
       <label>
         Имя ребенка:
         <input type="text" name="childName" value={formData.childName} onChange={handleChange} required />
@@ -59,7 +60,18 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
       </label>
       <label>
         Телефон родителя:
-        <input type="text" name="parentPhone" value={formData.parentPhone || ''} onChange={handleChange} />
+        <IMaskInput
+          mask={'+{7} (000) 000-00-00'}
+          value={formData.parentPhone || ''}
+          onAccept={(value: string) => {
+            setFormData(prev => ({
+              ...prev,
+              parentPhone: value,
+            }));
+          }}
+          type="tel"
+          name="parentPhone"
+        />
       </label>
       <label>
         Адрес:
@@ -136,7 +148,7 @@ const ChildCardManager: React.FC = () => {
 
       {!showForm && (
         <button className="add-button" onClick={() => { setShowForm(true); setEditingChild(undefined); }}>
-          Добавить новую карточку ребенка
+          Добавить карточку ребенка
         </button>
       )}
 

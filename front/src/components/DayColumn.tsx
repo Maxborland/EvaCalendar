@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNav } from '../context/NavContext';
 import { deleteTask, duplicateTask, getTasksByWeekAndDay, moveTask } from '../services/api';
+import './DayColumn.css';
 import TaskForm from './TaskForm';
 import TaskItem from './TaskItem';
 
@@ -175,6 +176,7 @@ const { setIsNavVisible, setIsModalOpen } = useNav();
           onClose={handleCloseForm}
         />
       )}
+      <button className="add-task-button" onClick={() => handleOpenForm()}>Добавить дело</button>
     </div>
   );
 };

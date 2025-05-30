@@ -1,6 +1,7 @@
 import axios from 'axios'; // Импортируем axios для проверки ошибок
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom'; // Импортируем ReactDOM для Portal
+import { IMaskInput } from 'react-imask'; // Импортируем IMaskInput
 import { createTask, getAllChildren, getChildById, getExpenseCategories, updateTask, type Child } from '../services/api'; // Импортируем функции API
 import './TaskForm.css';
 
@@ -276,12 +277,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
               {/* Новое поле для телефона родителя */}
               <div className="form-group">
                 <label htmlFor="parentPhone" className="label">Телефон родителя:</label>
-                <input
-                  type="tel" // Используем тип tel для лучшей семантики
-                  id="parentPhone"
-                  name="parentPhone"
+                <IMaskInput
+                  mask={'+{7} (000) 000-00-00'}
                   value={formData.parentPhone || ''}
-                  onChange={handleChange}
+                  onAccept={(value: string) => {
+                    setFormData((prevData) => ({
+                      ...prevData,
+                      parentPhone: value,
+                    }));
+                  }}
+                  name="parentPhone"
+                  id="parentPhone"
+                  type="tel"
                   className="input"
                   readOnly // Только для чтения
                 />
@@ -444,6 +451,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     return null; // Или выбросить ошибку, если modal-root не найден
   }
 
+  // Используем ReactDOM.createPortal для рендеринга модального окна вне основного DOM-потока.
+  // Это помогает избежать проблем с z-index и позиционированием.
   return ReactDOM.createPortal(modalContent, modalRoot);
 };
 

@@ -1,0 +1,19 @@
+.add-task-button {
+  background-color: var(--theme-success); /* Green - Заменено на theme переменную */
+  border: none;
+  color: var(--color-accent);
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: block; /* Изменяем на block для занятия всей ширины */
+  font-size: 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  border-radius: 5px;
+  width: 100%; /* Занимаем всю доступную ширину */
+  box-sizing: border-box; /* Учитываем padding и border в ширине */
+}
+
+.add-task-button:hover {
+  background-color: var(--color-success-hover);
+}

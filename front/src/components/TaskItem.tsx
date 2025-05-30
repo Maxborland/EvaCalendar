@@ -1,3 +1,6 @@
+import { faClone } from '@fortawesome/free-solid-svg-icons/faClone';
+import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useRef } from 'react';
 import { useDrag } from 'react-dnd';
 import styled from 'styled-components';
@@ -158,10 +161,10 @@ const TaskItem: React.FC<TaskItemProps> = (props) => {
         </TaskInfoContainer>
         <ButtonContainer>
           <ActionButton className="delete" onClick={(e) => { e.stopPropagation(); onDelete(id || ''); }}>
-            🗑️
+            <FontAwesomeIcon icon={faTrash} />
           </ActionButton>
           <ActionButton className="duplicate" onClick={(e) => { e.stopPropagation(); onDuplicate(id || ''); }}>
-            📄
+            <FontAwesomeIcon icon={faClone} />
           </ActionButton>
         </ButtonContainer>
       </div>

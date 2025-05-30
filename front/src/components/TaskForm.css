@@ -4,22 +4,22 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-modal-overlay-background);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .modal-content {
-  background: #282c34; /* Темный фон */
-  color: white; /* Белый текст для контраста */
+  background: var(--color-modal-background);
+  color: var(--color-accent);
   padding: 20px 20px 0px 20px; /* Уменьшаем нижний отступ, чтобы кнопка submit была близко к низу */
   border-radius: 8px;
   width: 90%;
   height: 90vh; /* Почти на весь экран по высоте */
   max-width: 90%; /* Разрешаем шире на больших экранах */
   max-height: 90vh; /* Максимальная высота, чтобы не выходить за пределы окна */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px var(--color-shadow-light); /* Обновлено на общую переменную тени */
   position: relative;
   display: flex; /* Используем flexbox для внутреннего содержимого */
   flex-direction: column; /* Элементы внутри будут располагаться вертикально */
@@ -36,7 +36,7 @@
   border: none;
   font-size: 1.5em;
   cursor: pointer;
-  color: white; /* Цвет для крестика */
+  color: var(--color-accent);
 }
 
 .form {
@@ -57,31 +57,31 @@
 .label {
   margin-bottom: 5px;
   font-weight: bold;
-  color: #dddddd; /* Светло-серый цвет для меток */
+  color: var(--color-border-light);
 }
 
 .input {
   padding: 8px;
-  border: 1px solid #555; /* Темная рамка */
+  border: 1px solid var(--color-border-medium);
   border-radius: 4px;
   font-size: 1em;
-  background-color: #333; /* Темный фон для полей ввода */
-  color: white; /* Белый текст внутри полей ввода */
+  background-color: var(--color-input-background);
+  color: var(--color-accent);
 }
 
 .textarea {
   padding: 8px;
-  border: 1px solid #555; /* Темная рамка */
+  border: 1px solid var(--color-border-medium);
   border-radius: 4px;
   font-size: 1em;
   min-height: 80px;
-  background-color: #333; /* Темный фон для полей ввода */
-  color: white; /* Белый текст внутри полей ввода */
+  background-color: var(--color-input-background);
+  color: var(--color-accent);
 }
 
 .submit-button {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--color-blue-accent);
+  color: var(--color-accent);
   border: none;
   border-radius: 5px;
   padding: 10px 15px;
@@ -92,5 +92,5 @@
 }
 
 .submit-button:hover {
-  background-color: #0056b3;
+  background-color: var(--color-blue-accent-hover);
 }

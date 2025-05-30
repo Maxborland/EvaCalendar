@@ -1,14 +1,101 @@
+@import './styles/theme.css';
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-  --color-background-soft: #2a2a2a;
-  --color-text-primary: rgba(255, 255, 255, 0.87);
-  --color-accent: #646cff;
+  /* Цветовая палитра на основе 5 основных цветов */
+  /*
+  Палитра основана на 5 базовых цветах:
+  1. Primary (Акцентный синий/фиолетовый)
+  2. Success (Зеленый)
+  3. Danger (Красный)
+  4. Info (Синий)
+  5. Neutral (Оттенки серого от белого до черного)
+  */
+
+  /* Базовые цвета (темная тема) */
+  --color-primary-base: var(--theme-primary);
+  --color-success-base: var(--theme-success);
+  --color-danger-base: var(--theme-danger);
+  --color-info-base: var(--theme-info);
+
+  /* Нейтральные (оттенки серого) (темная тема): от светлого к темному */
+  --color-neutral-0: var(--theme-light);             /* Чистый белый */
+  --color-neutral-10: color-mix(in srgb, var(--theme-light) 87%, transparent); /* Основной светлый текст */
+  --color-neutral-20: var(--theme-gray-light);               /* Очень светлый серый (border-light) */
+  --color-neutral-30: color-mix(in srgb, var(--theme-gray-light) 80%, var(--theme-gray-medium));               /* Светлый серый (text-tertiary, border-dark light theme) */
+  --color-neutral-40: color-mix(in srgb, var(--theme-gray-medium) 70%, var(--theme-gray-light));               /* Средне-светлый серый (text-secondary) */
+  --color-neutral-50: var(--theme-gray-medium);               /* Средне-темный серый (placeholder) */
+  --color-neutral-60: color-mix(in srgb, var(--theme-gray-medium) 50%, var(--theme-gray-dark));               /* Темнее чем 50 (border-medium light theme; placeholder light theme) */
+  --color-neutral-70: color-mix(in srgb, var(--theme-gray-dark) 70%, var(--theme-gray-medium));               /* Темно-серый (border-medium) */
+  --color-neutral-80: color-mix(in srgb, var(--theme-gray-dark) 90%, var(--theme-dark));               /* Очень темно-серый (dashed-border-dark) */
+  --color-neutral-90: var(--theme-gray-dark);            /* Обычный серый (highlight dark) */
+  --color-neutral-100: color-mix(in srgb, var(--theme-gray-dark) 80%, var(--theme-dark));            /* Темно-серый (border-dark, input background) */
+  --color-neutral-110: color-mix(in srgb, var(--theme-dark) 80%, var(--theme-gray-dark));           /* Мягкий фон (background-soft) */
+  --color-neutral-120: color-mix(in srgb, var(--theme-dark) 90%, black);           /* Вторичный фон (secondary-background) */
+  --color-neutral-130: var(--theme-dark);           /* Третичный фон (tertiary-background) */
+  --color-neutral-140: var(--theme-dark);           /* Основной фон (primary-background) */
+  --color-neutral-150: color-mix(in srgb, var(--theme-dark) 90%, var(--theme-gray-dark));           /* Фон модального окна (modal-background) */
+
+  /* Общие функциональные переменные (для темной темы) */
+  --color-text-primary: var(--color-neutral-10);
+  --color-text-secondary: var(--color-neutral-40);
+  --color-text-tertiary: var(--color-neutral-120);
+  --color-placeholder: var(--color-neutral-50);
+
+  --color-background-soft: var(--color-neutral-110);
+  --color-primary-background: var(--color-neutral-140);
+  --color-secondary-background: var(--color-neutral-120);
+  --color-tertiary-background: var(--color-neutral-130);
+  --color-modal-background: var(--color-neutral-150);
+  --color-input-background: var(--color-neutral-100);
+
+  --color-accent: var(--theme-light); /* Общий акцент: белый в темной теме */
+  --color-highlight: var(--color-neutral-90);
+
+  --color-border-dark: var(--color-neutral-100);
+  --color-border-medium: var(--color-neutral-70);
+  --color-border-light: var(--color-neutral-20);
+  --color-dashed-border-dark: var(--color-neutral-80);
+
+  --color-blue-accent: var(--color-primary-base);
+  --color-blue-accent-hover: var(--theme-secondary); /* Чуть темнее базового синего */
+  --color-link-hover: var(--color-primary-base);
+  --color-blue-accent-shadow: rgba(var(--theme-info-rgb), 0.25);
+  --color-blue-accent-shadow-light: rgba(var(--theme-info-rgb), 0.2);
+
+  --color-danger-hover: color-mix(in srgb, var(--theme-danger) 80%, black);
+  --color-danger-background: color-mix(in srgb, var(--theme-danger) 20%, var(--theme-light));
+  --color-danger-border: color-mix(in srgb, var(--theme-danger) 50%, var(--theme-light));
+  --color-danger-text: color-mix(in srgb, var(--theme-danger) 90%, black);
+
+  --color-success-hover: color-mix(in srgb, var(--theme-success) 80%, black);
+  --color-success-background: color-mix(in srgb, var(--theme-success) 20%, var(--theme-light));
+  --color-success-border: color-mix(in srgb, var(--theme-success) 50%, var(--theme-light));
+  --color-success-text: color-mix(in srgb, var(--theme-success) 90%, black);
+
+  --color-secondary-button: var(--color-neutral-60); /* Используем нейтральный оттенок */
+  --color-secondary-button-hover: var(--color-neutral-70); /* Используем нейтральный оттенок */
+
+  --color-purple-primary: var(--theme-primary); /* Ближайший по значению к #535BF2 */
+  --color-purple-hover: color-mix(in srgb, var(--theme-primary) 80%, black);
+
+  --color-light-background: var(--theme-gray-light); /* Светлый фон (из SummaryBlock, используем как есть) */
+  --color-light-grey: var(--theme-gray-light);      /* Светло-серый (из SummaryBlock, используем как есть) */
+
+  --color-info-background: color-mix(in srgb, var(--theme-info) 20%, var(--theme-light));
+  --color-info-border: color-mix(in srgb, var(--theme-info) 50%, var(--theme-light));
+  --color-info-text: var(--color-info-base);
+
+  /* Тени (темная тема) */
+  --color-shadow-dark: rgba(var(--theme-dark-rgb), 1);
+  --color-shadow-medium: rgba(var(--theme-dark-rgb), 0.8);
+  --color-shadow-light: rgba(var(--theme-dark-rgb), 0.5);
+  --color-shadow-lighter: rgba(var(--theme-dark-rgb), 0.1);
+
+  --color-modal-overlay-background: rgba(var(--theme-dark-rgb), 0.5);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -18,15 +105,6 @@
 
 #root {
   margin: 0 auto; /* Центрирование контента */
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
 }
 
 body {
@@ -41,38 +119,95 @@ h1 {
   line-height: 1.1;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
-    --color-background-soft: #f0f0f0;
-    --color-text-primary: #213547;
-    --color-accent: #747bff;
+    /* Основные базовые цвета (переопределения для светлой темы) */
+    --color-primary-base: color-mix(in srgb, var(--theme-primary) 80%, var(--theme-light));
+    --color-success-base: var(--theme-success);
+    --color-danger-base: var(--theme-danger);
+    --color-info-base: var(--theme-info);
+
+    /* Нейтральные (оттенки серого) (светлая тема): от светлого к темному (в соответствии с темной темой, но с переопределенными значениями) */
+    --color-neutral-0: var(--theme-dark);                  /* Чистый черный (для текста) */
+    --color-neutral-10: var(--theme-dark);             /* Основной темно-серый текст */
+    --color-neutral-20: var(--theme-gray-dark);                /* Темно-серый (text, border) */
+    --color-neutral-30: color-mix(in srgb, var(--theme-gray-dark) 70%, var(--theme-gray-medium));                /* Средне-темный серый (text-secondary) */
+    --color-neutral-40: color-mix(in srgb, var(--theme-gray-medium) 50%, var(--theme-gray-dark));                /* Светлее серый (placeholder) */
+    --color-neutral-50: color-mix(in srgb, var(--theme-gray-light) 80%, var(--theme-gray-medium));                /* Светло-серый (border-medium) */
+    --color-neutral-60: color-mix(in srgb, var(--theme-gray-light) 85%, var(--theme-gray-medium));                /* Светло-серый (border-dark, dashed-border-dark) */
+    --color-neutral-70: color-mix(in srgb, var(--theme-gray-light) 95%, var(--theme-gray-medium));             /* Светло-серый (highlight light) */
+    --color-neutral-80: var(--theme-gray-light);             /* Light grey for summary today background */
+    --color-neutral-90: var(--theme-gray-light);             /* Background soft */
+    --color-neutral-100: color-mix(in srgb, var(--theme-gray-light) 98%, white);            /* Tertiary background */
+    --color-neutral-110: color-mix(in srgb, var(--theme-gray-light) 99%, white);            /* Light background */
+    --color-neutral-120: color-mix(in srgb, var(--theme-gray-light) 99%, white);            /* Secondary background */
+    --color-neutral-130: var(--theme-light);            /* Primary background, modal background */
+
+    /* Общие функциональные переменные (для светлой темы) */
+    --color-text-primary: var(--color-neutral-10);
+    --color-text-secondary: var(--color-neutral-30);
+    --color-text-tertiary: var(--color-neutral-20);
+    --color-placeholder: var(--color-neutral-40);
+
+    --color-background-soft: var(--color-neutral-90);
+    --color-primary-background: var(--color-neutral-130);
+    --color-secondary-background: var(--color-neutral-120);
+    --color-tertiary-background: var(--color-neutral-100);
+    --color-modal-background: var(--color-neutral-130);
+    --color-input-background: var(--color-neutral-90); /* Используем background-soft */
+
+    --color-accent: var(--color-primary-base); /* Общий акцент: синий в светлой теме */
+    --color-highlight: var(--color-neutral-70);
+
+    --color-border-dark: var(--color-neutral-60);
+    --color-border-medium: var(--color-neutral-50);
+    --color-border-light: var(--color-neutral-20);
+    --color-dashed-border-dark: var(--color-neutral-60);
+
+    --color-blue-accent: var(--color-primary-base);
+    --color-blue-accent-hover: var(--theme-secondary);
+    --color-link-hover: var(--color-primary-base);
+    --color-blue-accent-shadow: rgba(var(--theme-info-rgb), 0.25);
+    --color-blue-accent-shadow-light: rgba(var(--theme-info-rgb), 0.2);
+
+    --color-danger-hover: color-mix(in srgb, var(--theme-danger) 80%, black);
+    --color-danger-background: color-mix(in srgb, var(--theme-danger) 20%, var(--theme-light));
+    --color-danger-border: color-mix(in srgb, var(--theme-danger) 50%, var(--theme-light));
+    --color-danger-text: color-mix(in srgb, var(--theme-danger) 90%, black);
+
+    --color-success-hover: color-mix(in srgb, var(--theme-success) 80%, black);
+    --color-success-background: color-mix(in srgb, var(--theme-success) 20%, var(--theme-light));
+    --color-success-border: color-mix(in srgb, var(--theme-success) 50%, var(--theme-light));
+    --color-success-text: color-mix(in srgb, var(--theme-success) 90%, black);
+
+    --color-secondary-button: var(--color-neutral-90);
+    --color-secondary-button-hover: var(--color-neutral-100);
+
+    --color-purple-primary: var(--theme-primary); /* Уже переопределен --color-primary-base, но для консистентности */
+    --color-purple-hover: color-mix(in srgb, var(--theme-primary) 80%, black);
+
+    --color-light-background: var(--color-neutral-110);
+    --color-light-grey: var(--color-neutral-80);
+
+    --color-info-background: color-mix(in srgb, var(--theme-info) 20%, var(--theme-light));
+    --color-info-border: color-mix(in srgb, var(--theme-info) 50%, var(--theme-light));
+    --color-info-text: var(--color-info-base);
+
+    /* Тени (светлая тема) */
+    --color-shadow-dark: rgba(var(--theme-dark-rgb), 0.1);
+    --color-shadow-medium: rgba(var(--theme-dark-rgb), 0.1);
+    --color-shadow-light: rgba(var(--theme-dark-rgb), 0.1);
+    --color-shadow-lighter: rgba(var(--theme-dark-rgb), 0.05);
+
+    --color-modal-overlay-background: rgba(var(--theme-dark-rgb), 0.3);
+
+    --color-black: var(--theme-dark);
   }
   a:hover {
-    color: #747bff;
+    color: var(--color-accent);
   }
   button {
-    background-color: #f9f9f9;
+    background-color: var(--color-secondary-background);
   }
 }
 
@@ -85,9 +220,9 @@ button:focus-visible {
   top: 0;
   left: 0;
   width: 100%;
-  background-color: #242424;
+  background-color: var(--color-primary-background);
   padding: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* Тень сверху */
+  box-shadow: 0 2px 10px var(--color-shadow-dark); /* Тень сверху */
   box-sizing: border-box;
   z-index: 1000;
   box-sizing: border-box;
@@ -99,7 +234,7 @@ button:focus-visible {
 }
 
 #root .top-navigator .logo {
-  color: #fff;
+  color: var(--color-accent);
   font-size: 1.2em;
   font-weight: bold;
 }
@@ -108,17 +243,17 @@ button:focus-visible {
   padding: 12px 20px;
   font-size: 1em;
   border-radius: 5px;
-  border: 1px solid #646cff;
-  background-color: #1a1a1a;
-  color: #ffffff;
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-secondary-background);
+  color: var(--color-accent);
   cursor: pointer;
   transition: background-color 0.3s ease;
   box-sizing: border-box;
 }
 
 #root .top-navigator .settings-button:hover {
-  background-color: #646cff;
-  color: #fff;
+  background-color: var(--color-accent);
+  color: var(--color-primary-background); /* Invert for hover */
 }
 
 /* WeekView Component Styles */
@@ -138,9 +273,9 @@ button:focus-visible {
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #242424;
+  background-color: var(--color-primary-background);
   padding: 10px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 -2px 10px var(--color-shadow-dark);
   z-index: 1000;
   box-sizing: border-box;
   transition: transform 0.3s ease-in-out; /* Добавляем плавность перехода */
@@ -154,9 +289,9 @@ button:focus-visible {
   padding: 12px 20px;
   font-size: 1em;
   border-radius: 5px;
-  border: 1px solid #646cff;
-  background-color: #1a1a1a;
-  color: #ffffff;
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-secondary-background);
+  color: var(--color-accent);
   cursor: pointer;
   transition: background-color 0.3s ease;
   flex-grow: 1;
@@ -173,13 +308,13 @@ button:focus-visible {
 }
 
 .navigation-buttons button:hover {
-  background-color: #646cff;
-  color: #fff;
+  background-color: var(--color-accent);
+  color: var(--color-primary-background); /* Invert for hover */
 }
 
 h2 {
-  color: #ffffff;
-  font-size: 1.8em;
+  color: var(--color-text-primary); /* Используем основной цвет текста */
+  font-size: 1.5em;
   margin-bottom: 20px;
 }
 
@@ -213,7 +348,7 @@ h2 {
 .second-half-of-week {
   flex: 0 0 50%; /* Каждая половина занимает 50% от ширины week-days-container (т.е. 100% видимой области) */
   padding: 10px;
-  border: 1px solid #333;
+  border: 1px solid var(--color-border-dark);
   border-radius: 8px;
   margin: 0 10px;
   display: flex; /* Делаем контент внутри flex-контейнером */
@@ -230,7 +365,7 @@ h2 {
 
 .day-column {
   flex: 1;
-  background-color: #1e1e1e;
+  background-color: var(--color-tertiary-background);
   border-radius: 8px;
   padding: 10px;
   min-width: 120px; /* Минимальная ширина колонки для лучшей адаптивности */
@@ -238,21 +373,21 @@ h2 {
 }
 
 .day-column.today-highlight {
-  background-color: #3a3a3a; /* Более темный фон для выделения */
-  border: 1px solid #007bff; /* Синяя рамка */
+  background-color: var(--color-highlight); /* Более темный фон для выделения */
+  border: 1px solid var(--color-blue-accent); /* Синяя рамка */
 }
 
 @media (prefers-color-scheme: light) {
   .day-column.today-highlight {
-    background-color: #e0e0e0; /* Светлее для светлой темы */
-    border: 1px solid #007bff;
+    background-color: var(--color-highlight); /* Светлее для светлой темы */
+    border: 1px solid var(--color-blue-accent);
   }
 }
 
 .day-column h3 {
   margin-top: 0;
   margin-bottom: 10px;
-  color: #646cff; /* Цвет заголовка дня */
+  color: var(--color-text-primary); /* Цвет заголовка дня */
 }
 
 .day-cells {
@@ -262,75 +397,75 @@ h2 {
 }
 
 .day-cell-empty, .task-item {
-  background-color: #2a2a2a;
-  border: 1px dashed #555;
+  background-color: var(--color-background-soft);
+  border: 1px dashed var(--color-border-medium);
   border-radius: 4px;
   min-height: 40px; /* Высота для пустых ячеек и элементов дел */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #aaa;
+  color: var(--color-text-secondary);
   font-size: 0.9em;
 }
 
 @media (prefers-color-scheme: light) {
   #root .top-navigator {
-    background-color: #ffffff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    background-color: var(--color-primary-background);
+    box-shadow: 0 2px 10px var(--color-shadow-dark);
   }
 
   #root .top-navigator .logo {
-    color: #213547;
+    color: var(--color-text-primary);
   }
 
   #root .top-navigator .settings-button {
-    background-color: #f0f0f0;
-    color: #213547;
-    border-color: #747bff;
+    background-color: var(--color-background-soft);
+    color: var(--color-text-primary);
+    border-color: var(--color-accent);
   }
 
   #root .top-navigator .settings-button:hover {
-    background-color: #747bff;
-    color: #fff;
+    background-color: var(--color-accent);
+    color: var(--color-primary-background); /* Invert for hover */
   }
 
   .navigation-buttons {
-    background-color: #ffffff; /* Светлый фон для кнопок навигации */
+    background-color: var(--color-primary-background); /* Светлый фон для кнопок навигации */
   }
 
   .navigation-buttons button {
-    background-color: #f0f0f0;
-    color: #213547;
-    border-color: #747bff;
+    background-color: var(--color-background-soft);
+    color: var(--color-text-primary);
+    border-color: var(--color-accent);
   }
 
 
   .navigation-buttons button:hover {
-    background-color: #747bff;
-    color: #fff;
+    background-color: var(--color-accent);
+    color: var(--color-primary-background); /* Invert for hover */
   }
 
   h2 {
-    color: #213547;
+    color: var(--color-text-primary);
   }
 
   .first-half-of-week,
   .second-half-of-week {
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border-dark);
   }
 
   .day-column {
-    background-color: #f5f5f5;
+    background-color: var(--color-tertiary-background);
   }
 
   .day-column h3 {
-    color: #747bff;
+    color: var(--color-accent);
   }
 
   .day-cell-empty, .task-item {
-    background-color: #e0e0e0;
-    border: 1px dashed #bbb;
-    color: #555;
+    background-color: var(--color-highlight);
+    border: 1px dashed var(--color-border-medium);
+    color: var(--color-text-secondary);
   }
 }
 
@@ -340,10 +475,10 @@ h2 {
   width: 100%;
   padding: 8px;
   margin-top: 10px;
-  border: 1px solid #555;
+  border: 1px solid var(--color-border-medium);
   border-radius: 4px;
-  background-color: #2a2a2a;
-  color: #ccc;
+  background-color: var(--color-background-soft);
+  color: var(--color-text-tertiary);
   min-height: 120px;
   resize: vertical;
 }
@@ -353,45 +488,45 @@ h2 {
   margin-top: 10px;
   padding: 8px 15px;
   border-radius: 5px;
-  border: 1px solid #646cff;
-  background-color: #1a1a1a;
-  color: #ffffff;
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-secondary-background);
+  color: var(--color-accent);
   cursor: pointer;
   transition: background-color 0.3s ease;
   font-size: 0.9em;
 }
 
 .note-field-container button:hover {
-  background-color: #646cff;
-  color: #fff;
+  background-color: var(--color-accent);
+  color: var(--color-primary-background); /* Invert for hover */
 }
 
 @media (prefers-color-scheme: light) {
   .note-textarea {
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    color: #333;
+    background-color: var(--color-tertiary-background);
+    border: 1px solid var(--color-border-dark);
+    color: var(--color-text-tertiary);
   }
 
   .note-field-container button {
-    background-color: #f0f0f0;
-    color: #213547;
-    border-color: #747bff;
+    background-color: var(--color-background-soft);
+    color: var(--color-text-primary);
+    border-color: var(--color-accent);
   }
 
   .note-field-container button:hover {
-    background-color: #747bff;
-    color: #fff;
+    background-color: var(--color-accent);
+    color: var(--color-primary-background); /* Invert for hover */
   }
 }
 /* Summary Block Styles */
 .summary-block {
-    background-color: #2a2a2a; /* Темный фон для контраста */
+    background-color: var(--color-background-soft); /* Темный фон для контраста */
     padding: 20px;
     border-radius: 8px;
     text-align: center;
     margin-bottom: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Небольшая тень для глубины */
+    box-shadow: 0 4px 8px var(--color-shadow-light); /* Небольшая тень для глубины */
 }
 
 
@@ -403,20 +538,20 @@ h2 {
 
 .summary-block p {
     margin: 8px 0; /* Отступы между строками */
-    color: #ccc; /* Светлый цвет текста для читаемости */
+    color: var(--color-text-tertiary); /* Светлый цвет текста для читаемости */
     font-size: 1.1em;
 }
 
 .summary-block .summary-block-title {
     font-size: 1.3em;
     font-weight: bold;
-    color: #ffffff; /* Белый цвет для заголовка */
+    color: var(--color-accent); /* Белый цвет для заголовка */
     margin-bottom: 15px;
 }
 
 .summary-block .summary-block-week {
     font-size: 1em;
-    color: #aaa;
+    color: var(--color-text-secondary);
     margin-top: 15px;
 }
 
@@ -433,42 +568,42 @@ h2 {
 
 .summary-block .summary-block-value {
     font-weight: bold;
-    color: #ffffff; /* Белый цвет для значений */
+    color: var(--color-accent); /* Белый цвет для значений */
     font-size: 1.2em;
 }
 
 @media (prefers-color-scheme: light) {
     .summary-block {
-        background-color: #f0f0f0; /* Светлый фон для светлой темы */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: var(--color-background-soft); /* Светлый фон для светлой темы */
+        box-shadow: 0 4px 8px var(--color-shadow-light);
     }
     .summary-block p {
-        color: #333;
+        color: var(--color-text-tertiary);
     }
     .summary-block .summary-block-title,
     .summary-block .summary-block-value {
-        color: #000;
+        color: var(--color-black);
     }
     .summary-block .summary-block-week {
-        color: #555;
+        color: var(--color-text-secondary);
     }
 
     /* No Tasks Message Styles */
     .no-tasks-message {
         text-align: center;
         padding: 15px;
-        color: #888;
+        color: var(--color-placeholder);
         font-style: italic;
         font-size: 0.9em;
-        border: 1px dashed #444;
+        border: 1px dashed var(--color-dashed-border-dark);
         border-radius: 4px;
         margin-top: 10px;
     }
 
     @media (prefers-color-scheme: light) {
         .no-tasks-message {
-            color: #666;
-            border: 1px dashed #ccc;
+            color: var(--color-placeholder);
+            border: 1px dashed var(--color-dashed-border-dark);
         }
     }
 }
@@ -478,7 +613,7 @@ h2 {
     text-align: center;
     padding: 20px;
     font-size: 1.2em;
-    color: #646cff; /* Цвет текста загрузки */
+    color: var(--color-accent); /* Цвет текста загрузки */
     animation: pulse 1.5s infinite ease-in-out; /* Анимация пульсации */
 }
 
@@ -499,7 +634,7 @@ h2 {
 
 @media (prefers-color-scheme: light) {
     .loading-indicator {
-        color: #747bff; /* Цвет текста загрузки для светлой темы */
+        color: var(--color-accent); /* Цвет текста загрузки для светлой темы */
     }
 }
 
@@ -573,7 +708,7 @@ h2 {
 .top-navigator {
     background-color: var(--color-background-soft);
     color: var(--color-text-primary);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px var(--color-shadow-light);
     z-index: 1000;
 }
 
@@ -586,8 +721,8 @@ h2 {
 /* TopNavigator specific styles */
 .top-navigator {
   height: var(--navigation-height); /* Use the --navigation-height variable */
-  background-color: var(--navigation-background-color);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: var(--theme-gray-dark); /* Fallback, should be defined per theme */
+  box-shadow: 0 2px 5px var(--color-shadow-light);
   transition: transform 0.3s ease-in-out;
   z-index: 1000;
 }
@@ -609,12 +744,12 @@ h2 {
 .top-navigator .settings-button {
   background: none;
   border: none;
-  color: var(--navigation-icon-color);
+  color: var(--theme-light); /* Fallback, should be defined per theme */
   font-size: 1.5rem; /* Adjust as needed */
   cursor: pointer;
   padding: 0 1rem;
 }
 
 .top-navigator .settings-button:hover {
-  color: var(--navigation-icon-hover-color);
+  color: var(--theme-primary); /* Fallback, should be defined per theme */
 }
