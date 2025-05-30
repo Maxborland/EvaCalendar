@@ -2,7 +2,7 @@ import type { Moment } from 'moment';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNav } from '../context/NavContext';
-import { getDailySummary, getWeeklySummary } from '../services/api';
+import { getDailySummary, getMonthlySummary, type SummaryData } from '../services/api';
 import SummaryBlock from './SummaryBlock';
 import WeekDaysScroller from './WeekDaysScroller';
 import WeekNavigator from './WeekNavigator';
@@ -12,8 +12,8 @@ const WeekView: React.FC = () => {
   const [weekInfo, setWeekInfo] = useState<{ id: string | null; startDate: string; endDate: string }>({ id: null, startDate: '', endDate: '' });
   const [today] = useState(moment()); // Состояние для получения текущего дня
   const [weekDays, setWeekDays] = useState<Moment[]>([]); // Добавляем состояние для дней недели
-  const [dailySummary, setDailySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для дневной сводки
-  const [weeklySummary, setWeeklySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для недельной сводки
+  const [dailySummary, setDailySummary] = useState<SummaryData>({ totalIncome: 0, totalExpense: 0, balance: 0 }); // Добавляем состояние для дневной сводки
+  const [monthlySummary, setMonthlySummary] = useState<SummaryData>({ totalIncome: 0, totalExpense: 0, balance: 0 }); // Добавляем состояние для месячной сводки
   const [isLoading, setIsLoading] = useState(true); // Состояние для отслеживания загрузки
   const { isNavVisible, setIsNavVisible, isModalOpen } = useNav(); // Состояние для видимости навигации из контекста
 
@@ -69,9 +69,10 @@ const WeekView: React.FC = () => {
         const daily = await getDailySummary(weekInfo.id, dayOfWeekNumber.toString());
         setDailySummary(daily);
 
-        // Получаем сводку за неделю
-        const weekly = await getWeeklySummary(weekInfo.id);
-        setWeeklySummary(weekly);
+
+        // Получаем сводку за месяц
+        const monthly = await getMonthlySummary(currentDate.year(), currentDate.month() + 1); // moment.month() возвращает 0-11
+        setMonthlySummary(monthly);
       }
     } catch (error) {
       console.error('Error fetching summary:', error);
@@ -146,8 +147,7 @@ const WeekView: React.FC = () => {
             <SummaryBlock
               today={today}
               dailySummary={dailySummary}
-              weeklySummary={weeklySummary}
-              weekInfo={weekInfo}
+              monthlySummary={monthlySummary} // Передаем monthlySummary
             />
           </div>
           <WeekDaysScroller

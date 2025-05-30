@@ -1,21 +1,20 @@
 import type { Moment } from 'moment';
-import moment from 'moment';
 import React from 'react';
+import type { SummaryData } from '../services/api';
 
 interface SummaryBlockProps {
   today: Moment;
-  dailySummary: { totalIncome: number; totalExpense: number };
-  weeklySummary: { totalIncome: number; totalExpense: number };
-  weekInfo: { startDate: string; endDate: string };
+  dailySummary: SummaryData;
+  monthlySummary: SummaryData;
 }
 
 const SummaryBlock: React.FC<SummaryBlockProps> = ({
-  today,
-  dailySummary,
-  weeklySummary,
-  weekInfo,
-}) => (
-  <div className="summary-block compact-summary">
+    today,
+    dailySummary,
+    monthlySummary,
+}) => {
+    return (
+        <div className="summary-block compact-summary">
     <p className="summary-block-title">
       Сегодня: {today.format('D MMMM YYYY')}
     </p>
@@ -33,25 +32,30 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
         </span>
       </p>
     </div>
-    <div className="summary-block-row">
-      <p>
-        Заработано за неделю:{' '}
-        <span className="summary-block-value">
-          {weeklySummary.totalIncome.toFixed(2)}₽
-        </span>
-      </p>
-      <p>
-        Потрачено за неделю:{' '}
-        <span className="summary-block-value">
-          {weeklySummary.totalExpense.toFixed(2)}₽
-        </span>
-      </p>
-    </div>
-    <p className="summary-block-week">
-      Неделя: {moment(weekInfo.startDate).format('D MMM YY')} -{' '}
-      {moment(weekInfo.endDate).format('D MMM YY')}
+   <div className="summary-block-row">
+     <p>
+       Заработано за месяц:{' '}
+       <span className="summary-block-value">
+         {monthlySummary.totalIncome.toFixed(2)}₽
+       </span>
+     </p>
+     <p>
+       Потрачено за месяц:{' '}
+       <span className="summary-block-value">
+         {monthlySummary.totalExpense.toFixed(2)}₽
+       </span>
+     </p>
+   </div>
+  <div className="summary-block-row">
+    <p>
+      Остаток средств:{' '}
+      <span className="summary-block-value">
+        {monthlySummary.balance?.toFixed(2) ?? '0.00'}₽
+      </span>
     </p>
   </div>
-);
+ </div>
+   );
+};
 
 export default SummaryBlock;

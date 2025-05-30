@@ -377,7 +377,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
                 <input
                   type="text"
                   id="title"
-                  name="name" // Используем name для описания расхода. Ошибку в первом решении.
+                  name="title" // Используем name для описания расхода.
                   value={formData.title || ''} // Используем title для описания расхода
                   onChange={handleChange}
                   required

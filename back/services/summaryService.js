@@ -29,9 +29,48 @@ class SummaryService {
       .sum('amountSpent as totalExpense')
       .first();
 
+    const totalIncome = income.totalIncome || 0;
+    const totalExpense = expenses.totalExpense || 0;
+    const balance = totalIncome - totalExpense;
+
     return {
-      totalIncome: income.totalIncome || 0,
-      totalExpense: expenses.totalExpense || 0,
+      totalIncome,
+      totalExpense,
+      balance,
+    };
+  }
+  async getMonthlySummary(year, month) {
+    // Получаем все weekId, относящиеся к указанному году и месяцу
+    const weeksInMonth = await knex('weeks')
+      .whereRaw('strftime("%Y-%m", startDate) = ?', [`${year}-${String(month).padStart(2, '0')}`])
+      .select('id');
+
+    const weekIds = weeksInMonth.map(week => week.id);
+
+    if (weekIds.length === 0) {
+      return { totalIncome: 0, totalExpense: 0 };
+    }
+
+    const income = await knex('tasks')
+      .whereIn('weekId', weekIds)
+      .andWhere({ type: 'income' })
+      .sum('amountEarned as totalIncome')
+      .first();
+
+    const expenses = await knex('tasks')
+      .whereIn('weekId', weekIds)
+      .andWhere({ type: 'expense' })
+      .sum('amountSpent as totalExpense')
+      .first();
+
+    const totalIncome = income.totalIncome || 0;
+    const totalExpense = expenses.totalExpense || 0;
+    const balance = totalIncome - totalExpense;
+
+    return {
+      totalIncome,
+      totalExpense,
+      balance,
     };
   }
 }

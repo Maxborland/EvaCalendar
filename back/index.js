@@ -70,6 +70,7 @@ app.delete('/children/:id', deleteChild);
 import summaryController, { validateSummary } from './controllers/summaryController.js';
 app.get('/summary/:weekId', validateSummary.getWeeklySummary, summaryController.getWeeklySummary);
 app.get('/summary/:weekId/:dayOfWeek', validateSummary.getDailySummary, summaryController.getDailySummary);
+app.get('/summary/month/:year/:month', validateSummary.getMonthlySummary, summaryController.getMonthlySummary);
 
 import errorHandler from './middleware/errorHandler.js';
 

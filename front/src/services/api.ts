@@ -11,6 +11,7 @@ export interface ExpenseCategory {
 export interface SummaryData {
   totalIncome: number;
   totalExpense: number;
+  balance: number;
 }
 
 export interface Child {
@@ -84,6 +85,11 @@ export const getWeeklySummary = async (weekId: string) => {
 
 export const getDailySummary = async (weekId: string, dayOfWeek: string) => {
   const response = await api.get(`/summary/${weekId}/${dayOfWeek}`);
+  return response.data as SummaryData;
+};
+
+export const getMonthlySummary = async (year: number, month: number) => {
+  const response = await api.get(`/summary/month/${year}/${month}`);
   return response.data as SummaryData;
 };
 
