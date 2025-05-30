@@ -13,6 +13,16 @@ export interface SummaryData {
   totalExpense: number;
 }
 
+export interface Child {
+  id: number;
+  childName: string;
+  parentName: string;
+  parentPhone: string | null;
+  address: string | null;
+  hourlyRate: number | null;
+  comment: string | null;
+}
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -99,6 +109,35 @@ export const deleteExpenseCategory = async (id: number) => {
 
 export const getTasksByCategory = async (category: string) => {
   return api.get(`/tasks/category?name=${encodeURIComponent(category)}`);
+};
+
+// Children API
+export const getAllChildren = async () => {
+    const response = await api.get('/children');
+    return response.data as Child[];
+};
+
+export const getChildById = async (id: number) => {
+    const response = await api.get(`/children/${id}`);
+    return response.data as Child;
+};
+
+export const addChild = async (child: Omit<Child, 'id'>) => {
+    const response = await api.post('/children', child);
+    return response.data as Child;
+};
+
+export const updateChild = async (id: number, child: Child) => {
+    // Деструктурируем объект child, чтобы исключить поле 'id' из тела запроса
+    // При этом, childIdToExclude будет содержать значение id, но не будет отправлено в childDataToSend
+    const { id: childIdToExclude, ...childDataToSend } = child;
+    const response = await api.put(`/children/${id}`, childDataToSend);
+    return response.data as Child;
+};
+
+export const deleteChild = async (id: number) => {
+    const response = await api.delete(`/children/${id}`);
+    return response.data;
 };
 
 export default api;

@@ -458,8 +458,11 @@ h2 {
 
 /* Adjust padding for root and week-view on mobile */
 @media (max-width: 768px) {
-  #root, .week-view {
-    padding: 0; /* Remove padding from root and week-view to allow overflow */
+  .week-view {
+    padding: 0; /* Remove padding from week-view to allow overflow */
+    max-width: none; /* Remove max-width to allow overflow */
+  }
+  #root {
     max-width: none; /* Remove max-width to allow overflow */
   }
   body, html {
@@ -488,4 +491,13 @@ h2 {
     flex: 1;
     /* На десктопе у них уже будет 50% из column-half */
   }
+}
+/* Settings Page Styles */
+.settings-page-container {
+  padding: 16px;
+}
+
+.component-padding-x {
+  padding-left: 16px;
+  padding-right: 16px;
 }

@@ -1,18 +1,20 @@
 import axios from 'axios'; // Импортируем axios для проверки ошибок
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom'; // Импортируем ReactDOM для Portal
-import { createTask, getExpenseCategories, updateTask } from '../services/api'; // Импортируем функции API
+import { createTask, getAllChildren, getChildById, getExpenseCategories, updateTask, type Child } from '../services/api'; // Импортируем функции API
 import './TaskForm.css';
 
 interface TaskFormProps {
   initialData?: {
     id?: string;
     type: 'income' | 'expense';
-    title?: string; // Для income
+    title?: string | null; // Для income - может быть null
     time?: string; // Для income
     address?: string; // Для income
     childName?: string; // Для income
     hourlyRate?: number; // Для income
+    parentName?: string; // Новое поле
+    parentPhone?: string; // Новое поле
     comments?: string; // Для income, А ТАКЖЕ для expense
     category?: string; // Для expense
     amountEarned?: number; // Для income
@@ -26,14 +28,16 @@ interface TaskFormProps {
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onTaskSaved, onClose }) => {
-  const [formData, setFormData] = useState(initialData || {
-    id: undefined,
-    type: 'income',
-    title: '',
+  const [formData, setFormData] = useState({
+    id: undefined as string | undefined, // Default value, может быть string или undefined
+    type: 'income' as 'income' | 'expense', // Default value
+    title: '' as string | null, // Default value
     time: '',
     address: '',
     childName: '',
     hourlyRate: 0,
+    parentName: '',
+    parentPhone: '',
     comments: '',
     category: '',
     amountEarned: 0,
@@ -41,15 +45,34 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
     hoursWorked: 0,
   });
 
+  const [children, setChildren] = useState<Child[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        id: initialData.id,
+        type: initialData.type,
+        title: initialData.title ?? '',
+        time: initialData.time || '',
+        address: initialData.address || '',
+        childName: initialData.childName || '',
+        hourlyRate: initialData.hourlyRate || 0,
+        parentName: initialData.parentName || '',
+        parentPhone: initialData.parentPhone || '',
+        comments: initialData.comments || '',
+        category: initialData.category || '',
+        amountEarned: initialData.amountEarned || 0,
+        amountSpent: initialData.amountSpent || 0,
+        hoursWorked: initialData.hoursWorked || 0,
+      });
     }
   }, [initialData]);
 
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
+    // Загрузка категорий расходов
     const fetchCategories = async () => {
       try {
         const fetchedCategories = await getExpenseCategories();
@@ -59,16 +82,71 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
       }
     };
     fetchCategories();
-  }, []);
+
+    // Загрузка списка детей
+    const fetchChildren = async () => {
+      try {
+        const fetchedChildren = await getAllChildren();
+        setChildren(fetchedChildren);
+          // После загрузки детей, если есть initialData.childName, найти и установить selectedChildId
+          if (initialData?.childName) {
+            const foundChild = fetchedChildren.find(child => child.childName === initialData.childName);
+            if (foundChild) {
+              setSelectedChildId(foundChild.id);
+            }
+          }
+      } catch (error) {
+        console.error('Ошибка при загрузке детей:', error);
+      }
+    };
+    fetchChildren();
+  }, [initialData]);
+
+  useEffect(() => {
+    if (selectedChildId !== null) {
+      const fetchChildData = async () => {
+        try {
+          const childData = await getChildById(selectedChildId);
+          setFormData((prevData) => ({
+            ...prevData,
+            childName: childData.childName,
+            hourlyRate: childData.hourlyRate || 0, // Установим hourlyRate, если есть
+            address: childData.address || '',
+            parentName: childData.parentName || '', // Предзаполняем имя родителя
+            parentPhone: childData.parentPhone || '', // Предзаполняем телефон родителя
+            title: (prevData.title === '' || prevData.title === `Работать с ${prevData.childName}` || prevData.title === null) ? `Работать с ${childData.childName}` : prevData.title, // Предзаполняем название. Добавлено `prevData.title === null` для обработки null
+          }));
+        } catch (error) {
+          console.error('Ошибка при загрузке данных ребенка:', error);
+        }
+      };
+      fetchChildData();
+    } else {
+      // Сбросить поля, если ребенок не выбран
+      setFormData((prevData) => ({
+        ...prevData,
+        childName: '',
+        hourlyRate: 0,
+        address: '',
+        parentName: '', // Сбрасываем имя родителя
+        parentPhone: '', // Сбрасываем телефон родителя
+        title: initialData?.title ?? '', // Сбрасываем title, если не было initialData (используем ?? для null и undefined)
+      }));
+    }
+  }, [selectedChildId, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: (name === 'hourlyRate' || name === 'amountEarned' || name === 'amountSpent' || name === 'hoursWorked')
-        ? (value === '' ? 0 : parseFloat(value)) // Преобразуем пустую строку в 0 для числовых полей
-        : value,
-    }));
+    if (name === 'childSelect') {
+        setSelectedChildId(value === '' ? null : parseInt(value));
+    } else {
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: (name === 'hourlyRate' || name === 'amountEarned' || name === 'amountSpent' || name === 'hoursWorked')
+                ? (value === '' ? 0 : parseFloat(value)) // Преобразуем пустую строку в 0 для числовых полей
+                : value,
+        }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,6 +228,66 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
           {formData.type === 'income' && (
             <>
               <div className="form-group">
+                <label htmlFor="childSelect" className="label">Выбрать ребенка:</label>
+                <select
+                  id="childSelect"
+                  name="childSelect"
+                  value={selectedChildId !== null ? selectedChildId.toString() : ''}
+                  onChange={handleChange}
+                  className="input"
+                >
+                  <option value="">Не выбрано</option>
+                  {children.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.childName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Поле для отображения имени ребенка, будет заполняться из выбранного ребенка */}
+              <div className="form-group">
+                <label htmlFor="childName" className="label">Имя ребенка:</label>
+                <input
+                  type="text"
+                  id="childName"
+                  name="childName"
+                  value={formData.childName || ''}
+                  onChange={handleChange}
+                  className="input"
+                  readOnly // Это поле только для чтения
+                />
+              </div>
+
+              {/* Новое поле для имени родителя */}
+              <div className="form-group">
+                <label htmlFor="parentName" className="label">Имя родителя:</label>
+                <input
+                  type="text"
+                  id="parentName"
+                  name="parentName"
+                  value={formData.parentName || ''}
+                  onChange={handleChange}
+                  className="input"
+                  readOnly // Только для чтения
+                />
+              </div>
+
+              {/* Новое поле для телефона родителя */}
+              <div className="form-group">
+                <label htmlFor="parentPhone" className="label">Телефон родителя:</label>
+                <input
+                  type="tel" // Используем тип tel для лучшей семантики
+                  id="parentPhone"
+                  name="parentPhone"
+                  value={formData.parentPhone || ''}
+                  onChange={handleChange}
+                  className="input"
+                  readOnly // Только для чтения
+                />
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="title" className="label">Название:</label>
                 <input
                   type="text"
@@ -184,18 +322,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
                   value={formData.address || ''}
                   onChange={handleChange}
                   className="input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="childName" className="label">Имя ребенка:</label>
-                <input
-                  type="text"
-                  id="childName"
-                  name="childName"
-                  value={formData.childName || ''}
-                  onChange={handleChange}
-                  className="input"
+                  readOnly // Это поле будет заполняться из выбранного ребенка
                 />
               </div>
 
@@ -229,20 +356,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="amountEarned" className="label">Заработано (расчетное):</label>
-                <input
-                  type="number"
-                  id="amountEarned"
-                  name="amountEarned"
-                  value={formData.amountEarned ?? ''}
-                  step="0.01"
-                  min="0"
-                  placeholder="0"
-                  className="input"
-                  readOnly // Поле только для чтения, т.к. оно расчетное
-                />
-              </div>
 
               <div className="form-group">
                 <label htmlFor="comments" className="label">Комментарии:</label>
@@ -264,7 +377,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
                 <input
                   type="text"
                   id="title"
-                  name="title"
+                  name="name" // Используем name для описания расхода. Ошибку в первом решении.
                   value={formData.title || ''} // Используем title для описания расхода
                   onChange={handleChange}
                   required
@@ -319,7 +432,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, weekId, dayOfWeek, onT
           )}
 
           <button type="submit" className="submit-button">
-            {formData.id ? 'Сохранить изменения' : 'Создать дело'}
+            {formData.id ? 'Сохранить' : 'Создать дело'}
           </button>
         </form>
       </div>

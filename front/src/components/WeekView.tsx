@@ -1,6 +1,7 @@
 import type { Moment } from 'moment';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNav } from '../context/NavContext';
 import { getDailySummary, getWeeklySummary } from '../services/api';
 import SummaryBlock from './SummaryBlock';
 import WeekDaysScroller from './WeekDaysScroller';
@@ -14,7 +15,7 @@ const WeekView: React.FC = () => {
   const [dailySummary, setDailySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для дневной сводки
   const [weeklySummary, setWeeklySummary] = useState({ totalIncome: 0, totalExpense: 0 }); // Добавляем состояние для недельной сводки
   const [isLoading, setIsLoading] = useState(true); // Состояние для отслеживания загрузки
-  const [isNavVisible, setIsNavVisible] = useState(true); // Состояние для видимости навигации
+  const { isNavVisible, setIsNavVisible, isModalOpen } = useNav(); // Состояние для видимости навигации из контекста
 
   const fetchWeekInfo = useCallback(async () => {
     setIsLoading(true); // Начинаем загрузку
@@ -86,6 +87,8 @@ const WeekView: React.FC = () => {
   // Эффект для отслеживания прокрутки и скрытия/показа навигации
   useEffect(() => {
     const handleScroll = () => {
+      if (isModalOpen) return; // Если модальное окно открыто, отключаем логику прокрутки
+
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
       // Если прокручена донизу, то скрыть навигацию, иначе показать
       if (scrollTop + clientHeight >= scrollHeight - 20) { // -20 для небольшого отступа снизу
@@ -97,7 +100,7 @@ const WeekView: React.FC = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [setIsNavVisible, isModalOpen]);
 
   useEffect(() => {
     const startOfWeek = currentDate.clone().startOf('isoWeek');

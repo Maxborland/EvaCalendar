@@ -52,6 +52,21 @@ app.delete('/expense-categories/:id', validateExpenseCategory.deleteExpenseCateg
 
 app.get('/tasks/category', validateTask.getTasksByCategory, taskController.getTasksByCategory);
 
+import {
+  addChild,
+  deleteChild,
+  getAllChildren,
+  getChildById,
+  updateChild,
+  validateChild,
+} from './controllers/childrenController.js';
+
+app.get('/children', getAllChildren);
+app.get('/children/:id', getChildById);
+app.post('/children', validateChild, addChild);
+app.put('/children/:id', validateChild, updateChild);
+app.delete('/children/:id', deleteChild);
+
 import summaryController, { validateSummary } from './controllers/summaryController.js';
 app.get('/summary/:weekId', validateSummary.getWeeklySummary, summaryController.getWeeklySummary);
 app.get('/summary/:weekId/:dayOfWeek', validateSummary.getDailySummary, summaryController.getDailySummary);

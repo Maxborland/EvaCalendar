@@ -1,6 +1,7 @@
 import type { Moment } from 'moment';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
+import { useNav } from '../context/NavContext';
 import { deleteTask, duplicateTask, getTasksByWeekAndDay, moveTask } from '../services/api';
 import TaskForm from './TaskForm';
 import TaskItem from './TaskItem';
@@ -39,6 +40,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
   const isToday = fullDate.isSame(today, 'day');
   const dayColumnClassName = `day-column ${isToday ? 'today-highlight' : ''}`;
 
+const { setIsNavVisible, setIsModalOpen } = useNav();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
@@ -81,11 +83,15 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       });
     }
     setShowForm(true);
+    setIsNavVisible(false); // Скрываем навигацию при открытии формы
+    setIsModalOpen(true); // Устанавливаем isModalOpen в true при открытии формы
   };
 
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingTask(undefined);
+    setIsNavVisible(true); // Показываем навигацию при закрытии формы
+    setIsModalOpen(false); // Устанавливаем isModalOpen в false при закрытии формы
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -162,7 +168,10 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
           initialData={editingTask}
           weekId={weekId} // Используем weekId из props
           dayOfWeek={dayOfWeekForApi} // Передаем форматированный день недели для API
-          onTaskSaved={fetchTasks}
+          onTaskSaved={() => {
+            fetchTasks();
+            setIsNavVisible(true); // Показываем навигацию при сохранении задачи
+          }}
           onClose={handleCloseForm}
         />
       )}
