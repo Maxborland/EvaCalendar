@@ -40,7 +40,7 @@ describe('TaskItem', () => {
     dueDate: '2024-01-15',
     time: '10:00',
     address: 'Онлайн',
-    childId: 'child-alex',
+    childId: 'child-alex', // Заменено childUuid на childId
     hourlyRate: 700,
     hoursWorked: 2,
     comments: 'Хороший ученик',

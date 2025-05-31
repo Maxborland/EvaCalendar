@@ -10,7 +10,9 @@ const asyncHandler = fn => (req, res, next) =>
 
 // POST /tasks - Создание новой задачи
 router.post('/', asyncHandler(async (req, res) => {
+    console.log('[taskController.createTask] Received body for creation:', JSON.stringify(req.body));
     const task = await taskService.createTask(req.body);
+    console.log('[taskController.createTask] Task created by service:', JSON.stringify(task));
     res.status(201).json(task);
 }));
 
@@ -38,8 +40,12 @@ router.get('/:uuid', asyncHandler(async (req, res, next) => {
 
 // PUT /tasks/:uuid - Обновление задачи по UUID
 router.put('/:uuid', asyncHandler(async (req, res, next) => {
+    console.log('[taskController.updateTask] Received UUID for update:', req.params.uuid);
+    console.log('[taskController.updateTask] Received body for update:', JSON.stringify(req.body));
     const updatedCount = await taskService.updateTask(req.params.uuid, req.body);
+    console.log('[taskController.updateTask] Updated count from service:', updatedCount);
     if (updatedCount === 0) { // Если 0 строк обновлено, значит задача не найдена или данные не изменились
+        console.log('[taskController.updateTask] updatedCount is 0. Checking if task exists.');
         // Чтобы соответствовать тестам, которые ожидают 404 если задача не найдена для обновления,
         // мы должны проверить, существует ли задача перед попыткой обновления,
         // или положиться на то, что сервис вернет ошибку, если uuid не существует.
@@ -54,14 +60,19 @@ router.put('/:uuid', asyncHandler(async (req, res, next) => {
         // taskService.updateTask возвращает количество обновленных строк.
         // Если оно 0, значит, либо не найдено, либо данные идентичны.
         // Для прохождения теста, если 0, кидаем notFound.
+        console.log('[taskController.updateTask] Calling getTaskById with UUID:', req.params.uuid);
         const taskExists = await taskService.getTaskById(req.params.uuid);
+        console.log('[taskController.updateTask] taskExists result:', taskExists);
         if (!taskExists) {
+            console.log('[taskController.updateTask] Task not found by getTaskById. Throwing ApiError.notFound.');
             throw ApiError.notFound('Task not found for update');
         }
         // Если задача существует, но ничего не обновилось (данные те же), вернем 200 и 0.
         // Или можно вернуть сам объект без изменений. Тесты ожидают число.
+        console.log('[taskController.updateTask] Task exists, but updatedCount is 0. Returning updatedCount.');
         res.json(updatedCount); // Возвращаем количество обновленных строк
     } else {
+        console.log('[taskController.updateTask] updatedCount is not 0. Returning updatedCount.');
         res.json(updatedCount); // Возвращаем количество обновленных строк
     }
 }));

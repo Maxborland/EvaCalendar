@@ -60,7 +60,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
         // id не указываем, TaskForm сгенерирует его
         type: 'income', // Тип по умолчанию для новой задачи
         title: '',
-        // dueDate будет установлен в TaskForm на основе initialDueDate или по умолчанию
+        dueDate: props.fullDate.format('YYYY-MM-DD'), // Устанавливаем dueDate из даты колонки
         // Остальные поля будут инициализированы в TaskForm
       });
     }

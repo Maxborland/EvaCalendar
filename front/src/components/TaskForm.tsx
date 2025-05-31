@@ -2,8 +2,7 @@ import axios from 'axios'; // Импортируем axios для проверк
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom'; // Импортируем ReactDOM для Portal
 import { IMaskInput } from 'react-imask'; // Импортируем IMaskInput
-import { v4 as uuidv4 } from 'uuid';
-import { createTask, getAllChildren, getChildById, getExpenseCategories, updateTask, type Child, type ExpenseCategory, type Task } from '../services/api'; // Импортируем функции API
+import { createTask, getAllChildren, getChildByUuid, getExpenseCategories, updateTask, type Child, type ExpenseCategory, type Task } from '../services/api'; // Импортируем функции API
 import './TaskForm.css';
 
 interface TaskFormProps {
@@ -18,13 +17,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
   const [formData, setFormData] = useState(() => {
     const defaultDueDate = new Date().toISOString().split('T')[0]; // Сегодняшняя дата в формате YYYY-MM-DD
     const data = {
-      uuid: (initialData?.uuid || uuidv4()) as string | undefined, // UUID can be string or undefined
+      uuid: initialData?.uuid as string | undefined, // UUID can be string or undefined. For new tasks, it will be undefined.
       type: initialData?.type || ('income' as 'income' | 'expense'), // Default value
       title: initialData?.title || ('' as string | null), // Default value
       time: initialData?.time || '',
       address: initialData?.address || '',
-      childId: initialData?.childId || (null as string | null), // Добавлено childId
-      childName: '', // Оставлено для отображения, будет заполнено из childId
+      childId: initialData?.childId || (null as string | null), // Заменено childUuid на childId
+      childName: '', // Оставлено для отображения, будет заполнено из childUuid
       hourlyRate: initialData?.hourlyRate || 0,
       parentName: '', // Будет заполнено из childId
       parentPhone: '', // Будет заполнено из childId
@@ -33,46 +32,59 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
       amountEarned: initialData?.amountEarned || 0,
       amountSpent: initialData?.amountSpent || 0,
       hoursWorked: initialData?.hoursWorked || 0,
-      dueDate: initialData?.dueDate || defaultDueDate, // Добавлено поле dueDate
+      dueDate: initialData?.dueDate ?? defaultDueDate, // Используем ?? для более строгого контроля
     };
     return data as typeof data; // Ensure TypeScript infers the correct type including undefined for uuid
   });
 
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
       // Используем все поля из initialData, если они есть, иначе значения по умолчанию из useState
       setFormData(prevData => {
-        // Создаем новый объект для обновления состояния
-        const newUuid = initialData && initialData.uuid !== undefined
-                        ? initialData.uuid
-                        : (initialData && Object.prototype.hasOwnProperty.call(initialData, 'uuid') // Проверяем, что uuid был явно передан как undefined
-                           ? undefined
-                           : prevData.uuid);
+        const isNewTask = !initialData?.uuid;
 
+        const processedInitialData = { ...initialData };
+        // Удалена логика удаления dueDate из processedInitialData, так как новая логика ниже это обрабатывает корректно.
+
+        // Сначала применяем все из prevData, затем из обработанного initialData,
+        // а потом специфичные поля, чтобы сохранить логику prevData для них, если в initialData их нет.
         const newData = {
           ...prevData,
-          ...(initialData || {}),
-          uuid: newUuid as string | undefined, // Используем вычисленный newUuid и указываем тип
-          type: initialData?.type || prevData.type,
-          title: initialData?.title ?? prevData.title, // Используем ?? для title, чтобы сохранить пустую строку из initialData
-          time: initialData?.time || prevData.time,
-          address: initialData?.address || prevData.address,
-          childId: initialData?.childId || prevData.childId,
-          hourlyRate: initialData?.hourlyRate ?? prevData.hourlyRate, // Используем ?? для числовых полей, чтобы 0 из initialData не заменялся на prevData
-          comments: initialData?.comments || prevData.comments,
-          category: initialData?.category || prevData.category,
-          amountEarned: initialData?.amountEarned ?? prevData.amountEarned,
-          amountSpent: initialData?.amountSpent ?? prevData.amountSpent,
-          hoursWorked: initialData?.hoursWorked ?? prevData.hoursWorked,
-          dueDate: initialData?.dueDate || prevData.dueDate,
+          ...processedInitialData, // uuid здесь может быть из initialData
+          // Переопределяем поля, чтобы сохранить логику с || и ?? из prevData,
+          // если в initialData соответствующие поля отсутствуют или равны null/undefined.
+          uuid: initialData.uuid, // Явно берем uuid из initialData (может быть undefined для новых)
+          type: initialData.type || prevData.type,
+          title: initialData.title ?? prevData.title,
+          time: initialData.time || prevData.time,
+          address: initialData.address || prevData.address,
+          childId: initialData.childId || prevData.childId,
+          hourlyRate: initialData.hourlyRate ?? prevData.hourlyRate,
+          comments: initialData.comments || prevData.comments,
+          category: initialData.category || prevData.category,
+          amountEarned: initialData.amountEarned ?? prevData.amountEarned,
+          amountSpent: initialData.amountSpent ?? prevData.amountSpent,
+          hoursWorked: initialData.hoursWorked ?? prevData.hoursWorked,
+          // dueDate будет установлен ниже
         };
+
+        // Логика для dueDate:
+        // Если initialData.dueDate предоставлен, используем его.
+        // Иначе, используем prevData.dueDate (которое будет defaultDueDate для новых задач,
+        // или текущее значение для существующих, или измененное пользователем).
+        if (initialData.dueDate !== undefined) {
+          newData.dueDate = initialData.dueDate;
+        } else {
+          newData.dueDate = prevData.dueDate;
+        }
+
         return newData;
       });
       if (initialData.childId) {
-        setSelectedChildId(initialData.childId);
+        setSelectedChildUuid(initialData.childId);
       }
     }
   }, [initialData]);
@@ -96,14 +108,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
       try {
         const fetchedChildren = await getAllChildren();
         setChildren(fetchedChildren);
-          // После загрузки детей, если есть initialData.childId, найти и установить selectedChildId
+          // После загрузки детей, если есть initialData.childUuid, найти и установить selectedChildUuid
           if (initialData?.childId) {
-            setSelectedChildId(initialData.childId);
-          } else if (initialData && 'childName' in initialData && initialData.childName) { // Проверяем наличие childName в initialData
-            const foundChild = fetchedChildren.find(child => child.childName === initialData.childName);
-            if (foundChild) {
-              setSelectedChildId(foundChild.id); // Используем id из интерфейса Child
-            }
+            setSelectedChildUuid(initialData.childId);
+          // Удаляем логику поиска по childName согласно плану
+          // } else if (initialData && 'childName' in initialData && initialData.childName) {
+          //   const foundChild = fetchedChildren.find(child => child.childName === initialData.childName);
+          //   if (foundChild) {
+          //     setSelectedChildUuid(foundChild.uuid);
+          //   }
           }
       } catch (error) {
         console.error('Ошибка при загрузке детей:', error);
@@ -113,13 +126,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
   }, [initialData]);
 
   useEffect(() => {
-    if (selectedChildId !== null) {
+    if (selectedChildUuid !== null) {
       const fetchChildData = async () => {
         try {
-          const childData = await getChildById(selectedChildId as string);
+          const childData = await getChildByUuid(selectedChildUuid as string);
           setFormData((prevData) => ({
             ...prevData,
-            childId: childData.id, // Обновляем childId в formData, используя id из интерфейса Child
+            childId: childData.uuid, // Обновляем childId в formData, используя uuid из интерфейса Child
             childName: childData.childName,
             hourlyRate: childData.hourlyRate || 0,
             address: childData.address || '',
@@ -145,12 +158,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
         title: initialData?.title ?? '',
       }));
     }
-  }, [selectedChildId, initialData]);
+  }, [selectedChildUuid, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'childSelect') {
-        setSelectedChildId(value === '' ? null : value); // значение уже string
+        setSelectedChildUuid(value === '' ? null : value); // значение уже string
     } else {
         setFormData((prevData) => ({
             ...prevData,
@@ -177,8 +190,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
       if (formData.type === 'income') {
         // Для типа 'income' (и других, где это применимо)
         dataToSave.time = formData.time === '' ? undefined : formData.time;
-        dataToSave.address = formData.address === '' ? undefined : formData.address;
-        dataToSave.childId = selectedChildId || undefined;
+        // dataToSave.address = formData.address === '' ? undefined : formData.address; // Удалено, чтобы не отправлять на бэкенд
+        dataToSave.childId = selectedChildUuid || undefined;
         dataToSave.hourlyRate = formData.hourlyRate;
         dataToSave.hoursWorked = formData.hoursWorked;
         dataToSave.comments = formData.comments === '' ? undefined : formData.comments;
@@ -254,13 +267,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
                 <select
                   id="childSelect"
                   name="childSelect"
-                  value={selectedChildId !== null ? selectedChildId : ''} // значение уже string
+                  value={selectedChildUuid !== null ? selectedChildUuid : ''} // значение уже string
                   onChange={handleChange}
                   className="input"
                 >
                   <option value="">Не выбрано</option>
                   {children.map((child, index) => (
-                    <option key={child.id ?? index} value={child.id ?? ''}> {/* Ключ: child.id, если существует, иначе индекс. Значение: child.id, если существует, иначе пустая строка. */}
+                    <option key={child.uuid ?? index} value={child.uuid ?? ''}> {/* Ключ: child.uuid, если существует, иначе индекс. Значение: child.uuid, если существует, иначе пустая строка. */}
                       {child.childName}
                     </option>
                   ))}
@@ -268,7 +281,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
               </div>
 
               {/* Блок полей, зависящих от выбранного ребенка */}
-              {selectedChildId && (
+              {selectedChildUuid && (
                 <>
                   <div className="form-group"> {/* Имя ребенка */}
                     <label htmlFor="childName" className="label">Имя ребенка:</label>

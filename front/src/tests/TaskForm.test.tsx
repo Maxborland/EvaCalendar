@@ -12,13 +12,13 @@ vi.mock('../services/api', () => ({
     { id: '2', category_name: 'Транспорт' },
   ])),
   getAllChildren: vi.fn(() => Promise.resolve([
-    { id: 'child1', childName: 'Петя', hourlyRate: 600, address: 'Онлайн', parentName: 'Мама Пети', parentPhone: '+7 (111) 222-33-44' },
-    { id: 'child2', childName: 'Вася', hourlyRate: 500, address: 'Оффлайн', parentName: 'Папа Васи', parentPhone: '+7 (444) 555-66-77' },
+    { uuid: 'child1-uuid', childName: 'Петя', hourlyRate: 600, address: 'Онлайн', parentName: 'Мама Пети', parentPhone: '+7 (111) 222-33-44' },
+    { uuid: 'child2-uuid', childName: 'Вася', hourlyRate: 500, address: 'Оффлайн', parentName: 'Папа Васи', parentPhone: '+7 (444) 555-66-77' },
   ])),
-  getChildById: vi.fn((id) => {
-    if (id === 'child1') {
+  getChildByUuid: vi.fn((uuid) => { // Renamed from getChildById
+    if (uuid === 'child1-uuid') {
       return Promise.resolve({
-        id: 'child1',
+        uuid: 'child1-uuid', // Changed from id
         childName: 'Петя',
         hourlyRate: 600,
         address: 'Онлайн',
@@ -26,9 +26,9 @@ vi.mock('../services/api', () => ({
         parentPhone: '+7 (111) 222-33-44',
       });
     }
-    if (id === 'child2') {
+    if (uuid === 'child2-uuid') {
       return Promise.resolve({
-        id: 'child2',
+        uuid: 'child2-uuid', // Changed from id
         childName: 'Вася',
         hourlyRate: 500,
         address: 'Оффлайн',
@@ -118,7 +118,7 @@ describe('TaskForm', () => {
   test('отправляет форму для создания задачи (доход) и вызывает createTask', async () => {
     render(<TaskForm {...defaultProps} initialData={getCreationInitialData('income')} />);
     await screen.findByLabelText('Выбрать ребенка:');
-    fireEvent.change(screen.getByLabelText('Выбрать ребенка:'), { target: { value: 'child1' } });
+    fireEvent.change(screen.getByLabelText('Выбрать ребенка:'), { target: { value: 'child1-uuid' } }); // Changed to child1-uuid
     await waitFor(() => {
       expect(screen.getByLabelText('Имя ребенка:')).toHaveValue('Петя');
       expect(screen.getByLabelText('Адрес:')).toHaveValue('Онлайн');
@@ -134,7 +134,7 @@ describe('TaskForm', () => {
       expect(createTask).toHaveBeenCalledTimes(1);
       expect(createTask).toHaveBeenCalledWith(expect.objectContaining({
         type: 'income', title: 'Урок математики с Петей', dueDate: '2024-06-15',
-        time: '10:00', address: 'Онлайн', childId: 'child1',
+        time: '10:00', childId: 'child1-uuid', // Changed to childId and child1-uuid, address removed
         hourlyRate: 600, hoursWorked: 2, amountEarned: 1200, comments: 'Отличный урок',
       }));
       expect(mockOnTaskSaved).toHaveBeenCalledTimes(1);
@@ -167,7 +167,7 @@ describe('TaskForm', () => {
   test('рендерит форму для редактирования существующей задачи (доход) корректно', async () => {
     const initialData = {
       uuid: 'task-uuid-123', type: 'income' as 'income', title: 'Репетиторство',
-      dueDate: '2024-06-10', time: '14:00', childId: 'child1',
+      dueDate: '2024-06-10', time: '14:00', childId: 'child1-uuid', // Changed to childId and child1-uuid
       hoursWorked: 1.5, amountEarned: 900, comments: 'Подготовка к ЕГЭ',
     } as Partial<Task> & { type: 'income' | 'expense' };
     render(<TaskForm {...defaultProps} initialData={initialData} />);
@@ -177,7 +177,7 @@ describe('TaskForm', () => {
       expect(screen.getByLabelText('Дата выполнения:')).toHaveValue('2024-06-10');
       expect(screen.getByLabelText('Название:')).toHaveValue('Репетиторство');
       expect(screen.getByLabelText('Время:')).toHaveValue('14:00');
-      expect(screen.getByLabelText('Выбрать ребенка:')).toHaveValue('child1');
+      expect(screen.getByLabelText('Выбрать ребенка:')).toHaveValue('child1-uuid'); // Changed to child1-uuid
       expect(screen.getByLabelText('Имя ребенка:')).toHaveValue('Петя');
       expect(screen.getByLabelText('Адрес:')).toHaveValue('Онлайн');
       expect(screen.getByLabelText('Ставка (₽/час):')).toHaveValue(600);
@@ -192,7 +192,7 @@ describe('TaskForm', () => {
   test('отправляет форму для редактирования задачи (доход) и вызывает updateTask', async () => {
     const initialData = {
       uuid: 'task-uuid-123', type: 'income' as 'income', title: 'Репетиторство',
-      dueDate: '2024-06-10', time: '14:00', childId: 'child1',
+      dueDate: '2024-06-10', time: '14:00', childId: 'child1-uuid', // Changed to childId and child1-uuid
       hoursWorked: 1.5, comments: 'Подготовка к ЕГЭ',
     } as Partial<Task> & { type: 'income' | 'expense' };
     render(<TaskForm {...defaultProps} initialData={initialData} />);
@@ -200,7 +200,7 @@ describe('TaskForm', () => {
     fireEvent.change(screen.getByLabelText('Дата выполнения:'), { target: { value: '2024-06-11' } });
     fireEvent.change(screen.getByLabelText('Название:'), { target: { value: 'Новое название урока' } });
     await screen.findByLabelText('Выбрать ребенка:');
-    fireEvent.change(screen.getByLabelText('Выбрать ребенка:'), { target: { value: 'child2' } });
+    fireEvent.change(screen.getByLabelText('Выбрать ребенка:'), { target: { value: 'child2-uuid' } }); // Changed to child2-uuid
     await waitFor(() => {
       expect(screen.getByLabelText('Ставка (₽/час):')).toHaveValue(500);
       expect(screen.getByLabelText('Адрес:')).toHaveValue('Оффлайн');
@@ -211,7 +211,7 @@ describe('TaskForm', () => {
       expect(updateTask).toHaveBeenCalledTimes(1);
       expect(updateTask).toHaveBeenCalledWith('task-uuid-123', expect.objectContaining({
         uuid: 'task-uuid-123', type: 'income', title: 'Новое название урока',
-        dueDate: '2024-06-11', childId: 'child2', hourlyRate: 500,
+        dueDate: '2024-06-11', childId: 'child2-uuid', hourlyRate: 500, // Changed to childId and child2-uuid
         hoursWorked: 2, amountEarned: 1000,
       }));
       expect(mockOnTaskSaved).toHaveBeenCalledTimes(1);

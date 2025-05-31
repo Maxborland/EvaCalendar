@@ -33,9 +33,25 @@ const taskService = {
             throw ApiError.badRequest('Expense category not found');
         }
 
+        console.log('[taskService.createTask] Received taskData:', JSON.stringify(taskData)); // Добавлено логирование
+        // Удаляем hourlyRate из taskData, если оно пришло, так как его нет в таблице tasks
+        if (taskData.hasOwnProperty('hourlyRate')) {
+            delete taskData.hourlyRate;
+        }
         const newTask = { uuid: uuidv4(), ...taskData };
-        await knex('tasks').insert(newTask);
-        return newTask;
+        console.log('[taskService.createTask] Generated newTask object:', JSON.stringify(newTask));
+        try {
+            const result = await knex('tasks').insert(newTask);
+            console.log('[taskService.createTask] Knex insert result:', JSON.stringify(result));
+            if (result && result.length === 0) { // Или другая проверка в зависимости от того, что возвращает knex для вашего драйвера при успехе
+                console.warn('[taskService.createTask] Knex insert result is empty, task might not have been inserted.');
+            }
+            console.log('[taskService.createTask] Task inserted into DB. Returning newTask.');
+            return newTask;
+        } catch (error) {
+            console.error('[taskService.createTask] Error during knex insert:', error);
+            throw ApiError.internal('Failed to create task in database', error);
+        }
     },
 
     async getAllTasks() {
@@ -102,7 +118,16 @@ const taskService = {
         if (taskData.expenceTypeId && !(await validateExistence('expense_categories', taskData.expenceTypeId))) {
             throw ApiError.badRequest('Expense category not found');
         }
+
+        // Удаляем hourlyRate из taskData, так как это поле относится к таблице children
+        if (taskData.hasOwnProperty('hourlyRate')) {
+            delete taskData.hourlyRate;
+        }
+
+        console.log('[taskService.updateTask] Received UUID for update:', uuid);
+        console.log('[taskService.updateTask] Received taskData for update:', JSON.stringify(taskData));
         const updated = await knex('tasks').where({ uuid }).update(taskData);
+        console.log('[taskService.updateTask] Update result (updated count):', updated);
         return updated;
     },
 

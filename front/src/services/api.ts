@@ -15,7 +15,7 @@ export interface SummaryData {
 }
 
 export interface Child {
-  id: string;
+  uuid: string; // Было id
   childName: string;
   parentName: string;
   parentPhone: string | null;
@@ -30,7 +30,7 @@ export interface Task {
   type: string; // 'fixed', 'hourly', 'expense'
   time?: string;
   address?: string;
-  childId?: string;
+  childId?: string; // Заменено childUuid на childId
   hourlyRate?: number;
   category?: string; // или ExpenseCategory если это объект
   amountEarned?: number;
@@ -194,26 +194,25 @@ export const getAllChildren = async () => {
     return response.data as Child[];
 };
 
-export const getChildById = async (id: string) => {
-    const response = await api.get(`/children/${id}`);
+export const getChildByUuid = async (uuid: string) => { // Было getChildById(id: string)
+    const response = await api.get(`/children/${uuid}`); // Было /children/${id}
     return response.data as Child;
 };
 
-export const addChild = async (child: Omit<Child, 'id'>) => {
+export const addChild = async (child: Omit<Child, 'uuid'>) => { // Было Omit<Child, 'id'>
     const response = await api.post('/children', child);
+    return response.data as Child; // Бэкенд вернет Child с сгенерированным uuid
+};
+
+export const updateChild = async (uuid: string, child: Child) => { // Было id: string
+    // Деструктурируем объект child, чтобы исключить поле 'uuid' из тела запроса
+    const { uuid: childUuidToExclude, ...childDataToSend } = child; // Было id: childIdToExclude
+    const response = await api.put(`/children/${uuid}`, childDataToSend); // Было /children/${id}
     return response.data as Child;
 };
 
-export const updateChild = async (id: string, child: Child) => {
-    // Деструктурируем объект child, чтобы исключить поле 'id' из тела запроса
-    // При этом, childIdToExclude будет содержать значение id, но не будет отправлено в childDataToSend
-    const { id: childIdToExclude, ...childDataToSend } = child;
-    const response = await api.put(`/children/${id}`, childDataToSend);
-    return response.data as Child;
-};
-
-export const deleteChild = async (id: string) => {
-    const response = await api.delete(`/children/${id}`);
+export const deleteChild = async (uuid: string) => { // Было id: string
+    const response = await api.delete(`/children/${uuid}`); // Было /children/${id}
     return response.data;
 };
 
