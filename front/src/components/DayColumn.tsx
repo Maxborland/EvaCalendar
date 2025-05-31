@@ -1,28 +1,13 @@
 import type { Moment } from 'moment';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react'; // useCallback удален, так как fetchTasks удаляется
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNav } from '../context/NavContext';
-import { deleteTask, duplicateTask, getTasksByWeekAndDay, moveTask } from '../services/api';
+import { deleteTask, duplicateTask, moveTask, type Task } from '../services/api'; // getTasksByWeekAndDay удален, Task импортирован
 import './DayColumn.css';
 import TaskForm from './TaskForm';
 import TaskItem from './TaskItem';
 
-interface Task {
-  id?: string;
-  type: 'income' | 'expense';
-  title?: string;
-  time?: string;
-  address?: string;
-  childName?: string;
-  hourlyRate?: number;
-  comments?: string;
-  category?: string;
-  amountEarned?: number;
-  amountSpent?: number;
-  hoursWorked?: number;
-  weekId?: string;
-  dayOfWeek?: string;
-}
+// Локальное определение Task удалено
 
 const ItemTypes = {
   TASK: 'task',
@@ -32,55 +17,51 @@ interface DayColumnProps {
   day: string; // Это общее название дня (например, "Пн", "Вт")
   fullDate: Moment;
   today: Moment;
-  weekId: string;
+  tasksForDay: Task[]; // Новый проп
   onTaskMove: () => void;
 }
 
 const DayColumn: React.FC<DayColumnProps> = (props) => {
-  const { day, fullDate, today, weekId, onTaskMove } = props;
+  const { day, fullDate, today, tasksForDay, onTaskMove } = props; // weekId удален, tasksForDay добавлен
+
   const isToday = fullDate.isSame(today, 'day');
   const dayColumnClassName = `day-column ${isToday ? 'today-highlight' : ''}`;
 
-const { setIsNavVisible, setIsModalOpen } = useNav();
+  const { setIsNavVisible, setIsModalOpen } = useNav();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  // editingTask теперь может быть Partial<Task> для новых задач, или Task для существующих.
+  // TaskForm ожидает initialData?: Partial<Task> & { type: 'income' | 'expense' };
+  const [editingTask, setEditingTask] = useState<(Partial<Task> & { type: 'income' | 'expense' }) | undefined>(undefined);
 
   const dayOfWeekFormattedRu = fullDate.clone().locale('ru').format('dddd');
-  const dayOfWeekForApi = dayOfWeekFormattedRu.charAt(0).toUpperCase() + dayOfWeekFormattedRu.slice(1); // Форматируем для API (e.g., "Понедельник")
+  // dayOfWeekForApi удален
 
-  // weekId из props уже является UUID, который ожидает API
-  const fetchTasks = useCallback(async () => {
-    try {
-      const response = await getTasksByWeekAndDay(weekId, dayOfWeekForApi); // Используем weekId из props
-      setTasks(response.data as Task[]);
-    } catch (error) {
-      console.error('Ошибка при загрузке задач:', error);
-    }
-  }, [weekId, dayOfWeekForApi]); // Зависимость от weekId и dayOfWeekForApi
-
+  // Логика fetchTasks удалена, задачи теперь приходят через props.tasksForDay
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]); // Удалена зависимость от onTaskMove
 
-  const handleOpenForm = (task?: Task) => {
-    if (task && task.id) { // Проверяем, что task и его id существуют
-      setEditingTask(task);
+    setTasks(tasksForDay);
+  }, [tasksForDay, fullDate]);
+
+  const handleOpenForm = (task?: Task) => { // task здесь это Task из api.ts
+    if (task && task.uuid) { // Редактирование существующей задачи
+      // Убедимся, что тип задачи совместим с ожиданиями TaskForm
+      if (task.type === 'income' || task.type === 'expense') {
+        setEditingTask(task as Task & { type: 'income' | 'expense' });
+      } else {
+        // Если тип несовместим, можно установить тип по умолчанию или показать ошибку
+        // Пока установим 'income' и залогируем предупреждение
+        console.warn(`Task with id ${task.uuid} has an incompatible type: ${task.type}. Defaulting to 'income'.`);
+        setEditingTask({ ...task, type: 'income' });
+      }
     } else {
-      // Инициализируем все поля, подходящие для создания новой задачи
+      // Создание новой задачи
       setEditingTask({
-        id: undefined,
-        type: 'income',
+        // id не указываем, TaskForm сгенерирует его
+        type: 'income', // Тип по умолчанию для новой задачи
         title: '',
-        time: '',
-        address: '',
-        childName: '',
-        hourlyRate: 0,
-        comments: '',
-        category: '',
-        amountEarned: 0,
-        amountSpent: 0,
-        hoursWorked: 0,
+        // dueDate будет установлен в TaskForm на основе initialDueDate или по умолчанию
+        // Остальные поля будут инициализированы в TaskForm
       });
     }
     setShowForm(true);
@@ -98,7 +79,7 @@ const { setIsNavVisible, setIsModalOpen } = useNav();
   const handleDeleteTask = async (id: string) => {
     try {
       await deleteTask(id);
-      fetchTasks();
+      onTaskMove(); // Вызываем onTaskMove для обновления задач в родительском компоненте
     } catch (error) {
       console.error('Ошибка при удалении задачи:', error);
     }
@@ -107,15 +88,15 @@ const { setIsNavVisible, setIsModalOpen } = useNav();
   const handleDuplicateTask = async (id: string) => {
     try {
       await duplicateTask(id);
-      fetchTasks();
+      onTaskMove(); // Вызываем onTaskMove для обновления задач в родительском компоненте
     } catch (error) {
       console.error('Ошибка при дублировании задачи:', error);
     }
   };
 
-  const handleMoveTask = async (taskId: string, targetWeekId: string, targetDayOfWeek: string) => {
+  const handleMoveTask = async (taskId: string, newDueDate: string) => { // Сигнатура изменена
     try {
-      await moveTask(taskId, targetWeekId, targetDayOfWeek);
+      await moveTask(taskId, newDueDate); // Вызов moveTask изменен
       onTaskMove();
     } catch (error) {
       console.error('Ошибка при перемещении задачи:', error);
@@ -127,29 +108,29 @@ const { setIsNavVisible, setIsModalOpen } = useNav();
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.TASK,
     drop: (item: Task, monitor: DropTargetMonitor) => {
-      if (!monitor.didDrop()) {
-        handleMoveTask(item.id!, weekId, dayOfWeekForApi); // Используем форматированный день недели для API
+      if (!monitor.didDrop() && item.uuid) { // Добавлена проверка item.uuid
+        handleMoveTask(item.uuid, props.fullDate.format('YYYY-MM-DD')); // Передаем ID задачи и newDueDate
       }
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
-  }), [weekId, dayOfWeekForApi]); // Зависимость от dayOfWeekForApi
+  }), [props.fullDate, handleMoveTask]); // Зависимости обновлены
 
   drop(dropRef);
 
   return (
     <div ref={dropRef} className={`${dayColumnClassName} ${isOver ? 'highlighted-drop-zone' : ''}`}>
       <h3>{day}</h3>
+
       <div className="day-cells"> {/* Удаляем onClick отсюда */}
         {/* Оставляем onClick только на пустых ячейках */}
         {tasks.length > 0 ? (
           tasks.map((task) => (
-            task.id ? (
+            task.uuid ? (
               <TaskItem
-                key={task.id}
-                id={task.id}
-                {...task}
+                key={task.uuid}
+                task={task}
                 onDelete={handleDeleteTask}
                 onDuplicate={handleDuplicateTask}
                 onEdit={handleOpenForm}
@@ -160,17 +141,17 @@ const { setIsNavVisible, setIsModalOpen } = useNav();
       </div>
       {showForm && (
         <TaskForm
-          initialData={editingTask}
-          weekId={weekId} // Используем weekId из props
-          dayOfWeek={dayOfWeekForApi} // Передаем форматированный день недели для API
+          initialData={editingTask} // editingTask теперь (Partial<Task> & { type: 'income' | 'expense' }) | undefined
+          // initialDueDate удален, TaskForm использует initialData.dueDate или props.fullDate для установки даты по умолчанию
+          // Передаем dueDate через initialData при создании новой задачи
           onTaskSaved={() => {
-            fetchTasks();
-            setIsNavVisible(true); // Показываем навигацию при сохранении задачи
+            onTaskMove();
+            setIsNavVisible(true);
           }}
           onClose={handleCloseForm}
         />
       )}
-      <button className="add-task-button" onClick={() => handleOpenForm()}>Добавить дело</button>
+      <button className="add-task-button" onClick={() => handleOpenForm(undefined)}>Добавить дело</button>
     </div>
   );
 };

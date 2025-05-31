@@ -44,24 +44,43 @@ class NoteService {
             throw new Error('Не удалось получить заметку по UUID.');
         }
     }
+async getNoteByDate(dateString) {
+        try {
+            return await knex(TABLE_NAME).where({ date: dateString }).first();
+        } catch (error) {
+            console.error(`Ошибка при получении заметки по дате ${dateString}:`, error);
+            throw new Error('Не удалось получить заметку по дате.');
+        }
+    }
 
     async updateNote(uuid, noteData) {
         try {
-            // Проверка обязательных полей
-            const requiredFields = ['date', 'content'];
-            for (const field of requiredFields) {
-                if (!noteData[field]) {
-                    throw ApiError.badRequest(`${field} is required`);
-                }
+            // Для обновления заметки обязательно только поле content
+            if (!noteData || typeof noteData.content === 'undefined') {
+                // Если content не предоставлен или равен undefined, считаем это ошибкой.
+                // Пустая строка для content может быть допустима, если бизнес-логика это позволяет.
+                // В данном случае, если фронтенд всегда шлет content, эта проверка гарантирует его наличие.
+                throw ApiError.badRequest('content is required for update');
             }
-            const updatedRows = await knex(TABLE_NAME).where({ uuid }).update(noteData);
-            if (updatedRows === 0) {
+
+            const dataToUpdate = { content: noteData.content };
+
+            // Используем returning для получения обновленной записи без дополнительного запроса
+            // Возвращает массив, поэтому берем первый элемент
+            const [updatedNote] = await knex(TABLE_NAME)
+                .where({ uuid })
+                .update(dataToUpdate, ['uuid', 'date', 'content']);
+
+            if (!updatedNote) {
+                // Это условие сработает, если uuid не найден, и update ничего не вернул
                 return null; // Заметка не найдена
             }
-            return await this.getNoteById(uuid);
+            return updatedNote;
         } catch (error) {
             console.error(`Ошибка при обновлении заметки с UUID ${uuid}:`, error);
-            throw error; // Пробрасываем оригинальную ошибку
+            // Если это ошибка валидации (например, ApiError), пробрасываем ее дальше
+            // Иначе, можно обернуть в более общую ошибку, если это необходимо
+            throw error;
         }
     }
 

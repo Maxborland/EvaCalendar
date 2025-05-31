@@ -1,67 +1,87 @@
 import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { createNote, getNoteByDate, updateNote, type Note } from '../services/api';
 
 interface NoteFieldProps {
-  weekId: string; // weekId должен быть строкой (UUID), соответствующей id недели в БД
+  weekId: string; // weekId теперь это dateString 'YYYY-MM-DD'
 }
 
 const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
   const [noteContent, setNoteContent] = useState('');
+  const [noteUuid, setNoteUuid] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNote = async () => {
+      if (!weekId) return; // Не делаем запрос, если weekId не предоставлен
+
+      setIsLoading(true);
+      setError(null);
       try {
-        // weekId должен быть строкой (UUID)
-        const apiUrl = `${import.meta.env.VITE_API_URL}/notes/${weekId}`;
-        const response = await fetch(apiUrl);
-        if (response.ok) {
-          const data = await response.json();
-          setNoteContent(data && data.content ? data.content : '');
-          setHasChanges(false);
+        const data = await getNoteByDate(weekId);
+        if (data) {
+          setNoteContent(data.content);
+          setNoteUuid(data.uuid);
         } else {
           setNoteContent('');
-          setHasChanges(false);
-          console.error('Failed to fetch note:', response.statusText);
+          setNoteUuid(null);
         }
-      } catch (error) {
-        console.error('Error fetching note:', error);
-        setNoteContent('');
         setHasChanges(false);
+      } catch (err: any) {
+        console.error('Error fetching note:', err);
+        setError(err.message || 'Не удалось загрузить заметку.');
+        setNoteContent('');
+        setNoteUuid(null);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchNote();
   }, [weekId]);
 
-  const handleSave = async () => {
+  const handleSaveNote = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const apiUrl = `${import.meta.env.VITE_API_URL}/notes`;
-      console.log('Posting note to:', apiUrl); // Добавляем логирование
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ weekId, content: noteContent }), // weekId должен быть строкой (UUID)
-      });
-
-      if (response.ok) {
-        setHasChanges(false);
-        alert('Заметка сохранена!');
+      let savedNote: Note;
+      if (noteUuid) {
+        savedNote = await updateNote(noteUuid, noteContent);
+        toast.success('Заметка обновлена!');
       } else {
-        alert('Ошибка при сохранении заметки.');
-        console.error('Failed to save note:', response.statusText);
+        savedNote = await createNote(weekId, noteContent);
+        setNoteUuid(savedNote.uuid); // Обновляем UUID после создания
+        toast.success('Заметка создана!');
       }
-    } catch (error) {
-      console.error('Error saving note:', error);
-      alert('Ошибка при сохранении заметки.');
+      setNoteContent(savedNote.content); // Обновляем контент из ответа сервера
+      setHasChanges(false);
+    } catch (err: any) {
+      console.error('Error saving note:', err);
+      setError(err.message || 'Не удалось сохранить заметку.');
+      toast.error(err.message || 'Ошибка при сохранении заметки.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  if (isLoading && !noteContent && !error) { // Показываем загрузку только при первом запросе или если нет данных/ошибок
+    return (
+      <div className="day-column">
+        <h3>Заметки</h3>
+        <div className="day-cells">
+          <p>Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="day-column"> {/* Применяем стиль day-column */}
-      <h3>Заметки</h3> {/* Заголовок как у дня недели */}
-      <div className="day-cells"> {/* Обертка для textarea и кнопки */}
+    <div className="day-column">
+      <h3>Заметки</h3>
+      <div className="day-cells">
+        {error && <p style={{ color: 'red' }}>{error}</p>}
         <textarea
           className="note-textarea"
           value={noteContent}
@@ -72,9 +92,12 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
           placeholder="Введите заметки здесь..."
           rows={10}
           cols={30}
+          disabled={isLoading}
         />
         {hasChanges && (
-          <button onClick={handleSave}>Сохранить</button>
+          <button className="add-task-button" onClick={handleSaveNote} disabled={isLoading}>
+            {isLoading ? 'Сохранение...' : 'Сохранить'}
+          </button>
         )}
       </div>
     </div>

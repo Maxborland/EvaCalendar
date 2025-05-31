@@ -37,6 +37,19 @@ router.get('/:uuid', async (req, res, next) => {
         next(error);
     }
 });
+// GET /notes/date/:dateString - Получение информации о заметке по дате
+router.get('/date/:dateString', async (req, res, next) => {
+    try {
+        const note = await noteService.getNoteByDate(req.params.dateString);
+        if (note) {
+            res.status(200).json(note);
+        } else {
+            next(ApiError.notFound('Заметка не найдена по указанной дате'));
+        }
+    } catch (error) {
+        next(error);
+    }
+});
 
 // PUT /notes/:uuid - Обновление информации о заметке
 router.put('/:uuid', async (req, res, next) => {

@@ -3,102 +3,61 @@ import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useRef } from 'react';
 import { useDrag } from 'react-dnd';
+import type { Task } from '../services/api'; // Исправлен путь импорта Task и добавлен type
 import './TaskItem.css';
 
 interface TaskItemProps {
-  id: string;
-  type: 'income' | 'expense';
-  title?: string;
-  time?: string;
-  address?: string;
-  childId?: string; // Изменено с childName на childId
-  childName?: string; // Оставлено для отображения
-  hourlyRate?: number;
-  comments?: string;
-  category?: string;
-  amountEarned?: number;
-  amountSpent?: number;
-  hoursWorked?: number; // Новое поле для часов работы
+  task: Task; // Замена пропсов на один проп task типа Task
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
-  onEdit: (task: any) => void;
+  onEdit: (task: Task) => void; // Тип параметра task изменен на Task
 }
 
 const ItemTypes = {
   TASK: 'task',
 };
 
+const TaskItem: React.FC<TaskItemProps> = ({ task, onDelete, onDuplicate, onEdit }) => { // Деструктуризация task и колбэков
 
-
-
-
-
-const TaskItem: React.FC<TaskItemProps> = (props) => {
-  const {
-    id,
-    type,
-    title,
-    time,
-    address,
-    childName,
-    hourlyRate,
-    comments,
-    category,
-    amountEarned,
-    amountSpent,
-    hoursWorked,
-    onDelete,
-    onDuplicate,
-    onEdit,
-  } = props;
+  // Деструктуризация полей из task. dueDate и comments пока не используются в JSX, но доступны для логики.
+  const { uuid: id, type, title, amountEarned, amountSpent, comments, dueDate, childId, hourlyRate, category, hoursWorked, time, address } = task;
 
   const ref = useRef<HTMLDivElement>(null);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.TASK,
-    item: { id, type, title, time, address, childId: props.childId, childName, hourlyRate, comments, category, amountEarned, amountSpent, hoursWorked }, // Изменено childName на childId
+    // Передаем объект task целиком, так как он уже содержит все необходимые поля
+    item: task,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  }), [id, type, title, time, address, childName, hourlyRate, comments, category, amountEarned, amountSpent, hoursWorked]);
+  // Зависимости хука useDrag обновлены для отражения использования объекта task
+  }), [task]);
 
   drag(ref);
 
   const handleEditClick = () => {
-    onEdit({
-      id,
-      type,
-      title,
-      time,
-      address,
-      childId: props.childId, // Изменено childName на childId
-      childName,
-      hourlyRate,
-      comments,
-      category,
-      amountEarned,
-      amountSpent,
-      hoursWorked,
-    });
+    onEdit(task); // Передаем весь объект task в onEdit
   };
 
   const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (window.confirm('Вы уверены, что хотите удалить это дело?')) {
-      onDelete(id || '');
+      onDelete(id || ''); // Используем деструктурированный id
     }
   };
 
   return (
     <div
       ref={ref}
-      className={`TaskItemContainer ${isDragging ? 'dragging' : ''} ${type}`}
+      className={`TaskItemContainer ${isDragging ? 'dragging' : ''} ${type}`} // Используем деструктурированный type
       onClick={handleEditClick}
     >
       <div className="TaskItemMainContent">
         <div className="TaskInfoContainer">
-          <h4 className="TaskTitle">{title}</h4>
+          <h4 className="TaskTitle">{title}</h4> {/* Используем деструктурированный title */}
           <p className="TaskDetail">
+            {/* Используем деструктурированные type, amountEarned, amountSpent */}
             {type === 'income' ? `+${amountEarned || 0}₽` : `-${amountSpent || 0}₽`}
           </p>
         </div>
@@ -106,6 +65,7 @@ const TaskItem: React.FC<TaskItemProps> = (props) => {
           <button className="ActionButton delete" onClick={handleDeleteClick}>
             <FontAwesomeIcon icon={faTrash} />
           </button>
+          {/* Используем деструктурированный id для onDuplicate */}
           <button className="ActionButton duplicate" onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onDuplicate(id || ''); }}>
             <FontAwesomeIcon icon={faClone} />
           </button>

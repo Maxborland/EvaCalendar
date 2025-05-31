@@ -18,58 +18,45 @@ class SummaryService {
     };
   }
 
-  async getDailySummary(weekId, dayOfWeek) {
-    const income = await knex('tasks')
-      .where({ weekId, dayOfWeek, type: 'income' })
-      .sum('amountEarned as totalIncome')
+  async getDailySummary(date) { // date в формате YYYY-MM-DD
+    const result = await knex('tasks')
+      .select(
+        knex.raw("COALESCE(SUM(CASE WHEN type = 'income' THEN \"amountEarned\" ELSE 0 END), 0) as totalEarned"),
+        knex.raw("COALESCE(SUM(CASE WHEN type = 'expense' THEN \"amountSpent\" ELSE 0 END), 0) as totalSpent")
+      )
+      .whereRaw('DATE(dueDate) = ?', [date])
       .first();
 
-    const expenses = await knex('tasks')
-      .where({ weekId, dayOfWeek, type: 'expense' })
-      .sum('amountSpent as totalExpense')
-      .first();
-
-    const totalIncome = income.totalIncome || 0;
-    const totalExpense = expenses.totalExpense || 0;
-    const balance = totalIncome - totalExpense;
+    const totalEarned = parseFloat(result.totalEarned) || 0;
+    const totalSpent = parseFloat(result.totalSpent) || 0;
+    const balance = totalEarned - totalSpent;
 
     return {
-      totalIncome,
-      totalExpense,
+      totalEarned,
+      totalSpent,
       balance,
     };
   }
   async getMonthlySummary(year, month) {
-    // Получаем все weekId, относящиеся к указанному году и месяцу
-    const weeksInMonth = await knex('weeks')
-      .whereRaw('strftime("%Y-%m", startDate) = ?', [`${year}-${String(month).padStart(2, '0')}`])
-      .select('id');
+    const yearStr = String(year);
+    const monthStr = String(month).padStart(2, '0');
 
-    const weekIds = weeksInMonth.map(week => week.id);
-
-    if (weekIds.length === 0) {
-      return { totalIncome: 0, totalExpense: 0 };
-    }
-
-    const income = await knex('tasks')
-      .whereIn('weekId', weekIds)
-      .andWhere({ type: 'income' })
-      .sum('amountEarned as totalIncome')
+    const result = await knex('tasks')
+      .select(
+        knex.raw("COALESCE(SUM(CASE WHEN type = 'income' THEN \"amountEarned\" ELSE 0 END), 0) as totalEarned"),
+        knex.raw("COALESCE(SUM(CASE WHEN type = 'expense' THEN \"amountSpent\" ELSE 0 END), 0) as totalSpent")
+      )
+      .whereRaw("strftime('%Y', dueDate) = ?", [yearStr])
+      .andWhereRaw("strftime('%m', dueDate) = ?", [monthStr])
       .first();
 
-    const expenses = await knex('tasks')
-      .whereIn('weekId', weekIds)
-      .andWhere({ type: 'expense' })
-      .sum('amountSpent as totalExpense')
-      .first();
-
-    const totalIncome = income.totalIncome || 0;
-    const totalExpense = expenses.totalExpense || 0;
-    const balance = totalIncome - totalExpense;
+    const totalEarned = parseFloat(result.totalEarned) || 0;
+    const totalSpent = parseFloat(result.totalSpent) || 0;
+    const balance = totalEarned - totalSpent;
 
     return {
-      totalIncome,
-      totalExpense,
+      totalEarned,
+      totalSpent,
       balance,
     };
   }

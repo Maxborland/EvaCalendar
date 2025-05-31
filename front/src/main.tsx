@@ -1,4 +1,3 @@
-import { StrictMode } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { MultiBackend } from 'react-dnd-multi-backend';
@@ -15,9 +14,11 @@ const MyMultiBackend = MultiBackend;
 
 const backends = [
   {
+    id: 'html5', // Добавлен id
     backend: HTML5Backend
   },
   {
+    id: 'touch', // Добавлен id
     backend: TouchBackend,
     options: { enableTouchEvents: true },
     preview: true,
@@ -29,10 +30,10 @@ const backends = [
 ];
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+  <>
     <DndProvider backend={MyMultiBackend} options={{ backends: backends }}>
       <App />
     </DndProvider>
     <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
-  </StrictMode>,
+  </>,
 )

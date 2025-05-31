@@ -1,8 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TaskForm from '../components/TaskForm';
-import { createTask, updateTask } from '../services/api'; // Добавлен getAllChildren
+import { createTask, updateTask, type Task } from '../services/api';
 
-// Мокаем функции API
 import { vi } from 'vitest';
 
 vi.mock('../services/api', () => ({
@@ -12,128 +11,131 @@ vi.mock('../services/api', () => ({
     { id: '1', category_name: 'Еда' },
     { id: '2', category_name: 'Транспорт' },
   ])),
-  // Мокаем getAllChildren для тестов
   getAllChildren: vi.fn(() => Promise.resolve([
-    // Допустим, у нас есть несколько детей, один из которых 'Петя'
-    { id: 1, childName: 'Петя', hourlyRate: 600, address: 'Онлайн', parentName: 'Мама Пети', parentPhone: '111-222-3333' },
-    { id: 2, childName: 'Вася', hourlyRate: 500, address: 'Оффлайн', parentName: 'Папа Васи', parentPhone: '444-555-6666' },
+    { id: 'child1', childName: 'Петя', hourlyRate: 600, address: 'Онлайн', parentName: 'Мама Пети', parentPhone: '+7 (111) 222-33-44' },
+    { id: 'child2', childName: 'Вася', hourlyRate: 500, address: 'Оффлайн', parentName: 'Папа Васи', parentPhone: '+7 (444) 555-66-77' },
   ])),
-  // Мокаем getChildById для тестов
   getChildById: vi.fn((id) => {
-    if (id === 1) { // Условный мок для ребенка с ID 1
+    if (id === 'child1') {
       return Promise.resolve({
-        id: 1,
+        id: 'child1',
         childName: 'Петя',
         hourlyRate: 600,
         address: 'Онлайн',
         parentName: 'Мама Пети',
-        parentPhone: '111-222-3333',
+        parentPhone: '+7 (111) 222-33-44',
       });
     }
-    return Promise.resolve(null); // Если ребенок не найден
+    if (id === 'child2') {
+      return Promise.resolve({
+        id: 'child2',
+        childName: 'Вася',
+        hourlyRate: 500,
+        address: 'Оффлайн',
+        parentName: 'Папа Васи',
+        parentPhone: '+7 (444) 555-66-77',
+      });
+    }
+    return Promise.resolve(null);
   }),
 }));
 
 const mockOnTaskSaved = vi.fn();
 const mockOnClose = vi.fn();
 const defaultProps = {
-  weekId: 'week1',
-  dayOfWeek: 'Monday',
   onTaskSaved: mockOnTaskSaved,
   onClose: mockOnClose,
 };
+
+// Helper to create initialData for creation mode
+const getCreationInitialData = (type: 'income' | 'expense'): Partial<Task> & { type: 'income' | 'expense' } => ({
+    uuid: undefined, // Явно указываем uuid как undefined
+    type: type,
+  });
+
 
 describe('TaskForm', () => {
   let modalRoot: HTMLElement;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Создаем контейнер modal-root для портала
     modalRoot = document.createElement('div');
     modalRoot.setAttribute('id', 'modal-root');
     document.body.appendChild(modalRoot);
   });
 
   afterEach(() => {
-    // Очищаем DOM после каждого теста
-    document.body.removeChild(modalRoot);
+    if (document.body.contains(modalRoot)) {
+        document.body.removeChild(modalRoot);
+    }
+    document.body.innerHTML = '';
   });
 
   // Тест 1: Рендеринг формы для создания новой задачи (доход)
   test('рендерит форму для создания новой задачи (доход) корректно', async () => {
+    render(<TaskForm {...defaultProps} initialData={getCreationInitialData('income')} />);
+
+    await screen.findByRole('option', { name: 'Петя' });
+
+    expect(await screen.findByRole('heading', { name: 'Создать новое дело' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Создать дело' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Тип:')).toHaveValue('income');
+    expect(screen.getByLabelText('Название:')).toBeInTheDocument();
+    expect(screen.getByLabelText('Дата выполнения:')).toBeInTheDocument();
+    expect(screen.getByLabelText('Время:')).toBeInTheDocument();
+    expect(screen.getByLabelText('Выбрать ребенка:')).toBeInTheDocument();
+
     await waitFor(() => {
-      render(<TaskForm {...defaultProps} />);
+        expect(screen.queryByLabelText('Имя ребенка:')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('Адрес:')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('Ставка (₽/час):')).not.toBeInTheDocument();
     });
 
-    // Используем более точные селекторы для заголовка и кнопки
-    expect(screen.getByRole('heading', { name: 'Создать новое дело' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Создать дело' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Тип:')).toHaveValue('income');
-
-    // Проверяем поля для дохода
-    expect(screen.getByLabelText('Название:')).toBeInTheDocument();
-    expect(screen.getByLabelText('Время:')).toBeInTheDocument();
-    expect(screen.getByLabelText('Адрес:')).toBeInTheDocument();
-    expect(screen.getByLabelText('Имя ребенка:')).toBeInTheDocument();
-    expect(screen.getByLabelText('Ставка (₽/час):')).toBeInTheDocument();
     expect(screen.getByLabelText('Часов отработано:')).toBeInTheDocument();
-    // Удалено, так как это поле не отображается в UI
-    // expect(screen.getByText('Заработано (расчетное):')).toBeInTheDocument();
     expect(screen.getByLabelText('Комментарии:')).toBeInTheDocument();
-
-    // Категории расходов не должны быть видны
-    expect(screen.queryByText('Категория:')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Категория:')).not.toBeInTheDocument();
     expect(createTask).not.toHaveBeenCalled();
     expect(updateTask).not.toHaveBeenCalled();
   });
 
   // Тест 2: Рендеринг формы для создания новой задачи (расход)
   test('рендерит форму для создания новой задачи (расход) корректно', async () => {
-    await waitFor(() => {
-      render(<TaskForm {...defaultProps} />);
-    });
+    render(<TaskForm {...defaultProps} initialData={getCreationInitialData('expense')} />);
 
-    fireEvent.change(screen.getByLabelText('Тип:'), { target: { value: 'expense' } });
+    await screen.findByRole('option', { name: 'Еда' });
 
-    // Проверяем поля для расхода
+    expect(await screen.findByRole('heading', { name: 'Создать новое дело' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Дата выполнения:')).toBeInTheDocument();
     expect(screen.getByLabelText('Описание расхода:')).toBeInTheDocument();
     expect(screen.getByLabelText('Потрачено:')).toBeInTheDocument();
     expect(screen.getByLabelText('Комментарии:')).toBeInTheDocument();
-    expect(await screen.findByLabelText('Категория:')).toBeInTheDocument(); // Категории должны быть загружены
-
-    // Поля дохода не должны быть видны
+    expect(screen.getByLabelText('Категория:')).toBeInTheDocument();
     expect(screen.queryByLabelText('Ставка (₽/час):')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Часов отработано:')).not.toBeInTheDocument();
   });
 
   // Тест 3: Отправка формы для создания задачи (доход)
   test('отправляет форму для создания задачи (доход) и вызывает createTask', async () => {
-    render(<TaskForm {...defaultProps} />);
-
-    fireEvent.change(screen.getByLabelText('Название:'), { target: { value: 'Урок математики' } });
+    render(<TaskForm {...defaultProps} initialData={getCreationInitialData('income')} />);
+    await screen.findByLabelText('Выбрать ребенка:');
+    fireEvent.change(screen.getByLabelText('Выбрать ребенка:'), { target: { value: 'child1' } });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Имя ребенка:')).toHaveValue('Петя');
+      expect(screen.getByLabelText('Адрес:')).toHaveValue('Онлайн');
+      expect(screen.getByLabelText('Ставка (₽/час):')).toHaveValue(600);
+    });
+    fireEvent.change(screen.getByLabelText('Дата выполнения:'), { target: { value: '2024-06-15' } });
+    fireEvent.change(screen.getByLabelText('Название:'), { target: { value: 'Урок математики с Петей' } });
     fireEvent.change(screen.getByLabelText('Время:'), { target: { value: '10:00' } });
-    fireEvent.change(screen.getByLabelText('Адрес:'), { target: { value: 'Улица Пушкина, 10' } });
-    fireEvent.change(screen.getByLabelText('Имя ребенка:'), { target: { value: 'Маша' } });
-    fireEvent.change(screen.getByLabelText('Ставка (₽/час):'), { target: { value: '500' } });
     fireEvent.change(screen.getByLabelText('Часов отработано:'), { target: { value: '2' } });
     fireEvent.change(screen.getByLabelText('Комментарии:'), { target: { value: 'Отличный урок' } });
-
-    fireEvent.click(screen.getByText('Создать дело'));
-
+    fireEvent.click(screen.getByRole('button', { name: 'Создать дело' }));
     await waitFor(() => {
       expect(createTask).toHaveBeenCalledTimes(1);
       expect(createTask).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'income',
-        title: 'Урок математики',
-        time: '10:00',
-        address: 'Улица Пушкина, 10',
-        childName: 'Маша',
-        hourlyRate: 500,
-        hoursWorked: 2,
-        amountEarned: 1000, // 500 * 2
-        comments: 'Отличный урок',
-        weekId: 'week1',
-        dayOfWeek: 'Monday',
+        type: 'income', title: 'Урок математики с Петей', dueDate: '2024-06-15',
+        time: '10:00', address: 'Онлайн', childId: 'child1',
+        hourlyRate: 600, hoursWorked: 2, amountEarned: 1200, comments: 'Отличный урок',
       }));
       expect(mockOnTaskSaved).toHaveBeenCalledTimes(1);
       expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -142,32 +144,19 @@ describe('TaskForm', () => {
 
   // Тест 4: Отправка формы для создания задачи (расход)
   test('отправляет форму для создания задачи (расход) и вызывает createTask', async () => {
-    await waitFor(() => {
-      render(<TaskForm {...defaultProps} />);
-    });
-
-    fireEvent.change(screen.getByLabelText('Тип:'), { target: { value: 'expense' } });
-
+    render(<TaskForm {...defaultProps} initialData={getCreationInitialData('expense')} />);
+    await screen.findByLabelText('Категория:');
+    fireEvent.change(screen.getByLabelText('Дата выполнения:'), { target: { value: '2024-06-16' } });
     fireEvent.change(screen.getByLabelText('Описание расхода:'), { target: { value: 'Покупка продуктов' } });
     fireEvent.change(screen.getByLabelText('Потрачено:'), { target: { value: '1500' } });
     fireEvent.change(screen.getByLabelText('Комментарии:'), { target: { value: 'На ужин' } });
-    await waitFor(() => { // Оборачиваем, чтобы гарантировать обновление состояния перед отправкой
-        fireEvent.change(screen.getByLabelText('Категория:'), { target: { value: 'Еда' } });
-    });
-
-
-    fireEvent.click(screen.getByText('Создать дело'));
-
+    fireEvent.change(screen.getByLabelText('Категория:'), { target: { value: 'Еда' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Создать дело' }));
     await waitFor(() => {
       expect(createTask).toHaveBeenCalledTimes(1);
       expect(createTask).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'expense',
-        title: 'Покупка продуктов',
-        amountSpent: 1500,
-        comments: 'На ужин',
-        category: 'Еда',
-        weekId: 'week1',
-        dayOfWeek: 'Monday',
+        type: 'expense', title: 'Покупка продуктов', dueDate: '2024-06-16',
+        amountSpent: 1500, comments: 'На ужин', category: 'Еда',
       }));
       expect(mockOnTaskSaved).toHaveBeenCalledTimes(1);
       expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -177,70 +166,53 @@ describe('TaskForm', () => {
   // Тест 5: Рендеринг формы для редактирования существующей задачи (доход)
   test('рендерит форму для редактирования существующей задачи (доход) корректно', async () => {
     const initialData = {
-      id: 'task123',
-      type: 'income' as 'income',
-      title: 'Репетиторство',
-      time: '14:00',
-      address: 'Онлайн',
-      childName: 'Петя',
-      hourlyRate: 600,
-      hoursWorked: 1.5,
-      amountEarned: 900,
-      comments: 'Подготовка к ЕГЭ',
-    };
-    render(<TaskForm {...defaultProps} initialData={initialData} />); // Перенесено вне waitFor
-
-    await waitFor(() => { // waitFor теперь обертывает expect
-      expect(screen.getByText('Редактировать дело')).toBeInTheDocument();
+      uuid: 'task-uuid-123', type: 'income' as 'income', title: 'Репетиторство',
+      dueDate: '2024-06-10', time: '14:00', childId: 'child1',
+      hoursWorked: 1.5, amountEarned: 900, comments: 'Подготовка к ЕГЭ',
+    } as Partial<Task> & { type: 'income' | 'expense' };
+    render(<TaskForm {...defaultProps} initialData={initialData} />);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Редактировать дело' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Сохранить' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Дата выполнения:')).toHaveValue('2024-06-10');
       expect(screen.getByLabelText('Название:')).toHaveValue('Репетиторство');
       expect(screen.getByLabelText('Время:')).toHaveValue('14:00');
-      // Исправлено: использование toHaveValue для readOnly поля (так как toHaveDisplayValue не работает)
-      expect(screen.getByLabelText('Адрес:')).toHaveValue('Онлайн');
+      expect(screen.getByLabelText('Выбрать ребенка:')).toHaveValue('child1');
       expect(screen.getByLabelText('Имя ребенка:')).toHaveValue('Петя');
-      expect(screen.getByDisplayValue('600')).toBeInTheDocument(); // Ставка
-      // screen.debug(); // Удаляем отладочный вывод DOM
-      expect(screen.getByDisplayValue('1.5')).toBeInTheDocument(); // Часов отработано
-      // Удалено, так как это поле не отображается как input
-      // expect(screen.getByDisplayValue('900')).toBeInTheDocument(); // Заработано
+      expect(screen.getByLabelText('Адрес:')).toHaveValue('Онлайн');
+      expect(screen.getByLabelText('Ставка (₽/час):')).toHaveValue(600);
+      expect(screen.getByLabelText('Имя родителя:')).toHaveValue('Мама Пети');
+      expect(screen.getByLabelText('Телефон родителя:')).toHaveValue('+7 (111) 222-33-44');
+      expect(screen.getByLabelText('Часов отработано:')).toHaveValue(1.5);
       expect(screen.getByLabelText('Комментарии:')).toHaveValue('Подготовка к ЕГЭ');
-    }); // Закрытие waitFor
+    });
   });
 
   // Тест 6: Отправка формы для редактирования задачи (доход)
   test('отправляет форму для редактирования задачи (доход) и вызывает updateTask', async () => {
     const initialData = {
-      id: 'task123',
-      type: 'income' as 'income',
-      title: 'Репетиторство',
-      time: '14:00',
-      address: 'Онлайн',
-      childName: 'Петя',
-      hourlyRate: 600,
-      hoursWorked: 1.5,
-      amountEarned: 900,
-      comments: 'Подготовка к ЕГЭ',
-    };
+      uuid: 'task-uuid-123', type: 'income' as 'income', title: 'Репетиторство',
+      dueDate: '2024-06-10', time: '14:00', childId: 'child1',
+      hoursWorked: 1.5, comments: 'Подготовка к ЕГЭ',
+    } as Partial<Task> & { type: 'income' | 'expense' };
+    render(<TaskForm {...defaultProps} initialData={initialData} />);
+    await screen.findByLabelText('Ставка (₽/час):', {}, { timeout: 3000 });
+    fireEvent.change(screen.getByLabelText('Дата выполнения:'), { target: { value: '2024-06-11' } });
+    fireEvent.change(screen.getByLabelText('Название:'), { target: { value: 'Новое название урока' } });
+    await screen.findByLabelText('Выбрать ребенка:');
+    fireEvent.change(screen.getByLabelText('Выбрать ребенка:'), { target: { value: 'child2' } });
     await waitFor(() => {
-      render(<TaskForm {...defaultProps} initialData={initialData} />);
-    });
-
-    fireEvent.change(screen.getByLabelText('Название:'), { target: { value: 'Новое название' } });
-    fireEvent.change(screen.getByLabelText('Ставка (₽/час):'), { target: { value: '700' } });
+      expect(screen.getByLabelText('Ставка (₽/час):')).toHaveValue(500);
+      expect(screen.getByLabelText('Адрес:')).toHaveValue('Оффлайн');
+    }, { timeout: 3000 });
     fireEvent.change(screen.getByLabelText('Часов отработано:'), { target: { value: '2' } });
-
-    // Исправлено: использование 'Сохранить' вместо 'Сохранить изменения'
-    fireEvent.click(screen.getByText('Сохранить'));
-
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить' }));
     await waitFor(() => {
       expect(updateTask).toHaveBeenCalledTimes(1);
-      expect(updateTask).toHaveBeenCalledWith('task123', expect.objectContaining({
-        type: 'income',
-        title: 'Новое название',
-        hourlyRate: 700,
-        hoursWorked: 2,
-        amountEarned: 1400, // 700 * 2
-        weekId: 'week1',
-        dayOfWeek: 'Monday',
+      expect(updateTask).toHaveBeenCalledWith('task-uuid-123', expect.objectContaining({
+        uuid: 'task-uuid-123', type: 'income', title: 'Новое название урока',
+        dueDate: '2024-06-11', childId: 'child2', hourlyRate: 500,
+        hoursWorked: 2, amountEarned: 1000,
       }));
       expect(mockOnTaskSaved).toHaveBeenCalledTimes(1);
       expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -250,57 +222,39 @@ describe('TaskForm', () => {
   // Тест 7: Рендеринг формы для редактирования существующей задачи (расход)
   test('рендерит форму для редактирования существующей задачи (расход) корректно', async () => {
     const initialData = {
-      id: 'task456',
-      type: 'expense' as 'expense',
-      title: 'Обед в кафе',
-      amountSpent: 350,
-      comments: 'Бизнес-ланч',
-      category: 'Еда',
-    };
-    await waitFor(() => {
-      render(<TaskForm {...defaultProps} initialData={initialData} />);
+      uuid: 'task-uuid-456', type: 'expense' as 'expense', title: 'Обед в кафе',
+      dueDate: '2024-06-12', amountSpent: 350, comments: 'Бизнес-ланч', category: 'Еда',
+    } as Partial<Task> & { type: 'income' | 'expense' };
+    render(<TaskForm {...defaultProps} initialData={initialData} />);
+    await waitFor(async () => {
+      expect(screen.getByRole('heading', { name: 'Редактировать дело' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Сохранить' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Дата выполнения:')).toHaveValue('2024-06-12');
+      expect(screen.getByLabelText('Описание расхода:')).toHaveValue('Обед в кафе');
+      expect(screen.getByLabelText('Потрачено:')).toHaveValue(350);
+      expect(screen.getByLabelText('Комментарии:')).toHaveValue('Бизнес-ланч');
+      expect(await screen.findByLabelText('Категория:')).toHaveValue('Еда');
     });
-
-    expect(screen.getByText('Редактировать дело')).toBeInTheDocument();
-    expect(screen.getByLabelText('Описание расхода:')).toHaveValue('Обед в кафе');
-    expect(screen.getByDisplayValue('350')).toBeInTheDocument(); // Потрачено
-    expect(screen.getByLabelText('Комментарии:')).toHaveValue('Бизнес-ланч');
-    expect(await screen.findByDisplayValue('Еда')).toBeInTheDocument(); // Категория
   });
 
   // Тест 8: Отправка формы для редактирования задачи (расход)
   test('отправляет форму для редактирования задачи (расход) и вызывает updateTask', async () => {
     const initialData = {
-      id: 'task456',
-      type: 'expense' as 'expense',
-      title: 'Обед в кафе',
-      amountSpent: 350,
-      comments: 'Бизнес-ланч',
-      category: 'Еда',
-    };
-    await waitFor(() => {
-      render(<TaskForm {...defaultProps} initialData={initialData} />);
-    });
-
+      uuid: 'task-uuid-456', type: 'expense' as 'expense', title: 'Обед в кафе',
+      dueDate: '2024-06-12', amountSpent: 350, comments: 'Бизнес-ланч', category: 'Еда',
+    } as Partial<Task> & { type: 'income' | 'expense' };
+    render(<TaskForm {...defaultProps} initialData={initialData} />);
+    await screen.findByLabelText('Категория:');
+    fireEvent.change(screen.getByLabelText('Дата выполнения:'), { target: { value: '2024-06-13' } });
     fireEvent.change(screen.getByLabelText('Описание расхода:'), { target: { value: 'Ужин дома' } });
     fireEvent.change(screen.getByLabelText('Потрачено:'), { target: { value: '800' } });
-    await waitFor(() => {
-        fireEvent.change(screen.getByLabelText('Категория:'), { target: { value: 'Транспорт' } });
-    });
-
-
-    // Исправлено: использование 'Сохранить' вместо 'Сохранить изменения'
-    fireEvent.click(screen.getByText('Сохранить'));
-
+    fireEvent.change(screen.getByLabelText('Категория:'), { target: { value: 'Транспорт' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить' }));
     await waitFor(() => {
       expect(updateTask).toHaveBeenCalledTimes(1);
-      expect(updateTask).toHaveBeenCalledWith('task456', expect.objectContaining({
-        type: 'expense',
-        title: 'Ужин дома',
-        amountSpent: 800,
-        category: 'Транспорт',
-        weekId: 'week1',
-        dayOfWeek: 'Monday',
+      expect(updateTask).toHaveBeenCalledWith('task-uuid-456', expect.objectContaining({
+        uuid: 'task-uuid-456', type: 'expense', title: 'Ужин дома',
+        dueDate: '2024-06-13', amountSpent: 800, category: 'Транспорт',
       }));
       expect(mockOnTaskSaved).toHaveBeenCalledTimes(1);
       expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -308,66 +262,56 @@ describe('TaskForm', () => {
   });
 
   // Тест 9: Закрытие формы по клику на фон
-  test('закрывает форму при клике на фон', async () => { // Добавляем async/await
-    await waitFor(() => {
-      render(<TaskForm {...defaultProps} />);
-    });
-    fireEvent.click(screen.getByTestId('modal-overlay')); // Добавим data-testid для оверлея
-
+  test('закрывает форму при клике на фон', async () => {
+    render(<TaskForm {...defaultProps} initialData={getCreationInitialData('income')} />);
+    await screen.findByRole('heading', { name: 'Создать новое дело' });
+    fireEvent.click(screen.getByTestId('modal-overlay'));
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
   // Тест 10: Закрытие формы по клику на кнопку закрытия
-  test('закрывает форму при клике на кнопку закрытия', async () => { // Добавляем async/await
-    await waitFor(() => {
-      render(<TaskForm {...defaultProps} />);
-    });
-    fireEvent.click(screen.getByText('×')); // Символ × для закрытия
-
+  test('закрывает форму при клике на кнопку закрытия', async () => {
+    render(<TaskForm {...defaultProps} initialData={getCreationInitialData('income')} />);
+    await screen.findByRole('heading', { name: 'Создать новое дело' });
+    fireEvent.click(screen.getByText('×'));
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
   // Тест 11: Валидация required полей для дохода
   test('отображает ошибки валидации для required полей дохода', async () => {
-    await waitFor(() => {
-      render(<TaskForm {...defaultProps} />);
-    });
+    render(<TaskForm {...defaultProps} initialData={getCreationInitialData('income')} />);
+    await screen.findByLabelText('Название:');
+    const createButtonInitial = await screen.findByRole('button', { name: 'Создать дело' });
+    expect(createButtonInitial).toBeInTheDocument();
 
-    // Очищаем обязательные поля
+    fireEvent.change(screen.getByLabelText('Дата выполнения:'), { target: { value: '' } });
     fireEvent.change(screen.getByLabelText('Название:'), { target: { value: '' } });
     fireEvent.change(screen.getByLabelText('Время:'), { target: { value: '' } });
 
-    fireEvent.click(screen.getByText('Создать дело'));
-
-    // В данном случае React Testing Library не эмулирует нативное поведение браузерной валидации форм.
-    // Если бы валидация была реализована через JS (например, с состояниями ошибок), здесь были бы проверки.
-    // Для browser-native валидации, expect(createTask).not.toHaveBeenCalled() является достаточным.
+    const createButtonAfterChanges = await screen.findByRole('button', { name: 'Создать дело' });
+    fireEvent.click(createButtonAfterChanges);
     await waitFor(() => {
-        // Мы ожидаем, что createTask не будет вызван, так как форма невалидна
         expect(createTask).not.toHaveBeenCalled();
     });
   });
 
   // Тест 12: Валидация required полей для расхода
   test('отображает ошибки валидации для required полей расхода', async () => {
-    await waitFor(() => {
-        render(<TaskForm {...defaultProps} />);
-    });
-    fireEvent.change(screen.getByLabelText('Тип:'), { target: { value: 'expense' } });
+    render(<TaskForm {...defaultProps} initialData={getCreationInitialData('expense')} />);
+    await screen.findByLabelText('Тип:');
+    await screen.findByLabelText('Категория:');
+    const createButtonInitial = await screen.findByRole('button', { name: 'Создать дело' });
+    expect(createButtonInitial).toBeInTheDocument();
 
-    // Очищаем обязательные поля
+    fireEvent.change(screen.getByLabelText('Дата выполнения:'), { target: { value: '' } });
     fireEvent.change(screen.getByLabelText('Описание расхода:'), { target: { value: '' } });
     fireEvent.change(screen.getByLabelText('Потрачено:'), { target: { value: '' } });
-    await waitFor(() => {
-        fireEvent.change(screen.getByLabelText('Категория:'), { target: { value: '' } });
-    });
+    fireEvent.change(screen.getByLabelText('Категория:'), { target: { value: '' } });
 
-
-    fireEvent.click(screen.getByText('Создать дело'));
-
+    const createButtonAfterChanges = await screen.findByRole('button', { name: 'Создать дело' });
+    fireEvent.click(createButtonAfterChanges);
     await waitFor(() => {
         expect(createTask).not.toHaveBeenCalled();
     });
   });
-
 });

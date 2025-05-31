@@ -63,7 +63,7 @@ const ExpenseCategoryManager: React.FC = () => {
       if (oldCategoryName && oldCategoryName !== editingCategory.category_name) {
         const tasks = await getTasksByCategory(oldCategoryName);
         for (const task of tasks.data) {
-          await updateTask(task.id, { ...task, category: editingCategory.category_name });
+          await updateTask(task.uuid, { ...task, category: editingCategory.category_name });
         }
       }
     } catch (error: any) {
@@ -80,7 +80,7 @@ const ExpenseCategoryManager: React.FC = () => {
     }
   };
 
-  const handleDeleteCategory = async (id: number) => {
+  const handleDeleteCategory = async (id: string) => {
     if (!window.confirm('Вы уверены, что хотите удалить эту категорию?')) return;
 
     try {

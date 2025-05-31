@@ -49,15 +49,19 @@ describe('Note API', () => {
       .post('/notes')
       .send({ ...baseNote, content: 'Заметка для обновления' });
     const uuidToUpdate = createRes.body.uuid;
+    const originalDate = createRes.body.date; // Сохраняем исходную дату
 
     const updatedContent = 'Обновленное содержание заметки';
-    const updatedDate = '2025-06-01';
+    // const updatedDate = '2025-06-01'; // Это поле больше не должно влиять на обновление даты
+
     const res = await request(app)
       .put(`/notes/${uuidToUpdate}`)
-      .send({ content: updatedContent, date: updatedDate });
+      .send({ content: updatedContent }); // Отправляем только content, как и делает фронтенд
+      // Если бы мы отправили date, сервис бы его проигнорировал, но тест должен отражать реальное использование
+
     expect(res.statusCode).toEqual(200);
     expect(res.body.content).toEqual(updatedContent);
-    expect(res.body.date).toEqual(updatedDate);
+    expect(res.body.date).toEqual(originalDate); // Проверяем, что дата не изменилась
   });
 
   it('should delete a note', async () => {
@@ -83,12 +87,41 @@ describe('Note API', () => {
   it('should return 404 if note not found when updating', async () => {
     const res = await request(app)
       .put('/notes/00000000-0000-0000-0000-000000000000')
-      .send({ content: 'Попытка обновить несуществующую', date: '2025-01-01' });
+      .send({ content: 'Попытка обновить несуществующую' }); // Отправляем только content
     expect(res.statusCode).toEqual(404);
   });
 
   it('should return 404 if note not found when deleting', async () => {
     const res = await request(app).delete('/notes/00000000-0000-0000-0000-000000000000');
     expect(res.statusCode).toEqual(404);
+  });
+describe('GET /notes/date/:dateString', () => {
+    const testDate = '2025-07-15';
+    const noteForDate = {
+      date: testDate,
+      content: 'Заметка для конкретной даты',
+    };
+
+    beforeEach(async () => {
+      // Убедимся, что в базе нет заметки для этой даты перед тестом на "не найдено"
+      // и создаем заметку для теста на "найдено"
+      await db('notes').where({ date: testDate }).del(); // Сначала удаляем, если есть
+      await request(app).post('/notes').send(noteForDate); // Затем создаем
+    });
+
+    it('should get a note by date if it exists', async () => {
+      const res = await request(app).get(`/notes/date/${testDate}`);
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toHaveProperty('uuid');
+      expect(res.body.date).toEqual(noteForDate.date);
+      expect(res.body.content).toEqual(noteForDate.content);
+    });
+
+    it('should return 404 if note for the date does not exist', async () => {
+      const nonExistentDate = '2025-07-16';
+      const res = await request(app).get(`/notes/date/${nonExistentDate}`);
+      expect(res.statusCode).toEqual(404);
+    });
+
   });
 });

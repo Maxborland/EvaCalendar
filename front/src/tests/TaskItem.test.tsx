@@ -4,16 +4,20 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { vi } from 'vitest';
 import TaskItem from '../components/TaskItem';
+import type { Task } from '../services/api';
 
-// Мокаем функцию deleteTask
 vi.mock('../services/api', () => ({
   deleteTask: vi.fn(() => Promise.resolve()),
+  createTask: vi.fn(),
+  updateTask: vi.fn(),
+  getExpenseCategories: vi.fn(() => Promise.resolve([])),
+  getAllChildren: vi.fn(() => Promise.resolve([])),
+  getChildById: vi.fn(() => Promise.resolve(null)),
 }));
 
-// Мокаем react-dnd, так как он не нужен для этих тестов и может вызвать проблемы в jsdom
 vi.mock('react-dnd', () => ({
-  useDrag: () => [{}, vi.fn()],
-  useDrop: () => [{}, vi.fn()],
+  useDrag: () => [{ isDragging: false }, vi.fn(), vi.fn()],
+  useDrop: () => [{ canDrop: false, isOver: false }, vi.fn()],
   DndProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
@@ -22,99 +26,119 @@ describe('TaskItem', () => {
     vi.clearAllMocks();
   });
 
-  const incomeTask = {
-    id: 'income1',
-    type: 'income' as 'income',
+  const mockOnDelete = vi.fn();
+  const mockOnDuplicate = vi.fn();
+  const mockOnEdit = vi.fn();
+
+  const incomeTaskData: Task = {
+    uuid: 'income-uuid-1',
+    type: 'income', // Тип 'income' должен быть одним из 'fixed', 'hourly', 'expense'. Уточним на 'hourly' для дохода.
+                     // Однако, компонент TaskItem не валидирует это строго, он просто отображает.
+                     // Оставим 'income' как есть, если это соответствует логике отображения.
+                     // Судя по TaskForm, тип 'income' валиден.
     title: 'Урок английского',
+    dueDate: '2024-01-15',
     time: '10:00',
     address: 'Онлайн',
-    childName: 'Алексей',
+    childId: 'child-alex',
     hourlyRate: 700,
+    hoursWorked: 2,
     comments: 'Хороший ученик',
     amountEarned: 1400,
-    onDelete: vi.fn(),
-    onDuplicate: vi.fn(),
-    onEdit: vi.fn(),
+    isDone: false, // Исправлено с isCompleted на isDone
+    // weekId и dayOfWeek удалены, так как их нет в актуальном типе Task
   };
 
-  const expenseTask = {
-    id: 'expense1',
-    type: 'expense' as 'expense',
+  const expenseTaskData: Task = {
+    uuid: 'expense-uuid-1',
+    type: 'expense',
     title: 'Покупка книг',
+    dueDate: '2024-01-16',
     amountSpent: 500,
     comments: 'Для саморазвития',
     category: 'Образование',
-    onDelete: vi.fn(),
-    onDuplicate: vi.fn(),
-    onEdit: vi.fn(),
+    isDone: false, // Исправлено с isCompleted на isDone
+    // weekId и dayOfWeek удалены
   };
 
-  // Тест 1: Рендеринг задачи дохода
   test('рендерит задачу дохода корректно', () => {
     render(
       <DndProvider backend={HTML5Backend}>
-        <TaskItem {...incomeTask} />
+        <TaskItem task={incomeTaskData} onDelete={mockOnDelete} onDuplicate={mockOnDuplicate} onEdit={mockOnEdit} />
       </DndProvider>
     );
-    expect(screen.getByText('Урок английского')).toBeInTheDocument();
-    expect(screen.getByText('+1400₽')).toBeInTheDocument();
+    expect(screen.getByText(incomeTaskData.title!)).toBeInTheDocument();
+    expect(screen.getByText(`+${incomeTaskData.amountEarned}₽`)).toBeInTheDocument();
     expect(screen.queryByText('Потрачено:')).not.toBeInTheDocument();
   });
 
-  // Тест 2: Рендеринг задачи расхода
   test('рендерит задачу расхода корректно', () => {
     render(
       <DndProvider backend={HTML5Backend}>
-        <TaskItem {...expenseTask} />
+        <TaskItem task={expenseTaskData} onDelete={mockOnDelete} onDuplicate={mockOnDuplicate} onEdit={mockOnEdit} />
       </DndProvider>
     );
-    expect(screen.getByText('Покупка книг')).toBeInTheDocument();
-    expect(screen.getByText('-500₽')).toBeInTheDocument();
+    expect(screen.getByText(expenseTaskData.title!)).toBeInTheDocument();
+    expect(screen.getByText(`-${expenseTaskData.amountSpent}₽`)).toBeInTheDocument();
     expect(screen.queryByText('Заработано:')).not.toBeInTheDocument();
   });
 
-  // Тест 3: Вызывает onEdit при клике на элемент задачи
   test('вызывает onEdit при клике на элемент задачи', () => {
     render(
       <DndProvider backend={HTML5Backend}>
-        <TaskItem {...incomeTask} />
+        <TaskItem task={incomeTaskData} onDelete={mockOnDelete} onDuplicate={mockOnDuplicate} onEdit={mockOnEdit} />
       </DndProvider>
     );
-    fireEvent.click(screen.getByText('Урок английского'));
-    expect(incomeTask.onEdit).toHaveBeenCalledTimes(1);
-    expect(incomeTask.onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'income1' }));
+    fireEvent.click(screen.getByText(incomeTaskData.title!));
+    expect(mockOnEdit).toHaveBeenCalledTimes(1);
+    expect(mockOnEdit).toHaveBeenCalledWith(incomeTaskData);
   });
 
-  // Тест 4: Вызывает onDelete при клике на кнопку удаления
-  test('вызывает onDelete и deleteTask при клике на кнопку удаления', async () => {
+  test('вызывает onDelete при клике на кнопку удаления', async () => {
+    window.confirm = vi.fn(() => true);
+
     render(
       <DndProvider backend={HTML5Backend}>
-        <TaskItem {...incomeTask} />
+        <TaskItem task={incomeTaskData} onDelete={mockOnDelete} onDuplicate={mockOnDuplicate} onEdit={mockOnEdit} />
       </DndProvider>
     );
 
-    fireEvent.click(screen.getByText('🗑️')); // Клик по кнопке удаления
+    const buttons = screen.getAllByRole('button');
+    let deleteBtn;
+    buttons.forEach(button => {
+      if (button.querySelector('[data-icon="trash"]')) {
+        deleteBtn = button;
+      }
+    });
+    expect(deleteBtn).toBeInTheDocument();
+    fireEvent.click(deleteBtn!);
 
     await waitFor(() => {
-      expect(incomeTask.onDelete).toHaveBeenCalledTimes(1);
-      expect(incomeTask.onDelete).toHaveBeenCalledWith('income1');
+      expect(mockOnDelete).toHaveBeenCalledTimes(1);
+      expect(mockOnDelete).toHaveBeenCalledWith(incomeTaskData.uuid);
     });
   });
 
-  // Тест 5: Вызывает onDuplicate при клике на кнопку дублирования
   test('вызывает onDuplicate при клике на кнопку дублирования', async () => {
     render(
       <DndProvider backend={HTML5Backend}>
-        <TaskItem {...incomeTask} />
+        <TaskItem task={incomeTaskData} onDelete={mockOnDelete} onDuplicate={mockOnDuplicate} onEdit={mockOnEdit} />
       </DndProvider>
     );
 
-    fireEvent.click(screen.getByText('📄')); // Клик по кнопке дублирования
+    const buttons = screen.getAllByRole('button');
+    let duplicateBtn;
+    buttons.forEach(button => {
+      if (button.querySelector('[data-icon="clone"]')) {
+        duplicateBtn = button;
+      }
+    });
+    expect(duplicateBtn).toBeInTheDocument();
+    fireEvent.click(duplicateBtn!);
 
     await waitFor(() => {
-      expect(incomeTask.onDuplicate).toHaveBeenCalledTimes(1);
-      expect(incomeTask.onDuplicate).toHaveBeenCalledWith('income1');
+      expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
+      expect(mockOnDuplicate).toHaveBeenCalledWith(incomeTaskData.uuid);
     });
   });
-
 });

@@ -1,24 +1,25 @@
 import type { Moment } from 'moment';
 import React, { useEffect, useRef } from 'react';
+import type { Task } from '../services/api'; // Импортируем Task
 import FirstHalfOfWeek from './FirstHalfOfWeek';
 import SecondHalfOfWeek from './SecondHalfOfWeek';
 
 interface WeekDaysScrollerProps {
-  weekInfo: { id: string | null; startDate: string; endDate: string };
+  tasksForWeek: Task[]; // Заменяем weekInfo на tasksForWeek
   firstHalfDays: Moment[];
   secondHalfDays: Moment[];
   today: Moment;
   onTaskMove: () => void;
-  isFirstHalfVisible: boolean; // Добавляем новый пропс
+  isFirstHalfVisible: boolean;
 }
 
 const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
-  weekInfo,
+  tasksForWeek, // Используем tasksForWeek
   firstHalfDays,
   secondHalfDays,
   today,
   onTaskMove,
-  isFirstHalfVisible, // Деструктурируем isFirstHalfVisible
+  isFirstHalfVisible,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -30,7 +31,7 @@ const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
         scrollContainerRef.current.style.transform = 'translateX(-50%)';
       }
     }
-  }, [isFirstHalfVisible]); // Зависимость от isFirstHalfVisible
+  }, [isFirstHalfVisible]);
 
   return (
     <div
@@ -39,24 +40,22 @@ const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
       data-testid="week-days-container"
     >
       <div className="column-half">
-        {weekInfo.id !== null && (
-          <FirstHalfOfWeek
-            days={firstHalfDays}
-            weekId={weekInfo.id}
-            today={today}
-            onTaskMove={onTaskMove}
-          />
-        )}
+        {/* weekInfo.id больше не используется для условного рендеринга,
+            компоненты теперь всегда должны отображаться, если есть дни */}
+        <FirstHalfOfWeek
+          days={firstHalfDays}
+          tasksForWeek={tasksForWeek} // Передаем tasksForWeek
+          today={today}
+          onTaskMove={onTaskMove}
+        />
       </div>
       <div className="column-half">
-        {weekInfo.id !== null && (
-          <SecondHalfOfWeek
-            days={secondHalfDays}
-            weekId={weekInfo.id}
-            today={today}
-            onTaskMove={onTaskMove}
-          />
-        )}
+        <SecondHalfOfWeek
+          days={secondHalfDays}
+          tasksForWeek={tasksForWeek} // Передаем tasksForWeek
+          today={today}
+          onTaskMove={onTaskMove}
+        />
       </div>
     </div>
   );

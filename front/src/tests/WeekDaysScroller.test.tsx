@@ -3,7 +3,8 @@ import moment from 'moment';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import WeekDaysScroller from '../components/WeekDaysScroller';
-import { NavProvider } from '../context/NavContext'; // Импортируем NavProvider
+import { NavProvider } from '../context/NavContext';
+import type { Task } from '../services/api'; // Импортируем Task для tasksForWeek
 
 // Mock the scrollWidth and scrollLeft for the div element
 Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
@@ -14,12 +15,20 @@ Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
 Object.defineProperty(HTMLElement.prototype, 'scrollLeft', {
   configurable: true,
   writable: true,
+  value: 0, // Начальное значение
 });
 
 // Mock the style object for the div element to check transform property
-// This will simulate the style object and its properties
+let mockTransformValue = '';
 const mockStyle = {
-  transform: '',
+  // Используем getter и setter для transform, чтобы отслеживать изменения
+  get transform() {
+    return mockTransformValue;
+  },
+  set transform(value: string) {
+    mockTransformValue = value;
+  },
+  // Добавим другие свойства, если они используются и их нужно мокать
 };
 
 Object.defineProperty(HTMLElement.prototype, 'style', {
@@ -30,8 +39,15 @@ Object.defineProperty(HTMLElement.prototype, 'style', {
 });
 
 describe('WeekDaysScroller', () => {
+  beforeEach(() => {
+    // Сбрасываем mockTransformValue перед каждым тестом
+    mockTransformValue = '';
+    // Сбрасываем scrollLeft
+    (HTMLElement.prototype as any).scrollLeft = 0;
+  });
+
   const commonProps = {
-    weekInfo: { id: 'some-id', startDate: '2025-05-26', endDate: '2025-06-01' },
+    tasksForWeek: [] as Task[], // Заменяем weekInfo на tasksForWeek
     firstHalfDays: [
       moment('2025-05-26'), // Monday
       moment('2025-05-27'), // Tuesday
@@ -44,30 +60,32 @@ describe('WeekDaysScroller', () => {
       moment('2025-06-01'), // Sunday
     ],
     onTaskMove: () => {},
-    today: moment('2025-05-30'), // Устанавливаем today для соответствия prop-типу
+    today: moment('2025-05-30'),
   };
 
-  it('скроллит влево, когда отображается первая половина недели', () => {
+  it('скроллит влево (transform: translateX(0)), когда отображается первая половина недели', () => {
     render(
-      <NavProvider> {/* Оборачиваем в NavProvider */}
+      <NavProvider>
         <DndProvider backend={HTML5Backend}>
           <WeekDaysScroller {...commonProps} isFirstHalfVisible={true} />
         </DndProvider>
       </NavProvider>
     );
     const scrollContainer = screen.getByTestId('week-days-container');
+    // Проверяем значение, установленное через mockStyle
     expect(scrollContainer.style.transform).toBe('translateX(0)');
   });
 
-  it('скроллит вправо, когда отображается вторая половина недели', () => {
+  it('скроллит вправо (transform: translateX(-50%)), когда отображается вторая половина недели', () => {
     render(
-      <NavProvider> {/* Оборачиваем в NavProvider */}
+      <NavProvider>
         <DndProvider backend={HTML5Backend}>
           <WeekDaysScroller {...commonProps} isFirstHalfVisible={false} />
         </DndProvider>
       </NavProvider>
     );
     const scrollContainer = screen.getByTestId('week-days-container');
+    // Проверяем значение, установленное через mockStyle
     expect(scrollContainer.style.transform).toBe('translateX(-50%)');
   });
 });

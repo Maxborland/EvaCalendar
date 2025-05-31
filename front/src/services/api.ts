@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
 
 export interface ExpenseCategory {
-  id: number;
+  id: string;
   category_name: string;
 }
 
@@ -22,6 +22,36 @@ export interface Child {
   address: string | null;
   hourlyRate: number | null;
   comment: string | null;
+}
+
+export interface Task {
+  uuid: string | undefined;
+  title: string;
+  type: string; // 'fixed', 'hourly', 'expense'
+  time?: string;
+  address?: string;
+  childId?: string;
+  hourlyRate?: number;
+  category?: string; // или ExpenseCategory если это объект
+  amountEarned?: number;
+  amountSpent?: number;
+  hoursWorked?: number;
+  // weekId: string; // Удалено
+  // dayOfWeek: number; // Удалено
+  dueDate: string;
+  comments?: string;
+  isDone?: boolean;
+  isPaid?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Note {
+  uuid: string;
+  date: string;
+  content: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const api = axios.create({
@@ -54,15 +84,37 @@ api.interceptors.response.use(
   }
 );
 
-export const getTasksByWeekAndDay = (weekId: string, dayOfWeek: string) => {
-  return api.get(`/tasks/${weekId}/${dayOfWeek}`);
+// Notes API
+export const getNoteByDate = async (dateString: string): Promise<Note | null> => {
+  try {
+    const response = await api.get<Note>(`notes/date/${dateString}`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response && error.response.status === 404) {
+      return null; // Заметка не найдена
+    }
+    // Ошибка будет обработана глобальным interceptor'ом
+    throw error;
+  }
 };
 
-export const createTask = (taskData: any) => {
+export const createNote = async (dateString: string, content: string): Promise<Note> => {
+  const response = await api.post<Note>('/notes', { date: dateString, content });
+  return response.data;
+};
+
+export const updateNote = async (uuid: string, content: string): Promise<Note> => {
+  const response = await api.put<Note>(`/notes/${uuid}`, { content });
+  return response.data;
+};
+
+// Удалена функция getTasksByWeekAndDay
+
+export const createTask = (taskData: Task) => {
   return api.post('/tasks', taskData);
 };
 
-export const updateTask = (id: string, taskData: any) => {
+export const updateTask = (id: string, taskData: Partial<Task>) => {
   return api.put(`/tasks/${id}`, taskData);
 };
 
@@ -74,8 +126,19 @@ export const duplicateTask = (id: string) => {
   return api.post(`/tasks/${id}/duplicate`);
 };
 
-export const moveTask = (taskId: string, newWeekId: string, newDayOfWeek: string) => {
-  return api.put(`/tasks/move`, { taskId, newWeekId, newDayOfWeek });
+// export const getTasksByDateRange = async (startDate: string, endDate: string): Promise<Task[]> => {
+//   const response = await api.get('/api/tasks', { params: { startDate, endDate } });
+//   return response.data as Task[];
+// };
+
+export const getAllTasks = async (): Promise<Task[]> => {
+  const response = await api.get('/tasks');
+  return response.data as Task[];
+};
+
+export const moveTask = async (taskId: string, newDueDate: string): Promise<Task> => {
+  const response = await api.put(`/tasks/${taskId}`, { dueDate: newDueDate });
+  return response.data as Task;
 };
 
 export const getWeeklySummary = async (weekId: string) => {
@@ -83,9 +146,17 @@ export const getWeeklySummary = async (weekId: string) => {
   return response.data as SummaryData;
 };
 
-export const getDailySummary = async (weekId: string, dayOfWeek: string) => {
-  const response = await api.get(`/summary/${weekId}/${dayOfWeek}`);
-  return response.data as SummaryData;
+export const getDailySummary = async (date: string): Promise<{ totalEarned: number, totalSpent: number } | null> => {
+  try {
+    const response = await api.get(`/summary/daily?date=${date}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching daily summary:', error);
+    // Возвращаем null или выбрасываем ошибку в зависимости от требований к обработке ошибок
+    // В данном случае, чтобы соответствовать возможному null из Promise.resolve(null) ранее, вернем null
+    // Если API всегда должен возвращать данные или ошибку, то лучше throw error;
+    return null;
+  }
 };
 
 export const getMonthlySummary = async (year: number, month: number) => {
@@ -103,12 +174,12 @@ export const createExpenseCategory = async (category_name: string) => {
     return response.data;
 };
 
-export const updateExpenseCategory = async (id: number, category_name: string) => {
+export const updateExpenseCategory = async (id: string, category_name: string) => {
     const response = await api.put(`/expense-categories/${id}`, { category_name });
     return response.data;
 };
 
-export const deleteExpenseCategory = async (id: number) => {
+export const deleteExpenseCategory = async (id: string) => {
     const response = await api.delete(`/expense-categories/${id}`);
     return response.data;
 };
