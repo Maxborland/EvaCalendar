@@ -1,55 +1,69 @@
-import asyncHandler from 'express-async-handler';
-import { body, param, validationResult } from 'express-validator';
-import noteService from '../services/noteService.js';
-import ApiError from '../utils/ApiError.js';
+const express = require('express');
+const router = express.Router();
+const noteService = require('../services/noteService');
+const ApiError = require('../utils/ApiError');
 
-class NoteController {
-  getNoteByWeekId = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+// POST /notes - Создание новой заметки
+router.post('/', async (req, res, next) => {
+    try {
+        const newNote = await noteService.createNote(req.body);
+        res.status(201).json(newNote);
+    } catch (error) {
+        // Передаем ошибку как есть (уже содержит statusCode)
+        next(error);
     }
-    const { weekId } = req.params;
-    const note = await noteService.getNoteByWeekId(weekId);
-    if (note) {
-      res.json(note);
-    } else {
-      res.json({}); // Возвращаем пустой объект JSON, если заметка не найдена
+});
+
+// GET /notes - Получение списка всех заметок
+router.get('/', async (req, res, next) => {
+    try {
+        const notes = await noteService.getAllNotes();
+        res.status(200).json(notes);
+    } catch (error) {
+        next(error);
     }
-  });
+});
 
-  createOrUpdateNote = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+// GET /notes/:uuid - Получение информации о заметке по UUID
+router.get('/:uuid', async (req, res, next) => {
+    try {
+        const note = await noteService.getNoteById(req.params.uuid);
+        if (note) {
+            res.status(200).json(note);
+        } else {
+            next(ApiError.notFound('Заметка не найдена'));
+        }
+    } catch (error) {
+        next(error);
     }
-    const { weekId, content } = req.body;
-    const note = await noteService.createOrUpdateNote(weekId, content);
-    res.status(201).json(note);
-  });
+});
 
-  deleteNote = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+// PUT /notes/:uuid - Обновление информации о заметке
+router.put('/:uuid', async (req, res, next) => {
+    try {
+        const updatedNote = await noteService.updateNote(req.params.uuid, req.body);
+        if (updatedNote) {
+            res.status(200).json(updatedNote);
+        } else {
+            next(ApiError.notFound('Заметка не найдена для обновления'));
+        }
+    } catch (error) {
+        next(error);
     }
-    const { weekId } = req.params;
-    await noteService.deleteNote(weekId);
-    res.status(204).send();
-  });
-}
+});
 
-export default new NoteController();
+// DELETE /notes/:uuid - Удаление заметки
+router.delete('/:uuid', async (req, res, next) => {
+    try {
+        const deleted = await noteService.deleteNote(req.params.uuid);
+        if (deleted) {
+            res.status(204).send(); // No Content
+        } else {
+            next(ApiError.notFound('Заметка не найдена для удаления'));
+        }
+    } catch (error) {
+        next(error);
+    }
+});
 
-export const validateNote = {
-  getNoteByWeekId: [
-    param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
-  ],
-  createOrUpdateNote: [
-    body('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
-    body('content').isString().withMessage('Содержимое заметки должно быть строкой.'),
-  ],
-  deleteNote: [
-    param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
-  ],
-};
+module.exports = router;

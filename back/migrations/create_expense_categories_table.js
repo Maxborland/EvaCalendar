@@ -1,10 +1,10 @@
-export function up(knex) {
+exports.up = function(knex) {
   return knex.schema.createTable('expense_categories', function(table) {
-    table.increments('uuid').primary();
+    table.uuid('uuid').primary().notNullable(); // Изменено с increments на uuid
     table.string('category_name').notNullable().unique();
   });
-}
+};
 
-export function down(knex) {
+exports.down = function(knex) {
   return knex.schema.dropTable('expense_categories');
-}
+};

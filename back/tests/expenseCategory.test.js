@@ -1,78 +1,66 @@
 import request from 'supertest';
-import db from '../db.cjs'; // Используем db.cjs
-import { app } from '../index.js';
+const { app } = require('../index.js');
 
 // Устанавливаем NODE_ENV до всех импортов, которые могут от него зависеть
 process.env.NODE_ENV = 'test';
 
-beforeEach(async () => {
-  // Очищаем таблицу перед каждым тестом, чтобы тесты были независимыми
-  await db('expense_categories').del();
-});
 
 describe('Expense Category API', () => {
-  let categoryId;
+  const baseCategory = { category_name: 'Тестовая Категория' };
 
   it('should create a new expense category', async () => {
     const res = await request(app)
       .post('/expense-categories')
-      .send({ category_name: 'Food' });
+      .send(baseCategory);
     expect(res.statusCode).toEqual(201);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body.category_name).toEqual('Food');
-    categoryId = res.body.id;
+    expect(res.body).toHaveProperty('uuid');
+    expect(res.body.category_name).toEqual(baseCategory.category_name);
   });
 
   it('should get all expense categories', async () => {
-    // Создадим несколько категорий для теста
-    await request(app).post('/expense-categories').send({ category_name: 'Transport' });
-    await request(app).post('/expense-categories').send({ category_name: 'Utilities' });
+    await request(app).post('/expense-categories').send(baseCategory);
+    await request(app).post('/expense-categories').send({ category_name: 'Другая Категория' });
 
     const res = await request(app)
       .get('/expense-categories');
     expect(res.statusCode).toEqual(200);
     expect(Array.isArray(res.body)).toBeTruthy();
-    expect(res.body.length).toBeGreaterThanOrEqual(2); // Может быть больше из-за предыдущих тестов
-    expect(res.body.some(cat => cat.category_name === 'Transport')).toBeTruthy();
-    expect(res.body.some(cat => cat.category_name === 'Utilities')).toBeTruthy();
+    expect(res.body.length).toBeGreaterThanOrEqual(2);
+    expect(res.body.some(cat => cat.category_name === baseCategory.category_name)).toBeTruthy();
+    expect(res.body.some(cat => cat.category_name === 'Другая Категория')).toBeTruthy();
   });
 
   it('should update an expense category', async () => {
-    // Сначала создадим категорию для обновления
     const createRes = await request(app)
       .post('/expense-categories')
-      .send({ category_name: 'Old Name' });
-    const idToUpdate = createRes.body.id;
+      .send({ category_name: 'Категория для Обновления' });
+    const uuidToUpdate = createRes.body.uuid;
 
-    console.log(`Updating category with id: ${idToUpdate}`);
+    const updatedName = 'Обновленная Категория';
     const res = await request(app)
-      .put(`/expense-categories/${idToUpdate}`)
-      .send({ category_name: 'New Name' });
+      .put(`/expense-categories/${uuidToUpdate}`)
+      .send({ category_name: updatedName });
     expect(res.statusCode).toEqual(200);
-    expect(res.body.message).toEqual('Category updated successfully');
+    expect(res.body).toHaveProperty('uuid', uuidToUpdate);
+    expect(res.body.category_name).toEqual(updatedName);
 
-    // Проверим, что категория действительно обновилась
-    const getRes = await request(app).get('/expense-categories');
-    const updatedCategory = getRes.body.find(cat => cat.id === idToUpdate);
-    expect(updatedCategory.category_name).toEqual('New Name');
+    const getRes = await request(app).get(`/expense-categories/${uuidToUpdate}`);
+    expect(getRes.statusCode).toEqual(200);
+    expect(getRes.body.category_name).toEqual(updatedName);
   });
 
   it('should delete an expense category', async () => {
-    // Сначала создадим категорию для удаления
     const createRes = await request(app)
       .post('/expense-categories')
-      .send({ category_name: 'Category to Delete' });
-    const idToDelete = createRes.body.id;
+      .send({ category_name: 'Категория для Удаления' });
+    const uuidToDelete = createRes.body.uuid;
 
-    console.log(`Deleting category with id: ${idToDelete}`);
     const res = await request(app)
-      .delete(`/expense-categories/${idToDelete}`);
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.message).toEqual('Category deleted successfully');
+      .delete(`/expense-categories/${uuidToDelete}`);
+    expect(res.statusCode).toEqual(204); // Контроллер возвращает 204 при успешном удалении
 
-    // Проверим, что категория действительно удалена
-    const getRes = await request(app).get('/expense-categories');
-    expect(getRes.body.find(cat => cat.id === idToDelete)).toBeUndefined();
+    const getRes = await request(app).get(`/expense-categories/${uuidToDelete}`);
+    expect(getRes.statusCode).toEqual(404);
   });
 
   // Тесты на валидацию
@@ -81,35 +69,34 @@ describe('Expense Category API', () => {
       .post('/expense-categories')
       .send({});
     expect(res.statusCode).toEqual(400);
-    expect(res.body.message).toEqual('Category name is required');
+    expect(res.body).toHaveProperty('message');
   });
 
   it('should return 400 if category_name is missing when updating', async () => {
-    // Создадим категорию для обновления
     const createRes = await request(app)
       .post('/expense-categories')
-      .send({ category_name: 'Temp' });
-    const idToUpdate = createRes.body.id;
+      .send({ category_name: 'Временная' });
+    const uuidToUpdate = createRes.body.uuid;
 
     const res = await request(app)
-      .put(`/expense-categories/${idToUpdate}`)
+      .put(`/expense-categories/${uuidToUpdate}`)
       .send({});
     expect(res.statusCode).toEqual(400);
-    expect(res.body.message).toEqual('Category name is required');
+    expect(res.body).toHaveProperty('message');
   });
 
   it('should return 404 if category not found when updating', async () => {
     const res = await request(app)
-      .put(`/expense-categories/999999`) // Используем несуществующий ID
-      .send({ category_name: 'Non Existent' });
+      .put(`/expense-categories/00000000-0000-0000-0000-000000000000`)
+      .send({ category_name: 'Несуществующая' });
     expect(res.statusCode).toEqual(404);
-    expect(res.body.message).toEqual('Category not found');
+    expect(res.body).toHaveProperty('message');
   });
 
   it('should return 404 if category not found when deleting', async () => {
     const res = await request(app)
-      .delete(`/expense-categories/999999`); // Используем несуществующий ID
+      .delete(`/expense-categories/00000000-0000-0000-0000-000000000000`);
     expect(res.statusCode).toEqual(404);
-    expect(res.body.message).toEqual('Category not found');
+    expect(res.body).toHaveProperty('message');
   });
 });

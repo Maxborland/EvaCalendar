@@ -1,6 +1,6 @@
-import cors from 'cors';
-import dotenv from 'dotenv';
-import express from 'express';
+const cors = require('cors');
+const dotenv = require('dotenv');
+const express = require('express');
 dotenv.config(); // Загружаем переменные окружения из .env файла
 
 const app = express();
@@ -22,57 +22,18 @@ app.get('/', (req, res) => {
   res.send('API работает!');
 });
 
-import weekController, { validateWeek } from './controllers/weekController.js';
-app.get('/weeks', validateWeek.getWeek, weekController.getWeek);
-app.post('/weeks', validateWeek.createWeek, weekController.createWeek);
+// Импорт и использование контроллеров
+const childrenController = require('./controllers/childrenController.js');
+const expenseCategoryController = require('./controllers/expenseCategoryController.js');
+const noteController = require('./controllers/noteController.js');
+const taskController = require('./controllers/taskController.js'); // Мой новый контроллер задач
 
-import taskController, { validateTask } from './controllers/taskController.js';
-app.get(
-  '/tasks/:weekId/:dayOfWeek',
-  validateTask.getTasksByWeekAndDay,
-  taskController.getTasksByWeekAndDay,
-);
-app.post('/tasks', validateTask.createTask, taskController.createTask);
-// Маршрут для перемещения должен быть определен ДО более общего маршрута /tasks/:id
-app.put('/tasks/move', validateTask.moveTask, taskController.moveTask); // Возвращаем PUT, как было изначально
-app.put('/tasks/:id', validateTask.updateTask, taskController.updateTask);
-app.delete('/tasks/:id', validateTask.deleteTask, taskController.deleteTask);
-app.post('/tasks/:id/duplicate', validateTask.duplicateTask, taskController.duplicateTask);
+app.use('/children', childrenController);
+app.use('/expense-categories', expenseCategoryController);
+app.use('/notes', noteController);
+app.use('/tasks', taskController); // Используем мой новый контроллер задач
 
-import noteController, { validateNote } from './controllers/noteController.js';
-app.get('/notes/:weekId', validateNote.getNoteByWeekId, noteController.getNoteByWeekId);
-app.post('/notes', validateNote.createOrUpdateNote, noteController.createOrUpdateNote);
-app.delete('/notes/:weekId', validateNote.deleteNote, noteController.deleteNote);
-
-import expenseCategoryController, { validateExpenseCategory } from './controllers/expenseCategoryController.js';
-app.get('/expense-categories', validateExpenseCategory.getExpenseCategories, expenseCategoryController.getExpenseCategories);
-app.post('/expense-categories', validateExpenseCategory.addExpenseCategory, expenseCategoryController.addExpenseCategory);
-app.put('/expense-categories/:id', validateExpenseCategory.updateExpenseCategory, expenseCategoryController.updateExpenseCategory);
-app.delete('/expense-categories/:id', validateExpenseCategory.deleteExpenseCategory, expenseCategoryController.deleteExpenseCategory);
-
-app.get('/tasks/category', validateTask.getTasksByCategory, taskController.getTasksByCategory);
-
-import {
-  addChild,
-  deleteChild,
-  getAllChildren,
-  getChildById,
-  updateChild,
-  validateChild,
-} from './controllers/childrenController.js';
-
-app.get('/children', getAllChildren);
-app.get('/children/:id', getChildById);
-app.post('/children', validateChild.addChild, addChild);
-app.put('/children/:id', validateChild.updateChild, updateChild);
-app.delete('/children/:id', deleteChild);
-
-import summaryController, { validateSummary } from './controllers/summaryController.js';
-app.get('/summary/:weekId', validateSummary.getWeeklySummary, summaryController.getWeeklySummary);
-app.get('/summary/:weekId/:dayOfWeek', validateSummary.getDailySummary, summaryController.getDailySummary);
-app.get('/summary/month/:year/:month', validateSummary.getMonthlySummary, summaryController.getMonthlySummary);
-
-import errorHandler from './middleware/errorHandler.js';
+const errorHandler = require('./middleware/errorHandler.js');
 
 // Обработчик ошибок (должен быть последним middleware)
 app.use(errorHandler);
@@ -82,5 +43,5 @@ const server = app.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
 });
 
-export { app, server };
+module.exports = { app, server };
 

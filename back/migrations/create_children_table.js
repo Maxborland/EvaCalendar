@@ -1,6 +1,6 @@
-export function up(knex) {
+exports.up = function(knex) {
   return knex.schema.createTable('children', function(table) {
-    table.increments('uuid').primary();
+    table.uuid('uuid').primary().notNullable(); // Изменено с increments на uuid
     table.string('childName').notNullable();
     table.string('parentName').notNullable();
     table.string('parentPhone').notNullable();
@@ -8,8 +8,8 @@ export function up(knex) {
     table.float('hourlyRate');
     table.text('comment');
   });
-}
+};
 
-export function down(knex) {
+exports.down = function(knex) {
   return knex.schema.dropTable('children');
-}
+};

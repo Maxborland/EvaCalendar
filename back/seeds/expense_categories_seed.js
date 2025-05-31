@@ -1,18 +1,19 @@
-export async function seed(knex) {
+exports.seed = async function(knex) {
+  const { v4: uuidv4 } = require('uuid');
   // Deletes ALL existing entries
   await knex('expense_categories').del();
 
   // Inserts seed entries
   await knex('expense_categories').insert([
-    { category_name: 'Продукты' },
-    { category_name: 'Транспорт' },
-    { category_name: 'Развлечения' },
-    { category_name: 'Одежда' },
-    { category_name: 'Образование' },
-    { category_name: 'Здоровье' },
-    { category_name: 'Коммунальные услуги' },
-    { category_name: 'Подарки' },
-    { category_name: 'Рестораны и кафе' },
-    { category_name: 'Дом и ремонт' },
+    { uuid: uuidv4(), category_name: 'Продукты' },
+    { uuid: uuidv4(), category_name: 'Транспорт' },
+    { uuid: uuidv4(), category_name: 'Развлечения' },
+    { uuid: uuidv4(), category_name: 'Одежда' },
+    { uuid: uuidv4(), category_name: 'Образование' },
+    { uuid: uuidv4(), category_name: 'Здоровье' },
+    { uuid: uuidv4(), category_name: 'Коммунальные услуги' },
+    { uuid: uuidv4(), category_name: 'Подарки' },
+    { uuid: uuidv4(), category_name: 'Рестораны и кафе' },
+    { uuid: uuidv4(), category_name: 'Дом и ремонт' },
   ]);
-}
+};

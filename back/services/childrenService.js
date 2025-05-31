@@ -1,29 +1,44 @@
-import { v4 as uuidv4 } from 'uuid';
-import knex from '../db.cjs';
+const { v4: uuidv4 } = require('uuid');
+const knex = require('../db.cjs');
+const ApiError = require('../utils/ApiError.js');
 
-class ChildService {
+class ChildrenService {
+  async createChild(childData) {
+    // Проверка обязательных полей
+    const requiredFields = ['childName', 'parentName', 'parentPhone', 'address', 'hourlyRate'];
+    for (const field of requiredFields) {
+      if (!childData[field]) {
+        throw ApiError.badRequest(`${field} is required`);
+      }
+    }
+    const newUuid = uuidv4();
+    const [createdChild] = await knex('children').insert({ uuid: newUuid, ...childData }).returning('*');
+    return createdChild;
+  }
+
   async getAllChildren() {
     return knex('children').select('*');
   }
 
-  async getChildById(id) {
-    return knex('children').where({ childId: id }).first();
+  async getChildById(uuid) {
+    return knex('children').where({ uuid }).first();
   }
 
-  async addChild(child) {
-    const newChildId = uuidv4();
-    await knex('children').insert({ childId: newChildId, ...child });
-    return knex('children').where({ childId: newChildId }).first();
+  async updateChild(uuid, childData) {
+    // Проверка обязательных полей
+    const requiredFields = ['childName', 'parentName', 'parentPhone', 'address', 'hourlyRate'];
+    for (const field of requiredFields) {
+      if (!childData[field]) {
+        throw ApiError.badRequest(`${field} is required`);
+      }
+    }
+    const [updatedChild] = await knex('children').where({ uuid }).update(childData).returning('*');
+    return updatedChild;
   }
 
-  async updateChild(id, child) {
-    await knex('children').where({ childId: id }).update(child);
-    return knex('children').where({ childId: id }).first();
-  }
-
-  async deleteChild(id) {
-    return knex('children').where({ childId: id }).del();
+  async deleteChild(uuid) {
+    return knex('children').where({ uuid }).del();
   }
 }
 
-export default new ChildService();
+module.exports = new ChildrenService();

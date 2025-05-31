@@ -1,18 +1,19 @@
-export function up(knex) {
+exports.up = function(knex) {
   return knex.schema.createTable('tasks', function(table) {
-    table.increments('uuid').primary();
+    table.uuid('uuid').primary().notNullable(); // Изменено с increments на uuid
     table.string('type').notNullable();
     table.string('title').notNullable();
+    table.date('dueDate').notNullable(); // Добавляем обязательное поле
     table.datetime('time').nullable();
-    table.integer('childId').unsigned().references('id').inTable('children').onDelete('CASCADE');
+    table.uuid('childId').nullable().references('uuid').inTable('children').onDelete('CASCADE'); // Изменено с integer на uuid, и references на uuid
     table.integer('hoursWorked');
     table.float('amountEarned');
     table.float('amountSpent');
     table.text('comments');
-    table.integer('expenceTypeId').unsigned().references('id').inTable('expense_categories').onDelete('RESTRICT');
+    table.uuid('expenceTypeId').nullable().references('uuid').inTable('expense_categories').onDelete('RESTRICT'); // Изменено с integer на uuid, и references на uuid
   });
-}
+};
 
-export function down(knex) {
+exports.down = function(knex) {
   return knex.schema.dropTable('tasks');
-}
+};

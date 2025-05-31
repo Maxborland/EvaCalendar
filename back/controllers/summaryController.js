@@ -1,7 +1,7 @@
-import asyncHandler from 'express-async-handler';
-import { param, validationResult } from 'express-validator';
-import summaryService from '../services/summaryService.js';
-import ApiError from '../utils/ApiError.js';
+const asyncHandler = require('express-async-handler');
+const { param, validationResult } = require('express-validator');
+const summaryService = require('../services/summaryService.js');
+const ApiError = require('../utils/ApiError.js');
 
 class SummaryController {
   getWeeklySummary = asyncHandler(async (req, res, next) => {
@@ -35,9 +35,9 @@ class SummaryController {
   });
 }
 
-export default new SummaryController();
+module.exports = new SummaryController();
 
-export const validateSummary = {
+module.exports.validateSummary = {
   getWeeklySummary: [
     param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
   ],

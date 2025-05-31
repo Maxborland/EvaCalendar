@@ -2,13 +2,15 @@
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-export async function seed(knex) {
+const { v4: uuidv4 } = require('uuid');
+exports.seed = async function(knex) {
   // Deletes ALL existing entries
   await knex('children').del();
 
   // Inserts seed entries
   await knex('children').insert([
     {
+      uuid: uuidv4(),
       childName: 'Алексей Иванов',
       parentName: 'Мария Иванова',
       parentPhone: '+79001112233',
@@ -17,6 +19,7 @@ export async function seed(knex) {
       comment: 'Аллергия на орехи'
     },
     {
+      uuid: uuidv4(),
       childName: 'Ольга Петрова',
       parentName: 'Сергей Петров',
       parentPhone: '+79104445566',
@@ -25,6 +28,7 @@ export async function seed(knex) {
       comment: 'Любит рисовать'
     },
     {
+      uuid: uuidv4(),
       childName: 'Дмитрий Сидоров',
       parentName: 'Елена Сидорова',
       parentPhone: '+79207778899',
@@ -33,6 +37,7 @@ export async function seed(knex) {
       comment: ''
     },
     {
+      uuid: uuidv4(),
       childName: 'Екатерина Морозова',
       parentName: 'Андрей Морозов',
       parentPhone: '+79309990011',
@@ -41,6 +46,7 @@ export async function seed(knex) {
       comment: 'Забирать в 18:00'
     },
     {
+      uuid: uuidv4(),
       childName: 'Ирина Козлова',
       parentName: 'Иван Козлов',
       parentPhone: '+79402223344',

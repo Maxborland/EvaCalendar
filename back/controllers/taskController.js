@@ -1,212 +1,78 @@
-import asyncHandler from 'express-async-handler';
-import { body, param, query, validationResult } from 'express-validator';
-import taskService from '../services/taskService.js';
-import ApiError from '../utils/ApiError.js';
+const express = require('express');
+const taskService = require('../services/taskService.js');
+const ApiError = require('../utils/ApiError.js');
 
-class TaskController {
-  getTasksByWeekAndDay = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      // Debugging: Log validation errors
-      console.log('Ошибки валидации:', errors.array());
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+const router = express.Router();
+
+// Middleware для обработки ошибок
+const asyncHandler = fn => (req, res, next) =>
+    Promise.resolve(fn(req, res, next)).catch(next);
+
+// POST /tasks - Создание новой задачи
+router.post('/', asyncHandler(async (req, res) => {
+    const task = await taskService.createTask(req.body);
+    res.status(201).json(task);
+}));
+
+// GET /tasks - Получение всех задач
+router.get('/', asyncHandler(async (req, res) => {
+    const tasks = await taskService.getAllTasks();
+    res.json(tasks);
+}));
+
+// GET /tasks/:uuid - Получение задачи по UUID (или всех задач если нет uuid?)
+router.get('/:uuid', asyncHandler(async (req, res, next) => {
+    const { uuid } = req.params;
+    if (uuid) {
+      const task = await taskService.getTaskById(uuid);
+      if (!task) {
+        throw ApiError.notFound('Task not found');
+      }
+      res.json(task);
+    } else {
+      // Если UUID не передан, то это запрос на получение всех задач
+      const tasks = await taskService.getAllTasks();
+      res.json(tasks);
     }
-    const { weekId, dayOfWeek } = req.params;
-    const tasks = await taskService.findTasksByWeekAndDay(weekId, dayOfWeek);
-    res.status(200).json(tasks);
-  });
+}));
 
-  getTasksByCategory = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
-    }
-    const { name: categoryName } = req.query;
-    let decodedCategory = categoryName;
-
-    // Пробуем декодировать, если это строка, что важно для кириллицы
-    if (typeof categoryName === 'string') {
-        try {
-            decodedCategory = decodeURIComponent(categoryName);
-        } catch (e) {
-            // Если декодирование не удалось, логируем ошибку, но продолжаем
-            // Возможно, это не URI-кодированная строка, а просто название
-            console.error(`Ошибка декодирования URI для категории "${categoryName}":`, e.message);
+// PUT /tasks/:uuid - Обновление задачи по UUID
+router.put('/:uuid', asyncHandler(async (req, res, next) => {
+    const updatedCount = await taskService.updateTask(req.params.uuid, req.body);
+    if (updatedCount === 0) { // Если 0 строк обновлено, значит задача не найдена или данные не изменились
+        // Чтобы соответствовать тестам, которые ожидают 404 если задача не найдена для обновления,
+        // мы должны проверить, существует ли задача перед попыткой обновления,
+        // или положиться на то, что сервис вернет ошибку, если uuid не существует.
+        // В данном случае, если updatedCount === 0, это может означать "не найдено" или "нет изменений".
+        // Для простоты, если сервис не выбросил ошибку, но вернул 0, считаем что не найдено.
+        // Однако, более правильным было бы, чтобы сервис сам выбрасывал notFound, если uuid не существует.
+        // Либо, если мы хотим различать "не найдено" и "нет изменений", нужна другая логика.
+        // Пока что, для прохождения тестов, если updatedCount === 0, вернем 404.
+        // Это потребует проверки существования задачи перед обновлением в сервисе или здесь.
+        // Либо, если сервис уже это делает и кидает ошибку, то этот блок if (!updated) не нужен.
+        // Судя по тестам, ожидается, что если задача не найдена, будет 404.
+        // taskService.updateTask возвращает количество обновленных строк.
+        // Если оно 0, значит, либо не найдено, либо данные идентичны.
+        // Для прохождения теста, если 0, кидаем notFound.
+        const taskExists = await taskService.getTaskById(req.params.uuid);
+        if (!taskExists) {
+            throw ApiError.notFound('Task not found for update');
         }
-    }
-
-    console.log(`Получена категория: ${categoryName}, Декодированная категория: ${decodedCategory}`);
-
-    let tasks;
-    // Проверяем, является ли декодированная категория числом
-    if (!isNaN(decodedCategory) && !isNaN(parseFloat(decodedCategory))) {
-        // Если это число, передаем его как ID
-        tasks = await taskService.findTasksByCategory(parseInt(decodedCategory, 10));
+        // Если задача существует, но ничего не обновилось (данные те же), вернем 200 и 0.
+        // Или можно вернуть сам объект без изменений. Тесты ожидают число.
+        res.json(updatedCount); // Возвращаем количество обновленных строк
     } else {
-        // Если это строка, используем как название категории
-        tasks = await taskService.findTasksByCategory(decodedCategory);
+        res.json(updatedCount); // Возвращаем количество обновленных строк
     }
-    res.status(200).json(tasks);
-  });
+}));
 
-  createTask = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+// DELETE /tasks/:uuid - Удаление задачи по UUID
+router.delete('/:uuid', asyncHandler(async (req, res, next) => {
+    const deleted = await taskService.deleteTask(req.params.uuid);
+    if (!deleted) {
+        throw ApiError.notFound('Task not found for deletion');
     }
-    const task = req.body;
-    console.log('Данные задачи, полученные в контроллере createTask:', task); // Добавлен лог
-    const newTask = await taskService.createTask(task);
-    res.status(201).json(newTask);
-  });
+    res.status(204).send(); // No Content
+}));
 
-  updateTask = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
-    }
-    const task = req.body;
-    console.log('Данные задачи, полученные в контроллере updateTask:', task); // Добавлен лог
-    const updatedTask = await taskService.updateTask(id, task);
-    if (updatedTask) {
-      res.status(200).json(updatedTask);
-    } else {
-      return next(ApiError.notFound('Задача не найдена.'));
-    }
-  });
-
-  deleteTask = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
-    }
-    const { id } = req.params;
-    const deletedCount = await taskService.deleteTask(id);
-    if (deletedCount > 0) {
-      res.status(204).send(); // No Content
-    } else {
-      return next(ApiError.notFound('Задача не найдена.'));
-    }
-  });
-
-  duplicateTask = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
-    }
-    const { id } = req.params;
-    const originalTask = await taskService.findTaskById(id);
-    if (!originalTask) {
-      return next(ApiError.notFound('Оригинальная задача не найдена.'));
-    }
-
-    // Создаем копию задачи, исключая id и обновляя дату создания
-    const duplicatedTask = {
-      ...originalTask,
-      id: undefined, // Knex автоматически сгенерирует новый ID
-    };
-
-    const newTask = await taskService.createTask(duplicatedTask);
-    res.status(201).json(newTask);
-  });
-
-  moveTask = asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return next(ApiError.badRequest('Ошибки валидации', errors.array()));
-    }
-    const { taskId, newWeekId, newDayOfWeek } = req.body;
-    if (!taskId || newWeekId === undefined || !newDayOfWeek) {
-      return next(ApiError.badRequest('Отсутствуют обязательные поля: taskId, newWeekId, newDayOfWeek.'));
-    }
-    const taskExists = await taskService.findTaskById(taskId);
-    if (!taskExists) {
-      return next(ApiError.notFound('Задача не найдена.'));
-    }
-
-    const updatedTaskResult = await taskService.updateTask(taskId, { newWeekId, newDayOfWeek });
-
-    if (updatedTaskResult) {
-      res.status(200).json(updatedTaskResult);
-    } else {
-      return next(ApiError.notFound('Задача не найдена после попытки обновления.'));
-    }
-  });
-}
-
-export default new TaskController();
-
-export const validateTask = {
-  getTasksByWeekAndDay: [
-    param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
-    param('dayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
-  ],
-  getTasksByCategory: [
-    query('name').custom(value => {
-      // Пробуем декодировать на случай, если это URI-кодированная строка
-      let decodedValue = value;
-      if (typeof value === 'string') {
-        try {
-          decodedValue = decodeURIComponent(value);
-        } catch (e) {
-          throw new Error('Некорректное URI-кодирование для категории.');
-        }
-      }
-
-      // Если это UUID, это валидно
-      if (typeof decodedValue === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(decodedValue)) {
-        return true;
-      }
-
-      // Если это строка, и она непустая, это валидно (название категории)
-      if (typeof decodedValue === 'string' && decodedValue.trim() !== '') {
-        return true;
-      }
-
-      throw new Error('Категория должна быть валидным UUID или непустой строкой.');
-    }).withMessage('Категория должна быть корректным UUID или непустой строкой.'),
-  ],
-  createTask: [
-    body('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
-    body('dayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
-    body('type').isIn(['income', 'expense', 'babysitting', 'work']).withMessage('Неверный тип задачи.'),
-    body('title').isString().notEmpty().withMessage('Заголовок обязателен.'),
-    body('time').optional({ nullable: true }).isString().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Неверный формат времени. Используйте HH:MM.'),
-    body('address').optional({ nullable: true }).isString().withMessage('Адрес должен быть строкой.'),
-    body('childId').optional({ nullable: true }).isUUID().withMessage('ID ребенка должен быть валидным UUID.'),
-    body('hourlyRate').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Ставка должна быть положительным числом.'),
-    body('comments').optional({ nullable: true }).isString().withMessage('Комментарии должны быть строкой.'),
-    body('category').optional({ nullable: true }).isString().withMessage('Категория должна быть строкой.'),
-    body('amountEarned').optional().isFloat({ min: 0 }).withMessage('AmountEarned должен быть положительным числом.'),
-    body('amountSpent').optional().isFloat({ min: 0 }).withMessage('AmountSpent должен быть положительным числом.'),
-    body('hoursWorked').optional().isFloat({ min: 0 }).withMessage('HoursWorked должен быть положительным числом.'),
-  ],
-  updateTask: [
-    param('id').isUUID().withMessage('ID задачи должен быть валидным UUID.'),
-    body('weekId').optional().isUUID().withMessage('weekId должен быть валидным UUID.'),
-    body('dayOfWeek').optional().isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для dayOfWeek.'),
-    body('type').optional().isIn(['income', 'expense', 'babysitting', 'work']).withMessage('Неверный тип задачи.'),
-    body('title').optional().isString().notEmpty().withMessage('Заголовок обязателен.'),
-    body('time').optional({ nullable: true }).isString().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Неверный формат времени. Используйте HH:MM.'),
-    body('address').optional({ nullable: true }).isString().withMessage('Адрес должен быть строкой.'),
-    body('childId').optional({ nullable: true }).isUUID().withMessage('ID ребенка должен быть валидным UUID.'),
-    body('hourlyRate').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Ставка должна быть положительным числом.'),
-    body('comments').optional({ nullable: true }).isString().withMessage('Комментарии должны быть строкой.'),
-    body('category').optional({ nullable: true }).isString().withMessage('Категория должна быть строкой.'),
-    body('amountEarned').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('AmountEarned должен быть положительным числом.'),
-    body('amountSpent').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('AmountSpent должен быть положительным числом.'),
-    body('hoursWorked').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('HoursWorked должен быть положительным числом.'),
-  ],
-  deleteTask: [
-    param('id').isUUID().withMessage('ID задачи должен быть валидным UUID.'),
-  ],
-  duplicateTask: [
-    param('id').isUUID().withMessage('ID задачи должен быть валидным UUID.'),
-  ],
-  moveTask: [
-    body('taskId').isUUID().withMessage('ID задачи должен быть валидным UUID.'),
-    body('newWeekId').isUUID().withMessage('Новый weekId должен быть валидным UUID.'),
-    body('newDayOfWeek').isString().isIn(['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).withMessage('Неверное значение для newDayOfWeek.'),
-  ],
-};
+module.exports = router;

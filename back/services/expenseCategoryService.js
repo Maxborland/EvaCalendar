@@ -1,50 +1,75 @@
-import { v4 as uuidv4 } from 'uuid';
-import knex from '../db.cjs';
-import ApiError from '../utils/ApiError.js';
+const knex = require('../db.cjs');
+const { v4: uuidv4 } = require('uuid');
+const ApiError = require('../utils/ApiError');
 
 class ExpenseCategoryService {
-  async getAllCategories() {
-    return knex('expense_categories').select('*');
-  }
-
-  async createCategory(category_name) {
-    // Check if category name already exists
-    const existingCategory = await knex('expense_categories').where({ category_name }).first();
-    if (existingCategory) {
-      throw ApiError.badRequest('Category with this name already exists');
+    async createExpenseCategory(categoryData) {
+        try {
+            // Проверка обязательных полей
+            const requiredFields = ['category_name'];
+            for (const field of requiredFields) {
+                if (!categoryData[field]) {
+                    throw ApiError.badRequest(`${field} is required`);
+                }
+            }
+            const newUuid = uuidv4();
+            const [createdCategory] = await knex('expense_categories')
+                .insert({ uuid: newUuid, ...categoryData })
+                .returning('*');
+            return createdCategory;
+        } catch (error) {
+            console.error('Error creating expense category:', error);
+            throw error;
+        }
     }
 
-    const newId = uuidv4();
-    await knex('expense_categories').insert({ id: newId, category_name });
-    return { id: newId, category_name };
-  }
-
-  async updateCategory(id, category_name) {
-    // Get the current category
-    const currentCategory = await knex('expense_categories').where({ id }).first();
-    if (!currentCategory) {
-      return false; // Category not found
+    async getAllExpenseCategories() {
+        try {
+            return await knex('expense_categories').select('*');
+        } catch (error) {
+            console.error('Error getting all expense categories:', error);
+            throw error;
+        }
     }
 
-    // If the name is the same, no need to check uniqueness
-    if (currentCategory.category_name === category_name) {
-      return true; // Имя не изменилось, нет необходимости в обновлении
+    async getExpenseCategoryById(uuid) {
+        try {
+            return await knex('expense_categories').where({ uuid }).first();
+        } catch (error) {
+            console.error('Error getting expense category by UUID:', error);
+            throw error;
+        }
     }
 
-    // Check if category name already exists for another category
-    const existingCategory = await knex('expense_categories').where({ category_name }).whereNot({ id }).first();
-    if (existingCategory) {
-      throw ApiError.badRequest('Category with this name already exists');
+    async updateExpenseCategory(uuid, categoryData) {
+        try {
+            // Проверка обязательных полей
+            const requiredFields = ['category_name'];
+            for (const field of requiredFields) {
+                if (!categoryData[field]) {
+                    throw ApiError.badRequest(`${field} is required`);
+                }
+            }
+            const [updatedCategory] = await knex('expense_categories')
+                .where({ uuid })
+                .update(categoryData)
+                .returning('*');
+            return updatedCategory;
+        } catch (error) {
+            console.error('Error updating expense category:', error);
+            throw error;
+        }
     }
 
-    const updatedRows = await knex('expense_categories').where({ id }).update({ category_name });
-    return updatedRows > 0;
-  }
-
-  async deleteCategory(id) {
-    const deletedRows = await knex('expense_categories').where({ id }).del();
-    return deletedRows > 0;
-  }
+    async deleteExpenseCategory(uuid) {
+        try {
+            const deletedCount = await knex('expense_categories').where({ uuid }).del();
+            return deletedCount > 0;
+        } catch (error) {
+            console.error('Error deleting expense category:', error);
+            throw error;
+        }
+    }
 }
 
-export default new ExpenseCategoryService();
+module.exports = new ExpenseCategoryService();

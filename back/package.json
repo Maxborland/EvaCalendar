@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
-    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "dev": "nodemon index.js",
     "start": "node index.js",
     "migrate:latest": "npx knex migrate:latest --knexfile knexfile.cjs",

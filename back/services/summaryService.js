@@ -1,4 +1,4 @@
-import knex from '../db.cjs';
+const knex = require('../db.cjs');
 
 class SummaryService {
   async getWeeklySummary(weekId) {
@@ -75,4 +75,4 @@ class SummaryService {
   }
 }
 
-export default new SummaryService();
+module.exports = new SummaryService();
