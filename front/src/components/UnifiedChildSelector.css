@@ -1,0 +1,150 @@
+.unified-child-selector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* margin-bottom: 1rem; -- убрано, отступы управляются родителем (TaskForm) */
+  width: 100%; /* Занимаем всю доступную ширину */
+}
+
+.selector-label {
+  margin-bottom: 5px; /* Как в TaskForm.css .label */
+  font-weight: bold; /* Как в TaskForm.css .label */
+  color: var(--color-border-light); /* Как в TaskForm.css .label */
+}
+
+.selector-input {
+  padding: 8px; /* Как в TaskForm.css */
+  border: 1px solid var(--theme-gray-dark); /* Изменено для соответствия стилю */
+  border-radius: 4px; /* Как в TaskForm.css */
+  font-size: 1em; /* Как в TaskForm.css */
+  color: var(--theme-light); /* Изменено для соответствия стилю */
+  background-color: var(--theme-gray-dark); /* Изменено для соответствия стилю */
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  width: 100%; /* Явно указываем ширину */
+  box-sizing: border-box; /* Чтобы padding и border не влияли на общую ширину */
+}
+
+.selector-input:focus {
+  border-color: var(--theme-primary); /* Используем переменную */
+  box-shadow: 0 0 0 2px rgba(var(--theme-primary-rgb), 0.25); /* Используем переменную */
+  outline: none;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--theme-light); /* Используем переменную */
+  border: 1px solid var(--theme-gray-medium);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(var(--theme-dark-rgb), 0.1); /* Используем переменную */
+}
+
+/*
+  Комментарий по поводу позиционирования suggestions-list остается актуальным.
+  Для более точного позиционирования может потребоваться обертка для input и suggestions-list
+  или вычисление позиции в JavaScript.
+*/
+.unified-child-selector:has(.selector-label) .suggestions-list {
+  /* Пока оставляем top: 100% от родителя. Если input и label имеют фиксированную высоту,
+     можно будет скорректировать с помощью calc(), например:
+     top: calc( <высота_лейбла> + <отступ_лейбла> + <высота_инпута> );
+     Или, если input является непосредственным соседом, можно использовать относительное позиционирование
+     и top: <высота_инпута>.
+     Для текущей структуры flex-direction: column, top: 100% от .unified-child-selector
+     может смещать список ниже, чем ожидается, если label имеет значительную высоту.
+     Оптимально, если .selector-input и .suggestions-list находятся в общем div-контейнере,
+     для которого .suggestions-list позиционируется абсолютно.
+  */
+}
+
+
+.suggestion-item {
+  padding: 8px; /* Как в TaskForm.css */
+  cursor: pointer;
+  color: var(--theme-gray-dark); /* Используем переменную */
+}
+
+.suggestion-item:hover {
+  background-color: var(--theme-gray-light); /* Используем переменную */
+}
+
+.suggestion-item.create-new-item {
+  font-style: italic;
+  color: var(--theme-primary); /* Используем переменную */
+}
+
+.suggestion-item.create-new-item:hover {
+  background-color: rgba(var(--theme-primary-rgb), 0.1); /* Используем переменную */
+  color: var(--theme-primary);
+}
+
+.add-child-button {
+  padding: 10px 15px; /* Как в TaskForm.css */
+  background-color: var(--theme-primary);
+  color: var(--theme-primary-text);
+  border: none;
+  border-radius: 5px; /* Как в TaskForm.css (было 4px) */
+  cursor: pointer;
+  font-size: 1em; /* Как в TaskForm.css */
+  transition: background-color 0.2s ease-in-out;
+  align-self: flex-start;
+}
+
+.add-child-button:hover {
+  /* Для hover эффекта можно использовать более темный оттенок основного цвета,
+     но в theme.css нет такой переменной. Пока оставим осветление через opacity или rgba.
+     Или можно создать новую переменную, например --theme-primary-dark */
+  background-color: rgba(var(--theme-primary-rgb), 0.85);
+}
+
+.unified-child-selector p { /* Стили для сообщения "Список детей пуст" */
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+    color: var(--theme-gray-medium);
+}
+.child-info-card {
+  background-color: var(--theme-gray-light);
+  border: 1px solid var(--theme-gray-medium);
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 8px;
+  color: var(--theme-gray-dark);
+  font-size: 0.9em;
+}
+
+.child-info-card h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1em;
+  font-weight: bold;
+  color: var(--theme-gray-dark);
+}
+
+.child-info-card .info-item {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.child-info-card .info-item:last-child {
+  margin-bottom: 0;
+}
+
+.child-info-card .info-label {
+  font-weight: bold;
+  margin-right: 5px;
+  color: var(--theme-gray-dark);
+}
+
+.child-info-card .info-value {
+  color: var(--theme-gray-dark);
+  word-break: break-word; /* Для переноса длинных строк адреса и комментариев */
+}

@@ -1,98 +1,97 @@
 import axios from 'axios'; // Импортируем axios для проверки ошибок
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react'; // Добавлен useCallback
 import ReactDOM from 'react-dom'; // Импортируем ReactDOM для Portal
-import { IMaskInput } from 'react-imask'; // Импортируем IMaskInput
-import { createTask, getAllChildren, getChildByUuid, getExpenseCategories, updateTask, type Child, type ExpenseCategory, type Task } from '../services/api'; // Импортируем функции API
+import { toast } from 'react-toastify'; // Для уведомлений из ChildForm
+import { addChild, createTask, getAllChildren, getChildByUuid, getExpenseCategories, updateChild as updateChildAPI, updateTask, type Child, type ExpenseCategory, type Task } from '../services/api'; // Импортируем функции API, addChild, updateChild as updateChildAPI
+import ChildForm from './ChildForm'; // Импорт ChildForm
 import './TaskForm.css';
+import UnifiedChildSelector from './UnifiedChildSelector'; // Импорт нового компонента
 
 interface TaskFormProps {
-  initialData?: Partial<Task> & { type: 'income' | 'expense' }; // Используем Partial<Task> и уточняем type
-  // weekId: string; // Удалено
-  // dayOfWeek: string; // Удалено
+  initialData?: Partial<Task> & { type: 'income' | 'expense' };
   onTaskSaved: () => void;
   onClose: () => void;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, */ onTaskSaved, onClose }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }) => {
   const [formData, setFormData] = useState(() => {
-    const defaultDueDate = new Date().toISOString().split('T')[0]; // Сегодняшняя дата в формате YYYY-MM-DD
+    const defaultDueDate = new Date().toISOString().split('T')[0];
     const data = {
-      uuid: initialData?.uuid as string | undefined, // UUID can be string or undefined. For new tasks, it will be undefined.
-      type: initialData?.type || ('income' as 'income' | 'expense'), // Default value
-      title: initialData?.title || ('' as string | null), // Default value
+      uuid: initialData?.uuid as string | undefined,
+      type: initialData?.type || ('income' as 'income' | 'expense'),
+      title: initialData?.title || ('' as string | null),
       time: initialData?.time || '',
-      address: initialData?.address || '',
-      childId: initialData?.childId || (null as string | null), // Заменено childUuid на childId
-      childName: '', // Оставлено для отображения, будет заполнено из childUuid
-      hourlyRate: initialData?.hourlyRate || 0,
-      parentName: '', // Будет заполнено из childId
-      parentPhone: '', // Будет заполнено из childId
+      address: initialData?.address || '', // Это поле будет заполняться из данных ребенка
+      childId: initialData?.childId || (null as string | null),
+      // childName: '', // Удалено, так как имя будет браться из UnifiedChildSelector или children list
+      hourlyRate: initialData?.hourlyRate || 0, // Это поле будет заполняться из данных ребенка
+      parentName: '', // Это поле будет заполняться из данных ребенка
+      parentPhone: '', // Это поле будет заполняться из данных ребенка
       comments: initialData?.comments || '',
       category: initialData?.expenseCategoryName || initialData?.category || '',
       amountEarned: initialData?.amountEarned || 0,
       amountSpent: initialData?.amountSpent || 0,
       hoursWorked: initialData?.hoursWorked || 0,
-      dueDate: initialData?.dueDate ?? defaultDueDate, // Используем ?? для более строгого контроля
+      dueDate: initialData?.dueDate ?? defaultDueDate,
     };
-    return data as typeof data; // Ensure TypeScript infers the correct type including undefined for uuid
+    return data as typeof data;
   });
 
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(null);
+  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(initialData?.childId || null);
+  const [selectedChildDetails, setSelectedChildDetails] = useState<Child | null>(null); // Новое состояние для данных ребенка
+
+  const [showChildFormModal, setShowChildFormModal] = useState(false);
+  const [childFormInitialData, setChildFormInitialData] = useState<Partial<Child> | undefined>(undefined);
+
+
+  // Обертка для fetchChildren, чтобы использовать в useCallback
+  const fetchChildrenCallback = useCallback(async () => {
+    try {
+      const fetchedChildren = await getAllChildren();
+      setChildren(fetchedChildren);
+      // Если при инициализации был childId, он уже установлен в selectedChildUuid
+      // Если после добавления нового ребенка нужно его выбрать, это будет сделано в handleChildFormSave
+    } catch (error) {
+      console.error('Ошибка при загрузке детей:', error);
+      toast.error('Ошибка при загрузке списка детей.');
+    }
+  }, []);
+
 
   useEffect(() => {
     if (initialData) {
-      // Используем все поля из initialData, если они есть, иначе значения по умолчанию из useState
       setFormData(prevData => {
-        const isNewTask = !initialData?.uuid;
-
         const processedInitialData = { ...initialData };
-        // Удалена логика удаления dueDate из processedInitialData, так как новая логика ниже это обрабатывает корректно.
-
-        // Сначала применяем все из prevData, затем из обработанного initialData,
-        // а потом специфичные поля, чтобы сохранить логику prevData для них, если в initialData их нет.
         const newData = {
           ...prevData,
-          ...processedInitialData, // uuid здесь может быть из initialData
-          // Переопределяем поля, чтобы сохранить логику с || и ?? из prevData,
-          // если в initialData соответствующие поля отсутствуют или равны null/undefined.
-          uuid: initialData.uuid, // Явно берем uuid из initialData (может быть undefined для новых)
+          ...processedInitialData,
+          uuid: initialData.uuid,
           type: initialData.type || prevData.type,
           title: initialData.title ?? prevData.title,
           time: initialData.time || prevData.time,
-          address: initialData.address || prevData.address,
+          // address, hourlyRate, parentName, parentPhone будут установлены из useEffect для selectedChildUuid
           childId: initialData.childId || prevData.childId,
-          hourlyRate: initialData.hourlyRate ?? prevData.hourlyRate,
           comments: initialData.comments || prevData.comments,
           category: initialData.expenseCategoryName || initialData.category || prevData.category,
           amountEarned: initialData.amountEarned ?? prevData.amountEarned,
           amountSpent: initialData.amountSpent ?? prevData.amountSpent,
           hoursWorked: initialData.hoursWorked ?? prevData.hoursWorked,
-          // dueDate будет установлен ниже
         };
-
-        // Логика для dueDate:
-        // Если initialData.dueDate предоставлен, используем его.
-        // Иначе, используем prevData.dueDate (которое будет defaultDueDate для новых задач,
-        // или текущее значение для существующих, или измененное пользователем).
         if (initialData.dueDate !== undefined) {
           newData.dueDate = initialData.dueDate;
         } else {
           newData.dueDate = prevData.dueDate;
         }
-
         return newData;
       });
-      if (initialData.childId) {
-        setSelectedChildUuid(initialData.childId);
-      }
+      // selectedChildUuid устанавливается при инициализации useState
     }
   }, [initialData]);
 
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    // Загрузка категорий расходов
     const fetchCategories = async () => {
       try {
         const fetchedCategories = await getExpenseCategories();
@@ -102,77 +101,105 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
       }
     };
     fetchCategories();
-
-    // Загрузка списка детей
-    const fetchChildren = async () => {
-      try {
-        const fetchedChildren = await getAllChildren();
-        setChildren(fetchedChildren);
-          // После загрузки детей, если есть initialData.childUuid, найти и установить selectedChildUuid
-          if (initialData?.childId) {
-            setSelectedChildUuid(initialData.childId);
-          // Удаляем логику поиска по childName согласно плану
-          // } else if (initialData && 'childName' in initialData && initialData.childName) {
-          //   const foundChild = fetchedChildren.find(child => child.childName === initialData.childName);
-          //   if (foundChild) {
-          //     setSelectedChildUuid(foundChild.uuid);
-          //   }
-          }
-      } catch (error) {
-        console.error('Ошибка при загрузке детей:', error);
-      }
-    };
-    fetchChildren();
-  }, [initialData]);
+    fetchChildrenCallback(); // Используем callback-версию
+  }, [fetchChildrenCallback]); // Зависимость от callback-версии
 
   useEffect(() => {
     if (selectedChildUuid !== null) {
-      const fetchChildData = async () => {
+      const fetchChildDataAndUpdateForm = async () => {
         try {
           const childData = await getChildByUuid(selectedChildUuid as string);
+          const currentChildName = children.find(c => c.uuid === selectedChildUuid)?.childName || childData.childName;
+          setSelectedChildDetails(childData); // Сохраняем полные данные ребенка
+
           setFormData((prevData) => ({
             ...prevData,
-            childId: childData.uuid, // Обновляем childId в formData, используя uuid из интерфейса Child
-            childName: childData.childName,
+            childId: childData.uuid,
+            // childName: childData.childName, // Удалено
             hourlyRate: childData.hourlyRate || 0,
-            address: childData.address || '',
-            parentName: childData.parentName || '',
-            parentPhone: childData.parentPhone || '',
-            title: (prevData.title === '' || prevData.title === `Работать с ${prevData.childName}` || prevData.title === null) ? `Работать с ${childData.childName}` : prevData.title,
+            address: childData.address || '', // Это поле остается в formData для совместимости, но не будет отображаться отдельно
+            parentName: childData.parentName || '', // Это поле остается в formData для совместимости, но не будет отображаться отдельно
+            parentPhone: childData.parentPhone || '', // Это поле остается в formData для совместимости, но не будет отображаться отдельно
+            // Обновляем title только если он был пуст или содержал старое имя ребенка
+            title: (prevData.title === '' || prevData.title?.startsWith('Работать с ') || prevData.title === null)
+              ? `Работать с ${currentChildName}`
+              : prevData.title,
           }));
         } catch (error) {
           console.error('Ошибка при загрузке данных ребенка:', error);
+          toast.error('Ошибка при загрузке данных ребенка.');
+          setSelectedChildUuid(null); // Сбрасываем выбор, если не удалось загрузить
+          setSelectedChildDetails(null); // Сбрасываем данные ребенка
         }
       };
-      fetchChildData();
+      fetchChildDataAndUpdateForm();
     } else {
-      // Сбросить поля, если ребенок не выбран
+      setSelectedChildDetails(null); // Сбрасываем данные ребенка, если UUID сброшен
       setFormData((prevData) => ({
         ...prevData,
-        childId: null, // Сбрасываем childId
-        childName: '',
+        childId: null,
+        // childName: '', // Удалено
         hourlyRate: 0,
         address: '',
         parentName: '',
         parentPhone: '',
-        title: initialData?.title ?? '',
+        // Сбрасываем title, если он был связан с ребенком, или используем initialData.title
+        title: initialData?.title && !initialData.title.startsWith('Работать с ') ? initialData.title : '',
       }));
     }
-  }, [selectedChildUuid, initialData]);
+  }, [selectedChildUuid, initialData, children]); // Добавили children в зависимости
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'childSelect') {
-        setSelectedChildUuid(value === '' ? null : value); // значение уже string
-    } else {
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: (name === 'hourlyRate' || name === 'amountEarned' || name === 'amountSpent' || name === 'hoursWorked')
-                ? (value === '' ? 0 : parseFloat(value)) // Преобразуем пустую строку в 0 для числовых полей
-                : value,
-        }));
+    // Удаляем старую логику для childSelect
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: (name === 'hourlyRate' || name === 'amountEarned' || name === 'amountSpent' || name === 'hoursWorked')
+        ? (value === '' ? 0 : parseFloat(value))
+        : value,
+    }));
+  };
+
+  const handleUnifiedChildChange = (childId: string | null, _newChildName?: string) => {
+    // _newChildName здесь не используется, так как создание инициируется через onAddNewChildRequest
+    setSelectedChildUuid(childId);
+  };
+
+  const handleOpenChildFormForNew = (childName: string) => {
+    setChildFormInitialData({ childName }); // Предзаполняем имя
+    setShowChildFormModal(true);
+  };
+
+  const handleOpenChildFormDefault = () => {
+    setChildFormInitialData({}); // Пустая форма для нового ребенка
+    setShowChildFormModal(true);
+  };
+
+  const handleChildFormSave = async (childDataFromForm: Child | Partial<Child>) => {
+    try {
+      let savedOrUpdatedChild: Child;
+      if (childDataFromForm.uuid) { // Обновление существующего (маловероятно из TaskForm, но возможно)
+        savedOrUpdatedChild = await updateChildAPI(childDataFromForm.uuid, childDataFromForm as Child);
+        toast.success('Карточка ребенка успешно обновлена!');
+      } else { // Создание нового
+        const { uuid, ...dataToSend } = childDataFromForm; // Убираем uuid если он там случайно есть
+        savedOrUpdatedChild = await addChild(dataToSend as Omit<Child, 'uuid'>);
+        toast.success('Новая карточка ребенка успешно добавлена!');
+      }
+      setShowChildFormModal(false);
+      await fetchChildrenCallback(); // Обновляем список детей
+      setSelectedChildUuid(savedOrUpdatedChild.uuid); // Автоматически выбираем нового/обновленного ребенка
+    } catch (error) {
+      toast.error('Ошибка при сохранении карточки ребенка.');
+      console.error("Ошибка при сохранении карточки ребенка из TaskForm:", error);
     }
   };
+
+  const handleChildFormCancel = () => {
+    setShowChildFormModal(false);
+    setChildFormInitialData(undefined);
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,272 +254,201 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, /* weekId, dayOfWeek, 
   };
 
   const modalContent = (
-    <div className="modal-overlay" onClick={onClose} data-testid="modal-overlay">
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-button" onClick={onClose}>&times;</button>
-        <form className="form" onSubmit={handleSubmit}>
-          <h2>{formData.uuid ? 'Редактировать дело' : 'Создать новое дело'}</h2>
+    <>
+      <div className="modal-overlay" onClick={onClose} data-testid="modal-overlay">
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <button className="close-button" onClick={onClose}>&times;</button>
+          <form className="form" onSubmit={handleSubmit}>
+            <h2>{formData.uuid ? 'Редактировать дело' : 'Создать новое дело'}</h2>
 
-          <div className="form-group">
-            <label htmlFor="type" className="label">Тип:</label>
-            <select
-              id="type"
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              className="input"
-            >
-              <option value="income">Доход</option>
-              <option value="expense">Расход</option>
-            </select>
-          </div>
+            <div className="form-group">
+              <label htmlFor="title" className="label">Название дела:</label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title || ''}
+                onChange={handleChange}
+                required
+                className="input"
+              />
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="dueDate" className="label">Дата выполнения:</label>
-            <input
-              type="date"
-              id="dueDate"
-              name="dueDate"
-              value={formData.dueDate}
-              onChange={handleChange}
-              required
-              className="input"
+            <div className="form-group">
+              <label htmlFor="type" className="label">Тип:</label>
+              <select
+                id="type"
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                className="input"
+              >
+                <option value="income">Доход</option>
+                <option value="expense">Расход</option>
+              </select>
+            </div>
+
+
+
+            <div className="form-group">
+              <label htmlFor="dueDate" className="label">Дата выполнения:</label>
+              <input
+                type="date"
+                id="dueDate"
+                name="dueDate"
+                value={formData.dueDate}
+                onChange={handleChange}
+                required
+                className="input"
+              />
+            </div>
+
+            {formData.type === 'income' && (
+              <>
+                <UnifiedChildSelector
+                  value={selectedChildUuid}
+                  onChange={handleUnifiedChildChange}
+                  childrenList={children}
+                  onAddNewChildRequest={handleOpenChildFormForNew}
+                  onGoToCreateChildPageRequest={handleOpenChildFormDefault}
+                  label="Ребенок:"
+                  placeholder="Введите или выберите имя ребенка"
+                  selectedChildDetails={selectedChildDetails} // Передаем данные для мини-карточки
+                />
+
+                <div className="form-group">
+                  <label htmlFor="time" className="label">Время:</label>
+                  <input
+                    type="time"
+                    id="time"
+                    name="time"
+                    value={formData.time || ''}
+                    onChange={handleChange}
+                    required
+                    className="input"
+                  />
+                </div>
+
+                {/* Поле "Часов отработано" не зависит от выбора ребенка и должно быть здесь */}
+                <div className="form-group">
+                  <label htmlFor="hoursWorked" className="label">Часов отработано:</label>
+                  <input
+                    type="number"
+                    id="hoursWorked"
+                    name="hoursWorked"
+                    value={formData.hoursWorked ?? ''}
+                    onChange={handleChange}
+                    step="0.01"
+                    min=""
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+
+
+                <div className="form-group">
+                  <label htmlFor="comments" className="label">Комментарии:</label>
+                  <textarea
+                    id="comments"
+                    name="comments"
+                    value={formData.comments || ''}
+                    onChange={handleChange}
+                    className="textarea"
+                  />
+                </div>
+              </>
+            )}
+
+            {formData.type === 'expense' && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="title" className="label">Описание расхода:</label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title" // Используем name для описания расхода.
+                    value={formData.title || ''} // Используем title для описания расхода
+                    onChange={handleChange}
+                    required
+                    className="input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="amountSpent" className="label">Потрачено:</label>
+                  <input
+                    type="number"
+                    id="amountSpent"
+                    name="amountSpent"
+                    value={formData.amountSpent ?? ''} // Используем amountSpent
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                    required
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="comments" className="label">Комментарии:</label>
+                  <textarea
+                    id="comments"
+                    name="comments"
+                    value={formData.comments || ''} // Используем comments для расходов
+                    onChange={handleChange}
+                    className="textarea"
+                  />
+                </div>
+
+
+                <div className="form-group">
+                  <label htmlFor="category" className="label">Категория:</label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={formData.category || ''}
+                    onChange={handleChange}
+                    className="input"
+                    required
+                  >
+                    <option value="">Выберите категорию</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}{" "}
+                  </select>
+                </div>
+              </>
+            )}
+
+            <button type="submit" className="submit-button">
+              {formData.uuid ? 'Сохранить' : 'Создать дело'}
+            </button>
+          </form>
+        </div>
+      </div>
+      {showChildFormModal && (
+        <div className="modal-overlay" onClick={handleChildFormCancel} data-testid="child-form-modal-overlay">
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-button" onClick={handleChildFormCancel}>&times;</button>
+            <ChildForm
+              initialChild={childFormInitialData}
+              onSave={handleChildFormSave}
+              onCancel={handleChildFormCancel}
             />
           </div>
-
-          {formData.type === 'income' && (
-            <>
-              <div className="form-group">
-                <label htmlFor="childSelect" className="label">Выбрать ребенка:</label>
-                <select
-                  id="childSelect"
-                  name="childSelect"
-                  value={selectedChildUuid !== null ? selectedChildUuid : ''} // значение уже string
-                  onChange={handleChange}
-                  className="input"
-                >
-                  <option value="">Не выбрано</option>
-                  {children.map((child, index) => (
-                    <option key={child.uuid ?? index} value={child.uuid ?? ''}> {/* Ключ: child.uuid, если существует, иначе индекс. Значение: child.uuid, если существует, иначе пустая строка. */}
-                      {child.childName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Блок полей, зависящих от выбранного ребенка */}
-              {selectedChildUuid && (
-                <>
-                  <div className="form-group"> {/* Имя ребенка */}
-                    <label htmlFor="childName" className="label">Имя ребенка:</label>
-                <input
-                  type="text"
-                  id="childName"
-                  name="childName"
-                  value={formData.childName || ''}
-                  onChange={handleChange}
-                  className="input"
-                  readOnly // Это поле только для чтения
-                />
-              </div>
-
-              {/* Новое поле для имени родителя */}
-              <div className="form-group">
-                <label htmlFor="parentName" className="label">Имя родителя:</label>
-                <input
-                  type="text"
-                  id="parentName"
-                  name="parentName"
-                  value={formData.parentName || ''}
-                  onChange={handleChange}
-                  className="input"
-                  readOnly // Только для чтения
-                />
-              </div>
-
-              {/* Новое поле для телефона родителя */}
-              <div className="form-group">
-                <label htmlFor="parentPhone" className="label">Телефон родителя:</label>
-                <IMaskInput
-                  mask={'+{7} (000) 000-00-00'}
-                  value={formData.parentPhone || ''}
-                  onAccept={(value: string) => {
-                    setFormData((prevData) => ({
-                      ...prevData,
-                      parentPhone: value,
-                    }));
-                  }}
-                  name="parentPhone"
-                  id="parentPhone"
-                  type="tel"
-                  className="input"
-                  readOnly // Только для чтения
-                />
-              </div>
-              {/* Адрес и Ставка также должны быть внутри этого блока */}
-              <div className="form-group"> {/* Адрес */}
-                <label htmlFor="address" className="label">Адрес:</label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={formData.address || ''}
-                  onChange={handleChange}
-                  className="input"
-                  readOnly // Это поле будет заполняться из выбранного ребенка
-                />
-              </div>
-
-              <div className="form-group"> {/* Ставка */}
-                <label htmlFor="hourlyRate" className="label">Ставка (₽/час):</label>
-                <input
-                  type="number"
-                  id="hourlyRate"
-                  name="hourlyRate"
-                  value={formData.hourlyRate ?? ''}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="0"
-                  className="input"
-                />
-              </div>
-                </>
-              )}
-              {/* Поля Название и Время остаются видимыми */}
-              <div className="form-group">
-                <label htmlFor="title" className="label">Название:</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title || ''}
-                  onChange={handleChange}
-                  required
-                  className="input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="time" className="label">Время:</label>
-                <input
-                  type="time"
-                  id="time"
-                  name="time"
-                  value={formData.time || ''}
-                  onChange={handleChange}
-                  required
-                  className="input"
-                />
-              </div>
-
-              {/* Поле "Часов отработано" не зависит от выбора ребенка и должно быть здесь */}
-              <div className="form-group">
-                <label htmlFor="hoursWorked" className="label">Часов отработано:</label>
-                <input
-                  type="number"
-                  id="hoursWorked"
-                  name="hoursWorked"
-                  value={formData.hoursWorked ?? ''}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="0"
-                  className="input"
-                />
-              </div>
-
-
-              <div className="form-group">
-                <label htmlFor="comments" className="label">Комментарии:</label>
-                <textarea
-                  id="comments"
-                  name="comments"
-                  value={formData.comments || ''}
-                  onChange={handleChange}
-                  className="textarea"
-                />
-              </div>
-            </>
-          )}
-
-          {formData.type === 'expense' && (
-            <>
-              <div className="form-group">
-                <label htmlFor="title" className="label">Описание расхода:</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title" // Используем name для описания расхода.
-                  value={formData.title || ''} // Используем title для описания расхода
-                  onChange={handleChange}
-                  required
-                  className="input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="amountSpent" className="label">Потрачено:</label>
-                <input
-                  type="number"
-                  id="amountSpent"
-                  name="amountSpent"
-                  value={formData.amountSpent ?? ''} // Используем amountSpent
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  required
-                  placeholder="0"
-                  className="input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="comments" className="label">Комментарии:</label>
-                <textarea
-                  id="comments"
-                  name="comments"
-                  value={formData.comments || ''} // Используем comments для расходов
-                  onChange={handleChange}
-                  className="textarea"
-                />
-              </div>
-
-
-              <div className="form-group">
-                <label htmlFor="category" className="label">Категория:</label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category || ''}
-                  onChange={handleChange}
-                  className="input"
-                  required
-                >
-                  <option value="">Выберите категорию</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}{" "}
-                </select>
-              </div>
-            </>
-          )}
-
-          <button type="submit" className="submit-button">
-            {formData.uuid ? 'Сохранить' : 'Создать дело'}
-          </button>
-        </form>
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 
   const modalRoot = document.getElementById('modal-root');
   if (!modalRoot) {
-    return null; // Или выбросить ошибку, если modal-root не найден
+    // Если modal-root не найден, можно создать его динамически или вернуть null/ошибку
+    // Для простоты пока возвращаем null, но в реальном приложении это нужно обработать надежнее.
+    console.error("Элемент с id 'modal-root' не найден в DOM.");
+    return null;
   }
-
-  // Используем ReactDOM.createPortal для рендеринга модального окна вне основного DOM-потока.
-  // Это помогает избежать проблем с z-index и позиционированием.
   return ReactDOM.createPortal(modalContent, modalRoot);
 };
 
