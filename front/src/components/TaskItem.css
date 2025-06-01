@@ -100,3 +100,8 @@
   align-items: center;
   justify-content: space-between;
 }
+.ExpenseCategoryName {
+  font-style: italic;
+  color: #6c757d; /* Нейтральный цвет для категории */
+  margin-left: 5px; /* Небольшой отступ слева */
+}

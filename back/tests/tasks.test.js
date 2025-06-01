@@ -59,6 +59,51 @@ describe('Task API', () => {
     expect(res.body.title).toEqual(taskData.title);
   });
 
+  it('should create a new expense task with category name and link it correctly', async () => {
+    const taskData = {
+      ...baseTask,
+      type: 'expense', // Указываем тип expense
+      title: 'Тестовая Задача Расхода с Именем Категории',
+      category: 'Тестовая Категория для Задачи', // Используем имя категории, созданной в beforeEach
+      // childId не обязателен для expense, но если нужен, можно добавить childUuid
+    };
+
+    const createRes = await request(app)
+      .post('/tasks')
+      .send(taskData);
+
+    expect(createRes.statusCode).toEqual(201);
+    expect(createRes.body).toHaveProperty('uuid');
+    expect(createRes.body.title).toEqual(taskData.title);
+    expect(createRes.body.type).toEqual('expense');
+    expect(createRes.body).not.toHaveProperty('category'); // Поле category (имя) должно быть удалено
+    expect(createRes.body.expenceTypeId).toEqual(categoryUuid); // Проверяем, что UUID категории подставился
+
+    // Дополнительная проверка: получаем задачу и убеждаемся, что expenceTypeId верный
+    const getRes = await request(app).get(`/tasks/${createRes.body.uuid}`);
+    expect(getRes.statusCode).toEqual(200);
+    expect(getRes.body.expenceTypeId).toEqual(categoryUuid);
+    expect(getRes.body).not.toHaveProperty('category');
+    // Также проверяем, что expenseCategoryName подтягивается правильно
+    expect(getRes.body.expenseCategoryName).toEqual('Тестовая Категория для Задачи');
+  });
+
+  it('should return 400 when creating an expense task with a non-existent category name', async () => {
+    const taskData = {
+      ...baseTask,
+      type: 'expense',
+      title: 'Задача с Несуществующей Категорией',
+      category: 'Несуществующая Категория',
+    };
+
+    const res = await request(app)
+      .post('/tasks')
+      .send(taskData);
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body).toHaveProperty('message', "Категория расхода 'Несуществующая Категория' не найдена");
+  });
+
   it('should get all tasks', async () => {
     const taskData = { ...baseTask, childId: childUuid, expenceTypeId: categoryUuid };
     await request(app).post('/tasks').send(taskData);

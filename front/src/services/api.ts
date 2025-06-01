@@ -2,6 +2,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
+console.log('[api.ts] Using API_URL:', API_URL);
 
 export interface ExpenseCategory {
   id: string;
@@ -42,6 +43,7 @@ export interface Task {
   comments?: string;
   isDone?: boolean;
   isPaid?: boolean;
+  expenseCategoryName?: string; // Добавлено для отображения имени категории расходов
   createdAt?: string;
   updatedAt?: string;
 }
@@ -161,7 +163,7 @@ export const getDailySummary = async (date: string): Promise<{ totalEarned: numb
 
 export const getMonthlySummary = async (year: number, month: number) => {
   const response = await api.get(`/summary/month/${year}/${month}`);
-  return response.data as SummaryData;
+  return response.data as { totalEarned: number; totalSpent: number; balance: number; };
 };
 
 export const getExpenseCategories = async () => {

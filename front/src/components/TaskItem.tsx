@@ -20,7 +20,7 @@ const ItemTypes = {
 const TaskItem: React.FC<TaskItemProps> = ({ task, onDelete, onDuplicate, onEdit }) => { // Деструктуризация task и колбэков
 
   // Деструктуризация полей из task. dueDate и comments пока не используются в JSX, но доступны для логики.
-  const { uuid: id, type, title, amountEarned, amountSpent, comments, dueDate, childId, hourlyRate, category, hoursWorked, time, address } = task;
+  const { uuid: id, type, title, amountEarned, amountSpent, comments, dueDate, childId, hourlyRate, category, hoursWorked, time, address, expenseCategoryName } = task;
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -59,6 +59,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onDelete, onDuplicate, onEdit
           <p className="TaskDetail">
             {/* Используем деструктурированные type, amountEarned, amountSpent */}
             {type === 'income' ? `+${amountEarned || 0}₽` : `-${amountSpent || 0}₽`}
+            {type === 'expense' && expenseCategoryName && (
+              <span className="ExpenseCategoryName"> ({expenseCategoryName})</span>
+            )}
           </p>
         </div>
         <div className="ButtonContainer">

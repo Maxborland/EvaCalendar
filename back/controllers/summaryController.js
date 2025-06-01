@@ -1,3 +1,4 @@
+console.log('[SummaryController] File loaded'); // Лог загрузки файла
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
@@ -23,6 +24,7 @@ const validateMonthlySummary = [
 
 // GET /summary/week/:weekId - Получение недельной сводки
 router.get('/week/:weekId', validateWeeklySummary, asyncHandler(async (req, res, next) => {
+  console.log(`[SummaryController] GET /week/${req.params.weekId} called`);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(ApiError.badRequest('Ошибки валидации', errors.array()));
@@ -34,6 +36,7 @@ router.get('/week/:weekId', validateWeeklySummary, asyncHandler(async (req, res,
 
 // GET /summary/daily?date=YYYY-MM-DD - Получение дневной сводки
 router.get('/daily', validateDailySummary, asyncHandler(async (req, res, next) => {
+  console.log(`[SummaryController] GET /daily called with query:`, req.query);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(ApiError.badRequest('Ошибки валидации', errors.array()));
@@ -45,6 +48,7 @@ router.get('/daily', validateDailySummary, asyncHandler(async (req, res, next) =
 
 // GET /summary/month/:year/:month - Получение месячной сводки
 router.get('/month/:year/:month', validateMonthlySummary, asyncHandler(async (req, res, next) => {
+  console.log(`[SummaryController] GET /month/${req.params.year}/${req.params.month} called`);
   // try { // Убираем try...catch, так как asyncHandler это обработает
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

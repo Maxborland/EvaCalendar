@@ -26,30 +26,63 @@ const taskService = {
         // }
 
 
-        if (taskData.childId && !(await validateExistence('children', taskData.childId))) {
-            throw ApiError.badRequest('Child not found');
-        }
-        if (taskData.expenceTypeId && !(await validateExistence('expense_categories', taskData.expenceTypeId))) {
-            throw ApiError.badRequest('Expense category not found');
+        // Обработка имени категории для задач типа 'expense'
+        if (taskData.type === 'expense' && typeof taskData.category === 'string' && taskData.category.trim() !== '') {
+            const categoryName = taskData.category;
+            // Удаляем поле category из taskData, чтобы оно не попало в newTask и затем в БД
+            delete taskData.category;
+
+            console.log(`[taskService.createTask] Searching for expense category by name: "${categoryName}"`);
+            const expenseCategory = await knex('expense_categories').where({ category_name: categoryName }).first();
+
+            if (!expenseCategory) {
+                console.error(`[taskService.createTask] Expense category not found by name: "${categoryName}"`);
+                throw ApiError.badRequest(`Категория расхода '${categoryName}' не найдена`);
+            }
+            taskData.expenceTypeId = expenseCategory.uuid;
+            console.log(`[taskService.createTask] Found expense category UUID: ${expenseCategory.uuid}. Set taskData.expenceTypeId to: ${taskData.expenceTypeId}`);
         }
 
-        console.log('[taskService.createTask] Received taskData:', JSON.stringify(taskData)); // Добавлено логирование
+        if (taskData.childId && !(await validateExistence('children', taskData.childId))) {
+            console.error('[taskService.createTask] Validation failed for childId:', taskData.childId);
+            throw ApiError.badRequest('Child not found');
+        }
+        console.log('[taskService.createTask] Validating expenceTypeId. Received value:', taskData.expenceTypeId);
+        const categoryExists = await validateExistence('expense_categories', taskData.expenceTypeId);
+        console.log('[taskService.createTask] Result of validateExistence for expenceTypeId:', categoryExists);
+
+        if (taskData.expenceTypeId && !categoryExists) {
+            console.error('[taskService.createTask] Validation failed for expenceTypeId:', taskData.expenceTypeId);
+            throw ApiError.badRequest('Expense category not found');
+        }
+        console.log('[taskService.createTask] expenceTypeId after validation check:', taskData.expenceTypeId);
+
+        console.log('[taskService.createTask] Received taskData before modification:', JSON.stringify(taskData));
         // Удаляем hourlyRate из taskData, если оно пришло, так как его нет в таблице tasks
         if (taskData.hasOwnProperty('hourlyRate')) {
             delete taskData.hourlyRate;
         }
         const newTask = { uuid: uuidv4(), ...taskData };
-        console.log('[taskService.createTask] Generated newTask object:', JSON.stringify(newTask));
+        console.log('[taskService.createTask] Generated newTask object for DB insert:', JSON.stringify(newTask));
         try {
+            console.log('[taskService.createTask] Attempting to insert newTask into DB. Current expenceTypeId in newTask:', newTask.expenceTypeId);
             const result = await knex('tasks').insert(newTask);
             console.log('[taskService.createTask] Knex insert result:', JSON.stringify(result));
-            if (result && result.length === 0) { // Или другая проверка в зависимости от того, что возвращает knex для вашего драйвера при успехе
-                console.warn('[taskService.createTask] Knex insert result is empty, task might not have been inserted.');
+            // Для PostgreSQL, result обычно содержит массив вставленных строк или количество вставленных строк,
+            // в зависимости от конфигурации .returning(). Если .returning() не используется,
+            // result может быть количеством вставленных строк (например, 1 при успехе).
+            // Проверка result.length === 0 может быть не всегда корректной для insert.
+            // Более надежно проверить, не выбросило ли исключение, и что result не является ошибкой.
+            // Knex обычно выбрасывает исключение при ошибке вставки.
+            if (Array.isArray(result) && result.length === 0 && newTask) { // Если ожидался массив вставленных ID и он пуст
+                 console.warn('[taskService.createTask] Knex insert result is an empty array, task might not have been inserted if returning IDs was expected.');
+            } else if (typeof result === 'number' && result === 0) { // Если ожидалось количество вставленных строк
+                 console.warn('[taskService.createTask] Knex insert result is 0, task might not have been inserted.');
             }
             console.log('[taskService.createTask] Task inserted into DB. Returning newTask.');
             return newTask;
         } catch (error) {
-            console.error('[taskService.createTask] Error during knex insert:', error);
+            console.error('[taskService.createTask] Error during knex insert:', error.message, error.stack, error.detail, error.constraint);
             throw ApiError.internal('Failed to create task in database', error);
         }
     },
@@ -112,11 +145,37 @@ const taskService = {
         }
 
 
+        // Обработка имени категории для задач типа 'expense' при обновлении
+        if (taskData.type === 'expense' && typeof taskData.category === 'string' && taskData.category.trim() !== '') {
+            const categoryName = taskData.category;
+            // Удаляем поле category из taskData, чтобы оно не попало в запрос к БД как колонка
+            delete taskData.category;
+
+            console.log(`[taskService.updateTask] Searching for expense category by name: "${categoryName}"`);
+            const expenseCategory = await knex('expense_categories').where({ category_name: categoryName }).first();
+
+            if (!expenseCategory) {
+                console.error(`[taskService.updateTask] Expense category not found by name: "${categoryName}"`);
+                throw ApiError.badRequest(`Категория расхода '${categoryName}' не найдена`);
+            }
+            taskData.expenceTypeId = expenseCategory.uuid; // Используем uuid категории
+            console.log(`[taskService.updateTask] Found expense category UUID: ${expenseCategory.uuid}. Set taskData.expenceTypeId to: ${taskData.expenceTypeId}`);
+        } else if (taskData.hasOwnProperty('category') && taskData.category === null) {
+            // Если фронтенд явно прислал null для категории, это может означать "убрать категорию"
+            // В этом случае мы должны установить expenceTypeId в null
+            delete taskData.category; // Удаляем, чтобы не пытаться записать 'category'
+            taskData.expenceTypeId = null;
+            console.log(`[taskService.updateTask] Category explicitly set to null. Setting expenceTypeId to null.`);
+        }
+
+
         if (taskData.childId && !(await validateExistence('children', taskData.childId))) {
             throw ApiError.badRequest('Child not found');
         }
-        if (taskData.expenceTypeId && !(await validateExistence('expense_categories', taskData.expenceTypeId))) {
-            throw ApiError.badRequest('Expense category not found');
+        // Валидация expenceTypeId должна происходить ПОСЛЕ его возможной установки из имени категории
+        if (taskData.hasOwnProperty('expenceTypeId') && taskData.expenceTypeId !== null && !(await validateExistence('expense_categories', taskData.expenceTypeId))) {
+            console.error('[taskService.updateTask] Validation failed for expenceTypeId:', taskData.expenceTypeId);
+            throw ApiError.badRequest('Expense category not found by expenceTypeId');
         }
 
         // Удаляем hourlyRate из taskData, так как это поле относится к таблице children
