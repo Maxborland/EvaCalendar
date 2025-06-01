@@ -40,12 +40,10 @@ router.get('/:uuid', async (req, res, next) => {
 // GET /notes/date/:dateString - Получение информации о заметке по дате
 router.get('/date/:dateString', async (req, res, next) => {
     try {
-        const note = await noteService.getNoteByDate(req.params.dateString);
-        if (note) {
-            res.status(200).json(note);
-        } else {
-            next(ApiError.notFound('Заметка не найдена по указанной дате'));
-        }
+        // Используем обновленный метод сервиса, который возвращает массив
+        const notes = await noteService.getNotesByDate(req.params.dateString);
+        // Всегда возвращаем 200 OK и массив заметок (может быть пустым)
+        res.status(200).json(notes);
     } catch (error) {
         next(error);
     }

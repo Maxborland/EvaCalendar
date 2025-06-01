@@ -183,13 +183,40 @@ const taskService = {
             delete taskData.hourlyRate;
         }
 
+        // Удаляем поля, которых нет в таблице 'tasks' напрямую
+        if (taskData.hasOwnProperty('childName')) {
+            delete taskData.childName;
+        }
+        if (taskData.hasOwnProperty('expenseCategoryName')) {
+            delete taskData.expenseCategoryName;
+        }
+
         console.log('[taskService.updateTask] Received UUID for update:', uuid);
-        console.log('[taskService.updateTask] Received taskData for update:', JSON.stringify(taskData));
+        console.log('[taskService.updateTask] Cleaned taskData for update:', JSON.stringify(taskData)); // Изменено сообщение в логе
         const updated = await knex('tasks').where({ uuid }).update(taskData);
         console.log('[taskService.updateTask] Update result (updated count):', updated);
         return updated;
     },
 
+async getTasksByCategoryUuid(categoryUuid) {
+        console.log(`[taskService.getTasksByCategoryUuid] Searching for expense category by UUID: "${categoryUuid}"`);
+        const category = await knex('expense_categories').where({ uuid: categoryUuid }).first();
+
+        if (!category) {
+            console.log(`[taskService.getTasksByCategoryUuid] Category with UUID "${categoryUuid}" not found.`);
+            return null; // Контроллер обработает это как 404
+        }
+
+        console.log(`[taskService.getTasksByCategoryUuid] Found category name: ${category.category_name}. Fetching tasks.`);
+        return knex('tasks')
+            .where({ expenceTypeId: category.uuid })
+            .select(
+                'tasks.*',
+                'children.childName as childName',
+                knex.raw('? as expenseCategoryName', [category.category_name])
+            )
+            .leftJoin('children', 'tasks.childId', 'children.uuid');
+    },
     async deleteTask(uuid) {
         const deleted = await knex('tasks').where({ uuid }).del();
         return deleted;

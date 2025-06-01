@@ -43,11 +43,11 @@
 
 .TaskInfoContainer {
   display: flex;
-  flex-direction: column; /* Изменяем на column, чтобы заголовок и детали были по вертикали */
-  align-items: flex-start; /* Выравниваем по левому краю */
-  gap: 2px; /* Уменьшаем зазор между элементами */
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   flex-grow: 1;
-  min-width: 0; /* Разрешаем контейнеру сжиматься */
+  min-width: 0;
 }
 
 .ButtonContainer {
@@ -63,14 +63,14 @@
   color: white;
   border: none;
   border-radius: 5px;
-  padding: 0; /* Удалить padding, чтобы width/height работали как ожидалось */
-  width: 32px; /* Увеличить ширину */
-  height: 32px; /* Увеличить высоту */
-  display: flex; /* Для центрирования иконок */
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  font-size: 1.2em; /* Увеличить размер шрифта для иконок */
+  font-size: 1.2em;
 }
 
 .ActionButton:hover {
@@ -102,6 +102,6 @@
 }
 .ExpenseCategoryName {
   font-style: italic;
-  color: #6c757d; /* Нейтральный цвет для категории */
-  margin-left: 5px; /* Небольшой отступ слева */
+  color: #6c757d;
+  margin-left: 5px;
 }

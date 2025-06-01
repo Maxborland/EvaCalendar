@@ -10,9 +10,7 @@ const asyncHandler = fn => (req, res, next) =>
 
 // POST /tasks - Создание новой задачи
 router.post('/', asyncHandler(async (req, res) => {
-    console.log('[taskController.createTask] Received body for creation:', JSON.stringify(req.body));
     const task = await taskService.createTask(req.body);
-    console.log('[taskController.createTask] Task created by service:', JSON.stringify(task));
     res.status(201).json(task);
 }));
 
@@ -22,6 +20,18 @@ router.get('/', asyncHandler(async (req, res) => {
     res.json(tasks);
 }));
 
+// GET /tasks/by-category-uuid/:uuid
+router.get('/by-category-uuid/:uuid', asyncHandler(async (req, res) => {
+    const { uuid } = req.params;
+    if (!uuid) {
+        throw ApiError.badRequest('Category UUID is required');
+    }
+    const tasks = await taskService.getTasksByCategoryUuid(uuid);
+    if (tasks === null) { // Пример, если сервис возвращает null при ненайденной категории
+        throw ApiError.notFound('Category not found or no tasks for this category');
+    }
+    res.json(tasks);
+}));
 // GET /tasks/:uuid - Получение задачи по UUID (или всех задач если нет uuid?)
 router.get('/:uuid', asyncHandler(async (req, res, next) => {
     const { uuid } = req.params;

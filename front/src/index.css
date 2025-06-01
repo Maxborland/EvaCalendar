@@ -5,9 +5,9 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  /* Цветовая палитра на основе 5 основных цветов */
-  /*
-  Палитра основана на 5 базовых цветах:
+
+
+  /* Палитра основана на 5 базовых цветах:
   1. Primary (Акцентный синий/фиолетовый)
   2. Success (Зеленый)
   3. Danger (Красный)
@@ -15,31 +15,31 @@
   5. Neutral (Оттенки серого от белого до черного)
   */
 
-  /* Базовые цвета (темная тема) */
+
   --color-primary-base: var(--theme-primary);
   --color-success-base: var(--theme-success);
   --color-danger-base: var(--theme-danger);
   --color-info-base: var(--theme-info);
 
-  /* Нейтральные (оттенки серого) (темная тема): от светлого к темному */
-  --color-neutral-0: var(--theme-light);             /* Чистый белый */
-  --color-neutral-10: color-mix(in srgb, var(--theme-light) 87%, transparent); /* Основной светлый текст */
-  --color-neutral-20: var(--theme-gray-light);               /* Очень светлый серый (border-light) */
-  --color-neutral-30: color-mix(in srgb, var(--theme-gray-light) 80%, var(--theme-gray-medium));               /* Светлый серый (text-tertiary, border-dark light theme) */
-  --color-neutral-40: color-mix(in srgb, var(--theme-gray-medium) 70%, var(--theme-gray-light));               /* Средне-светлый серый (text-secondary) */
-  --color-neutral-50: var(--theme-gray-medium);               /* Средне-темный серый (placeholder) */
-  --color-neutral-60: color-mix(in srgb, var(--theme-gray-medium) 50%, var(--theme-gray-dark));               /* Темнее чем 50 (border-medium light theme; placeholder light theme) */
-  --color-neutral-70: color-mix(in srgb, var(--theme-gray-dark) 70%, var(--theme-gray-medium));               /* Темно-серый (border-medium) */
-  --color-neutral-80: color-mix(in srgb, var(--theme-gray-dark) 90%, var(--theme-dark));               /* Очень темно-серый (dashed-border-dark) */
-  --color-neutral-90: var(--theme-gray-dark);            /* Обычный серый (highlight dark) */
-  --color-neutral-100: color-mix(in srgb, var(--theme-gray-dark) 80%, var(--theme-dark));            /* Темно-серый (border-dark, input background) */
-  --color-neutral-110: color-mix(in srgb, var(--theme-dark) 80%, var(--theme-gray-dark));           /* Мягкий фон (background-soft) */
-  --color-neutral-120: color-mix(in srgb, var(--theme-dark) 90%, black);           /* Вторичный фон (secondary-background) */
-  --color-neutral-130: var(--theme-dark);           /* Третичный фон (tertiary-background) */
-  --color-neutral-140: var(--theme-dark);           /* Основной фон (primary-background) */
-  --color-neutral-150: color-mix(in srgb, var(--theme-dark) 90%, var(--theme-gray-dark));           /* Фон модального окна (modal-background) */
 
-  /* Общие функциональные переменные (для темной темы) */
+  --color-neutral-0: var(--theme-light);
+  --color-neutral-10: color-mix(in srgb, var(--theme-light) 87%, transparent);
+  --color-neutral-20: var(--theme-gray-light);
+  --color-neutral-30: color-mix(in srgb, var(--theme-gray-light) 80%, var(--theme-gray-medium));
+  --color-neutral-40: color-mix(in srgb, var(--theme-gray-medium) 70%, var(--theme-gray-light));
+  --color-neutral-50: var(--theme-gray-medium);
+  --color-neutral-60: color-mix(in srgb, var(--theme-gray-medium) 50%, var(--theme-gray-dark));
+  --color-neutral-70: color-mix(in srgb, var(--theme-gray-dark) 70%, var(--theme-gray-medium));
+  --color-neutral-80: color-mix(in srgb, var(--theme-gray-dark) 90%, var(--theme-dark));
+  --color-neutral-90: var(--theme-gray-dark);
+  --color-neutral-100: color-mix(in srgb, var(--theme-gray-dark) 80%, var(--theme-dark));
+  --color-neutral-110: color-mix(in srgb, var(--theme-dark) 80%, var(--theme-gray-dark));
+  --color-neutral-120: color-mix(in srgb, var(--theme-dark) 90%, black);
+  --color-neutral-130: var(--theme-dark);
+  --color-neutral-140: var(--theme-dark);
+  --color-neutral-150: color-mix(in srgb, var(--theme-dark) 90%, var(--theme-gray-dark));
+
+
   --color-text-primary: var(--color-neutral-10);
   --color-text-secondary: var(--color-neutral-40);
   --color-text-tertiary: var(--color-neutral-120);
@@ -52,7 +52,7 @@
   --color-modal-background: var(--color-neutral-150);
   --color-input-background: var(--color-neutral-100);
 
-  --color-accent: var(--theme-light); /* Общий акцент: белый в темной теме */
+  --color-accent: var(--theme-light);
   --color-highlight: var(--color-neutral-90);
 
   --color-border-dark: var(--color-neutral-100);
@@ -61,7 +61,7 @@
   --color-dashed-border-dark: var(--color-neutral-80);
 
   --color-blue-accent: var(--color-primary-base);
-  --color-blue-accent-hover: var(--theme-secondary); /* Чуть темнее базового синего */
+  --color-blue-accent-hover: var(--theme-secondary);
   --color-link-hover: var(--color-primary-base);
   --color-blue-accent-shadow: rgba(var(--theme-info-rgb), 0.25);
   --color-blue-accent-shadow-light: rgba(var(--theme-info-rgb), 0.2);
@@ -76,20 +76,20 @@
   --color-success-border: color-mix(in srgb, var(--theme-success) 50%, var(--theme-light));
   --color-success-text: color-mix(in srgb, var(--theme-success) 90%, black);
 
-  --color-secondary-button: var(--color-neutral-60); /* Используем нейтральный оттенок */
-  --color-secondary-button-hover: var(--color-neutral-70); /* Используем нейтральный оттенок */
+  --color-secondary-button: var(--color-neutral-60);
+  --color-secondary-button-hover: var(--color-neutral-70);
 
-  --color-purple-primary: var(--theme-primary); /* Ближайший по значению к #535BF2 */
+  --color-purple-primary: var(--theme-primary);
   --color-purple-hover: color-mix(in srgb, var(--theme-primary) 80%, black);
 
-  --color-light-background: var(--theme-gray-light); /* Светлый фон (из SummaryBlock, используем как есть) */
-  --color-light-grey: var(--theme-gray-light);      /* Светло-серый (из SummaryBlock, используем как есть) */
+  --color-light-background: var(--theme-gray-light);
+  --color-light-grey: var(--theme-gray-light);
 
   --color-info-background: color-mix(in srgb, var(--theme-info) 20%, var(--theme-light));
   --color-info-border: color-mix(in srgb, var(--theme-info) 50%, var(--theme-light));
   --color-info-text: var(--color-info-base);
 
-  /* Тени (темная тема) */
+
   --color-shadow-dark: rgba(var(--theme-dark-rgb), 1);
   --color-shadow-medium: rgba(var(--theme-dark-rgb), 0.8);
   --color-shadow-light: rgba(var(--theme-dark-rgb), 0.5);
@@ -104,7 +104,7 @@
 }
 
 #root {
-  margin: 0 auto; /* Центрирование контента */
+  margin: 0 auto;
 }
 
 body {
@@ -121,29 +121,29 @@ h1 {
 
 @media (prefers-color-scheme: light) {
   :root {
-    /* Основные базовые цвета (переопределения для светлой темы) */
+
     --color-primary-base: color-mix(in srgb, var(--theme-primary) 80%, var(--theme-light));
     --color-success-base: var(--theme-success);
     --color-danger-base: var(--theme-danger);
     --color-info-base: var(--theme-info);
 
-    /* Нейтральные (оттенки серого) (светлая тема): от светлого к темному (в соответствии с темной темой, но с переопределенными значениями) */
-    --color-neutral-0: var(--theme-dark);                  /* Чистый черный (для текста) */
-    --color-neutral-10: var(--theme-dark);             /* Основной темно-серый текст */
-    --color-neutral-20: var(--theme-gray-dark);                /* Темно-серый (text, border) */
-    --color-neutral-30: color-mix(in srgb, var(--theme-gray-dark) 70%, var(--theme-gray-medium));                /* Средне-темный серый (text-secondary) */
-    --color-neutral-40: color-mix(in srgb, var(--theme-gray-medium) 50%, var(--theme-gray-dark));                /* Светлее серый (placeholder) */
-    --color-neutral-50: color-mix(in srgb, var(--theme-gray-light) 80%, var(--theme-gray-medium));                /* Светло-серый (border-medium) */
-    --color-neutral-60: color-mix(in srgb, var(--theme-gray-light) 85%, var(--theme-gray-medium));                /* Светло-серый (border-dark, dashed-border-dark) */
-    --color-neutral-70: color-mix(in srgb, var(--theme-gray-light) 95%, var(--theme-gray-medium));             /* Светло-серый (highlight light) */
-    --color-neutral-80: var(--theme-gray-light);             /* Light grey for summary today background */
-    --color-neutral-90: var(--theme-gray-light);             /* Background soft */
-    --color-neutral-100: color-mix(in srgb, var(--theme-gray-light) 98%, white);            /* Tertiary background */
-    --color-neutral-110: color-mix(in srgb, var(--theme-gray-light) 99%, white);            /* Light background */
-    --color-neutral-120: color-mix(in srgb, var(--theme-gray-light) 99%, white);            /* Secondary background */
-    --color-neutral-130: var(--theme-light);            /* Primary background, modal background */
 
-    /* Общие функциональные переменные (для светлой темы) */
+    --color-neutral-0: var(--theme-dark);
+    --color-neutral-10: var(--theme-dark);
+    --color-neutral-20: var(--theme-gray-dark);
+    --color-neutral-30: color-mix(in srgb, var(--theme-gray-dark) 70%, var(--theme-gray-medium));
+    --color-neutral-40: color-mix(in srgb, var(--theme-gray-medium) 50%, var(--theme-gray-dark));
+    --color-neutral-50: color-mix(in srgb, var(--theme-gray-light) 80%, var(--theme-gray-medium));
+    --color-neutral-60: color-mix(in srgb, var(--theme-gray-light) 85%, var(--theme-gray-medium));
+    --color-neutral-70: color-mix(in srgb, var(--theme-gray-light) 95%, var(--theme-gray-medium));
+    --color-neutral-80: var(--theme-gray-light);
+    --color-neutral-90: var(--theme-gray-light);
+    --color-neutral-100: color-mix(in srgb, var(--theme-gray-light) 98%, white);
+    --color-neutral-110: color-mix(in srgb, var(--theme-gray-light) 99%, white);
+    --color-neutral-120: color-mix(in srgb, var(--theme-gray-light) 99%, white);
+    --color-neutral-130: var(--theme-light);
+
+
     --color-text-primary: var(--color-neutral-10);
     --color-text-secondary: var(--color-neutral-30);
     --color-text-tertiary: var(--color-neutral-20);
@@ -154,9 +154,9 @@ h1 {
     --color-secondary-background: var(--color-neutral-120);
     --color-tertiary-background: var(--color-neutral-100);
     --color-modal-background: var(--color-neutral-130);
-    --color-input-background: var(--color-neutral-90); /* Используем background-soft */
+    --color-input-background: var(--color-neutral-90);
 
-    --color-accent: var(--color-primary-base); /* Общий акцент: синий в светлой теме */
+    --color-accent: var(--color-primary-base);
     --color-highlight: var(--color-neutral-70);
 
     --color-border-dark: var(--color-neutral-60);
@@ -183,7 +183,7 @@ h1 {
     --color-secondary-button: var(--color-neutral-90);
     --color-secondary-button-hover: var(--color-neutral-100);
 
-    --color-purple-primary: var(--theme-primary); /* Уже переопределен --color-primary-base, но для консистентности */
+    --color-purple-primary: var(--theme-primary);
     --color-purple-hover: color-mix(in srgb, var(--theme-primary) 80%, black);
 
     --color-light-background: var(--color-neutral-110);
@@ -193,7 +193,7 @@ h1 {
     --color-info-border: color-mix(in srgb, var(--theme-info) 50%, var(--theme-light));
     --color-info-text: var(--color-info-base);
 
-    /* Тени (светлая тема) */
+
     --color-shadow-dark: rgba(var(--theme-dark-rgb), 0.1);
     --color-shadow-medium: rgba(var(--theme-dark-rgb), 0.1);
     --color-shadow-light: rgba(var(--theme-dark-rgb), 0.1);
@@ -211,7 +211,7 @@ h1 {
   }
 }
 
-/* Top Navigator Styles */
+
 #root .top-navigator {
   display: flex;
   justify-content: space-between;
@@ -222,7 +222,7 @@ h1 {
   width: 100%;
   background-color: var(--color-primary-background);
   padding: 10px;
-  box-shadow: 0 2px 10px var(--color-shadow-dark); /* Тень сверху */
+  box-shadow: 0 2px 10px var(--color-shadow-dark);
   box-sizing: border-box;
   z-index: 1000;
   box-sizing: border-box;
@@ -230,7 +230,7 @@ h1 {
 }
 
 #root .top-navigator.hidden {
-  transform: translateY(-100%); /* Полное скрытие верхней панели */
+  transform: translateY(-100%);
 }
 
 #root .top-navigator .logo {
@@ -253,22 +253,22 @@ h1 {
 
 #root .top-navigator .settings-button:hover {
   background-color: var(--color-accent);
-  color: var(--color-primary-background); /* Invert for hover */
+  color: var(--color-primary-background);
 }
 
-/* WeekView Component Styles */
+
 .week-view {
   width: 100%;
   text-align: center;
   box-sizing: border-box;
-  margin-top: 50px; /* Отступ сверху для фиксированного верхнего элемента, если таковой будет */
-  padding-bottom: 80px; /* Отступ снизу для фиксированных кнопок */
+  margin-top: 50px;
+  padding-bottom: 80px;
 }
 
 .navigation-buttons {
   display: flex;
-  flex-direction: column; /* Теперь кнопки будут в колонку */
-  gap: 10px; /* Расстояние между рядами кнопок */
+  flex-direction: column;
+  gap: 10px;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -278,11 +278,11 @@ h1 {
   box-shadow: 0 -2px 10px var(--color-shadow-dark);
   z-index: 1000;
   box-sizing: border-box;
-  transition: transform 0.3s ease-in-out; /* Добавляем плавность перехода */
+  transition: transform 0.3s ease-in-out;
 }
 
 .navigation-buttons--hidden {
-  transform: translateY(100%); /* Полное скрытие кнопки */
+  transform: translateY(100%);
 }
 
 .navigation-buttons button {
@@ -296,30 +296,30 @@ h1 {
   transition: background-color 0.3s ease;
   flex-grow: 1;
   min-width: 120px;
-  max-width: none; /* Убираем max-width, чтобы кнопки заполняли доступное пространство */
+  max-width: none;
   box-sizing: border-box;
 }
 
 .week-navigation, .half-week-navigation {
   display: flex;
-  justify-content: space-around; /* Равномерное распределение кнопок */
-  gap: 10px; /* Расстояние между кнопками в ряду */
-  width: 100%; /* Занимать всю ширину */
+  justify-content: space-around;
+  gap: 10px;
+  width: 100%;
 }
 
 .navigation-buttons button:hover {
   background-color: var(--color-accent);
-  color: var(--color-primary-background); /* Invert for hover */
+  color: var(--color-primary-background);
 }
 
 h2 {
-  color: var(--color-text-primary); /* Используем основной цвет текста */
+  color: var(--color-text-primary);
   font-size: 1.5em;
   margin-bottom: 20px;
 }
 
 .half-navigation {
-  margin-bottom: 20px; /* Добавляем отступ */
+  margin-bottom: 20px;
 }
 
 .week-days-container {
@@ -328,37 +328,37 @@ h2 {
   margin-bottom: 20px;
   flex-wrap: nowrap;
   flex-direction: row;
-  overflow-x: hidden; /* Отключить горизонтальную прокрутку, но сохранить 'скрытый' оверфлоу' */
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-  transition: transform 0.3s ease-in-out; /* Плавный переход при перемещении */
-  width: 200%; /* Увеличиваем ширину контейнера, чтобы обе половины помещались рядом */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  transition: transform 0.3s ease-in-out;
+  width: 200%;
 }
 
-/* Стили для контейнера дней, который теперь вертикален */
+
 .day-columns-container {
   display: flex;
-  flex-direction: column; /* Делаем колонки вертикальными */
-  gap: 10px; /* Пространство между колонками дней */
-  width: 100%; /* Занимаем всю доступную ширину */
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
 }
 
 .first-half-of-week,
 .second-half-of-week {
-  flex: 0 0 50%; /* Каждая половина занимает 50% от ширины week-days-container (т.е. 100% видимой области) */
+  flex: 0 0 50%;
   padding: 10px;
   border: 1px solid var(--color-border-dark);
   border-radius: 8px;
   margin: 0 10px;
-  display: flex; /* Делаем контент внутри flex-контейнером */
-  flex-direction: column; /* Вертикально */
-  align-items: center; /* Выравнивание по центру */
-  box-sizing: border-box; /* Учитываем padding и border в ширине */
-  /* Remove scroll-snap-align as we are controlling scroll via JS transform */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+
 }
 
-/* Стили для обёртки колонки дня, чтобы она занимала всю ширину */
+
 .day-column-wrapper {
   width: 100%;
 }
@@ -368,18 +368,18 @@ h2 {
   background-color: var(--color-tertiary-background);
   border-radius: 8px;
   padding: 10px;
-  min-width: 120px; /* Минимальная ширина колонки для лучшей адаптивности */
+  min-width: 120px;
   text-align: center;
 }
 
 .day-column.today-highlight {
-  background-color: var(--color-highlight); /* Более темный фон для выделения */
-  border: 1px solid var(--color-blue-accent); /* Синяя рамка */
+  background-color: var(--color-highlight);
+  border: 1px solid var(--color-blue-accent);
 }
 
 @media (prefers-color-scheme: light) {
   .day-column.today-highlight {
-    background-color: var(--color-highlight); /* Светлее для светлой темы */
+    background-color: var(--color-highlight);
     border: 1px solid var(--color-blue-accent);
   }
 }
@@ -387,27 +387,27 @@ h2 {
 .day-column h3 {
   margin-top: 0;
   margin-bottom: 10px;
-  color: var(--color-text-primary); /* Цвет заголовка дня */
+  color: var(--color-text-primary);
 }
 
 .day-cells {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  min-height: calc(4 * 40px + 3 * 5px); /* 4 задачи * 40px (min-height) + 3 промежутка * 5px (gap) */
+  min-height: calc(4 * 40px + 3 * 5px);
 }
 
 .day-cell-empty, .task-item {
   background-color: var(--color-background-soft);
   border: 1px dashed var(--color-border-medium);
   border-radius: 4px;
-  min-height: 55px; /* Увеличено для лучшей кликабельности на мобильных устройствах */
+  min-height: 55px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary);
   font-size: 0.9em;
-  padding: 8px; /* Добавлено для увеличения площади взаимодействия */
+  padding: 8px;
 }
 
 @media (prefers-color-scheme: light) {
@@ -428,11 +428,11 @@ h2 {
 
   #root .top-navigator .settings-button:hover {
     background-color: var(--color-accent);
-    color: var(--color-primary-background); /* Invert for hover */
+    color: var(--color-primary-background);
   }
 
   .navigation-buttons {
-    background-color: var(--color-primary-background); /* Светлый фон для кнопок навигации */
+    background-color: var(--color-primary-background);
   }
 
   .navigation-buttons button {
@@ -444,7 +444,7 @@ h2 {
 
   .navigation-buttons button:hover {
     background-color: var(--color-accent);
-    color: var(--color-primary-background); /* Invert for hover */
+    color: var(--color-primary-background);
   }
 
   h2 {
@@ -471,7 +471,7 @@ h2 {
   }
 }
 
-/* NoteField specific styles */
+
 .note-textarea {
   box-sizing: border-box;
   width: 100%;
@@ -486,7 +486,7 @@ h2 {
 }
 
 .note-field-container button {
-  /* Стили для кнопки сохранения внутри NoteField */
+
   margin-top: 10px;
   padding: 8px 15px;
   border-radius: 5px;
@@ -500,7 +500,7 @@ h2 {
 
 .note-field-container button:hover {
   background-color: var(--color-accent);
-  color: var(--color-primary-background); /* Invert for hover */
+  color: var(--color-primary-background);
 }
 
 @media (prefers-color-scheme: light) {
@@ -518,17 +518,17 @@ h2 {
 
   .note-field-container button:hover {
     background-color: var(--color-accent);
-    color: var(--color-primary-background); /* Invert for hover */
+    color: var(--color-primary-background);
   }
 }
-/* Summary Block Styles */
+
 .summary-block {
-    background-color: var(--color-background-soft); /* Темный фон для контраста */
+    background-color: var(--color-background-soft);
     padding: 20px;
     border-radius: 8px;
     text-align: center;
     margin-bottom: 20px;
-    box-shadow: 0 4px 8px var(--color-shadow-light); /* Небольшая тень для глубины */
+    box-shadow: 0 4px 8px var(--color-shadow-light);
 }
 
 
@@ -539,15 +539,15 @@ h2 {
 }
 
 .summary-block p {
-    margin: 8px 0; /* Отступы между строками */
-    color: var(--color-text-tertiary); /* Светлый цвет текста для читаемости */
+    margin: 8px 0;
+    color: var(--color-text-tertiary);
     font-size: 1.1em;
 }
 
 .summary-block .summary-block-title {
     font-size: 1.3em;
     font-weight: bold;
-    color: var(--color-accent); /* Белый цвет для заголовка */
+    color: var(--color-accent);
     margin-bottom: 15px;
 }
 
@@ -561,22 +561,22 @@ h2 {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 10px; /* Пространство между элементами в строке */
+    gap: 10px;
 }
 
 .summary-block .summary-block-row span {
-    white-space: nowrap; /* Чтобы значения не переносились */
+    white-space: nowrap;
 }
 
 .summary-block .summary-block-value {
     font-weight: bold;
-    color: var(--color-accent); /* Белый цвет для значений */
+    color: var(--color-accent);
     font-size: 1.2em;
 }
 
 @media (prefers-color-scheme: light) {
     .summary-block {
-        background-color: var(--color-background-soft); /* Светлый фон для светлой темы */
+        background-color: var(--color-background-soft);
         box-shadow: 0 4px 8px var(--color-shadow-light);
     }
     .summary-block p {
@@ -590,7 +590,7 @@ h2 {
         color: var(--color-text-secondary);
     }
 
-    /* No Tasks Message Styles */
+
     .no-tasks-message {
         text-align: center;
         padding: 15px;
@@ -610,13 +610,13 @@ h2 {
     }
 }
 
-/* Loading Indicator Styles */
+
 .loading-indicator {
     text-align: center;
     padding: 20px;
     font-size: 1.2em;
-    color: var(--color-accent); /* Цвет текста загрузки */
-    animation: pulse 1.5s infinite ease-in-out; /* Анимация пульсации */
+    color: var(--color-accent);
+    animation: pulse 1.5s infinite ease-in-out;
 }
 
 @keyframes pulse {
@@ -636,70 +636,70 @@ h2 {
 
 @media (prefers-color-scheme: light) {
     .loading-indicator {
-        color: var(--color-accent); /* Цвет текста загрузки для светлой темы */
+        color: var(--color-accent);
     }
 }
 
-/* Mobile styles for 2-column layout */
-@media (max-width: 768px) { /* Adjust breakpoint as needed for mobile devices */
+
+@media (max-width: 768px) {
   .navigation-buttons button {
     font-size: 0.9em;
     padding: 10px 15px;
   }
 
   .week-navigation, .half-week-navigation {
-    flex-wrap: wrap; /* Разрешаем перенос кнопок на новую строку на мобильных */
+    flex-wrap: wrap;
   }
 
-  /* Скрываем скроллбар, если вдруг появится (в идеале, он не должен появляться) */
+
   .week-days-container::-webkit-scrollbar {
     display: none;
   }
 
   .column-half {
-    flex: 0 0 50%; /* Каждая колонка занимает 50% ширины mobile-scroll-container */
-    box-sizing: border-box; /* Include padding and border in width */
-    padding: 0 10px; /* Reduce padding for mobile */
+    flex: 0 0 50%;
+    box-sizing: border-box;
+    padding: 0 10px;
   }
 }
 
-/* Adjust padding for root and week-view on mobile */
+
 @media (max-width: 768px) {
   .week-view {
-    padding: 0; /* Remove padding from week-view to allow overflow */
-    max-width: none; /* Remove max-width to allow overflow */
+    padding: 0;
+    max-width: none;
   }
   #root {
-    max-width: none; /* Remove max-width to allow overflow */
+    max-width: none;
   }
   body, html {
-    overflow-x: hidden; /* Prevent horizontal scrolling of the entire page */
+    overflow-x: hidden;
   }
 }
 
 @media (min-width: 769px) {
   #root {
-    max-width: 1200px; /* Max width for desktop */
+    max-width: 1200px;
     padding: 0 20px;
   }
   .week-view {
-    padding: 20px; /* Padding for desktop */
+    padding: 20px;
   }
   .week-days-container {
-    justify-content: center; /* Центрируем содержимое на десктопе */
-    flex-wrap: nowrap; /* Prevent wrapping on desktop */
+    justify-content: center;
+    flex-wrap: nowrap;
   }
   .column-half {
-    flex: 0 0 50%; /* На десктопе каждая половина также занимает 50% контейнера */
-    padding: 10px; /* Reset padding for desktop */
+    flex: 0 0 50%;
+    padding: 10px;
   }
   .first-half-of-week,
   .second-half-of-week {
     flex: 1;
-    /* На десктопе у них уже будет 50% из column-half */
+
   }
 }
-/* Settings Page Styles */
+
 .settings-page-container {
   padding: 16px;
 }
@@ -720,10 +720,10 @@ h2 {
     color: var(--color-accent);
     margin-left: 1rem;
 }
-/* TopNavigator specific styles */
+
 .top-navigator {
-  height: var(--navigation-height); /* Use the --navigation-height variable */
-  background-color: var(--theme-gray-dark); /* Fallback, should be defined per theme */
+  height: var(--navigation-height);
+  background-color: var(--theme-gray-dark);
   box-shadow: 0 2px 5px var(--color-shadow-light);
   transition: transform 0.3s ease-in-out;
   z-index: 1000;
@@ -746,12 +746,12 @@ h2 {
 .top-navigator .settings-button {
   background: none;
   border: none;
-  color: var(--theme-light); /* Fallback, should be defined per theme */
-  font-size: 1.5rem; /* Adjust as needed */
+  color: var(--theme-light);
+  font-size: 1.5rem;
   cursor: pointer;
   padding: 0 1rem;
 }
 
 .top-navigator .settings-button:hover {
-  color: var(--theme-primary); /* Fallback, should be defined per theme */
+  color: var(--theme-primary);
 }

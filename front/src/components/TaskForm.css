@@ -13,19 +13,19 @@
 .modal-content {
   background: var(--color-modal-background);
   color: var(--color-accent);
-  padding: 20px 20px 0px 20px; /* Уменьшаем нижний отступ, чтобы кнопка submit была близко к низу */
+  padding: 20px 20px 0px 20px;
   border-radius: 8px;
   width: 90%;
-  height: 90vh; /* Почти на весь экран по высоте */
-  max-width: 90%; /* Разрешаем шире на больших экранах */
-  max-height: 90vh; /* Максимальная высота, чтобы не выходить за пределы окна */
-  box-shadow: 0 4px 8px var(--color-shadow-light); /* Обновлено на общую переменную тени */
+  height: 90vh;
+  max-width: 90%;
+  max-height: 90vh;
+  box-shadow: 0 4px 8px var(--color-shadow-light);
   position: relative;
-  display: flex; /* Используем flexbox для внутреннего содержимого */
-  flex-direction: column; /* Элементы внутри будут располагаться вертикально */
-  box-sizing: border-box; /* Учитываем padding в общей ширине/высоте */
-  overflow: hidden; /* Скрываем все, что выходит за границы modal-content */
-  margin: auto; /* Центрируем модальное окно, если оно все равно выходит за пределы */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: auto;
 }
 
 .close-button {
@@ -43,10 +43,10 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  flex-grow: 1; /* Позволяет форме занимать все доступное пространство по вертикали */
-  overflow-y: auto; /* Добавляем прокрутку, если содержимое превышает высоту */
-  padding-right: 5px; /* Небольшой отступ справа, если появится скроллбар */
-  padding-bottom: 20px; /* Отступ внизу формы, чтобы контент не прилипал к кнопке */
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 5px;
+  padding-bottom: 20px;
 }
 
 .form-group {
@@ -88,7 +88,7 @@
   cursor: pointer;
   font-size: 1em;
   margin-top: 10px;
-  flex-shrink: 0; /* Гарантируем, что кнопка не будет сжиматься */
+  flex-shrink: 0;
 }
 
 .submit-button:hover {

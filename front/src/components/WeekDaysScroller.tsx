@@ -1,24 +1,28 @@
 import type { Moment } from 'moment';
 import React, { useEffect, useRef } from 'react';
-import type { Task } from '../services/api'; // Импортируем Task
+import type { Note, Task } from '../services/api'; // Импортируем Task и Note
 import FirstHalfOfWeek from './FirstHalfOfWeek';
 import SecondHalfOfWeek from './SecondHalfOfWeek';
 
 interface WeekDaysScrollerProps {
   tasksForWeek: Task[]; // Заменяем weekInfo на tasksForWeek
+  notesForWeek: Note[]; // Добавляем notesForWeek
   firstHalfDays: Moment[];
   secondHalfDays: Moment[];
   today: Moment;
   onTaskMove: () => void;
+  onDataChange?: () => void; // Новый опциональный колбэк
   isFirstHalfVisible: boolean;
 }
 
 const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
   tasksForWeek, // Используем tasksForWeek
+  notesForWeek, // Добавляем notesForWeek
   firstHalfDays,
   secondHalfDays,
   today,
   onTaskMove,
+  onDataChange, // Добавляем onDataChange
   isFirstHalfVisible,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -47,6 +51,11 @@ const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
           tasksForWeek={tasksForWeek} // Передаем tasksForWeek
           today={today}
           onTaskMove={onTaskMove}
+          onDataChange={() => {
+            if (onDataChange) {
+              onDataChange();
+            }
+          }}
         />
       </div>
       <div className="column-half">
@@ -55,6 +64,7 @@ const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
           tasksForWeek={tasksForWeek} // Передаем tasksForWeek
           today={today}
           onTaskMove={onTaskMove}
+          // onDataChange={onDataChange} // TODO: Передать, если SecondHalfOfWeek будет содержать NoteField
         />
       </div>
     </div>

@@ -94,8 +94,19 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.childName || !formData.parentName) {
-      toast.error('Имя ребенка и имя родителя обязательны.');
+    // SP-6: Уточненная проверка на пустое имя ребенка
+    if (!formData.childName?.trim()) {
+      toast.error('Имя ребенка не может быть пустым.');
+      return;
+    }
+    if (!formData.parentName?.trim()) { // Сохраняем проверку и для имени родителя, т.к. оно тоже required
+      toast.error('Имя родителя не может быть пустым.');
+      return;
+    }
+    // SP-7: Валидация на максимальную длину имени ребенка
+    const MAX_CHILD_NAME_LENGTH = 50;
+    if (formData.childName.trim().length > MAX_CHILD_NAME_LENGTH) {
+      toast.error(`Имя ребенка не должно превышать ${MAX_CHILD_NAME_LENGTH} символов.`);
       return;
     }
     onSave(formData);
@@ -106,7 +117,7 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
       <h3>{initialChild ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
       <label>
         Имя ребенка:
-        <input type="text" name="childName" value={formData.childName} onChange={handleChange} required />
+        <input type="text" name="childName" value={formData.childName} onChange={handleChange} required maxLength={50} />
       </label>
       <label>
         Имя родителя:

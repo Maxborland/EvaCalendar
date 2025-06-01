@@ -2,10 +2,9 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
-console.log('[api.ts] Using API_URL:', API_URL);
 
 export interface ExpenseCategory {
-  id: string;
+  uuid: string; // Changed from id to uuid to match API response
   category_name: string;
 }
 
@@ -110,14 +109,18 @@ export const updateNote = async (uuid: string, content: string): Promise<Note> =
   return response.data;
 };
 
+export const getAllNotes = async (): Promise<Note[]> => {
+  const response = await api.get('/notes');
+  return response.data as Note[];
+};
 // Удалена функция getTasksByWeekAndDay
 
 export const createTask = (taskData: Task) => {
   return api.post('/tasks', taskData);
 };
 
-export const updateTask = (id: string, taskData: Partial<Task>) => {
-  return api.put(`/tasks/${id}`, taskData);
+export const updateTask = (uuid: string, taskData: Partial<Task>) => {
+  return api.put(`/tasks/${uuid}`, taskData);
 };
 
 export const deleteTask = (id: string) => {
@@ -186,8 +189,8 @@ export const deleteExpenseCategory = async (id: string) => {
     return response.data;
 };
 
-export const getTasksByCategory = async (category: string) => {
-  return api.get(`/tasks/category?name=${encodeURIComponent(category)}`);
+export const getTasksByCategory = async (categoryUuid: string) => {
+  return api.get(`/tasks/by-category-uuid/${categoryUuid}`);
 };
 
 // Children API

@@ -44,12 +44,13 @@ class NoteService {
             throw new Error('Не удалось получить заметку по UUID.');
         }
     }
-async getNoteByDate(dateString) {
+async getNotesByDate(dateString) { // Изменено имя метода и логика для возврата массива
         try {
-            return await knex(TABLE_NAME).where({ date: dateString }).first();
+            // Возвращаем массив заметок. Если заметок нет, вернется пустой массив.
+            return await knex(TABLE_NAME).where({ date: dateString }).select('*');
         } catch (error) {
-            console.error(`Ошибка при получении заметки по дате ${dateString}:`, error);
-            throw new Error('Не удалось получить заметку по дате.');
+            console.error(`Ошибка при получении заметок по дате ${dateString}:`, error);
+            throw new Error('Не удалось получить заметки по дате.');
         }
     }
 

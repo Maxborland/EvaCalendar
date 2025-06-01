@@ -1,7 +1,7 @@
 import type { Moment } from 'moment';
 import moment from 'moment'; // Импортируем moment для сравнения дат
 import React from 'react';
-import type { Task } from '../services/api'; // Импортируем Task
+import type { Task } from '../services/api'; // Импортируем Task и Note
 import DayColumn from './DayColumn';
 
 interface SecondHalfOfWeekProps {

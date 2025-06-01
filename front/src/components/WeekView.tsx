@@ -2,7 +2,7 @@ import type { Moment } from 'moment';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNav } from '../context/NavContext';
-import { getAllTasks, getDailySummary, getMonthlySummary, type Task } from '../services/api';
+import { getAllNotes, getAllTasks, getDailySummary, getMonthlySummary, type Note, type Task } from '../services/api';
 import SummaryBlock from './SummaryBlock';
 import TopNavigator from './TopNavigator';
 import WeekDaysScroller from './WeekDaysScroller';
@@ -11,6 +11,8 @@ import WeekNavigator from './WeekNavigator';
 const WeekView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(moment());
   const [tasksForWeek, setTasksForWeek] = useState<Task[]>([]);
+  const [allNotes, setAllNotes] = useState<Note[]>([]);
+  const [notesForCurrentWeek, setNotesForCurrentWeek] = useState<Note[]>([]);
   // const [weekInfo, setWeekInfo] = useState<{ id: string | null; startDate: string; endDate: string }>({ id: null, startDate: '', endDate: '' }); // Удалено
   const [today] = useState(moment()); // Состояние для получения текущего дня
   // Используем useMemo для мемоизации дней недели
@@ -27,34 +29,46 @@ const WeekView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true); // Состояние для отслеживания загрузки
   const { isNavVisible, setIsNavVisible, isModalOpen } = useNav(); // Состояние для видимости навигации из контекста
 
-  const loadTasksForWeek = useCallback(async () => {
+  const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // const startOfWeek = currentDate.clone().startOf('isoWeek').format('YYYY-MM-DD'); // Больше не нужно
-      // const endOfWeek = currentDate.clone().endOf('isoWeek').format('YYYY-MM-DD'); // Больше не нужно
-      const tasks = await getAllTasks(); // Загружаем все задачи
+      const [tasks, notes] = await Promise.all([
+        getAllTasks(),
+        getAllNotes()
+      ]);
       setTasksForWeek(tasks);
+      setAllNotes(notes);
     } catch (error) {
-      console.error('Error fetching all tasks: ', error); // Обновленное сообщение об ошибке
-      setTasksForWeek([]); // В случае ошибки сбрасываем задачи
+      console.error('Error fetching initial data: ', error);
+      setTasksForWeek([]);
+      setAllNotes([]);
     } finally {
       setIsLoading(false);
     }
-  }, []); // Зависимость от currentDate удалена, так как загружаем все задачи
+  }, []);
 
   useEffect(() => {
-    loadTasksForWeek();
-  }, [loadTasksForWeek]);
+    loadInitialData();
+  }, [loadInitialData]);
+
+  useEffect(() => {
+    const startOfWeek = currentDate.clone().startOf('isoWeek');
+    const endOfWeek = currentDate.clone().endOf('isoWeek');
+
+    const filteredNotes = allNotes.filter(note => {
+      const noteDate = moment(note.date);
+      const isBetween = noteDate.isBetween(startOfWeek, endOfWeek, 'day', '[]');
+      return isBetween; // '[]' включает начальную и конечную даты
+    });
+    setNotesForCurrentWeek(filteredNotes);
+  }, [allNotes, currentDate]);
 
   const fetchSummary = useCallback(async () => {
-    console.log('[WeekView] fetchSummary called.');
     // setIsLoading(true); // Управляется в loadTasksForWeek
     try {
       // Получаем сводку за день для текущего дня (сегодня)
       const dailyDate = today.format('YYYY-MM-DD');
-      console.log('[WeekView] Calling getDailySummary with date:', dailyDate);
       const daily = await getDailySummary(dailyDate); // Убедимся, что дата передается в формате YYYY-MM-DD
-      console.log('[WeekView] getDailySummary response:', daily);
       if (daily) { // Проверяем, что daily не null
         setDailySummary(daily); // daily теперь { totalEarned: number, totalSpent: number }
       } else {
@@ -65,9 +79,7 @@ const WeekView: React.FC = () => {
       // Получаем сводку за месяц
       const year = currentDate.year();
       const month = currentDate.month() + 1; // moment.month() возвращает 0-11
-      console.log('[WeekView] Calling getMonthlySummary with year:', year, 'month:', month);
       const monthly = await getMonthlySummary(year, month);
-      console.log('[WeekView] getMonthlySummary response:', monthly);
       setMonthlySummary(monthly);
     } catch (error) {
       console.error('[WeekView] Error fetching summary:', error);
@@ -77,16 +89,13 @@ const WeekView: React.FC = () => {
   }, [currentDate, today]); // Зависимость от currentDate для месячной сводки и today для дневной
 
   useEffect(() => {
-    console.log(`[WeekView] useEffect for fetchSummary triggered. isLoading: ${isLoading}, tasksForWeek.length: ${tasksForWeek.length}`);
     // fetchSummary вызывается после загрузки задач или при изменении currentDate/today
     // Чтобы избежать двойной загрузки, можно вызывать fetchSummary внутри loadTasksForWeek
     // или когда tasksForWeek обновлены, но для простоты пока оставим так,
     // т.к. setIsLoading управляется в loadTasksForWeek
     if (!isLoading) { // Вызываем только если не идет основная загрузка задач
-        console.log('[WeekView] Condition !isLoading is true, calling fetchSummary.');
         fetchSummary();
     } else {
-        console.log('[WeekView] Condition !isLoading is false, fetchSummary NOT called.');
     }
   }, [fetchSummary, isLoading, tasksForWeek]); // Добавлена зависимость от tasksForWeek и isLoading
 
@@ -124,16 +133,15 @@ const WeekView: React.FC = () => {
   const firstHalfDays = weekDays.slice(0, 3);
   const secondHalfDays = [weekDays[3], ...weekDays.slice(4, 7)];
 
-  const handleTaskChange = useCallback(() => { // Переименовано для общности (move, add, update)
-    loadTasksForWeek(); // Перезагружаем задачи на неделю
+  // Переименовано для общности (задачи, заметки)
+  const handleDataChange = useCallback(() => {
+    loadInitialData(); // Перезагружаем все данные (задачи и заметки)
     fetchSummary();     // Обновляем сводку
-  }, [loadTasksForWeek, fetchSummary]);
+  }, [loadInitialData, fetchSummary, currentDate]);
 
   const showFirstHalf = () => setIsFirstHalfVisible(true);
   const showSecondHalf = () => setIsFirstHalfVisible(false);
 
-  // Логируем состояние перед рендером SummaryBlock
-  console.log('[WeekView] About to render. dailySummary:', dailySummary, 'monthlySummary:', monthlySummary, 'isLoading:', isLoading);
 
   return (
     <div className="week-view">
@@ -151,10 +159,12 @@ const WeekView: React.FC = () => {
           </div>
           <WeekDaysScroller
             tasksForWeek={tasksForWeek}
+                        notesForWeek={notesForCurrentWeek}
             firstHalfDays={firstHalfDays}
             secondHalfDays={secondHalfDays}
             today={today}
-            onTaskMove={handleTaskChange} // Используем новый обработчик
+            onTaskMove={handleDataChange} // Используем новый обработчик для задач
+            onDataChange={handleDataChange} // Новый обработчик для общего обновления данных (включая заметки)
             isFirstHalfVisible={isFirstHalfVisible}
           />
           <WeekNavigator

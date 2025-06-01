@@ -2,7 +2,7 @@ import type { Moment } from 'moment';
 import React, { useEffect, useRef, useState } from 'react'; // useCallback удален, так как fetchTasks удаляется
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNav } from '../context/NavContext';
-import { deleteTask, duplicateTask, moveTask, type Task } from '../services/api'; // getTasksByWeekAndDay удален, Task импортирован
+import { deleteTask, duplicateTask, moveTask, type Task } from '../services/api'; // getTasksByWeekAndDay удален, Task и Note импортированы
 import './DayColumn.css';
 import TaskForm from './TaskForm';
 import TaskItem from './TaskItem';

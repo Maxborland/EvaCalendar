@@ -1,7 +1,7 @@
 import type { Moment } from 'moment';
 import moment from 'moment'; // Импортируем moment для сравнения дат
 import React from 'react';
-import type { Task } from '../services/api'; // Импортируем Task
+import type { Task } from '../services/api'; // Импортируем Task и Note
 import DayColumn from './DayColumn';
 import NoteField from './NoteField'; // Добавляем импорт NoteField
 
@@ -10,9 +10,10 @@ interface FirstHalfOfWeekProps {
   tasksForWeek: Task[]; // Заменяем weekId на tasksForWeek
   today: Moment;
   onTaskMove: () => void;
+  onDataChange?: () => void; // Новый опциональный колбэк
 }
 
-const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, today, onTaskMove }) => {
+const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, today, onTaskMove, onDataChange }) => {
   const daysToShow = days.slice(0, 3); // Понедельник, Вторник, Среда
 
   return (
@@ -48,7 +49,11 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, t
             Возможно, его нужно будет привязать к startDate недели или удалить.
             Пока закомментируем, чтобы не было ошибок.
         */}
-        {days.length > 0 && <NoteField weekId={days[0].format('YYYY-MM-DD')} />}
+        {days.length > 0 && <NoteField weekId={days[0].format('YYYY-MM-DD')} onNoteSaved={() => {
+          if (onDataChange) {
+            onDataChange();
+          }
+        }} />}
       </div>
     </div>
   );

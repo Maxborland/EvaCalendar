@@ -4,9 +4,10 @@ import { createNote, getNoteByDate, updateNote, type Note } from '../services/ap
 
 interface NoteFieldProps {
   weekId: string; // weekId теперь это dateString 'YYYY-MM-DD'
+  onNoteSaved?: () => void; // Опциональный колбэк
 }
 
-const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
+const NoteField: React.FC<NoteFieldProps> = ({ weekId, onNoteSaved }) => {
   const [noteContent, setNoteContent] = useState('');
   const [noteUuid, setNoteUuid] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -21,12 +22,17 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
       setError(null);
       try {
         const data = await getNoteByDate(weekId);
-        if (data) {
+        if (data && typeof data === 'object' && !Array.isArray(data)) { // Добавлена проверка, что data это объект, а не массив
           setNoteContent(data.content);
           setNoteUuid(data.uuid);
         } else {
-          setNoteContent('');
-          setNoteUuid(null);
+          if (Array.isArray(data) && data.length > 0) {
+            setNoteContent(data[0].content); // Временно используем первую заметку из массива
+            setNoteUuid(data[0].uuid);
+          } else {
+            setNoteContent('');
+            setNoteUuid(null);
+          }
         }
         setHasChanges(false);
       } catch (err: any) {
@@ -57,6 +63,9 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
       }
       setNoteContent(savedNote.content); // Обновляем контент из ответа сервера
       setHasChanges(false);
+      if (onNoteSaved) {
+        onNoteSaved(); // Вызываем колбэк
+      }
     } catch (err: any) {
       console.error('Error saving note:', err);
       setError(err.message || 'Не удалось сохранить заметку.');
