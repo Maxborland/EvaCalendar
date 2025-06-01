@@ -5,7 +5,8 @@ import { useNav } from '../context/NavContext';
 import { getAllNotes, getAllTasks, getDailySummary, getMonthlySummary, type Note, type Task } from '../services/api';
 import SummaryBlock from './SummaryBlock';
 import TopNavigator from './TopNavigator';
-import WeekDaysScroller from './WeekDaysScroller';
+// import WeekDaysScroller from './WeekDaysScroller'; // Заменяется на TwoColumnWeekLayout
+import TwoColumnWeekLayout from './TwoColumnWeekLayout'; // Новый компонент
 import WeekNavigator from './WeekNavigator';
 
 const WeekView: React.FC = () => {
@@ -125,23 +126,32 @@ const WeekView: React.FC = () => {
 
   const goToNextWeek = () => {
     setCurrentDate(currentDate.clone().add(1, 'week'));
-    // loadTasksForWeek и fetchSummary будут вызваны через useEffect при изменении currentDate
+    // loadInitialData и fetchSummary будут вызваны через useEffect при изменении currentDate
   };
 
-  const [isFirstHalfVisible, setIsFirstHalfVisible] = useState(true);
+  // Удаляем состояния и логику, связанные с isFirstHalfVisible, firstHalfDays, secondHalfDays
+  // const [isFirstHalfVisible, setIsFirstHalfVisible] = useState(true);
+  // const firstHalfDays = weekDays.slice(0, 3);
+  // const secondHalfDays = [weekDays[3], ...weekDays.slice(4, 7)];
 
-  const firstHalfDays = weekDays.slice(0, 3);
-  const secondHalfDays = [weekDays[3], ...weekDays.slice(4, 7)];
-
-  // Переименовано для общности (задачи, заметки)
   const handleDataChange = useCallback(() => {
     loadInitialData(); // Перезагружаем все данные (задачи и заметки)
     fetchSummary();     // Обновляем сводку
-  }, [loadInitialData, fetchSummary, currentDate]);
+  }, [loadInitialData, fetchSummary]); // Удалена зависимость от currentDate, т.к. loadInitialData и fetchSummary уже зависят от нее или today
 
-  const showFirstHalf = () => setIsFirstHalfVisible(true);
-  const showSecondHalf = () => setIsFirstHalfVisible(false);
+  // Удаляем showFirstHalf и showSecondHalf
+  // const showFirstHalf = () => setIsFirstHalfVisible(true);
+  // const showSecondHalf = () => setIsFirstHalfVisible(false);
 
+  // Формируем название текущего недельного диапазона для WeekNavigator
+  const weekRangeDisplay = useMemo(() => {
+    const start = weekDays[0]?.clone().locale('ru').format('D MMMM');
+    const end = weekDays[6]?.clone().locale('ru').format('D MMMM YYYY');
+    if (start && end) {
+      return `${start} - ${end}`;
+    }
+    return '';
+  }, [weekDays]);
 
   return (
     <div className="week-view">
@@ -157,23 +167,22 @@ const WeekView: React.FC = () => {
               monthlySummary={monthlySummary ? { totalIncome: monthlySummary.totalEarned, totalExpense: monthlySummary.totalSpent, balance: monthlySummary.balance } : { totalIncome: 0, totalExpense: 0, balance: 0 }}
             />
           </div>
-          <WeekDaysScroller
-            tasksForWeek={tasksForWeek}
-                        notesForWeek={notesForCurrentWeek}
-            firstHalfDays={firstHalfDays}
-            secondHalfDays={secondHalfDays}
-            today={today}
-            onTaskMove={handleDataChange} // Используем новый обработчик для задач
-            onDataChange={handleDataChange} // Новый обработчик для общего обновления данных (включая заметки)
-            isFirstHalfVisible={isFirstHalfVisible}
-          />
+          {/* WeekNavigator теперь располагается над TwoColumnWeekLayout */}
           <WeekNavigator
             goToPreviousWeek={goToPreviousWeek}
             goToNextWeek={goToNextWeek}
-            showFirstHalf={showFirstHalf}
-            showSecondHalf={showSecondHalf}
+            currentWeekDisplay={weekRangeDisplay} // Передаем отображаемый диапазон
             isNavVisible={isNavVisible} // Передаем состояние видимости навигации
+            // showFirstHalf и showSecondHalf удалены
           />
+          <TwoColumnWeekLayout
+            weekDays={weekDays}
+            tasksForWeek={tasksForWeek}
+            notesForWeek={notesForCurrentWeek}
+            today={today}
+            onDataChange={handleDataChange}
+          />
+          {/* WeekNavigator был перемещен выше, чтобы соответствовать макету */}
         </>
       )}
     </div>

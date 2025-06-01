@@ -1,0 +1,214 @@
+/* Общие стили для mini-event-card */
+.mini-event-card {
+  background-color: var(--color-background-soft);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  padding: 6px; /* Дополнительно уменьшаем для мобильных */
+  margin-bottom: 6px; /* Уменьшаем отступ между карточками */
+  box-shadow: 0 1px 3px var(--color-shadow-lighter);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative; /* Для позиционирования цветовой полоски */
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.mini-event-card:hover {
+  background-color: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-background-soft));
+  border-color: var(--color-border-medium);
+}
+
+.mini-event-card.dragging {
+  opacity: 0.5;
+  border: 1px dashed var(--color-accent);
+}
+
+.mini-event-card.active,
+.mini-event-card:focus, /* Для доступности при навигации с клавиатуры */
+ .mini-event-card:focus-within { /* Если фокус внутри интерактивных элементов */
+  border: 2px solid var(--color-blue-accent); /* var(--color-blue-accent) - это зеленый #44b340 */
+  padding: 5px; /* Компенсируем толщину рамки (6px - 1px) */
+  outline: none; /* Убираем стандартный outline, так как есть border */
+ }
+
+
+.card-main-content {
+  display: flex;
+  align-items: flex-start;
+  flex-grow: 1;
+  margin-right: 6px; /* Дополнительно уменьшаем отступ от кнопок действий */
+  min-width: 0; /* Добавлено для корректного сжатия flex-контейнера */
+}
+
+.card-icon {
+  font-size: 14px; /* Дополнительно уменьшаем размер иконки */
+  margin-right: 6px; /* Дополнительно уменьшаем отступ */
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  width: 18px; /* Дополнительно уменьшаем фиксированную ширину */
+  text-align: center;
+}
+
+.card-details {
+  display: flex;
+  flex-direction: row;
+  /* Изменено для лучшего распределения, если элементы в ряд */
+  justify-content: space-between;
+  align-items: flex-start; /* Добавим для выравнивания по верху, если элементы разной высоты */
+  flex-grow: 1;
+  min-width: 0; /* Позволяет тексту сокращаться */
+}
+
+.card-title-wrapper {
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0; /* Очень важно для сжатия в flex-контейнере */
+  overflow: hidden; /* Дополнительная страховка, если title не справится */
+}
+
+.card-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 0.8em;  /* Дополнительно уменьшаем размер шрифта */
+  color: var(--color-text-primary);
+  margin: 0 0 3px 0; /* Уменьшаем отступ снизу */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* Изменено для однострочного отображения с многоточием */
+  display: block;
+  width: 100%; /* Чтобы занять всю ширину обертки */
+}
+
+.mini-event-card:hover .card-title {
+  /* Показ полного текста при наведении лучше реализовать через title атрибут или JS tooltip,
+     так как white-space: normal; может ломать верстку при длинных названиях.
+     Пока оставляем стандартное сокращение. */
+  /* white-space: normal; */
+  /* overflow: visible; */
+}
+
+
+.card-time,
+.card-category,
+.card-note-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 0.75em; /* Дополнительно уменьшаем размер шрифта */
+  color: var(--color-text-secondary);
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0; /* Чтобы эти элементы не сжимались, давая приоритет .card-title */
+}
+
+.card-note-text {
+  white-space: pre-wrap; /* Для сохранения переносов строк в заметках, если они есть */
+  /* Для сокращения заметки до N строк (пример для 3 строк) */
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Сокращаем до 2 строк для компактности */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.card-amount {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.6em; /* Дополнительно уменьшаем размер шрифта */
+  margin: 0;
+}
+
+.card-amount.income {
+  color: var(--theme-success); /* или другой цвет для доходов */
+}
+
+.card-amount.expense {
+  color: var(--theme-danger);
+}
+
+/* Кнопки действий */
+.card-actions {
+  display: flex;
+  flex-direction: column; /* Располагаем кнопки вертикально */
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 2px; /* Дополнительно уменьшаем padding */
+  font-size: 12px; /* Дополнительно уменьшаем размер иконок */
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.action-button:hover {
+  color: var(--color-accent);
+}
+
+.delete-button:hover {
+  color: var(--theme-danger);
+}
+
+.duplicate-button:hover {
+  color: var(--theme-info);
+}
+
+
+/* Цветовая полоска */
+.color-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px; /* Немного увеличим для заметности */
+  border-top-left-radius: 6px; /* Скругляем вместе с карточкой */
+  border-bottom-left-radius: 6px;
+}
+
+/* Пример цветов для категорий - нужно будет определить переменные или классы */
+.color-stripe.default { background-color: var(--color-neutral-50); } /* Используем нейтральный цвет из index.css */
+.color-stripe.work { background-color: var(--color-info-base); } /* Используем --color-info-base из index.css */
+.color-stripe.personal { background-color: var(--color-success-base); } /* Используем --color-success-base из index.css */
+.color-stripe.urgent { background-color: var(--color-danger-base); } /* Используем --color-danger-base из index.css */
+/* ... другие категории ... */
+
+/* Стили для разных типов карточек, если нужно */
+.mini-event-card.task {
+  /* Специфичные стили для задач */
+}
+.mini-event-card.expense {
+  /* Специфичные стили для расходов */
+  /* Например, легкий фон, как в макете:
+  background-color: color-mix(in srgb, var(--theme-danger) 5%, var(--color-background-soft));
+  */
+}
+.mini-event-card.note {
+  /* Специфичные стили для заметок */
+}
+
+/* Стили для карточек дохода */
+.mini-event-card.income-card-style .card-details {
+  display: flex;
+  justify-content: space-between;
+}
+
+.mini-event-card.income-card-style .card-title {
+  margin-right: 8px; /* или другой подходящий отступ */
+  /* white-space, overflow, text-overflow наследуются из общего .card-title */
+  /* min-width, flex-grow, flex-shrink удалены, так как теперь управляются через wrapper */
+}
+
+.mini-event-card.income-card-style .income-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  white-space: nowrap; /* Предотвратить перенос времени и суммы */
+  flex-shrink: 0; /* Чтобы этот блок не сжимался */
+}

@@ -1,19 +1,104 @@
-.add-task-button {
-  background-color: var(--theme-success);
-  border: none;
-  color: var(--color-accent);
-  padding: 10px 20px;
-  text-align: center;
-  text-decoration: none;
-  display: block;
-  font-size: 16px;
-  margin: 10px 0;
-  cursor: pointer;
-  border-radius: 5px;
-  width: 100%;
-  box-sizing: border-box;
+.day-column {
+  display: flex;
+  flex-direction: column;
+  padding: 10px; /* Уменьшенный отступ внутри блока дня для мобильных */
+  background-color: var(--color-tertiary-background); /* Фон колонки дня, если отличается от фона страницы */
+  /* Для независимой прокрутки, если содержимое превышает высоту */
+  overflow-y: auto;
+  height: 100%; /* Занимает всю доступную высоту родительского контейнера-колонки */
+  border-radius: 8px; /* Небольшое скругление для самого блока дня */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Легкая тень для разделения */
 }
 
-.add-task-button:hover {
-  background-color: var(--color-success-hover);
+/* Выделение сегодняшнего дня */
+.day-column.today {
+  /* Может иметь тонкую рамку, как в макете */
+  border: 2px solid var(--color-blue-accent); /* var(--color-blue-accent) - это зеленый #44b340 */
+  padding: 8px; /* Компенсируем рамку (10px - 2px), чтобы внутренний размер остался прежним */
+}
+
+.day-header {
+  margin-bottom: 8px; /* Уменьшенный отступ снизу до первого элемента дня */
+}
+
+.day-header.today-header-highlight {
+  background-color: var(--color-highlight); /* Фон заголовка для сегодняшнего дня */
+  padding: 4px; /* Уменьшенный padding */
+  margin: -4px -4px 8px -4px; /* Компенсируем padding, чтобы текст остался на месте */
+  border-radius: 4px;
+}
+
+.day-header .day-name {
+  display: block; /* Чтобы имя дня и дата были на разных строках, если нужно */
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.8em; /* Уменьшенный размер шрифта */
+  color: var(--color-text-primary);
+}
+.day-header.today-header-highlight .day-name,
+.day-header.today-header-highlight .day-date {
+  color: var(--color-blue-accent); /* Текст заголовка для сегодняшнего дня */
+}
+
+
+.day-header .day-date {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600; /* В макете указано 600 для всего заголовка */
+  font-size: 0.8em; /* Уменьшенный размер как у названия дня */
+  color: var(--color-text-primary); /* Цвет такой же, как у названия дня */
+  /* Если нужно, можно сделать чуть менее заметным:
+  font-size: 0.9em;
+  color: var(--color-text-secondary);
+  */
+}
+
+.day-events-list {
+  flex-grow: 1; /* Занимает все доступное пространство, чтобы кнопка была внизу */
+  min-height: 50px; /* Минимальная высота, чтобы было куда дропать, если пусто */
+  /* Стили для прокрутки, если карточек много, уже заданы для .day-column */
+}
+
+.empty-day-placeholder {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 20px;
+  font-style: italic;
+}
+
+/* Кнопка "Добавить дело" */
+.add-event-button {
+  width: 100%; /* Ширина 100% от блока дня */
+  padding: 6px 10px; /* Уменьшенный padding */
+  margin-top: 10px; /* Уменьшенный отступ от последнего элемента */
+  background-color: var(--color-secondary-button); /* Используем переменную для вторичных кнопок */
+  color: var(--color-text-primary); /* Цвет текста кнопки */
+  border: 1px solid var(--color-border-dark); /* Более темная граница для контраста */
+  border-radius: 6px; /* Скругление углов кнопок: 4px - 6px */
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9em; /* Уменьшенный размер шрифта */
+  font-weight: 600; /* Более жирный шрифт для акцента */
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  height: 34px; /* Уменьшенная высота кнопки */
+  line-height: 1.5; /* Для вертикального выравнивания текста */
+}
+
+.add-event-button:hover {
+  background-color: var(--color-secondary-button-hover); /* Используем переменную для ховера вторичных кнопок */
+  color: var(--color-text-primary); /* Цвет текста при ховере */
+  border-color: var(--color-accent); /* Акцентная граница при ховере */
+}
+
+.add-event-button:active {
+  background-color: color-mix(in srgb, var(--color-secondary-button-hover) 80%, black); /* Затемнение при активном состоянии */
+  color: var(--color-text-primary);
+}
+
+/* Стили для зоны перетаскивания */
+.highlighted-drop-zone {
+  background-color: color-mix(in srgb, var(--color-blue-accent) 15%, var(--color-tertiary-background));
+  outline: 2px dashed var(--color-blue-accent);
+  outline-offset: -2px;
 }

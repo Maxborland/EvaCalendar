@@ -34,6 +34,6 @@ createRoot(document.getElementById('root')!).render(
     <DndProvider backend={MyMultiBackend} options={{ backends: backends }}>
       <App />
     </DndProvider>
-    <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+    <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} limit={2} theme="dark" pauseOnFocusLoss draggable pauseOnHover />
   </>,
 )

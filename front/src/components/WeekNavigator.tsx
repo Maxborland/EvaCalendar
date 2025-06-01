@@ -5,34 +5,33 @@ import React from 'react';
 interface WeekNavigatorProps {
   goToPreviousWeek: () => void;
   goToNextWeek: () => void;
-  showFirstHalf: () => void;
-  showSecondHalf: () => void;
-  isNavVisible: boolean; // Добавляем новое свойство
+  currentWeekDisplay: string; // Новое свойство для отображения диапазона дат
+  isNavVisible: boolean;
+  // showFirstHalf и showSecondHalf удалены
 }
 
 const WeekNavigator: React.FC<WeekNavigatorProps> = ({
   goToPreviousWeek,
   goToNextWeek,
-  showFirstHalf,
-  showSecondHalf,
-  isNavVisible, // Деструктурируем новое свойство
+  currentWeekDisplay,
+  isNavVisible,
 }) => {
-  const navClasses = `navigation-buttons ${isNavVisible ? '' : 'navigation-buttons--hidden'}`;
+  // Обновляем классы для нового макета и стилей
+  // Основной контейнер теперь будет центрировать элементы
+  const navContainerClasses = `week-navigator-container ${isNavVisible ? '' : 'week-navigator-container--hidden'}`;
 
   return (
-    <div className={navClasses}>
-      <div className="half-week-navigation">
-        <button onClick={showFirstHalf}>1-я пол.</button>
-        <button onClick={showSecondHalf}>2-я пол.</button>
-      </div>
-      <div className="week-navigation">
-        <button onClick={goToPreviousWeek}>
-          <FontAwesomeIcon icon={faChevronLeft} /> Неделя
-        </button>
-        <button onClick={goToNextWeek}>
-          Неделя <FontAwesomeIcon icon={faChevronRight} />
-        </button>
-      </div>
+    <div className={navContainerClasses}>
+      {/* half-week-navigation удален */}
+      <button className="week-nav-button prev-week" onClick={goToPreviousWeek} aria-label="Предыдущая неделя">
+        <FontAwesomeIcon icon={faChevronLeft} />
+        &nbsp;Неделя
+      </button>
+      <span className="current-week-display">{currentWeekDisplay}</span>
+      <button className="week-nav-button next-week" onClick={goToNextWeek} aria-label="Следующая неделя">
+        Неделя&nbsp;
+        <FontAwesomeIcon icon={faChevronRight} />
+      </button>
     </div>
   );
 };

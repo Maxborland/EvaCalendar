@@ -133,11 +133,11 @@
     margin-top: 20px;
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 5px;
 }
 
 .form-actions button {
-    padding: 10px 20px;
+    padding: 10px 15px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -154,13 +154,14 @@
     background-color: var(--color-success-hover);
 }
 
-.form-actions button[type="button"] {
-    background-color: var(--color-secondary-button);
+.form-actions .delete-button-form  {
+    background-color: var(--theme-danger) !important;
     color: var(--color-accent);
 }
 
-.form-actions button[type="button"]:hover {
-    background-color: var(--color-secondary-button-hover);
+.form-actions .duplicate-button-form {
+    background-color: var(--theme-info) !important;
+    color: var(--color-accent);
 }
 
 .add-button {

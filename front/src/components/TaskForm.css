@@ -91,6 +91,30 @@
   flex-shrink: 0;
 }
 
+.delete-button-form {
+  background-color: var(--color-red-accent) !important;
+  color: var(--color-accent);
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-top: 10px;
+  flex-shrink: 0;
+}
+
+.duplicate-button-form {
+  background-color: var(--color-yellow-accent) !important;
+  color: var(--color-accent);
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-top: 10px;
+  flex-shrink: 0;
+}
+
 .submit-button:hover {
   background-color: var(--color-blue-accent-hover);
 }

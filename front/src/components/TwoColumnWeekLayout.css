@@ -1,0 +1,116 @@
+.two-column-week-layout {
+  display: flex;
+  flex-direction: row; /* Явно указываем направление для десктопа */
+  gap: 20px; /* Отступ между левой секцией и правой колонкой дней */
+  padding: 0 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.left-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Занимает столько же места, сколько и .right-column */
+  min-width: 0;
+  gap: 15px; /* Отступ между блоком дней и полем заметки */
+  height: calc(100vh - 200px); /* Та же высота, что и у .week-column */
+  overflow-y: hidden; /* Если нужен скролл, то для .days-column или .note-field-container */
+}
+
+.days-column { /* Общий класс для колонок с днями */
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Отступ между DayColumn */
+  /* Не устанавливаем flex: 1 здесь, чтобы .note-field-container мог занимать место */
+}
+
+.top-days {
+  /* Стили специфичные для верхних трех дней, если нужны */
+  /* Например, если они должны занимать определенную часть высоты .left-section */
+}
+
+.note-field-container {
+  /* flex-grow: 1; /* Позволяет полю заметки занять оставшееся место в .left-section */
+  /* Можно задать min-height или height, если нужно */
+  /* background-color: #f9f9f9; /* Для визуального выделения, если нужно */
+  /* padding: 10px; */
+  /* border-radius: 8px; */
+  /* overflow-y: auto; /* Если содержимое заметки может быть большим */
+  /* Для NoteField.tsx уже есть .day-column и .note-textarea, которые можно стилизовать */
+  /* Важно, чтобы NoteField сам управлял своей внутренней структурой и стилями */
+}
+
+/* Стили для .note-field-container .day-column (из NoteField.tsx) */
+.note-field-container .day-column {
+  height: auto; /* Переопределяем, если NoteField не должен занимать всю высоту родителя */
+  padding: 10px; /* Пример отступов */
+  border: 1px solid var(--border-color-light); /* Пример рамки */
+  border-radius: var(--border-radius-base);
+  background-color: var(--background-color-secondary);
+}
+
+.note-field-container .note-textarea {
+  width: 100%; /* Занимает всю ширину контейнера */
+  min-height: 150px; /* Минимальная высота для поля ввода */
+  resize: vertical; /* Позволяет изменять высоту */
+}
+
+
+.week-column { /* Этот класс теперь используется только для правой колонки (Чт-Вс) */
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: calc(100vh - 200px);
+  overflow-y: hidden; /* Скролл управляется внутри DayColumn */
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) { /* Планшеты */
+  .two-column-week-layout {
+    gap: 15px;
+    padding: 0 15px;
+  }
+  .left-section, .week-column { /* Применяем к обеим основным колонкам */
+    gap: 10px;
+  }
+  .days-column { /* Также для колонки дней внутри left-section */
+    gap: 10px;
+  }
+}
+
+@media (max-width: 767px) { /* Мобильные устройства */
+  .two-column-week-layout {
+    flex-direction: row; /* Изменено на row для двухколоночного макета */
+    gap: 10px; /* Уменьшим отступ между колонками для мобильных */
+    padding: 0 10px;
+    /* height: auto;  - оставляем по умолчанию или как на десктопе, если нужно */
+    /* overflow-y: auto; - возможно, не нужен, если колонки скроллятся индивидуально */
+  }
+
+  .left-section, .week-column {
+    flex-basis: 50%; /* Делим ширину пополам */
+    min-width: 0; /* Важно для flex элементов */
+    /* height: auto; - возможно, нужно вернуть calc(100vh - ...) или аналогичное */
+    /* overflow-y: visible; - возможно, нужно вернуть hidden и управлять скроллом внутри */
+    gap: 10px;
+    /* Добавим overflow-y: auto; чтобы каждая колонка могла скроллиться независимо, если контента много */
+    overflow-y: auto;
+    height: calc(100vh - 150px); /* Примерная высота, возможно, потребует корректировки. 150px - это примерная высота шапки и отступов */
+  }
+
+  .days-column {
+    gap: 10px;
+  }
+
+  .note-field-container {
+    margin-top: 10px; /* Небольшой отступ сверху для поля заметок */
+  }
+
+  .note-field-container .note-textarea {
+    min-height: 120px; /* Уменьшаем минимальную высоту для мобильных */
+  }
+}

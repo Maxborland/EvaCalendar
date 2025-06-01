@@ -43,6 +43,7 @@ export interface Task {
   isDone?: boolean;
   isPaid?: boolean;
   expenseCategoryName?: string; // Добавлено для отображения имени категории расходов
+  child_name?: string; // Добавлено для имени ребенка в карточках дохода
   createdAt?: string;
   updatedAt?: string;
 }

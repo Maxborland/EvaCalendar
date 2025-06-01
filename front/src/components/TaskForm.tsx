@@ -11,9 +11,11 @@ interface TaskFormProps {
   initialData?: Partial<Task> & { type: 'income' | 'expense' };
   onTaskSaved: () => void;
   onClose: () => void;
+  onDelete?: (id: string, itemType: 'task' | 'expense') => void; // Добавлено
+  onDuplicate?: (id: string, itemType: 'task' | 'expense') => void; // Добавлено
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, onDelete, onDuplicate }) => { // Добавлены onDelete, onDuplicate
   const [formData, setFormData] = useState(() => {
     const defaultDueDate = new Date().toISOString().split('T')[0];
     const data = {
@@ -121,9 +123,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
             parentName: childData.parentName || '', // Это поле остается в formData для совместимости, но не будет отображаться отдельно
             parentPhone: childData.parentPhone || '', // Это поле остается в formData для совместимости, но не будет отображаться отдельно
             // Обновляем title только если он был пуст или содержал старое имя ребенка
-            title: (prevData.title === '' || prevData.title?.startsWith('Работать с ') || prevData.title === null)
-              ? `Работать с ${currentChildName}`
-              : prevData.title,
+            title: currentChildName
           }));
         } catch (error) {
           console.error('Ошибка при загрузке данных ребенка:', error);
@@ -250,6 +250,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         console.error('Неизвестная ошибка:', error);
       }
       // Возможно, добавить сообщение об ошибке для пользователя
+    }
+  };
+
+  const handleDelete = () => {
+    if (formData.uuid && onDelete && window.confirm('Вы уверены, что хотите удалить это дело?')) {
+      onDelete(formData.uuid, formData.type as 'task' | 'expense');
+      onClose();
+    }
+  };
+
+  const handleDuplicate = () => {
+    if (formData.uuid && onDuplicate) {
+      onDuplicate(formData.uuid, formData.type as 'task' | 'expense');
+      onClose();
     }
   };
 
@@ -421,9 +435,21 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
               </>
             )}
 
-            <button type="submit" className="submit-button">
-              {formData.uuid ? 'Сохранить' : 'Создать дело'}
-            </button>
+            <div className="form-actions">
+              {formData.uuid && onDelete && (
+                <button type="button" className="delete-button-form" onClick={handleDelete}>
+                  Удалить
+                </button>
+              )}
+              {formData.uuid && onDuplicate && (
+                <button type="button" className="duplicate-button-form" onClick={handleDuplicate}>
+                  Дублировать
+                </button>
+              )}
+              <button type="submit" className="submit-button">
+                {formData.uuid ? 'Сохранить' : 'Создать'}
+              </button>
+            </div>
           </form>
         </div>
       </div>
