@@ -75,10 +75,10 @@ const ExpenseCategoryManager: React.FC = () => {
 
     try {
       // Сохранить старую категорию
-      const oldCategoryName = categories.find(cat => cat.uuid === editingCategory.uuid)?.category_name || ''; // Changed from id to uuid
+      // const oldCategoryName = categories.find(cat => cat.uuid === editingCategory.uuid)?.category_name || ''; // Changed from id to uuid
 
       // Обновить категорию
-      const updatedCategory = await updateExpenseCategory(editingCategory.uuid, editingCategory.category_name); // Changed from id to uuid
+      await updateExpenseCategory(editingCategory.uuid, editingCategory.category_name); // Changed from id to uuid
       setEditingCategory(null); // Сбросить режим редактирования
       fetchCategories(); // Обновить список категорий
 

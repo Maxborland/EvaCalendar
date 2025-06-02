@@ -16,16 +16,15 @@ const SecondHalfOfWeek: React.FC<SecondHalfOfWeekProps> = (props) => {
   return (
     <div className="second-half-of-week">
       <div className="day-columns-container">
-        {days.map((dayMoment, index) => {
+        {days.map((dayMoment) => {
           // Фильтруем задачи для текущего дня
           const tasksForDay = tasksForWeek.filter(task =>
             moment(task.dueDate).isSame(dayMoment, 'day')
           );
 
           return (
-            <div key={index} className="day-column-wrapper">
+            <div key={dayMoment.format('YYYY-MM-DD')} className="day-column-wrapper">
               <DayColumn
-                day={dayMoment.format('D MMMM')}
                 fullDate={dayMoment}
                 today={today}
                 tasksForDay={tasksForDay} // Передаем отфильтрованные задачи

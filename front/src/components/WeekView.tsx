@@ -2,7 +2,7 @@ import type { Moment } from 'moment';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNav } from '../context/NavContext';
-import { getAllNotes, getAllTasks, getDailySummary, getMonthlySummary, type Note, type Task } from '../services/api';
+import { getAllNotes, getAllTasks, getDailySummary, getMonthlySummary, type Task } from '../services/api';
 import SummaryBlock from './SummaryBlock';
 import TopNavigator from './TopNavigator';
 // import WeekDaysScroller from './WeekDaysScroller'; // Заменяется на TwoColumnWeekLayout
@@ -12,8 +12,7 @@ import WeekNavigator from './WeekNavigator';
 const WeekView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(moment());
   const [tasksForWeek, setTasksForWeek] = useState<Task[]>([]);
-  const [allNotes, setAllNotes] = useState<Note[]>([]);
-  const [notesForCurrentWeek, setNotesForCurrentWeek] = useState<Note[]>([]);
+  // const [notesForCurrentWeek, setNotesForCurrentWeek] = useState<Note[]>([]); // Удалено, так как не используется
   // const [weekInfo, setWeekInfo] = useState<{ id: string | null; startDate: string; endDate: string }>({ id: null, startDate: '', endDate: '' }); // Удалено
   const [today] = useState(moment()); // Состояние для получения текущего дня
   // Используем useMemo для мемоизации дней недели
@@ -38,11 +37,11 @@ const WeekView: React.FC = () => {
         getAllNotes()
       ]);
       setTasksForWeek(tasks);
-      setAllNotes(notes);
+      // setAllNotes(notes); // Удалено, так как allNotes не используется
     } catch (error) {
       console.error('Error fetching initial data: ', error);
       setTasksForWeek([]);
-      setAllNotes([]);
+      // setAllNotes([]); // Удалено, так как allNotes не используется
     } finally {
       setIsLoading(false);
     }
@@ -52,17 +51,17 @@ const WeekView: React.FC = () => {
     loadInitialData();
   }, [loadInitialData]);
 
-  useEffect(() => {
-    const startOfWeek = currentDate.clone().startOf('isoWeek');
-    const endOfWeek = currentDate.clone().endOf('isoWeek');
-
-    const filteredNotes = allNotes.filter(note => {
-      const noteDate = moment(note.date);
-      const isBetween = noteDate.isBetween(startOfWeek, endOfWeek, 'day', '[]');
-      return isBetween; // '[]' включает начальную и конечную даты
-    });
-    setNotesForCurrentWeek(filteredNotes);
-  }, [allNotes, currentDate]);
+  // useEffect(() => { // Удалено, так как notesForCurrentWeek не используется
+  //   const startOfWeek = currentDate.clone().startOf('isoWeek');
+  //   const endOfWeek = currentDate.clone().endOf('isoWeek');
+  //
+  //   const filteredNotes = allNotes.filter(note => {
+  //     const noteDate = moment(note.date);
+  //     const isBetween = noteDate.isBetween(startOfWeek, endOfWeek, 'day', '[]');
+  //     return isBetween; // '[]' включает начальную и конечную даты
+  //   });
+  //   setNotesForCurrentWeek(filteredNotes);
+  // }, [allNotes, currentDate]);
 
   const fetchSummary = useCallback(async () => {
     // setIsLoading(true); // Управляется в loadTasksForWeek

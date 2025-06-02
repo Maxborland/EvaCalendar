@@ -48,6 +48,7 @@ describe('WeekDaysScroller', () => {
 
   const commonProps = {
     tasksForWeek: [] as Task[], // Заменяем weekInfo на tasksForWeek
+    notesForWeek: [], // Добавляем недостающий проп
     firstHalfDays: [
       moment('2025-05-26'), // Monday
       moment('2025-05-27'), // Tuesday

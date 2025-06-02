@@ -20,6 +20,7 @@ const ItemTypes = {
 const TaskItem: React.FC<TaskItemProps> = ({ task, onDelete, onDuplicate, onEdit }) => { // Деструктуризация task и колбэков
 
   // Деструктуризация полей из task. dueDate и comments пока не используются в JSX, но доступны для логики.
+  // TODO: Implement or remove unused variable/prop
   const { uuid: id, type, title, amountEarned, amountSpent, comments, dueDate, childId, hourlyRate, category, hoursWorked, time, address, expenseCategoryName } = task;
 
   const ref = useRef<HTMLDivElement>(null);
