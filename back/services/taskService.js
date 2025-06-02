@@ -220,6 +220,23 @@ async getTasksByCategoryUuid(categoryUuid) {
     async deleteTask(uuid) {
         const deleted = await knex('tasks').where({ uuid }).del();
         return deleted;
+    },
+
+    async getTasksByDate(dateString) {
+        // Валидация формата даты (простая проверка, можно улучшить с помощью библиотек типа moment.js или date-fns)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            throw ApiError.badRequest('Invalid date format. Please use YYYY-MM-DD.');
+        }
+
+        return knex('tasks')
+            .where('tasks.dueDate', dateString) // Используем dueDate, так как это поле в таблице
+            .select(
+                'tasks.*',
+                'children.childName as child_name', // Алиас для соответствия ожиданиям фронтенда
+                'expense_categories.category_name as expenseCategoryName'
+            )
+            .leftJoin('children', 'tasks.childId', 'children.uuid')
+            .leftJoin('expense_categories', 'tasks.expenceTypeId', 'expense_categories.uuid');
     }
 };
 

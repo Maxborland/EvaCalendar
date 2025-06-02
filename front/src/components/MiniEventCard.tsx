@@ -28,16 +28,18 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.EVENT_CARD,
-    item: {
-      // Используем uuid для обоих типов, если Note также имеет uuid
-      id: event.itemType === 'note' ? (event as Note & { uuid: string }).uuid : (event as Task).uuid,
-      itemType: event.itemType,
-      originalEvent: event
-    }, // Передаем ID и тип для dnd
+    item: () => { // Оборачиваем в функцию для ленивого вычисления
+      const itemId = event.itemType === 'note' ? (event as Note).uuid : (event as Task).id;
+      return {
+        id: itemId,
+        itemType: event.itemType,
+        originalEvent: event,
+      };
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  }), [event]);
+  }), [event]); // Зависимость от event
 
   drag(ref);
 
@@ -45,47 +47,58 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
     onEdit(event);
   };
 
-  // Рендеринг в зависимости от типа события (Task, Expense, Note)
   const renderContent = () => {
-    if (event.itemType === 'task' || event.itemType === 'expense' || event.type === 'income') { // Добавлена проверка event.type === 'income'
-      const task = event as Task; // Приводим к типу Task для доступа к полям задачи/расхода/дохода
+    // Проверяем, является ли событие задачей (Task) для доступа к ее полям
+    if ('title' in event) { // Простой способ проверить, есть ли у объекта поле title (характерно для Task)
+      const task = event as Task; // Теперь TypeScript знает, что это Task
 
-      if (task.type === 'income') {
+      // Логика для отображения дохода (income), расхода (expense) или обычной задачи (task)
+      if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') { // 'fixed' и 'hourly' тоже доходы
         return (
           <>
             <div className="card-icon">
-              <span>{task.type === 'income' ? <FontAwesomeIcon icon={faPlus} /> : <FontAwesomeIcon icon={faMinus} />}</span>
+              <FontAwesomeIcon icon={faPlus} />
+            </div>
+            <div className="income-meta">
+              {task.time && <span className="card-time">{task.time}</span>}
             </div>
             <div className="card-details">
               <div className="card-title-wrapper">
-                <span className="card-title">{task.child_name || task.title}</span> {/* Имя ребенка или заголовок */}
+                <span className="card-title">{task.child_name || task.title}</span>
+                {task.amount !== undefined && <span className="card-amount"> ({task.amount?.toFixed(2)})</span>}
               </div>
-              <div className="income-meta">
-                {task.time && <span className="card-time">{task.time}</span>}
+            </div>
+          </>
+        );
+      } else if (task.type === 'expense') {
+        return (
+          <>
+            <div className="card-icon">
+              <FontAwesomeIcon icon={faMinus} />
+            </div>
+            <div className="card-details">
+              <div className="card-title-wrapper">
+                 <h4 className="card-title">{task.title}</h4>
+                 {task.amount !== undefined && <span className="card-amount"> ({task.amount?.toFixed(2)})</span>}
+              </div>
+              {task.expenseCategoryName && (
+                <p className="card-category">({task.expenseCategoryName})</p>
+              )}
+            </div>
+          </>
+        );
+      } else { // Обычная задача без явного дохода/расхода (если такие будут)
+         return (
+          <>
+            {/* Можно добавить иконку по умолчанию для задач */}
+            <div className="card-details">
+              <div className="card-title-wrapper">
+                <h4 className="card-title">{task.title}</h4>
               </div>
             </div>
           </>
         );
       }
-
-      return (
-        <>
-          <div className="card-icon">
-            <span>{task.type === 'expense' ? <FontAwesomeIcon icon={faMinus} /> : <FontAwesomeIcon icon={faPlus} />}</span>
-          </div>
-          <div className="card-details">
-            <div className="card-title-wrapper">
-              <h4 className="card-title">{task.title}</h4>
-            </div>
-            <div className="expense-meta">
-              {task.type === 'expense' && task.expenseCategoryName && (
-                <p className="card-category">({task.expenseCategoryName})</p>
-              )}
-
-            </div>
-          </div>
-        </>
-      );
     } else if (event.itemType === 'note') {
       const note = event as Note;
       return (
@@ -100,10 +113,13 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
     return null;
   };
 
+  // Определяем класс для income-card-style более точно
+  const isIncomeType = 'type' in event && (event.type === 'income' || event.type === 'fixed' || event.type === 'hourly');
+
   return (
     <div
       ref={ref}
-      className={`mini-event-card ${event.itemType} ${isDragging ? 'dragging' : ''} ${(event as Task).type === 'income' ? 'income-card-style' : ''}`}
+      className={`mini-event-card ${event.itemType} ${isDragging ? 'dragging' : ''} ${isIncomeType ? 'income-card-style' : ''}`}
       onClick={handleEditClick}
       role="button"
       tabIndex={0}
@@ -112,10 +128,10 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
       <div className="card-main-content">
         {renderContent()}
       </div>
-      {/* Опциональная цветовая полоска для задач */}
-      {(event.itemType === 'task' || event.itemType === 'expense') && (event as Task).category && (
-        <div className={`color-stripe ${(event as Task).category || 'default'}`}></div>
-      )}
+      {/* Убираем color-stripe, так как поле category удалено из Task */}
+      {/* {(event.itemType === 'task' || event.itemType === 'expense') && (event as Task).category_id && (
+        <div className={`color-stripe ${(event as Task).category_id || 'default'}`}></div>
+      )} */}
     </div>
   );
 };

@@ -1,46 +1,52 @@
-import axios from 'axios'; // Импортируем axios для проверки ошибок
 import React, { useCallback, useEffect, useState } from 'react'; // Добавлен useCallback
 import ReactDOM from 'react-dom'; // Импортируем ReactDOM для Portal
 import { toast } from 'react-toastify'; // Для уведомлений из ChildForm
-import { addChild, createTask, getAllChildren, getChildByUuid, getExpenseCategories, updateChild as updateChildAPI, updateTask, type Child, type ExpenseCategory, type Task } from '../services/api'; // Импортируем функции API, addChild, updateChild as updateChildAPI
+import { addChild, getAllChildren, getExpenseCategories, updateChild as updateChildAPI, type Child, type ExpenseCategory, type Task } from '../services/api'; // Импортируем функции API, addChild, updateChild as updateChildAPI
 import ChildForm from './ChildForm'; // Импорт ChildForm
 import './TaskForm.css';
 import UnifiedChildSelector from './UnifiedChildSelector'; // Импорт нового компонента
 
 interface TaskFormProps {
-  initialData?: Partial<Task> & { type: 'income' | 'expense' };
-  onTaskSaved: () => void;
+  initialData?: Partial<Task> & { formType: 'income' | 'expense' }; // Используем formType для внутренней логики формы
+  onTaskSaved: (taskData: Omit<Task, 'id'> | Task) => void; // Обновляем тип для передачи данных задачи
   onClose: () => void;
-  onDelete?: (id: string, itemType: 'task' | 'expense') => void; // Добавлено
-  onDuplicate?: (id: string, itemType: 'task' | 'expense') => void; // Добавлено
+  onDelete?: (id: string) => void; // Упрощаем onDelete, itemType не нужен, т.к. удаляем всегда Task
+  onDuplicate?: (id: string) => void; // Упрощаем onDuplicate
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, onDelete, onDuplicate }) => { // Добавлены onDelete, onDuplicate
+const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, onDelete, onDuplicate }) => {
   const [formData, setFormData] = useState(() => {
-    const defaultDueDate = new Date().toISOString().split('T')[0];
-    const data = {
-      uuid: initialData?.uuid as string | undefined,
-      type: initialData?.type || ('income' as 'income' | 'expense'),
-      title: initialData?.title || ('' as string | null),
+    const defaultDueDate = initialData?.dueDate || new Date().toISOString().split('T')[0];
+    const baseData = {
+      id: initialData?.id, // Используем id вместо uuid
+      // `type` будет определяться на основе `formType` и других полей перед сохранением
+      title: initialData?.title || '',
+      description: initialData?.description || '',
       time: initialData?.time || '',
-      address: initialData?.address || '', // Это поле будет заполняться из данных ребенка
-      childId: initialData?.childId || (null as string | null),
-      // childName: '', // Удалено, так как имя будет браться из UnifiedChildSelector или children list
-      hourlyRate: initialData?.hourlyRate || 0, // Это поле будет заполняться из данных ребенка
-      parentName: '', // Это поле будет заполняться из данных ребенка
-      parentPhone: '', // Это поле будет заполняться из данных ребенка
+      address: initialData?.address || '',
+      child_id: initialData?.child_id || null, // Используем child_id
+      hourlyRate: initialData?.hourlyRate || undefined, // Может быть undefined если не почасовая
       comments: initialData?.comments || '',
-      category: initialData?.expenseCategoryName || initialData?.category || '',
-      amountEarned: initialData?.amountEarned || 0,
-      amountSpent: initialData?.amountSpent || 0,
-      hoursWorked: initialData?.hoursWorked || 0,
-      dueDate: initialData?.dueDate ?? defaultDueDate,
+      expenseCategoryName: initialData?.expenseCategoryName || '',
+      amount: initialData?.amount || undefined, // Общее поле amount
+      hoursWorked: initialData?.hoursWorked || undefined, // Может быть undefined
+      dueDate: defaultDueDate,
+      completed: initialData?.completed || false,
+      isPaid: initialData?.isPaid || false,
+      // Внутреннее состояние формы для определения доход/расход
+      formType: initialData?.formType || 'income',
+      // Для связи с API, если это существующая задача
+      category_id: initialData?.category_id,
+      // Для отображения имени ребенка, если есть
+      child_name: initialData?.child_name,
+      // Оригинальный `type` задачи, если редактируем, чтобы не потерять его
+      originalTaskType: initialData?.type
     };
-    return data as typeof data;
+    return baseData;
   });
 
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(initialData?.childId || null);
+  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(initialData?.child_id || null);
   const [selectedChildDetails, setSelectedChildDetails] = useState<Child | null>(null); // Новое состояние для данных ребенка
 
   const [showChildFormModal, setShowChildFormModal] = useState(false);
@@ -63,109 +69,95 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
 
   useEffect(() => {
     if (initialData) {
-      setFormData(prevData => {
-        const processedInitialData = { ...initialData };
-        const newData = {
-          ...prevData,
-          ...processedInitialData,
-          uuid: initialData.uuid,
-          type: initialData.type || prevData.type,
-          title: initialData.title ?? prevData.title,
-          time: initialData.time || prevData.time,
-          // address, hourlyRate, parentName, parentPhone будут установлены из useEffect для selectedChildUuid
-          childId: initialData.childId || prevData.childId,
-          comments: initialData.comments || prevData.comments,
-          category: initialData.expenseCategoryName || initialData.category || prevData.category,
-          amountEarned: initialData.amountEarned ?? prevData.amountEarned,
-          amountSpent: initialData.amountSpent ?? prevData.amountSpent,
-          hoursWorked: initialData.hoursWorked ?? prevData.hoursWorked,
-        };
-        if (initialData.dueDate !== undefined) {
-          newData.dueDate = initialData.dueDate;
-        } else {
-          newData.dueDate = prevData.dueDate;
-        }
-        return newData;
-      });
-      // selectedChildUuid устанавливается при инициализации useState
+      setFormData(prevData => ({
+        ...prevData,
+        id: initialData.id,
+        formType: initialData.formType || prevData.formType,
+        title: initialData.title ?? prevData.title,
+        description: initialData.description || prevData.description,
+        time: initialData.time || prevData.time,
+        address: initialData.address || prevData.address,
+        child_id: initialData.child_id || prevData.child_id,
+        hourlyRate: initialData.hourlyRate ?? prevData.hourlyRate,
+        comments: initialData.comments || prevData.comments,
+        expenseCategoryName: initialData.expenseCategoryName || prevData.expenseCategoryName,
+        amount: initialData.amount ?? prevData.amount,
+        hoursWorked: initialData.hoursWorked ?? prevData.hoursWorked,
+        dueDate: initialData.dueDate ?? prevData.dueDate,
+        completed: initialData.completed ?? prevData.completed,
+        isPaid: initialData.isPaid ?? prevData.isPaid,
+        category_id: initialData.category_id || prevData.category_id,
+        child_name: initialData.child_name || prevData.child_name,
+        originalTaskType: initialData.type || prevData.originalTaskType,
+      }));
+      setSelectedChildUuid(initialData.child_id || null);
     }
   }, [initialData]);
 
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<ExpenseCategory[]>([]); // Храним объекты категорий
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const fetchedCategories = await getExpenseCategories();
-        setCategories(fetchedCategories.map((cat: ExpenseCategory) => cat.category_name));
+        setCategories(fetchedCategories); // Сохраняем объекты категорий
       } catch (error) {
         console.error('Ошибка при загрузке категорий:', error);
+        toast.error('Ошибка при загрузке списка категорий.');
       }
     };
     fetchCategories();
-    fetchChildrenCallback(); // Используем callback-версию
-  }, [fetchChildrenCallback]); // Зависимость от callback-версии
+    fetchChildrenCallback();
+  }, [fetchChildrenCallback]);
 
   useEffect(() => {
-    if (selectedChildUuid !== null) {
-      const fetchChildDataAndUpdateForm = async () => {
-        try {
-          const childData = await getChildByUuid(selectedChildUuid as string);
-          const currentChildName = children.find(c => c.uuid === selectedChildUuid)?.childName || childData.childName;
-          setSelectedChildDetails(childData); // Сохраняем полные данные ребенка
-
-          setFormData((prevData) => ({
-            ...prevData,
-            childId: childData.uuid,
-            // childName: childData.childName, // Удалено
-            hourlyRate: childData.hourlyRate || 0,
-            address: childData.address || '', // Это поле остается в formData для совместимости, но не будет отображаться отдельно
-            parentName: childData.parentName || '', // Это поле остается в formData для совместимости, но не будет отображаться отдельно
-            parentPhone: childData.parentPhone || '', // Это поле остается в formData для совместимости, но не будет отображаться отдельно
-            // Обновляем title только если он был пуст или содержал старое имя ребенка
-            title: currentChildName
-          }));
-        } catch (error) {
-          console.error('Ошибка при загрузке данных ребенка:', error);
-          toast.error('Ошибка при загрузке данных ребенка.');
-          setSelectedChildUuid(null); // Сбрасываем выбор, если не удалось загрузить
-          setSelectedChildDetails(null); // Сбрасываем данные ребенка
-        }
-      };
-      fetchChildDataAndUpdateForm();
+    if (selectedChildUuid) {
+      const childData = children.find(c => c.uuid === selectedChildUuid);
+      if (childData) {
+        setSelectedChildDetails(childData);
+        setFormData((prevData) => ({
+          ...prevData,
+          child_id: childData.uuid,
+          hourlyRate: childData.hourlyRate ?? prevData.hourlyRate, // Используем ставку ребенка или текущую в форме
+          address: childData.address || prevData.address,
+          // title: prevData.title || `Работа с ${childData.childName}`, // Автозаполнение, если title пуст
+          child_name: childData.childName, // Для отображения
+        }));
+      } else {
+        // Если ребенок не найден в списке (например, после удаления), сбрасываем
+        setSelectedChildDetails(null);
+        setFormData(prev => ({ ...prev, child_id: null, child_name: undefined }));
+      }
     } else {
-      setSelectedChildDetails(null); // Сбрасываем данные ребенка, если UUID сброшен
-      setFormData((prevData) => ({
-        ...prevData,
-        childId: null,
-        // childName: '', // Удалено
-        hourlyRate: 0,
-        address: '',
-        parentName: '',
-        parentPhone: '',
-        // Сбрасываем title, если он был связан с ребенком, или используем initialData.title
-        title: initialData?.title && !initialData.title.startsWith('Работать с ') ? initialData.title : '',
-      }));
+      setSelectedChildDetails(null);
+      // Не сбрасываем title, если ребенок не выбран, пользователь мог ввести его вручную
+      setFormData(prev => ({ ...prev, child_id: null, child_name: undefined, hourlyRate: initialData?.hourlyRate || undefined }));
     }
-  }, [selectedChildUuid, initialData, children]); // Добавили children в зависимости
+  }, [selectedChildUuid, children, initialData?.hourlyRate]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    // Удаляем старую логику для childSelect
+    const { name, value, type: inputType } = e.target;
+
+    if (name === "formType") {
+        setFormData(prev => ({ ...prev, formType: value as 'income' | 'expense' }));
+        return;
+    }
+
     setFormData((prevData) => ({
       ...prevData,
-      [name]: (name === 'hourlyRate' || name === 'amountEarned' || name === 'amountSpent' || name === 'hoursWorked')
-        ? (value === '' ? 0 : parseFloat(value))
+      [name]: inputType === 'number'
+        ? (value === '' ? undefined : parseFloat(value)) // Для числовых полей, если пусто, ставим undefined
         : value,
     }));
   };
 
-  const handleUnifiedChildChange = (childId: string | null, _newChildName?: string) => {
-    // _newChildName здесь не используется, так как создание инициируется через onAddNewChildRequest
-    setSelectedChildUuid(childId);
+
+  const handleUnifiedChildChange = (childUuid: string | null) => {
+    setSelectedChildUuid(childUuid);
   };
 
-  const handleOpenChildFormForNew = (childName: string) => {
+  const handleOpenChildFormForNew = (childName?: string) => { // childName опционален
     setChildFormInitialData({ childName }); // Предзаполняем имя
     setShowChildFormModal(true);
   };
@@ -203,67 +195,70 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const dataToSave: Task = {
-        uuid: formData.uuid,
-        // weekId, // Удалено
-        // dayOfWeek: parseInt(dayOfWeek, 10), // Удалено
-        type: formData.type,
-        title: formData.title || '', // title обязателен
-        dueDate: formData.dueDate, // Добавляем dueDate
-        // Остальные поля добавляются в зависимости от типа
-      };
 
-      if (formData.type === 'income') {
-        // Для типа 'income' (и других, где это применимо)
-        dataToSave.time = formData.time === '' ? undefined : formData.time;
-        // dataToSave.address = formData.address === '' ? undefined : formData.address; // Удалено, чтобы не отправлять на бэкенд
-        dataToSave.childId = selectedChildUuid || undefined;
-        dataToSave.hourlyRate = formData.hourlyRate;
-        dataToSave.hoursWorked = formData.hoursWorked;
-        dataToSave.comments = formData.comments === '' ? undefined : formData.comments;
-        dataToSave.amountEarned = formData.hourlyRate && formData.hoursWorked ? formData.hourlyRate * formData.hoursWorked : 0;
-      } else if (formData.type === 'expense') {
-        // Для типа 'expense'
-        dataToSave.comments = formData.comments === '' ? undefined : formData.comments;
-        dataToSave.category = formData.category === '' ? undefined : formData.category;
-        dataToSave.amountSpent = formData.amountSpent;
-      }
-
-      if (formData.uuid) {
-        // Обновление существующей задачи
-        await updateTask(formData.uuid, dataToSave);
+    // Определяем тип задачи для API
+    let taskTypeForApi: string;
+    if (formData.formType === 'expense') {
+      taskTypeForApi = 'expense';
+    } else {
+      // Для 'income' формы, тип может быть 'hourly', 'fixed', или просто 'income'
+      // Если есть часы или ставка, предполагаем 'hourly'
+      // Иначе, если есть initialData.type (т.е. редактируем), используем его
+      // Иначе, по умолчанию 'income' (или 'fixed', если это более подходящий дефолт)
+      if (formData.hoursWorked || formData.hourlyRate) {
+        taskTypeForApi = 'hourly';
       } else {
-        // Создание новой задачи
-        await createTask(dataToSave);
+        taskTypeForApi = formData.originalTaskType || 'fixed'; // 'fixed' как более общий для дохода без часов
       }
-      onTaskSaved(); // Вызываем обратный вызов после сохранения
-      onClose();
-    } catch (error) {
-      console.error('Ошибка при сохранении задачи:', error);
-      if (axios.isAxiosError(error) && error.response) {
-        console.error('Статус ответа:', error.response.status);
-        console.error('Данные ответа:', error.response.data);
-      } else {
-        console.error('Неизвестная ошибка:', error);
-      }
-      // Возможно, добавить сообщение об ошибке для пользователя
+    }
+
+    const dataToSave: Omit<Task, 'id'> & { id?: string } = {
+      id: formData.id, // id будет undefined для новых задач
+      title: formData.title,
+      description: formData.description,
+      type: taskTypeForApi,
+      time: formData.time || undefined,
+      dueDate: formData.dueDate,
+      completed: formData.completed,
+      child_id: selectedChildUuid || undefined,
+      child_name: selectedChildDetails?.childName || undefined, // Добавляем имя ребенка если выбран
+      category_id: formData.formType === 'expense'
+        ? categories.find(c => c.category_name === formData.expenseCategoryName)?.uuid
+        : undefined,
+      expenseCategoryName: formData.formType === 'expense' ? formData.expenseCategoryName : undefined,
+      amount: formData.amount,
+      hourlyRate: taskTypeForApi === 'hourly' ? formData.hourlyRate : undefined,
+      hoursWorked: taskTypeForApi === 'hourly' ? formData.hoursWorked : undefined,
+      isPaid: formData.isPaid,
+      address: selectedChildDetails?.address || formData.address || undefined, // Адрес из ребенка или формы
+      comments: formData.comments || undefined,
+    };
+
+    // Расчет amount для почасовых задач, если не указан явно
+    if (taskTypeForApi === 'hourly' && dataToSave.hourlyRate && dataToSave.hoursWorked && dataToSave.amount === undefined) {
+        dataToSave.amount = dataToSave.hourlyRate * dataToSave.hoursWorked;
+    }
+
+
+    onTaskSaved(dataToSave as Omit<Task, 'id'> | Task); // Передаем данные в DayDetailsPage
+    // onClose(); // Закрытие формы теперь обрабатывается в DayDetailsPage после успешного сохранения
+  };
+
+
+  const handleDeleteClick = () => {
+    if (formData.id && onDelete) {
+      onDelete(formData.id);
+      // onClose(); // Закрытие формы теперь обрабатывается в DayDetailsPage
     }
   };
 
-  const handleDelete = () => {
-    if (formData.uuid && onDelete && window.confirm('Вы уверены, что хотите удалить это дело?')) {
-      onDelete(formData.uuid, formData.type as 'task' | 'expense');
-      onClose();
+  const handleDuplicateClick = () => {
+    if (formData.id && onDuplicate) {
+      onDuplicate(formData.id);
+      // onClose(); // Закрытие формы теперь обрабатывается в DayDetailsPage
     }
   };
 
-  const handleDuplicate = () => {
-    if (formData.uuid && onDuplicate) {
-      onDuplicate(formData.uuid, formData.type as 'task' | 'expense');
-      onClose();
-    }
-  };
 
   const modalContent = (
     <>
@@ -271,15 +266,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
           <button className="close-button" onClick={onClose}>&times;</button>
           <form className="form" onSubmit={handleSubmit}>
-            <h2>{formData.uuid ? 'Редактировать дело' : 'Создать новое дело'}</h2>
+            <h2>{formData.id ? 'Редактировать задачу' : 'Создать новую задачу'}</h2>
 
             <div className="form-group">
-              <label htmlFor="title" className="label">Название дела:</label>
+              <label htmlFor="title" className="label">Название:</label>
               <input
                 type="text"
                 id="title"
                 name="title"
-                value={formData.title || ''}
+                value={formData.title}
                 onChange={handleChange}
                 required
                 className="input"
@@ -287,11 +282,23 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             </div>
 
             <div className="form-group">
-              <label htmlFor="type" className="label">Тип:</label>
+              <label htmlFor="description" className="label">Описание (опционально):</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="textarea"
+              />
+            </div>
+
+
+            <div className="form-group">
+              <label htmlFor="formType" className="label">Тип операции:</label>
               <select
-                id="type"
-                name="type"
-                value={formData.type}
+                id="formType"
+                name="formType"
+                value={formData.formType}
                 onChange={handleChange}
                 className="input"
               >
@@ -299,8 +306,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
                 <option value="expense">Расход</option>
               </select>
             </div>
-
-
 
             <div className="form-group">
               <label htmlFor="dueDate" className="label">Дата:</label>
@@ -316,78 +321,91 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             </div>
 
             <div className="form-group">
-              <label htmlFor="time" className="label">Время:</label>
+              <label htmlFor="time" className="label">Время (опционально):</label>
               <input
                 type="time"
                 id="time"
                 name="time"
-                value={formData.time || ''}
+                value={formData.time}
                 onChange={handleChange}
-                required
                 className="input"
               />
             </div>
 
-            {formData.type === 'income' && (
+            {formData.formType === 'income' && (
               <>
                 <UnifiedChildSelector
                   value={selectedChildUuid}
                   onChange={handleUnifiedChildChange}
                   childrenList={children}
-                  onAddNewChildRequest={handleOpenChildFormForNew}
+                  onAddNewChildRequest={() => handleOpenChildFormForNew(undefined)} // Передаем undefined, если имя не введено
                   onGoToCreateChildPageRequest={handleOpenChildFormDefault}
-                  label="Ребенок:"
-                  placeholder="Введите или выберите имя ребенка"
+                  label="Ребенок (опционально):"
+                  placeholder="Выберите или добавьте ребенка"
                   selectedChildDetails={selectedChildDetails}
                 />
-
+                 {selectedChildDetails && selectedChildDetails.hourlyRate && !formData.hourlyRate && (
+                  <div className="info-text">Ставка ребенка: {selectedChildDetails.hourlyRate}</div>
+                )}
                 <div className="form-group">
-                  <label htmlFor="hoursWorked" className="label">Часов:</label>
+                  <label htmlFor="hourlyRate" className="label">Ставка в час (если применимо):</label>
+                  <input
+                    type="number"
+                    id="hourlyRate"
+                    name="hourlyRate"
+                    value={formData.hourlyRate ?? ''}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder={selectedChildDetails?.hourlyRate?.toString() || "0"}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="hoursWorked" className="label">Количество часов (если применимо):</label>
                   <input
                     type="number"
                     id="hoursWorked"
                     name="hoursWorked"
-                    value={formData.hoursWorked ?? 0}
+                    value={formData.hoursWorked ?? ''}
                     onChange={handleChange}
                     className="input"
                   />
                 </div>
-
                 <div className="form-group">
-                  <label htmlFor="comments" className="label">Комментарии:</label>
-                  <textarea
-                    id="comments"
-                    name="comments"
-                    value={formData.comments || ''}
+                  <label htmlFor="amount" className="label">Сумма дохода (если не почасовая):</label>
+                  <input
+                    type="number"
+                    id="amount"
+                    name="amount"
+                    value={formData.amount ?? ''}
                     onChange={handleChange}
-                    className="textarea"
+                    className="input"
+                    // Если есть часы и ставка, это поле может быть рассчитано автоматически
+                    disabled={!!(formData.hourlyRate && formData.hoursWorked)}
+                    placeholder={(formData.hourlyRate && formData.hoursWorked) ? (formData.hourlyRate * formData.hoursWorked).toString() : "0"}
+                  />
+                </div>
+                 <div className="form-group">
+                  <label htmlFor="isPaid" className="label">Оплачено:</label>
+                  <input
+                    type="checkbox"
+                    id="isPaid"
+                    name="isPaid"
+                    checked={formData.isPaid}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isPaid: e.target.checked }))}
                   />
                 </div>
               </>
             )}
 
-            {formData.type === 'expense' && (
+            {formData.formType === 'expense' && (
               <>
                 <div className="form-group">
-                  <label htmlFor="title" className="label">Описание расхода:</label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title" // Используем name для описания расхода.
-                    value={formData.title || ''} // Используем title для описания расхода
-                    onChange={handleChange}
-                    required
-                    className="input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="amountSpent" className="label">Потрачено:</label>
+                  <label htmlFor="amount" className="label">Сумма расхода:</label>
                   <input
                     type="number"
-                    id="amountSpent"
-                    name="amountSpent"
-                    value={formData.amountSpent ?? ''} // Используем amountSpent
+                    id="amount"
+                    name="amount"
+                    value={formData.amount ?? ''}
                     onChange={handleChange}
                     step="0.01"
                     min="0"
@@ -396,51 +414,61 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
                     className="input"
                   />
                 </div>
-
                 <div className="form-group">
-                  <label htmlFor="comments" className="label">Комментарии:</label>
-                  <textarea
-                    id="comments"
-                    name="comments"
-                    value={formData.comments || ''} // Используем comments для расходов
-                    onChange={handleChange}
-                    className="textarea"
-                  />
-                </div>
-
-
-                <div className="form-group">
-                  <label htmlFor="category" className="label">Категория:</label>
+                  <label htmlFor="expenseCategoryName" className="label">Категория расхода:</label>
                   <select
-                    id="category"
-                    name="category"
-                    value={formData.category || ''}
+                    id="expenseCategoryName"
+                    name="expenseCategoryName"
+                    value={formData.expenseCategoryName}
                     onChange={handleChange}
                     className="input"
                     required
                   >
                     <option value="">Выберите категорию</option>
                     {categories.map((category) => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}{" "}
+                      <option key={category.uuid} value={category.category_name}>{category.category_name}</option>
+                    ))}
                   </select>
                 </div>
               </>
             )}
 
+            <div className="form-group">
+              <label htmlFor="comments" className="label">Комментарий (опционально):</label>
+              <textarea
+                id="comments"
+                name="comments"
+                value={formData.comments}
+                onChange={handleChange}
+                className="textarea"
+              />
+            </div>
+             <div className="form-group">
+                <label htmlFor="completed" className="label">Выполнено:</label>
+                <input
+                    type="checkbox"
+                    id="completed"
+                    name="completed"
+                    checked={formData.completed}
+                    onChange={(e) => setFormData(prev => ({ ...prev, completed: e.target.checked }))}
+                />
+            </div>
+
+
             <div className="form-actions">
-              {formData.uuid && onDelete && (
-                <button type="button" className="delete-button-form" onClick={handleDelete}>
+              {formData.id && onDelete && (
+                <button type="button" className="delete-button-form" onClick={handleDeleteClick}>
                   Удалить
                 </button>
               )}
-              {formData.uuid && onDuplicate && (
-                <button type="button" className="duplicate-button-form" onClick={handleDuplicate}>
+              {/* Дублирование пока убрано из основного потока, можно будет вернуть
+              {formData.id && onDuplicate && (
+                <button type="button" className="duplicate-button-form" onClick={handleDuplicateClick}>
                   Дублировать
                 </button>
-              )}
+              )} */}
               <button type="submit" className="submit-button">
-                {formData.uuid ? 'Сохранить' : 'Создать'}
+                {formData.id ? 'Сохранить изменения' : 'Создать задачу'}
               </button>
             </div>
           </form>

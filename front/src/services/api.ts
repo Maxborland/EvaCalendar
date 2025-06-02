@@ -25,25 +25,27 @@ export interface Child {
 }
 
 export interface Task {
-  uuid: string | undefined;
+  id: string; // Изменено с uuid на id, чтобы соответствовать бэкенду
   title: string;
-  type: string; // 'fixed', 'hourly', 'expense'
-  time?: string;
+  description?: string; // Добавлено поле description
+  type: string; // 'fixed', 'hourly', 'expense', 'income' (добавим income для унификации)
+  time?: string; // Может быть eventTime или taskTime от бэкенда
+  dueDate: string; // Может быть date от бэкенда
+  completed?: boolean; // Изменено с isDone
+  child_id?: string;
+  child_name?: string;
+  category_id?: string;
+  expenseCategoryName?: string;
+  amount?: number; // Общее поле для суммы (доход/расход)
+  hourlyRate?: number; // Для почасовых задач
+  hoursWorked?: number; // Для почасовых задач
+  isPaid?: boolean; // Для отслеживания оплаты
   address?: string;
-  childId?: string; // Заменено childUuid на childId
-  hourlyRate?: number;
-  category?: string; // или ExpenseCategory если это объект
-  amountEarned?: number;
-  amountSpent?: number;
-  hoursWorked?: number;
-  // weekId: string; // Удалено
-  // dayOfWeek: number; // Удалено
-  dueDate: string;
-  comments?: string;
-  isDone?: boolean;
-  isPaid?: boolean;
-  expenseCategoryName?: string; // Добавлено для отображения имени категории расходов
-  child_name?: string; // Добавлено для имени ребенка в карточках дохода
+  parentName?: string;
+  parentPhone?: string;
+  childAddress?: string;
+  childHourlyRate?: number; // Добавлено для ставки ребенка
+  comments?: string; // Переименовано из description для заметок к задаче
   createdAt?: string;
   updatedAt?: string;
 }
@@ -114,14 +116,19 @@ export const getAllNotes = async (): Promise<Note[]> => {
   const response = await api.get('/notes');
   return response.data as Note[];
 };
+
+export const getTasksForDay = async (dateString: string): Promise<Task[]> => {
+  const response = await api.get(`/tasks/for-day?date=${dateString}`);
+  return response.data as Task[];
+};
 // Удалена функция getTasksByWeekAndDay
 
-export const createTask = (taskData: Task) => {
-  return api.post('/tasks', taskData);
+export const createTask = (taskData: Omit<Task, 'id'>) => { // Убираем id при создании
+  return api.post<Task>('/tasks', taskData); // Указываем тип возвращаемого значения
 };
 
-export const updateTask = (uuid: string, taskData: Partial<Task>) => {
-  return api.put(`/tasks/${uuid}`, taskData);
+export const updateTask = (id: string, taskData: Partial<Omit<Task, 'id'>>) => { // Используем id, убираем id из данных
+  return api.put<Task>(`/tasks/${id}`, taskData); // Указываем тип возвращаемого значения
 };
 
 export const deleteTask = (id: string) => {
@@ -129,7 +136,7 @@ export const deleteTask = (id: string) => {
 };
 
 export const duplicateTask = (id: string) => {
-  return api.post(`/tasks/${id}/duplicate`);
+  return api.post<Task>(`/tasks/${id}/duplicate`); // Указываем тип возвращаемого значения
 };
 
 // export const getTasksByDateRange = async (startDate: string, endDate: string): Promise<Task[]> => {

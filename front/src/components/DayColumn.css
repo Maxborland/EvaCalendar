@@ -15,7 +15,12 @@
 }
 
 .day-header {
+  display: flex;
+  flex-direction: row; /* Изменено для горизонтального расположения */
+  align-items: center; /* Выравнивание по центру по вертикали */
+  justify-content: flex-start; /* Элементы начинаются слева, day-name растянется */
   margin-bottom: 8px; /* Уменьшенный отступ снизу до первого элемента дня */
+  /* position: relative; -- Больше не нужно, кнопка "+" будет в потоке */
 }
 
 .day-header.today-header-highlight {
@@ -26,11 +31,14 @@
 }
 
 .day-header .day-name {
-  display: block; /* Чтобы имя дня и дата были на разных строках, если нужно */
+  /* display: block; -- Больше не нужно, flex-item по умолчанию */
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 0.8em; /* Уменьшенный размер шрифта */
+  padding-left: 5px; /* Оставляем небольшой отступ слева для текста даты */
+  font-size: 0.8em;
   color: var(--color-text-primary);
+  flex-grow: 1; /* Растягиваем на всю доступную ширину */
+  text-align: left; /* Явное выравнивание текста влево */
 }
 .day-header.today-header-highlight .day-name,
 .day-header.today-header-highlight .day-date {
@@ -58,10 +66,11 @@
 }
 
 .add-task-button-container {
-  flex-shrink: 0; /* Предотвращает сжатие контейнера кнопки */
-  /* Можно добавить стили для позиционирования, если кнопка должна быть, например, прижата к низу */
-  /* Например, margin-top: auto; если кнопка должна быть внизу, а список задач растягиваться */
-  /* В данном случае, кнопка будет просто следовать за списком */
+  /* position: absolute; -- Убираем абсолютное позиционирование */
+  /* top: 50%; */
+  /* right: 0; */
+  /* transform: translateY(-50%); */
+  flex-shrink: 0; /* Чтобы контейнер (и кнопка) не сжимался */
 }
 
 .empty-day-placeholder {
@@ -73,21 +82,17 @@
 
 /* Кнопка "Добавить дело" */
 .add-event-button {
-  width: 100%; /* Ширина 100% от блока дня */
-  padding: 6px 10px; /* Уменьшенный padding */
-  margin-top: 10px; /* Уменьшенный отступ от последнего элемента */
-  background-color: var(--color-secondary-button); /* Используем переменную для вторичных кнопок */
-  color: var(--color-text-primary); /* Цвет текста кнопки */
-  border: 1px solid var(--color-border-dark); /* Более темная граница для контраста */
-  border-radius: 6px; /* Скругление углов кнопок: 4px - 6px */
+  width: auto; /* Автоматическая ширина по содержимому */
+  padding: 4px 15px; /* Еще более уменьшенный padding для меньшего размера */
+  /* margin-top: 0; -- Убираем верхний отступ, он был для абсолютного позиционирования */
+  margin-left: 8px; /* Отступ слева от кнопки с датой */
+  background-color: var(--theme-primary); /* Оставляем текущий --theme-primary */
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-dark);
+  border-radius: 4px; /* Чуть меньше скругление */
   font-family: 'Inter', sans-serif;
-  font-size: 0.9em; /* Уменьшенный размер шрифта */
-  font-weight: 600; /* Более жирный шрифт для акцента */
   cursor: pointer;
-  text-align: center;
   transition: background-color 0.2s ease, color 0.2s ease;
-  height: 34px; /* Уменьшенная высота кнопки */
-  line-height: 1.5; /* Для вертикального выравнивания текста */
 }
 
 .add-event-button:hover {

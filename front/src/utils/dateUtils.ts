@@ -169,7 +169,46 @@ export const formatDateRange = (startDate: Date | string | number, endDate: Date
   const endD = normalizeDateInput(endDate);
 
   const startFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
-  const endFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  const endFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
 
   return `${startFormat.format(startD)} - ${endFormat.format(endD)}`;
+};
+
+/**
+ * Форматирует дату в строку "День недели, ДД месяца ГГГГ" (например, "Четверг, 15 августа 2024").
+ * @param date - Дата для форматирования (Date, строка с датой или timestamp).
+ * @returns Отформатированная строка.
+ */
+export const formatDateForDisplay = (date: Date | string | number): string => {
+  const d = normalizeDateInput(date);
+  return new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+};
+
+/**
+ * Преобразует строку даты в формате YYYY-MM-DD в объект Date.
+ * Важно: эта функция предполагает, что время не имеет значения, и устанавливает его на начало дня в UTC,
+ * чтобы избежать проблем с часовыми поясами при простом создании new Date('YYYY-MM-DD').
+ * @param dateString - Строка даты в формате YYYY-MM-DD.
+ * @returns Объект Date.
+ * @throws Error если строка имеет неверный формат.
+ */
+export const parseDateString = (dateString: string): Date => {
+  const parts = dateString.split('-');
+  if (parts.length !== 3) {
+    throw new Error('Invalid date string format. Expected YYYY-MM-DD.');
+  }
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // Месяцы в JS Date идут от 0 до 11
+  const day = parseInt(parts[2], 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    throw new Error('Invalid date components. Year, month, and day must be numbers.');
+  }
+  // Создаем дату в UTC, чтобы избежать смещения из-за локального часового пояса
+  const date = new Date(Date.UTC(year, month, day));
+  // Проверяем, что дата не изменилась из-за некорректных значений (например, 32-й день)
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day) {
+      throw new Error('Invalid date components, date changed after creation.');
+  }
+  return date;
 };
