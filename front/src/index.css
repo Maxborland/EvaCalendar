@@ -512,17 +512,7 @@ h2 {
 /* Лишняя закрывающая скобка удалена отсюда */
 
 
-.note-textarea {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 8px;
-  margin-top: 10px;
-  border: 1px solid var(--color-border-medium);
-  border-radius: 4px;
-  background-color: var(--color-background-soft);
-  color: var(--color-text-primary);
-  resize: vertical;
-}
+/* Стили для .note-textarea перенесены в front/src/components/NoteField.css */
 
 .summary-block {
     background-color: var(--color-background-soft);

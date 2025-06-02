@@ -212,3 +212,10 @@
   white-space: nowrap; /* Предотвратить перенос времени и суммы */
   flex-shrink: 0; /* Чтобы этот блок не сжимался */
 }
+.mini-event-card .expense-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  white-space: nowrap; /* Предотвратить перенос */
+  flex-shrink: 0; /* Чтобы этот блок не сжимался */
+}

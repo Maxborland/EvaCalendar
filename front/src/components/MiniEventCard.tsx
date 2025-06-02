@@ -1,3 +1,6 @@
+import { faMinus } from '@fortawesome/free-solid-svg-icons/faMinus';
+import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useRef } from 'react';
 import { useDrag } from 'react-dnd';
 import type { Note, Task } from '../services/api'; // Предполагаем, что типы Task и Note импортируются отсюда
@@ -51,7 +54,7 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
         return (
           <>
             <div className="card-icon">
-              <span>+</span> {/* Иконка для дохода */}
+              <span>{task.type === 'income' ? <FontAwesomeIcon icon={faPlus} /> : <FontAwesomeIcon icon={faMinus} />}</span>
             </div>
             <div className="card-details">
               <div className="card-title-wrapper">
@@ -68,24 +71,24 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
         );
       }
 
-      // Существующая логика для task и expense (не доход)
       return (
         <>
           <div className="card-icon">
-            <span>{task.type === 'expense' ? '💸' : '📌'}</span>
+            <span>{task.type === 'expense' ? <FontAwesomeIcon icon={faMinus} /> : <FontAwesomeIcon icon={faPlus} />}</span>
           </div>
           <div className="card-details">
             <div className="card-title-wrapper">
               <h4 className="card-title">{task.title}</h4>
             </div>
-            {task.time && <p className="card-time">{task.time}</p>}
-            {/* Удалена логика для income, так как она вынесена выше */}
-            {(task.type === 'expense' && task.amountSpent != null) && (
-              <p className="card-amount expense">-{task.amountSpent}₽</p>
-            )}
-            {task.type === 'expense' && task.expenseCategoryName && (
-              <p className="card-category">({task.expenseCategoryName})</p>
-            )}
+            <div className="expense-meta">
+              {task.type === 'expense' && task.expenseCategoryName && (
+                <p className="card-category">({task.expenseCategoryName})</p>
+              )}
+              {(task.type === 'expense' && task.amountSpent != null) && (
+                <span className="card-amount expense">-{task.amountSpent}₽</span>
+              )}
+
+            </div>
           </div>
         </>
       );
@@ -117,7 +120,7 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
       </div>
       {/* Опциональная цветовая полоска для задач */}
       {(event.itemType === 'task' || event.itemType === 'expense') && (event as Task).category && (
-        <div className={`color-stripe ${ (event as Task).category || 'default'}`}></div>
+        <div className={`color-stripe ${(event as Task).category || 'default'}`}></div>
       )}
     </div>
   );

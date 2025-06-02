@@ -50,7 +50,42 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
     //   itemType: 'note',
     // }));
     // TODO: Добавить сортировку событий по времени (если это еще актуально только для задач)
-    setEvents([...taskEvents]); // Теперь только taskEvents
+    // Реализация сортировки согласно плану MINI_CARD_SORTING_PLAN.md
+    const incomeEvents: EventItem[] = [];
+    const expenseEvents: EventItem[] = [];
+
+    taskEvents.forEach(event => {
+      // Предполагаем, что event здесь всегда имеет структуру Task, так как notesForDay не используются
+      const task = event as Task;
+      // Определение "дохода" и "расхода" согласно плану
+      const isIncome = task.type !== 'expense' && typeof task.time === 'string' && /^\d{2}:\d{2}$/.test(task.time);
+      const isExpense = task.type === 'expense';
+
+      if (isIncome) {
+        incomeEvents.push(event);
+      } else if (isExpense) {
+        expenseEvents.push(event);
+      } else {
+        // Если это не доход и не расход (например, задача без времени, но не expense),
+        // пока добавляем к расходам, чтобы сохранить их в конце списка.
+        // Это поведение можно будет уточнить.
+        expenseEvents.push(event);
+      }
+    });
+
+    // Сортировка "доходов" по времени
+    incomeEvents.sort((a, b) => {
+      const taskA = a as Task;
+      const taskB = b as Task;
+      // Убедимся, что time существует и является строкой (хотя проверка isIncome уже это делает)
+      if (taskA.time && taskB.time) {
+        return taskA.time.localeCompare(taskB.time);
+      }
+      return 0; // Если время отсутствует, не меняем порядок
+    });
+
+    const sortedEvents = [...incomeEvents, ...expenseEvents];
+    setEvents(sortedEvents);
   }, [tasksForDay, fullDate]); // Удалена зависимость notesForDay
 
   const handleOpenForm = (eventToEdit?: EventItem) => {
@@ -189,7 +224,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
         />
       )}
       {/* Кнопка "Добавить дело" с новым классом для стилизации */}
-      <button className="add-event-button" onClick={() => handleOpenForm()}>+ Добавить дело</button>
+      <button className="add-event-button" onClick={() => handleOpenForm()}>+</button>
     </div>
   );
 };

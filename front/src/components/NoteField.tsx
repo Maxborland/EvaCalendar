@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { createNote, getNoteByDate, updateNote, type Note } from '../services/api';
+import './NoteField.css'; // Импортируем стили
 
 interface NoteFieldProps {
   weekId: string; // weekId теперь это dateString 'YYYY-MM-DD'
@@ -77,36 +78,30 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId, onNoteSaved }) => {
 
   if (isLoading && !noteContent && !error) { // Показываем загрузку только при первом запросе или если нет данных/ошибок
     return (
-      <div className="day-column">
-        <h3>Заметки</h3>
-        <div className="day-cells">
-          <p>Загрузка...</p>
-        </div>
+      <div className="note-field-container note-field-loading">
+        <h3 className="note-field-header">Заметки</h3>
+        <p>Загрузка...</p>
       </div>
     );
   }
 
   return (
-    <div className="day-column">
-      <span className='day-name'>Заметки</span>
-      <div className="day-cells">
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <textarea
-          className="note-textarea"
-          value={noteContent}
-          onChange={(e) => {
-            setNoteContent(e.target.value);
-            setHasChanges(true);
-          }}
-          placeholder="Введите заметки здесь..."
-          rows={7}
-          cols={30}
-          disabled={isLoading}
-        />
-        <button className="add-event-button" onClick={handleSaveNote} disabled={isLoading}>
-          {isLoading ? 'Сохранение...' : 'Сохранить'}
-        </button>
-      </div>
+    <div className="note-field-container">
+      <h3 className='note-field-header'>Заметки</h3>
+      {error && <p style={{ color: 'red', textAlign: 'center', marginBottom: '10px' }}>{error}</p>}
+      <textarea
+        className="note-textarea"
+        value={noteContent}
+        onChange={(e) => {
+          setNoteContent(e.target.value);
+          setHasChanges(true);
+        }}
+        placeholder="Введите заметки здесь..."
+        disabled={isLoading}
+      />
+      <button className="save-note-button" onClick={handleSaveNote} disabled={isLoading || !hasChanges}>
+        {isLoading ? 'Сохранение...' : 'Сохранить'}
+      </button>
     </div>
   );
 };

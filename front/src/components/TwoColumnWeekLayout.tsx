@@ -35,25 +35,23 @@ const TwoColumnWeekLayout: React.FC<TwoColumnWeekLayoutProps> = ({
   return (
     <div className="two-column-week-layout">
       <div className="left-section"> {/* Новая обертка для левой части */}
-        <div className="days-column top-days"> {/* Класс для стилизации верхних дней */}
-          {firstThreeDays.map((day) => {
-            const { tasks, notes } = filterEventsForDay(day);
-            return (
-              <DayColumn
-                key={day.format('YYYY-MM-DD')}
-                fullDate={day}
-                today={today}
-                tasksForDay={tasks}
-                notesForDay={notes} // Передаем отфильтрованные заметки для дня
-                onTaskMove={onDataChange}
-              />
-            );
-          })}
-        </div>
+        {/* DayColumn для Пн, Вт, Ср теперь прямые дочерние элементы left-section */}
+        {firstThreeDays.map((day) => {
+          const { tasks, notes } = filterEventsForDay(day);
+          return (
+            <DayColumn
+              key={day.format('YYYY-MM-DD')}
+              fullDate={day}
+              today={today}
+              tasksForDay={tasks}
+              notesForDay={notes} // Передаем отфильтрованные заметки для дня
+              onTaskMove={onDataChange}
+            />
+          );
+        })}
+        {/* NoteField также прямой дочерний элемент left-section */}
         {currentWeekId && (
-          <div> {/* Контейнер для NoteField */}
-            <NoteField weekId={currentWeekId} onNoteSaved={onDataChange} />
-          </div>
+          <NoteField weekId={currentWeekId} onNoteSaved={onDataChange} />
         )}
       </div>
       <div className="week-column right-column"> {/* Правая колонка с остальными днями */}
