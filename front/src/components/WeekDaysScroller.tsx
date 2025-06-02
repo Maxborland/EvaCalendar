@@ -18,7 +18,7 @@ interface WeekDaysScrollerProps {
 const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
   tasksForWeek, // Используем tasksForWeek
   // TODO: Implement or remove unused variable/prop
-  notesForWeek, // Добавляем notesForWeek
+  // notesForWeek, // Добавляем notesForWeek
   firstHalfDays,
   secondHalfDays,
   today,

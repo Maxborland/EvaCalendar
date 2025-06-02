@@ -2,7 +2,7 @@ import type { Moment } from 'moment';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNav } from '../context/NavContext';
-import { getAllNotes, getAllTasks, getDailySummary, getMonthlySummary, type Task } from '../services/api';
+import { getAllTasks, getDailySummary, getMonthlySummary, type Task } from '../services/api';
 import SummaryBlock from './SummaryBlock';
 import TopNavigator from './TopNavigator';
 // import WeekDaysScroller from './WeekDaysScroller'; // Заменяется на TwoColumnWeekLayout
@@ -32,9 +32,9 @@ const WeekView: React.FC = () => {
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [tasks, notes] = await Promise.all([
+      const [tasks] = await Promise.all([ // Удалена переменная notes
         getAllTasks(),
-        getAllNotes()
+        // getAllNotes() // Закомментирован вызов getAllNotes, так как notes не используется
       ]);
       setTasksForWeek(tasks);
       // setAllNotes(notes); // Удалено, так как allNotes не используется
