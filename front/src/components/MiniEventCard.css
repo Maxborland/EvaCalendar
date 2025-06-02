@@ -61,7 +61,6 @@
 }
 
 .card-title-wrapper {
-  flex-grow: 1;
   flex-shrink: 1;
   min-width: 0; /* Очень важно для сжатия в flex-контейнере */
   overflow: hidden; /* Дополнительная страховка, если title не справится */

@@ -13,6 +13,14 @@ interface UnifiedChildSelectorProps {
   selectedChildDetails?: Child | null; // Добавляем новый проп для данных ребенка
 }
 
+// Helper function to sort children by name
+const sortChildrenByName = (children: Child[]): Child[] => {
+  // Создаем копию массива перед сортировкой, чтобы не мутировать оригинальный prop childrenList
+  return [...children].sort((a, b) =>
+    a.childName.toLowerCase().localeCompare(b.childName.toLowerCase())
+  );
+};
+
 const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   value,
   onChange,
@@ -53,21 +61,25 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newInputValue = event.target.value;
     setInputValue(newInputValue);
-    setSelectedChildNameState(null); // Сбрасываем имя выбранного ребенка, так как пользователь редактирует
+    setSelectedChildNameState(null); // Сбрасываем имя, так как пользователь редактирует
 
     if (newInputValue.trim() === '') {
-      setFilteredChildren([]);
-      setShowSuggestions(false);
-      onChange(null); // Если поле очищено, сбрасываем выбор
+      if (childrenList.length > 0) {
+        setFilteredChildren(sortChildrenByName(childrenList)); // Показываем всех отсортированных
+      } else {
+        setFilteredChildren([]);
+      }
+      setShowSuggestions(childrenList.length > 0);
+      onChange(null); // Сбрасываем выбор
       return;
     }
 
-    const lowercasedInput = newInputValue.toLowerCase();
+    const lowercasedInput = newInputValue.trim().toLowerCase(); // Используем trim() здесь тоже
     const filtered = childrenList.filter(child =>
       child.childName.toLowerCase().includes(lowercasedInput)
     );
-    setFilteredChildren(filtered);
-    setShowSuggestions(true);
+    setFilteredChildren(sortChildrenByName(filtered)); // Фильтруем и сортируем
+    setShowSuggestions(true); // Всегда показываем, если есть ввод, даже если filtered пуст (для "не найдено")
   };
 
   const handleSuggestionClick = (child: Child) => {
@@ -152,33 +164,53 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
           id="child-input"
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => { // Показываем предложения при фокусе, если есть что фильтровать
-              if (inputValue.trim() !== '' && childrenList.length > 0) {
-                   const lowercasedInput = inputValue.toLowerCase();
-                   const filtered = childrenList.filter(child =>
-                      child.childName.toLowerCase().includes(lowercasedInput)
-                   );
-                   setFilteredChildren(filtered);
-                   setShowSuggestions(true);
-              } else if (childrenList.length > 0 && inputValue.trim() === '') {
-                  // Если поле пустое, но есть дети, можно показать всех при фокусе (опционально)
-                  // setFilteredChildren(childrenList);
-                  // setShowSuggestions(true);
+          onFocus={() => {
+            if (childrenList.length > 0) {
+              const currentInput = inputValue.trim().toLowerCase();
+              let listToShow = childrenList;
+              if (currentInput !== '') {
+                listToShow = childrenList.filter(child =>
+                  child.childName.toLowerCase().includes(currentInput)
+                );
               }
+              setFilteredChildren(sortChildrenByName(listToShow));
+              setShowSuggestions(true);
+            } else {
+              // Если childrenList пуст, но мы все равно фокусируемся
+              setFilteredChildren([]); // Убедимся, что filteredChildren пуст
+              setShowSuggestions(true); // Показываем, чтобы отобразить "Дети не найдены" или кнопку "Создать"
+            }
           }}
           onBlur={handleBlur}
           placeholder={placeholder}
           className="selector-input input" /* Добавляем input для консистентности */
           autoComplete="off"
         />
-        {showSuggestions && (filteredChildren.length > 0 || inputValue.trim() !== '') && (
+        {showSuggestions && (
           <ul className="suggestions-list" ref={suggestionsRef}>
-            {filteredChildren.map(child => (
-              <li key={child.uuid} onClick={() => handleSuggestionClick(child)} className="suggestion-item">
-                {child.childName}
-              </li>
-            ))}
-            {inputValue.trim() !== '' && !filteredChildren.some(c => c.childName.toLowerCase() === inputValue.trim().toLowerCase()) && (
+            {filteredChildren.length > 0 ? (
+              filteredChildren.map(child => {
+                const matchIndex = child.childName.toLowerCase().indexOf(inputValue.trim().toLowerCase());
+                const prefix = child.childName.substring(0, matchIndex);
+                const match = child.childName.substring(matchIndex, matchIndex + inputValue.trim().length);
+                const suffix = child.childName.substring(matchIndex + inputValue.trim().length);
+                return (
+                  <li key={child.uuid} onClick={() => handleSuggestionClick(child)} className="suggestion-item">
+                    {prefix}
+                    <span className="suggestion-match">{match}</span>
+                    {suffix}
+                  </li>
+                );
+              })
+            ) : (
+              inputValue.trim() !== '' && ( // Показываем "не найдено" только если есть ввод
+                <li className="suggestion-item no-results">Дети не найдены</li>
+              )
+            )}
+            {inputValue.trim() !== '' &&
+             !childrenList.some(c => c.childName.toLowerCase() === inputValue.trim().toLowerCase()) && // Проверяем по всему childrenList
+             (filteredChildren.length === 0 || !filteredChildren.some(c => c.childName.toLowerCase() === inputValue.trim().toLowerCase())) && // И по отфильтрованному
+            (
               <li onClick={handleCreateNewChildClick} className="suggestion-item create-new-item">
                 Создать нового ребенка: "{inputValue.trim()}"
               </li>

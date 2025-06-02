@@ -19,12 +19,11 @@ interface DayColumnProps {
   fullDate: Moment;
   today: Moment;
   tasksForDay: Task[];
-  notesForDay: Note[]; // Добавляем заметки для дня
   onTaskMove: () => void; // Переименуем в onDataChange для общности
 }
 
 const DayColumn: React.FC<DayColumnProps> = (props) => {
-  const { fullDate, today, tasksForDay, notesForDay, onTaskMove: onDataChange } = props;
+  const { fullDate, today, tasksForDay, onTaskMove: onDataChange } = props;
 
   const isToday = fullDate.isSame(today, 'day');
   // Обновляем класс для соответствия макету (фон для today)

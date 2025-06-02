@@ -1,6 +1,6 @@
 import type { Moment } from 'moment';
 import React from 'react';
-import type { Note, Task } from '../services/api';
+import type { Task } from '../services/api';
 import DayColumn from './DayColumn';
 import NoteField from './NoteField'; // Импортируем NoteField
 import './TwoColumnWeekLayout.css';
@@ -8,7 +8,6 @@ import './TwoColumnWeekLayout.css';
 interface TwoColumnWeekLayoutProps {
   weekDays: Moment[]; // Все 7 дней недели
   tasksForWeek: Task[];
-  notesForWeek: Note[]; // Оставляем, если DayColumn все еще использует заметки для дня
   today: Moment;
   onDataChange: () => void; // Общий обработчик изменения данных
 }
@@ -16,7 +15,6 @@ interface TwoColumnWeekLayoutProps {
 const TwoColumnWeekLayout: React.FC<TwoColumnWeekLayoutProps> = ({
   weekDays,
   tasksForWeek,
-  notesForWeek, // Оставляем, если DayColumn все еще использует заметки для дня
   today,
   onDataChange,
 }) => {
@@ -28,8 +26,7 @@ const TwoColumnWeekLayout: React.FC<TwoColumnWeekLayoutProps> = ({
   const filterEventsForDay = (day: Moment) => {
     const tasks = tasksForWeek.filter(task => day.isSame(task.dueDate, 'day'));
     // Фильтруем заметки для конкретного дня, если DayColumn их отображает
-    const notes = notesForWeek.filter(note => day.isSame(note.date, 'day'));
-    return { tasks, notes };
+    return { tasks };
   };
 
   return (
@@ -37,33 +34,30 @@ const TwoColumnWeekLayout: React.FC<TwoColumnWeekLayoutProps> = ({
       <div className="left-section"> {/* Новая обертка для левой части */}
         {/* DayColumn для Пн, Вт, Ср теперь прямые дочерние элементы left-section */}
         {firstThreeDays.map((day) => {
-          const { tasks, notes } = filterEventsForDay(day);
+          const { tasks } = filterEventsForDay(day);
           return (
             <DayColumn
               key={day.format('YYYY-MM-DD')}
               fullDate={day}
               today={today}
               tasksForDay={tasks}
-              notesForDay={notes} // Передаем отфильтрованные заметки для дня
               onTaskMove={onDataChange}
             />
           );
         })}
-        {/* NoteField также прямой дочерний элемент left-section */}
         {currentWeekId && (
           <NoteField weekId={currentWeekId} onNoteSaved={onDataChange} />
         )}
       </div>
       <div className="week-column right-column"> {/* Правая колонка с остальными днями */}
         {lastFourDays.map((day) => {
-          const { tasks, notes } = filterEventsForDay(day);
+          const { tasks } = filterEventsForDay(day);
           return (
             <DayColumn
               key={day.format('YYYY-MM-DD')}
               fullDate={day}
               today={today}
               tasksForDay={tasks}
-              notesForDay={notes} // Передаем отфильтрованные заметки для дня
               onTaskMove={onDataChange}
             />
           );

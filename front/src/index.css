@@ -287,7 +287,8 @@ h1 {
 
 .week-nav-button {
   padding: 8px 15px; /* Размеры кнопок по макету */
-  font-size: 0.95em;
+  margin: 0 10px; /* Отступы между кнопками */
+  font-size: 0.9em;
   border-radius: 6px;
   border: none; /* Убираем стандартную границу, если не нужна */
   background-color: var(--color-secondary-background);

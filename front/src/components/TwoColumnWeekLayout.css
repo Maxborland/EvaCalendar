@@ -6,7 +6,7 @@
   max-width: 1400px;
   margin: 0 0 50px 0;
   flex-grow: 1;
-  overflow: hidden;
+  /* overflow: hidden; */ /* Закомментировано согласно плану */
 }
 
 .left-section {
@@ -15,8 +15,8 @@
   flex: 1; /* Занимает столько же места, сколько и .right-column */
   min-width: 0;
   gap: 15px; /* Отступ между блоком дней и полем заметки */
-  height: calc(100vh - 200px); /* Та же высота, что и у .week-column */
-  overflow-y: hidden; /* Если нужен скролл, то для .days-column или .note-field-container */
+  /* height: calc(100vh); */ /* Закомментировано согласно плану */
+  /* overflow-y: hidden; */ /* Закомментировано согласно плану */
 }
 
 .days-column { /* Общий класс для колонок с днями */
@@ -32,8 +32,8 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  height: calc(100vh - 200px);
-  overflow-y: hidden; /* Скролл управляется внутри DayColumn */
+  /* height: 100vh; */ /* Закомментировано согласно плану */
+  /* overflow-y: hidden; */ /* Закомментировано согласно плану */
 }
 
 /* Адаптивность */
@@ -66,8 +66,8 @@
     /* overflow-y: visible; - возможно, нужно вернуть hidden и управлять скроллом внутри */
     gap: 10px;
     /* Добавим overflow-y: auto; чтобы каждая колонка могла скроллиться независимо, если контента много */
-    overflow-y: auto;
-    height: calc(100vh - 150px); /* Примерная высота, возможно, потребует корректировки. 150px - это примерная высота шапки и отступов */
+    /* overflow-y: auto; */ /* Закомментировано согласно плану */
+    /* height: calc(100vh - 150px); */ /* Закомментировано согласно плану */
   }
 
   .days-column {

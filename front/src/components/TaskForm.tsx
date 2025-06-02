@@ -230,8 +230,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         dataToSave.amountSpent = formData.amountSpent;
       }
 
-      console.log('Sending data:', dataToSave); // Логируем отправляемые данные
-
       if (formData.uuid) {
         // Обновление существующей задачи
         await updateTask(formData.uuid, dataToSave);
@@ -305,12 +303,25 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
 
 
             <div className="form-group">
-              <label htmlFor="dueDate" className="label">Дата выполнения:</label>
+              <label htmlFor="dueDate" className="label">Дата:</label>
               <input
                 type="date"
                 id="dueDate"
                 name="dueDate"
                 value={formData.dueDate}
+                onChange={handleChange}
+                required
+                className="input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="time" className="label">Время:</label>
+              <input
+                type="time"
+                id="time"
+                name="time"
+                value={formData.time || ''}
                 onChange={handleChange}
                 required
                 className="input"
@@ -327,38 +338,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
                   onGoToCreateChildPageRequest={handleOpenChildFormDefault}
                   label="Ребенок:"
                   placeholder="Введите или выберите имя ребенка"
-                  selectedChildDetails={selectedChildDetails} // Передаем данные для мини-карточки
+                  selectedChildDetails={selectedChildDetails}
                 />
 
                 <div className="form-group">
-                  <label htmlFor="time" className="label">Время:</label>
-                  <input
-                    type="time"
-                    id="time"
-                    name="time"
-                    value={formData.time || ''}
-                    onChange={handleChange}
-                    required
-                    className="input"
-                  />
-                </div>
-
-                {/* Поле "Часов отработано" не зависит от выбора ребенка и должно быть здесь */}
-                <div className="form-group">
-                  <label htmlFor="hoursWorked" className="label">Часов отработано:</label>
+                  <label htmlFor="hoursWorked" className="label">Часов:</label>
                   <input
                     type="number"
                     id="hoursWorked"
                     name="hoursWorked"
-                    value={formData.hoursWorked ?? ''}
+                    value={formData.hoursWorked ?? 0}
                     onChange={handleChange}
-                    step="0.01"
-                    min=""
-                    placeholder="0"
                     className="input"
                   />
                 </div>
-
 
                 <div className="form-group">
                   <label htmlFor="comments" className="label">Комментарии:</label>

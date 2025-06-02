@@ -170,7 +170,6 @@ const WeekView: React.FC = () => {
           <TwoColumnWeekLayout
             weekDays={weekDays}
             tasksForWeek={tasksForWeek}
-            notesForWeek={notesForCurrentWeek}
             today={today}
             onDataChange={handleDataChange}
           />
