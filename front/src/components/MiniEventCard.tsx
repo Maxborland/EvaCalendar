@@ -62,9 +62,6 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
               </div>
               <div className="income-meta">
                 {task.time && <span className="card-time">{task.time}</span>}
-                {task.amountEarned != null && ( // Используем amountEarned для суммы дохода
-                  <span className="card-amount income">+{task.amountEarned}₽</span>
-                )}
               </div>
             </div>
           </>
@@ -83,9 +80,6 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
             <div className="expense-meta">
               {task.type === 'expense' && task.expenseCategoryName && (
                 <p className="card-category">({task.expenseCategoryName})</p>
-              )}
-              {(task.type === 'expense' && task.amountSpent != null) && (
-                <span className="card-amount expense">-{task.amountSpent}₽</span>
               )}
 
             </div>

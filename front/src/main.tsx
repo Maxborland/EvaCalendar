@@ -7,7 +7,6 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import App from './App.tsx';
 import './index.css';
-import './momentConfig.ts'; // Импорт конфигурации Moment.js
 
 // Создаем "MultiBackend"
 const MyMultiBackend = MultiBackend;

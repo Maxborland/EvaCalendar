@@ -1,8 +1,8 @@
-import type { Moment } from 'moment';
 import React, { useEffect, useRef, useState } from 'react'; // useCallback удален, так как fetchTasks удаляется
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNav } from '../context/NavContext';
 import { deleteTask, duplicateTask, moveTask, type Note, type Task } from '../services/api'; // getTasksByWeekAndDay удален, Task и Note импортированы
+import { createDate, formatDateForDayColumnHeader, isSameDay } from '../utils/dateUtils';
 import './DayColumn.css';
 import MiniEventCard, { type EventItem } from './MiniEventCard'; // Заменяем TaskItem на MiniEventCard
 import TaskForm from './TaskForm';
@@ -16,8 +16,8 @@ const ItemTypes = {
 
 interface DayColumnProps {
   // day: string; // Это общее название дня (например, "Пн", "Вт") - больше не нужно, будем формировать из fullDate
-  fullDate: Moment;
-  today: Moment;
+  fullDate: Date;
+  today: Date;
   tasksForDay: Task[];
   onTaskMove: () => void; // Переименуем в onDataChange для общности
 }
@@ -25,7 +25,7 @@ interface DayColumnProps {
 const DayColumn: React.FC<DayColumnProps> = (props) => {
   const { fullDate, today, tasksForDay, onTaskMove: onDataChange } = props;
 
-  const isToday = fullDate.isSame(today, 'day');
+  const isToday = isSameDay(fullDate, today);
   // Обновляем класс для соответствия макету (фон для today)
   const dayColumnClassName = `day-column ${isToday ? 'today' : ''}`;
 
@@ -104,7 +104,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       setEditingEvent({
         type: 'income', // Тип по умолчанию для новой задачи
         title: '',
-        dueDate: props.fullDate.format('YYYY-MM-DD'),
+        dueDate: createDate(props.fullDate).toISOString().slice(0, 10),
       });
     } else {
       // Если это заметка или другой тип, который не редактируется через TaskForm, ничего не делаем
@@ -175,7 +175,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
     accept: ItemTypes.EVENT_CARD, // Изменено с TASK
     drop: (item: { id: string; itemType: string; originalEvent: EventItem }, monitor: DropTargetMonitor) => {
       if (!monitor.didDrop() && item.id) {
-        handleMoveEvent(item.id, item.itemType, props.fullDate.format('YYYY-MM-DD'));
+        handleMoveEvent(item.id, item.itemType, createDate(props.fullDate).toISOString().slice(0, 10));
       }
     },
     collect: (monitor) => ({
@@ -188,7 +188,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
   // Новый стиль заголовка дня согласно макету
   const dayHeader = (
     <div className={`day-header ${isToday ? 'today-header-highlight' : ''}`}>
-      <span className="day-name">{fullDate.clone().locale('ru').format('dddd, D MMMM')}</span>
+      <span className="day-name">{formatDateForDayColumnHeader(fullDate)}</span>
     </div>
   );
 

@@ -1,8 +1,17 @@
-import type { Moment } from 'moment';
-import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNav } from '../context/NavContext';
 import { getAllTasks, getDailySummary, getMonthlySummary, type Task } from '../services/api';
+import {
+  addDays,
+  addWeeks,
+  createDate,
+  formatDateRange,
+  getCurrentDate,
+  getMonth,
+  getYear,
+  startOfISOWeek,
+  subtractWeeks
+} from '../utils/dateUtils';
 import SummaryBlock from './SummaryBlock';
 import TopNavigator from './TopNavigator';
 // import WeekDaysScroller from './WeekDaysScroller'; // Заменяется на TwoColumnWeekLayout
@@ -10,17 +19,17 @@ import TwoColumnWeekLayout from './TwoColumnWeekLayout'; // Новый комп�
 import WeekNavigator from './WeekNavigator';
 
 const WeekView: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState(moment());
+  const [currentDate, setCurrentDate] = useState(getCurrentDate());
   const [tasksForWeek, setTasksForWeek] = useState<Task[]>([]);
   // const [notesForCurrentWeek, setNotesForCurrentWeek] = useState<Note[]>([]); // Удалено, так как не используется
   // const [weekInfo, setWeekInfo] = useState<{ id: string | null; startDate: string; endDate: string }>({ id: null, startDate: '', endDate: '' }); // Удалено
-  const [today] = useState(moment()); // Состояние для получения текущего дня
+  const [today] = useState(getCurrentDate()); // Состояние для получения текущего дня
   // Используем useMemo для мемоизации дней недели
-  const weekDays = useMemo<Moment[]>(() => {
-    const startOfWeek = currentDate.clone().startOf('isoWeek');
-    const days: Moment[] = [];
+  const weekDays = useMemo<Date[]>(() => {
+    const startOfWeek = startOfISOWeek(currentDate);
+    const days: Date[] = [];
     for (let i = 0; i < 7; i++) {
-      days.push(startOfWeek.clone().add(i, 'days'));
+      days.push(addDays(startOfWeek, i));
     }
     return days;
   }, [currentDate]);
@@ -67,7 +76,7 @@ const WeekView: React.FC = () => {
     // setIsLoading(true); // Управляется в loadTasksForWeek
     try {
       // Получаем сводку за день для текущего дня (сегодня)
-      const dailyDate = today.format('YYYY-MM-DD');
+      const dailyDate = createDate(today).toISOString().slice(0, 10);
       const daily = await getDailySummary(dailyDate); // Убедимся, что дата передается в формате YYYY-MM-DD
       if (daily) { // Проверяем, что daily не null
         setDailySummary(daily); // daily теперь { totalEarned: number, totalSpent: number }
@@ -77,8 +86,8 @@ const WeekView: React.FC = () => {
       }
 
       // Получаем сводку за месяц
-      const year = currentDate.year();
-      const month = currentDate.month() + 1; // moment.month() возвращает 0-11
+      const year = getYear(currentDate);
+      const month = getMonth(currentDate); // getMonth() из dateUtils возвращает 1-12
       const monthly = await getMonthlySummary(year, month);
       setMonthlySummary(monthly);
     } catch (error) {
@@ -119,12 +128,12 @@ const WeekView: React.FC = () => {
 
 
   const goToPreviousWeek = () => {
-    setCurrentDate(currentDate.clone().subtract(1, 'week'));
+    setCurrentDate(subtractWeeks(currentDate, 1));
     // loadTasksForWeek и fetchSummary будут вызваны через useEffect при изменении currentDate
   };
 
   const goToNextWeek = () => {
-    setCurrentDate(currentDate.clone().add(1, 'week'));
+    setCurrentDate(addWeeks(currentDate, 1));
     // loadInitialData и fetchSummary будут вызваны через useEffect при изменении currentDate
   };
 
@@ -144,10 +153,8 @@ const WeekView: React.FC = () => {
 
   // Формируем название текущего недельного диапазона для WeekNavigator
   const weekRangeDisplay = useMemo(() => {
-    const start = weekDays[0]?.clone().locale('ru').format('D MMMM');
-    const end = weekDays[6]?.clone().locale('ru').format('D MMMM YYYY');
-    if (start && end) {
-      return `${start} - ${end}`;
+    if (weekDays && weekDays.length === 7) {
+      return formatDateRange(weekDays[0], weekDays[6]);
     }
     return '';
   }, [weekDays]);

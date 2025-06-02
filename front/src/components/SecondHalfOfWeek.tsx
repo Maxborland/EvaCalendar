@@ -1,13 +1,12 @@
-import type { Moment } from 'moment';
-import moment from 'moment'; // Импортируем moment для сравнения дат
 import React from 'react';
 import type { Task } from '../services/api'; // Импортируем Task и Note
+import { createDate, isSameDay } from '../utils/dateUtils';
 import DayColumn from './DayColumn';
 
 interface SecondHalfOfWeekProps {
-  days: Moment[];
+  days: Date[];
   tasksForWeek: Task[]; // Заменяем weekId на tasksForWeek
-  today: Moment;
+  today: Date;
   onTaskMove: () => void;
 }
 
@@ -19,11 +18,11 @@ const SecondHalfOfWeek: React.FC<SecondHalfOfWeekProps> = (props) => {
         {days.map((dayMoment) => {
           // Фильтруем задачи для текущего дня
           const tasksForDay = tasksForWeek.filter(task =>
-            moment(task.dueDate).isSame(dayMoment, 'day')
+            isSameDay(createDate(task.dueDate), dayMoment)
           );
 
           return (
-            <div key={dayMoment.format('YYYY-MM-DD')} className="day-column-wrapper">
+            <div key={createDate(dayMoment).toISOString().slice(0,10)} className="day-column-wrapper">
               <DayColumn
                 fullDate={dayMoment}
                 today={today}

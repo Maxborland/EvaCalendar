@@ -1,14 +1,13 @@
-import type { Moment } from 'moment';
-import moment from 'moment'; // Импортируем moment для сравнения дат
 import React from 'react';
 import type { Task } from '../services/api'; // Импортируем Task и Note
+import { createDate, isSameDay } from '../utils/dateUtils';
 import DayColumn from './DayColumn';
 import NoteField from './NoteField'; // Добавляем импорт NoteField
 
 interface FirstHalfOfWeekProps {
-  days: Moment[];
+  days: Date[];
   tasksForWeek: Task[]; // Заменяем weekId на tasksForWeek
-  today: Moment;
+  today: Date;
   onTaskMove: () => void;
   onDataChange?: () => void; // Новый опциональный колбэк
 }
@@ -22,10 +21,10 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, t
         {daysToShow.map((dayMoment) => {
           // Фильтруем задачи для текущего дня
           const tasksForDay = tasksForWeek.filter(task =>
-            moment(task.dueDate).isSame(dayMoment, 'day')
+            isSameDay(createDate(task.dueDate), dayMoment)
           );
           return (
-            <div key={dayMoment.format('YYYY-MM-DD')} className="day-column-wrapper">
+            <div key={createDate(dayMoment).toISOString().slice(0,10)} className="day-column-wrapper">
               <DayColumn
                 fullDate={dayMoment}
                 today={today}
@@ -48,7 +47,7 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, t
             Возможно, его нужно будет привязать к startDate недели или удалить.
             Пока закомментируем, чтобы не было ошибок.
         */}
-        {days.length > 0 && <NoteField weekId={days[0].format('YYYY-MM-DD')} onNoteSaved={() => {
+        {days.length > 0 && <NoteField weekId={createDate(days[0]).toISOString().slice(0,10)} onNoteSaved={() => {
           if (onDataChange) {
             onDataChange();
           }

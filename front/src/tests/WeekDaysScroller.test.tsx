@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import moment from 'moment';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import WeekDaysScroller from '../components/WeekDaysScroller';
 import { NavProvider } from '../context/NavContext';
 import type { Task } from '../services/api'; // Импортируем Task для tasksForWeek
+import { createDate } from '../utils/dateUtils';
 
 // Mock the scrollWidth and scrollLeft for the div element
 Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
@@ -50,18 +50,18 @@ describe('WeekDaysScroller', () => {
     tasksForWeek: [] as Task[], // Заменяем weekInfo на tasksForWeek
     notesForWeek: [], // Добавляем недостающий проп
     firstHalfDays: [
-      moment('2025-05-26'), // Monday
-      moment('2025-05-27'), // Tuesday
-      moment('2025-05-28'), // Wednesday
+      createDate('2025-05-26'), // Monday
+      createDate('2025-05-27'), // Tuesday
+      createDate('2025-05-28'), // Wednesday
     ],
     secondHalfDays: [
-      moment('2025-05-29'), // Thursday
-      moment('2025-05-30'), // Friday
-      moment('2025-05-31'), // Saturday
-      moment('2025-06-01'), // Sunday
+      createDate('2025-05-29'), // Thursday
+      createDate('2025-05-30'), // Friday
+      createDate('2025-05-31'), // Saturday
+      createDate('2025-06-01'), // Sunday
     ],
     onTaskMove: () => {},
-    today: moment('2025-05-30'),
+    today: createDate('2025-05-30'),
   };
 
   it('скроллит влево (transform: translateX(0)), когда отображается первая половина недели', () => {

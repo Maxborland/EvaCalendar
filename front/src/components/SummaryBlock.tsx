@@ -1,10 +1,10 @@
-import type { Moment } from 'moment';
 import React, { useState } from 'react';
 import type { SummaryData } from '../services/api';
+import { formatDateForTodayBlock } from '../utils/dateUtils';
 import './SummaryBlock.css';
 
 interface SummaryBlockProps {
-  today: Moment;
+  today: Date;
   dailySummary: SummaryData;
   monthlySummary: SummaryData;
 }
@@ -33,7 +33,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
             >
                 <div className="summary-header-info"> {/* Новый обертывающий div */}
                     <div className="summary-today-display">
-                        <p className="summary-item">Сегодня: {today.locale('ru').format('DD MMMM YYYY')}</p>
+                        <p className="summary-item">Сегодня: {formatDateForTodayBlock(today)}</p>
                     </div>
                     <div className="summary-balance-header-view">
                         <p className="summary-item">Баланс: {formatCurrency(monthlySummary.balance)}</p>

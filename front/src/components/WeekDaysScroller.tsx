@@ -1,4 +1,3 @@
-import type { Moment } from 'moment';
 import React, { useEffect, useRef } from 'react';
 import type { Note, Task } from '../services/api'; // Импортируем Task и Note
 import FirstHalfOfWeek from './FirstHalfOfWeek';
@@ -7,9 +6,9 @@ import SecondHalfOfWeek from './SecondHalfOfWeek';
 interface WeekDaysScrollerProps {
   tasksForWeek: Task[]; // Заменяем weekInfo на tasksForWeek
   notesForWeek: Note[]; // Добавляем notesForWeek
-  firstHalfDays: Moment[];
-  secondHalfDays: Moment[];
-  today: Moment;
+  firstHalfDays: Date[];
+  secondHalfDays: Date[];
+  today: Date;
   onTaskMove: () => void;
   onDataChange?: () => void; // Новый опциональный колбэк
   isFirstHalfVisible: boolean;
