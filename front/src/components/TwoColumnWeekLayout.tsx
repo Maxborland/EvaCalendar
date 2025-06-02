@@ -51,7 +51,7 @@ const TwoColumnWeekLayout: React.FC<TwoColumnWeekLayoutProps> = ({
           })}
         </div>
         {currentWeekId && (
-          <div className="note-field-container"> {/* Контейнер для NoteField */}
+          <div> {/* Контейнер для NoteField */}
             <NoteField weekId={currentWeekId} onNoteSaved={onDataChange} />
           </div>
         )}

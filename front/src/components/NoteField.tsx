@@ -88,7 +88,7 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId, onNoteSaved }) => {
 
   return (
     <div className="day-column">
-      <h3>Заметки</h3>
+      <span className='day-name'>Заметки</span>
       <div className="day-cells">
         {error && <p style={{ color: 'red' }}>{error}</p>}
         <textarea
@@ -99,15 +99,13 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId, onNoteSaved }) => {
             setHasChanges(true);
           }}
           placeholder="Введите заметки здесь..."
-          rows={10}
+          rows={7}
           cols={30}
           disabled={isLoading}
         />
-        {hasChanges && (
-          <button className="add-task-button" onClick={handleSaveNote} disabled={isLoading}>
-            {isLoading ? 'Сохранение...' : 'Сохранить'}
-          </button>
-        )}
+        <button className="add-event-button" onClick={handleSaveNote} disabled={isLoading}>
+          {isLoading ? 'Сохранение...' : 'Сохранить'}
+        </button>
       </div>
     </div>
   );

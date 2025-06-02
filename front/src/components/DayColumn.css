@@ -3,18 +3,15 @@
   flex-direction: column;
   padding: 10px; /* Уменьшенный отступ внутри блока дня для мобильных */
   background-color: var(--color-tertiary-background); /* Фон колонки дня, если отличается от фона страницы */
-  /* Для независимой прокрутки, если содержимое превышает высоту */
   overflow-y: auto;
   height: 100%; /* Занимает всю доступную высоту родительского контейнера-колонки */
   border-radius: 8px; /* Небольшое скругление для самого блока дня */
   box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Легкая тень для разделения */
 }
 
-/* Выделение сегодняшнего дня */
 .day-column.today {
-  /* Может иметь тонкую рамку, как в макете */
-  border: 2px solid var(--color-blue-accent); /* var(--color-blue-accent) - это зеленый #44b340 */
-  padding: 8px; /* Компенсируем рамку (10px - 2px), чтобы внутренний размер остался прежним */
+  border: 2px solid var(--color-blue-accent);
+  padding: 8px;
 }
 
 .day-header {

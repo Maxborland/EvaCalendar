@@ -226,7 +226,7 @@ h1 {
   box-sizing: border-box;
   z-index: 1000;
   box-sizing: border-box;
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.3s ease-out;
 }
 
 #root .top-navigator.hidden {
@@ -265,27 +265,24 @@ h1 {
   padding-bottom: 80px;
 }
 
-/* Стили для WeekNavigator - новое расположение и вид */
 .week-navigator-container {
   display: flex;
-  justify-content: center; /* Центральное расположение */
+  justify-content: center;
   align-items: center;
-  padding: 10px 0; /* Отступы сверху/снизу */
-  margin-bottom: 15px; /* Отступ до колонок с днями */
+  padding: 10px 0;
   gap: 15px; /* Пространство между кнопками и текстом */
   width: 100%;
   box-sizing: border-box;
-  /* position: fixed и bottom: 0 удалены, т.к. навигатор теперь в потоке */
-  /* background-color и box-shadow можно оставить, если нужен фон/тень под навигатором */
-  /* background-color: var(--color-primary-background); */
-  /* box-shadow: 0 1px 5px var(--color-shadow-light); */
-  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; /* Для скрытия */
+  position: fixed;
+  bottom: 0; /* Фиксируем снизу */
+  background-color : var(--color-primary-background); /* Фон для контейнера */
+  background-color: var(--color-primary-background);
+  box-shadow: 0 1px 5px var(--color-shadow-light);
+  transition: transform 0.3s ease-out;
 }
 
 .week-navigator-container--hidden {
-  opacity: 0;
-  visibility: hidden;
-  /* transform: translateY(100%); - больше не нужен, если не fixed */
+  transform: translateY(100%);
 }
 
 .week-nav-button {
@@ -403,14 +400,6 @@ h2 {
   width: 200%;
 }
 
-
-.day-columns-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-}
-
 .first-half-of-week,
 .second-half-of-week {
   flex: 0 0 50%;
@@ -423,38 +412,6 @@ h2 {
   align-items: center;
   box-sizing: border-box;
 
-}
-
-
-.day-column-wrapper {
-  width: 100%;
-}
-
-.day-column {
-  flex: 1;
-  background-color: var(--color-tertiary-background);
-  border-radius: 8px;
-  padding: 10px;
-  min-width: 120px;
-  text-align: center;
-}
-
-.day-column.today-highlight {
-  background-color: var(--color-highlight);
-  border: 1px solid var(--color-blue-accent);
-}
-
-@media (prefers-color-scheme: light) {
-  .day-column.today-highlight {
-    background-color: var(--color-highlight);
-    border: 1px solid var(--color-blue-accent);
-  }
-}
-
-.day-column h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: var(--color-text-primary);
 }
 
 .day-cells {
@@ -547,14 +504,6 @@ h2 {
     border: 1px solid var(--color-border-dark);
   }
 
-  .day-column {
-    background-color: var(--color-tertiary-background);
-  }
-
-  .day-column h3 {
-    color: var(--color-accent);
-  }
-
   .day-cell-empty, .task-item {
     background-color: var(--color-highlight);
     border: 1px dashed var(--color-border-medium);
@@ -572,45 +521,7 @@ h2 {
   border-radius: 4px;
   background-color: var(--color-background-soft);
   color: var(--color-text-primary);
-  min-height: 120px;
   resize: vertical;
-}
-
-.note-field-container button {
-
-  margin-top: 10px;
-  padding: 8px 15px;
-  border-radius: 5px;
-  border: 1px solid var(--color-accent);
-  background-color: var(--color-secondary-background);
-  color: var(--color-accent);
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-size: 0.9em;
-}
-
-.note-field-container button:hover {
-  background-color: var(--color-accent);
-  color: var(--color-primary-background);
-}
-
-@media (prefers-color-scheme: light) {
-  .note-textarea {
-    background-color: var(--color-tertiary-background);
-    border: 1px solid var(--color-border-dark);
-    color: var(--color-text-light);
-  }
-
-  .note-field-container button {
-    background-color: var(--color-background-soft);
-    color: var(--color-text-primary);
-    border-color: var(--color-accent);
-  }
-
-  .note-field-container button:hover {
-    background-color: var(--color-accent);
-    color: var(--color-primary-background);
-  }
 }
 
 .summary-block {

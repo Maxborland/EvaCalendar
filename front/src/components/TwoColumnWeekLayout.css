@@ -4,7 +4,7 @@
   gap: 20px; /* Отступ между левой секцией и правой колонкой дней */
   padding: 0 20px;
   max-width: 1400px;
-  margin: 0 auto;
+  margin: 0 0 50px 0;
   flex-grow: 1;
   overflow: hidden;
 }
@@ -22,41 +22,9 @@
 .days-column { /* Общий класс для колонок с днями */
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Отступ между DayColumn */
-  /* Не устанавливаем flex: 1 здесь, чтобы .note-field-container мог занимать место */
+  gap: 15px;
+  flex: 1;
 }
-
-.top-days {
-  /* Стили специфичные для верхних трех дней, если нужны */
-  /* Например, если они должны занимать определенную часть высоты .left-section */
-}
-
-.note-field-container {
-  /* flex-grow: 1; /* Позволяет полю заметки занять оставшееся место в .left-section */
-  /* Можно задать min-height или height, если нужно */
-  /* background-color: #f9f9f9; /* Для визуального выделения, если нужно */
-  /* padding: 10px; */
-  /* border-radius: 8px; */
-  /* overflow-y: auto; /* Если содержимое заметки может быть большим */
-  /* Для NoteField.tsx уже есть .day-column и .note-textarea, которые можно стилизовать */
-  /* Важно, чтобы NoteField сам управлял своей внутренней структурой и стилями */
-}
-
-/* Стили для .note-field-container .day-column (из NoteField.tsx) */
-.note-field-container .day-column {
-  height: auto; /* Переопределяем, если NoteField не должен занимать всю высоту родителя */
-  padding: 10px; /* Пример отступов */
-  border: 1px solid var(--border-color-light); /* Пример рамки */
-  border-radius: var(--border-radius-base);
-  background-color: var(--background-color-secondary);
-}
-
-.note-field-container .note-textarea {
-  width: 100%; /* Занимает всю ширину контейнера */
-  min-height: 150px; /* Минимальная высота для поля ввода */
-  resize: vertical; /* Позволяет изменять высоту */
-}
-
 
 .week-column { /* Этот класс теперь используется только для правой колонки (Чт-Вс) */
   flex: 1;
@@ -106,11 +74,4 @@
     gap: 10px;
   }
 
-  .note-field-container {
-    margin-top: 10px; /* Небольшой отступ сверху для поля заметок */
-  }
-
-  .note-field-container .note-textarea {
-    min-height: 120px; /* Уменьшаем минимальную высоту для мобильных */
-  }
 }

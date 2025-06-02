@@ -167,14 +167,6 @@ const WeekView: React.FC = () => {
               monthlySummary={monthlySummary ? { totalIncome: monthlySummary.totalEarned, totalExpense: monthlySummary.totalSpent, balance: monthlySummary.balance } : { totalIncome: 0, totalExpense: 0, balance: 0 }}
             />
           </div>
-          {/* WeekNavigator теперь располагается над TwoColumnWeekLayout */}
-          <WeekNavigator
-            goToPreviousWeek={goToPreviousWeek}
-            goToNextWeek={goToNextWeek}
-            currentWeekDisplay={weekRangeDisplay} // Передаем отображаемый диапазон
-            isNavVisible={isNavVisible} // Передаем состояние видимости навигации
-            // showFirstHalf и showSecondHalf удалены
-          />
           <TwoColumnWeekLayout
             weekDays={weekDays}
             tasksForWeek={tasksForWeek}
@@ -182,7 +174,12 @@ const WeekView: React.FC = () => {
             today={today}
             onDataChange={handleDataChange}
           />
-          {/* WeekNavigator был перемещен выше, чтобы соответствовать макету */}
+          <WeekNavigator
+            goToPreviousWeek={goToPreviousWeek}
+            goToNextWeek={goToNextWeek}
+            currentWeekDisplay={weekRangeDisplay}
+            isNavVisible={isNavVisible}
+          />
         </>
       )}
     </div>
