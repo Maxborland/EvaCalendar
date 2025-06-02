@@ -31,6 +31,16 @@
   --theme-gray-light-rgb: 240, 240, 240;
   --theme-gray-medium-rgb: 136, 136, 136;
   --theme-gray-dark-rgb: 58, 58, 58;
+
+/* Переменные для SummaryBlock */
+--color-light-grey-hover: #f0f0f0; /* Для ховера на шапке SummaryBlock */
+--color-light-grey-active: #e0e0e0; /* Для активного состояния шапки SummaryBlock */
+--color-icon-primary: #555555; /* Основной цвет иконок */
+--color-info-background-subtle: #e0f7fa; /* Очень светлый фон для info-блоков */
+--color-info-text-strong: #007c91; /* Насыщенный текст для info-блоков */
+--color-info-border-subtle: #b2ebf2; /* Светлая граница для info-блоков */
+--color-text-secondary: #555555; /* Вторичный цвет текста, если стандартные не подходят */
+/* Конец переменных для SummaryBlock */
 }
 
 input[readonly] {

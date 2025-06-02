@@ -286,11 +286,12 @@ h1 {
 }
 
 .week-nav-button {
-  padding: 8px 15px; /* Размеры кнопок по макету */
+  /* height: 5vh; */ /* Убрали высоту, чтобы размер определялся паддингом и контентом */
+  padding: 12px 20px; /* Как у .settings-button для сопоставимого размера */
   margin: 0 10px; /* Отступы между кнопками */
-  font-size: 0.9em;
-  border-radius: 6px;
-  border: none; /* Убираем стандартную границу, если не нужна */
+  font-size: 1.5rem; /* Как у .settings-button для увеличения иконки */
+  border-radius: 5px; /* Как у .settings-button для унификации */
+  border: none; /* Оставляем без границы, как было */
   background-color: var(--color-secondary-background);
   color: var(--color-accent);
   cursor: pointer;
@@ -298,6 +299,7 @@ h1 {
   display: inline-flex; /* Для выравнивания иконки и текста */
   align-items: center;
   gap: 5px; /* Пространство между иконкой и текстом */
+  box-sizing: border-box; /* Для корректного расчета размеров с padding */
 }
 
 .week-nav-button:hover {

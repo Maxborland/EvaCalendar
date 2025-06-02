@@ -1,4 +1,4 @@
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faCircleChevronLeft, faCircleChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
 
@@ -24,13 +24,11 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
     <div className={navContainerClasses}>
       {/* half-week-navigation удален */}
       <button className="week-nav-button prev-week" onClick={goToPreviousWeek} aria-label="Предыдущая неделя">
-        <FontAwesomeIcon icon={faChevronLeft} />
-        &nbsp;Неделя
+        <FontAwesomeIcon icon={faCircleChevronLeft} />
       </button>
       <span className="current-week-display">{currentWeekDisplay}</span>
       <button className="week-nav-button next-week" onClick={goToNextWeek} aria-label="Следующая неделя">
-        Неделя&nbsp;
-        <FontAwesomeIcon icon={faChevronRight} />
+        <FontAwesomeIcon icon={faCircleChevronRight} />
       </button>
     </div>
   );

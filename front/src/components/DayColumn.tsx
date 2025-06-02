@@ -196,7 +196,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
   return (
     <div ref={dropRef} className={`${dayColumnClassName} ${isOver ? 'highlighted-drop-zone' : ''}`}>
       {dayHeader}
-      <div className="day-events-list"> {/* Контейнер для карточек с возможностью прокрутки */}
+      <div className="tasks-list-container"> {/* Контейнер для списка задач с прокруткой */}
         {events.length > 0 ? (
           events.map((event) => (
             <MiniEventCard
@@ -209,6 +209,11 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
           <div className="empty-day-placeholder">Нет событий</div>
         )}
       </div>
+      {/* Контейнер для кнопки добавления задачи */}
+      <div className="add-task-button-container">
+        <button className="add-event-button" onClick={() => handleOpenForm()}>+</button>
+      </div>
+      {/* TaskForm отображается модально и не влияет на основной поток */}
       {showForm && editingEvent && (editingEvent.type === 'income' || editingEvent.type === 'expense') && (
         <TaskForm
           initialData={editingEvent}
@@ -222,8 +227,6 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
           onDuplicate={editingEvent.uuid ? handleDuplicateEvent : undefined} // Передаем onDuplicate если редактируем
         />
       )}
-      {/* Кнопка "Добавить дело" с новым классом для стилизации */}
-      <button className="add-event-button" onClick={() => handleOpenForm()}>+</button>
     </div>
   );
 };
