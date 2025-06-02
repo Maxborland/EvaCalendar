@@ -33,7 +33,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
             >
                 <div className="summary-header-info"> {/* Новый обертывающий div */}
                     <div className="summary-today-display">
-                        <p className="summary-item">Сегодня: {today.format('DD MMMM YYYY')}</p>
+                        <p className="summary-item">Сегодня: {today.locale('ru').format('DD MMMM YYYY')}</p>
                     </div>
                     <div className="summary-balance-header-view">
                         <p className="summary-item">Баланс: {formatCurrency(monthlySummary.balance)}</p>

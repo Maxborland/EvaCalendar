@@ -188,7 +188,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
   // Новый стиль заголовка дня согласно макету
   const dayHeader = (
     <div className={`day-header ${isToday ? 'today-header-highlight' : ''}`}>
-      <span className="day-name">{fullDate.clone().locale('ru').format('dddd')} {fullDate.clone().locale('ru').format('D MMMM')}</span>
+      <span className="day-name">{fullDate.clone().locale('ru').format('dddd, D MMMM')}</span>
     </div>
   );
 
