@@ -8,10 +8,41 @@ export interface ExpenseCategory {
   categoryName: string;
 }
 
-export interface SummaryData {
+// Переименовываем MonthlySummary в MonthSummaryValues, чтобы избежать конфликта с типом для getMonthlySummary
+export interface MonthSummaryValues {
   totalIncome: number;
-  totalExpense: number;
+  totalExpenses: number;
   balance: number;
+  calculatedForMonth: string;
+}
+
+export interface DailySummary {
+  totalIncome: number;
+  totalExpenses: number;
+  calculatedForDate: string;
+}
+
+export interface SummaryData { // Этот тип для getSummaryByWeek
+  monthlySummary: MonthSummaryValues;
+  dailySummary: DailySummary;
+}
+
+// Новый тип для ответа функции getMonthlySummary
+export interface MonthlySummaryAPIResponse {
+  totalEarned: number;
+  totalSpent: number;
+  balance: number;
+  // calculatedForMonth может отсутствовать в этом старом эндпоинте, или его нужно добавить на бэке
+  // Пока что сделаем его опциональным или будем формировать на клиенте
+}
+
+// Старый интерфейс SummaryData, который использовался для getMonthlySummary, переименуем
+// и будем использовать для возвращаемого значения getMonthlySummary
+export interface OldMonthlySummaryData {
+    totalIncome: number;
+    totalExpense: number; // В старом интерфейсе было totalExpense
+    balance: number;
+    calculatedForMonth?: string;
 }
 
 export interface Child {
@@ -160,9 +191,11 @@ export const moveTask = async (taskUuid: string, newDueDate: string): Promise<Ta
   return response.data as Task;
 };
 
-export const getWeeklySummary = async (weekId: string) => {
-  const response = await api.get(`/summary/${weekId}`);
-  return response.data as SummaryData;
+export const getSummaryByWeek = async (weekStartDate: string): Promise<SummaryData> => {
+  const response = await api.get<SummaryData>(`/summary/summary-by-week`, { // Указываем тип ответа <SummaryData>
+    params: { weekStartDate }
+  });
+  return response.data; // Не нужно as SummaryData, если Axios типизирован
 };
 
 export const getDailySummary = async (date: string): Promise<{ totalEarned: number, totalSpent: number } | null> => {
@@ -178,13 +211,18 @@ export const getDailySummary = async (date: string): Promise<{ totalEarned: numb
   }
 };
 
-export const getMonthlySummary = async (year: number, month: number): Promise<SummaryData> => {
-  const response = await api.get<{ totalEarned: number; totalSpent: number; balance: number; }>(`/summary/month/${year}/${month}`);
+export const getMonthlySummary = async (year: number, month: number): Promise<OldMonthlySummaryData> => {
+  const response = await api.get<MonthlySummaryAPIResponse>(`/summary/month/${year}/${month}`);
   // Преобразуем totalEarned и totalSpent в totalIncome и totalExpense
+  // Формируем calculatedForMonth на клиенте, если его нет в ответе
+  const monthString = month.toString().padStart(2, '0');
+  const calculatedForMonth = `${year}-${monthString}`;
+
   return {
     totalIncome: response.data.totalEarned,
-    totalExpense: response.data.totalSpent,
+    totalExpense: response.data.totalSpent, // Сохраняем totalExpense как в OldMonthlySummaryData
     balance: response.data.balance,
+    calculatedForMonth: calculatedForMonth
   };
 };
 

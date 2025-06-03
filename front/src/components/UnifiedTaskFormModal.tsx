@@ -54,7 +54,7 @@ const generateFinalTaskTitleOnSubmit = (
 
 const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
   isOpen,
-  onClose,
+  onClose: originalOnClose, // Переименовываем для внутреннего использования
   onSubmit,
   mode,
   initialTaskData,
@@ -62,6 +62,16 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
   onDelete,
   // onDuplicate, // Удалено, так как не используется
 }) => {
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      originalOnClose();
+      setIsClosing(false);
+    }, 300); // Длительность анимации
+  }, [originalOnClose]);
+
   const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense'>(() => {
     if (mode === 'edit' && initialTaskData?.type) {
       // Если initialTaskType передан, он имеет приоритет
@@ -522,15 +532,18 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     }
   };
 
-  if (!isOpen) {
+  if (!isOpen && !isClosing) { // Не рендерим, только если не открыто И не в процессе закрытия
     return null;
   }
 
+  const modalOverlayClass = `modal-overlay ${isClosing ? 'closing' : ''}`;
+  const modalContentClass = `modal-content ${isClosing ? 'closing' : ''}`;
+
   const modalContent = (
     <>
-      <div className="modal-overlay" onClick={onClose} data-testid="modal-overlay">
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <button className="btn btn-icon close-button" onClick={onClose}>&times;</button>
+      <div className={modalOverlayClass} onClick={handleClose} data-testid="modal-overlay">
+        <div className={modalContentClass} onClick={(e) => e.stopPropagation()}>
+          <button className="btn btn-icon close-button" onClick={handleClose}>&times;</button>
           <form className="form" onSubmit={handleSubmit}>
             <h2>{mode === 'edit' ? 'Редактирование задачи' : 'Создание задачи'}</h2>
 
@@ -707,9 +720,9 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
           </form>
         </div>
       </div>
-      {showChildFormModal && (
-        <div className="modal-overlay" onClick={handleChildFormCancel} data-testid="child-form-modal-overlay">
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      {showChildFormModal && ( // Вложенное модальное окно также должно использовать handleClose для основного
+        <div className={`modal-overlay ${isClosing && !showChildFormModal ? 'closing' : ''}`} onClick={handleChildFormCancel} data-testid="child-form-modal-overlay">
+          <div className={`modal-content ${isClosing && !showChildFormModal ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
             <button className="btn btn-icon close-button" onClick={handleChildFormCancel}>&times;</button>
             <ChildForm
               initialChild={childFormInitialData}

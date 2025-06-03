@@ -1,113 +1,150 @@
 import React, { useEffect, useState } from 'react';
 import type { SummaryData } from '../services/api';
-import { getDailySummary, getMonthlySummary } from '../services/api'; // Добавляем getMonthlySummary, если он будет использоваться для обновления
-import { formatDateForTodayBlock, formatDateToYYYYMMDD } from '../utils/dateUtils';
-import './SummaryBlock.css'; // Импортируем CSS
-
-interface DailySummaryData {
-  totalEarned: number;
-  totalSpent: number;
-}
+import { getSummaryByWeek } from '../services/api';
+import { createDate } from '../utils/dateUtils';
 
 interface SummaryBlockProps {
-  today: Date;
-  // monthlySummary будет загружаться внутри компонента
-  type: 'balance' | 'notes';
+    weekStartDate: string;
 }
 
 const SummaryBlock: React.FC<SummaryBlockProps> = ({
-    today,
-    type,
+    weekStartDate,
 }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [dailySummary, setDailySummary] = useState<DailySummaryData | null>(null);
-    const [currentMonthlySummary, setCurrentMonthlySummary] = useState<SummaryData | null>(null); // Переименовано для ясности
+    const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isExpanded, setIsExpanded] = useState(true);
+
+    const toggleExpansion = () => {
+        setIsExpanded(!isExpanded);
+    };
 
     useEffect(() => {
-        const fetchSummaries = async () => {
-            const dateStringForDailySummary = formatDateToYYYYMMDD(today); // "YYYY-MM-DD"
-            const parts = dateStringForDailySummary.split('-');
-            const year = parseInt(parts[0], 10);
-            const monthForMonthlySummary = parseInt(parts[1], 10); // Это 1-12
+        const fetchWeekSummary = async () => {
+            if (!weekStartDate) return;
 
+            setIsLoading(true);
+            setError(null);
             try {
-                const dailyData = await getDailySummary(dateStringForDailySummary);
-                setDailySummary(dailyData);
-            } catch (error) {
-                console.error("Failed to fetch daily summary:", error);
-                setDailySummary({ totalEarned: 0, totalSpent: 0 }); // Устанавливаем значения по умолчанию в случае ошибки
-            }
-
-            try {
-                // Загружаем или обновляем месячную сводку
-                // Убедимся, что month передается как 1-12
-                const monthlyData = await getMonthlySummary(year, monthForMonthlySummary);
-                setCurrentMonthlySummary(monthlyData);
-            } catch (error) {
-                console.error("Failed to fetch monthly summary:", error);
-                setCurrentMonthlySummary({ totalIncome: 0, totalExpense: 0, balance: 0 }); // Устанавливаем значения по умолчанию
+                const data = await getSummaryByWeek(weekStartDate);
+                setSummaryData(data);
+            } catch (err) {
+                console.error("Failed to fetch week summary:", err);
+                setError("Не удалось загрузить сводку за неделю.");
+                setSummaryData({
+                    monthlySummary: { totalIncome: 0, totalExpenses: 0, balance: 0, calculatedForMonth: '' },
+                    dailySummary: { totalIncome: 0, totalExpenses: 0, calculatedForDate: '' }
+                });
+            } finally {
+                setIsLoading(false);
             }
         };
 
-        fetchSummaries();
-    }, [today]); // Перезагружаем данные при изменении today
-
-    const toggleExpand = () => {
-        setIsExpanded(!isExpanded);
-    };
+        fetchWeekSummary();
+    }, [weekStartDate]);
 
     const formatCurrency = (amount: number | undefined) => {
         return (amount ?? 0).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
-    const renderBalanceContent = () => (
-            <div className="summary-header-info">
-                <p className="summary-today-display">Сегодня: {formatDateForTodayBlock(today)}</p>
-                <div className="summary-balance-header-view">
-                    <span className="font-semibold">Баланс: {formatCurrency(currentMonthlySummary?.balance)}</span>
-                </div>
-            </div>
-    );
+    const formatMonthYear = (dateString?: string) => {
+        if (!dateString) return '';
+        const date = createDate(dateString + '-01'); // Assuming YYYY-MM format
+        return date.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+    };
 
+    const formatFullDate = (dateString?: string) => {
+        if (!dateString) return '';
+        // Expects YYYY-MM-DD from dailySummary.calculatedForDate
+        const date = createDate(dateString);
+        return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    if (isLoading) {
+        return <div className="p-4 rounded-xl mb-2.5 bg-light-background shadow-[0_4px_12px_var(--color-shadow-light)] flex flex-col gap-2.5"><p>Загрузка сводки...</p></div>;
+    }
+
+    if (error || !summaryData) {
+        return <div className="p-4 rounded-xl mb-2.5 bg-light-background shadow-[0_4px_12px_var(--color-shadow-light)] flex flex-col gap-2.5"><p className="text-danger-text text-center p-2.5">{error || 'Нет данных для отображения.'}</p></div>;
+    }
+
+    const { monthlySummary, dailySummary } = summaryData;
+
+    const titleMonthYear = formatMonthYear(monthlySummary.calculatedForMonth);
+    const todayDateFormatted = formatFullDate(dailySummary.calculatedForDate);
 
     return (
-        <section className={`summary-block-container ${isExpanded ? 'expanded' : ''}`}>
-            <div className="summary-header-clickable" onClick={toggleExpand}>
-                {renderBalanceContent()}
+        <section className="rounded-xl mb-2.5 bg-light-background shadow-[0_4px_12px_var(--color-shadow-light)] flex flex-col">
+            {/* Кликабельный заголовок */}
+            <div
+                className={`p-4 cursor-pointer transition-colors duration-200 ease-in-out
+                    ${isExpanded
+                        ? 'bg-sky-100 hover:bg-sky-200 rounded-t-xl' // Только верхние скругления, если развернуто
+                        : 'bg-sky-100 hover:bg-sky-200 rounded-xl' // Все скругления, если свернуто
+                    }`}
+                onClick={toggleExpansion}
+            >
+                {isExpanded ? (
+                    <div className="text-gray-800 text-lg font-semibold text-center">
+                        Сводка за {titleMonthYear}<br/>(на {todayDateFormatted})
+                    </div>
+                ) : (
+                    <>
+                        <div className="text-sm text-gray-700">Сегодня: {todayDateFormatted}</div>
+                        <div className="text-lg font-semibold text-gray-800">
+                            Баланс: {formatCurrency(monthlySummary.balance)}
+                        </div>
+                    </>
+                )}
             </div>
 
-            {isExpanded && (
-                <div className="summary-collapsible-content">
-                    {type === 'balance' && currentMonthlySummary && ( // Добавлена проверка на currentMonthlySummary
-                        <div className="summary-cards-wrapper">
-                            <div className="summary-card income-card">
-                                <h3>Доход</h3>
-                                <div className="summary-item-group">
-                                    <span className="summary-item-label">Сегодня:</span>
-                                    <p className="income-value">{formatCurrency(dailySummary?.totalEarned)}</p>
-                                </div>
-                                <div className="summary-item-group">
-                                    <span className="summary-item-label">Месяц:</span>
-                                    <p className="income-value">{formatCurrency(currentMonthlySummary.totalIncome)}</p>
-                                </div>
-                            </div>
-                            <div className="summary-card expense-card">
-                                <h3>Расход</h3>
-                                <div className="summary-item-group">
-                                    <span className="summary-item-label">Сегодня:</span>
-                                    <p className="expense-value">{formatCurrency(dailySummary?.totalSpent)}</p>
-                                </div>
-                                <div className="summary-item-group">
-                                    <span className="summary-item-label">Месяц:</span>
-                                    <p className="expense-value">{formatCurrency(currentMonthlySummary.totalExpense)}</p>
-                                </div>
+            {/* Анимируемый блок с деталями */}
+            <div
+                className={`
+                    transition-all duration-300 ease-in-out overflow-hidden
+                    ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}
+                    ${isExpanded ? 'rounded-b-xl' : ''} // Нижние скругления только если развернуто и есть контент
+                    bg-light-background
+                `}
+            >
+                {/* Внутренний контейнер для padding и gap, видим только если isExpanded */}
+                {isExpanded && (
+                    <div className="p-4 flex flex-col gap-3 bg-gray-600">
+                        {/* Баланс в развернутом виде */}
+                        <div className="p-3 rounded-lg bg-sky-100 text-gray-800 text-base font-semibold text-center shadow-sm">
+                             Баланс ({titleMonthYear}): <span className="font-semibold text-gray-800">{formatCurrency(monthlySummary.balance)}</span>
+                        </div>
+
+                        {/* Доход */}
+                        <div className="p-3 rounded-lg bg-emerald-100 shadow-sm">
+                            <h4 className="text-md font-bold text-emerald-800 mb-2">Доход:</h4>
+                            <div className="flex justify-between items-center gap-2 w-full text-sm">
+                                <p className="text-emerald-700 mb-0">
+                                    Сегодня: <span className="font-semibold">{formatCurrency(dailySummary.totalIncome)}</span>
+                                </p>
+                                <p className="text-emerald-700 mb-0">
+                                    Месяц: <span className="font-semibold">{formatCurrency(monthlySummary.totalIncome)}</span>
+                                </p>
                             </div>
                         </div>
-                    )}
-                </div>
-            )}
+
+                        {/* Расход */}
+                        <div className="p-3 rounded-lg bg-rose-100 shadow-sm">
+                            <h4 className="text-md font-bold text-rose-800 mb-2">Расход:</h4>
+                            <div className="flex justify-between items-center gap-2 w-full text-sm">
+                                <p className="text-rose-700 mb-0">
+                                    Сегодня: <span className="font-semibold">{formatCurrency(dailySummary.totalExpenses)}</span>
+                                </p>
+                                <p className="text-rose-700 mb-0">
+                                    Месяц: <span className="font-semibold">{formatCurrency(monthlySummary.totalExpenses)}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </section>
-   );
+    );
 };
 
 export default SummaryBlock;

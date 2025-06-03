@@ -1,20 +1,38 @@
 const knex = require('../db.cjs');
 
 class SummaryService {
-  async getWeeklySummary(weekId) {
-    const income = await knex('tasks')
-      .where({ weekId, type: 'income' })
-      .sum('amountEarned as totalIncome')
+  async getSummaryForMonthByWeekStart(weekStartDate) { // weekStartDate в формате YYYY-MM-DD
+    const date = new Date(weekStartDate);
+    // Важно: getMonth() возвращает месяц от 0 (январь) до 11 (декабрь)
+    // Для консистентности с getMonthlySummary, который ожидает месяц 1-12, добавляем 1
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth() + 1; // Преобразуем 0-11 в 1-12
+
+    // Используем логику, аналогичную getMonthlySummary
+    const startDateOfMonth = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+    const endDateOfMonth = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)); // 0-й день следующего месяца это последний день текущего
+
+    const startDateString = startDateOfMonth.toISOString().slice(0, 10);
+    const endDateString = endDateOfMonth.toISOString().slice(0, 10);
+
+    const result = await knex('tasks')
+      .select(
+        knex.raw("COALESCE(SUM(CASE WHEN type = 'income' THEN \"amountEarned\" ELSE 0 END), 0) as totalEarned"),
+        knex.raw("COALESCE(SUM(CASE WHEN type = 'expense' THEN \"amountSpent\" ELSE 0 END), 0) as totalSpent")
+      )
+      .whereRaw('DATE(dueDate) >= ?', [startDateString])
+      .andWhereRaw('DATE(dueDate) <= ?', [endDateString])
       .first();
 
-    const expenses = await knex('tasks')
-      .where({ weekId, type: 'expense' })
-      .sum('amountSpent as totalExpense')
-      .first();
+    const totalEarned = parseFloat(result.totalEarned) || 0;
+    const totalSpent = parseFloat(result.totalSpent) || 0;
+    const balance = totalEarned - totalSpent;
 
     return {
-      totalIncome: income.totalIncome || 0,
-      totalExpense: expenses.totalExpense || 0,
+      totalIncome: totalEarned,
+      totalExpenses: totalSpent,
+      balance,
+      calculatedForMonth: `${year}-${String(month).padStart(2, '0')}` // Добавим информацию о месяце
     };
   }
 

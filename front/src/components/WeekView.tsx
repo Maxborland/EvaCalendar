@@ -230,8 +230,7 @@ const WeekView: React.FC = () => {
           <TopNavigator />
           <main className="flex-grow p-4 space-y-6 pb-20"> {/* Добавлен pb-20 для отступа */}
             <SummaryBlock
-                today={today}
-                type="balance"
+                weekStartDate={weekDays.length > 0 ? createDate(weekDays[0]).toISOString().slice(0, 10) : ''}
             />
             {/* Кнопка "Создать задачу" теперь позиционируется абсолютно */}
             <WeekNavigator
