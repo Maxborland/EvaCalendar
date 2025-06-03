@@ -176,8 +176,8 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
           <textarea name="comment" value={formData.comment || ''} onChange={handleChange} rows={3}></textarea>
         </label>
         <div className="form-actions">
-          <button type="submit">{initialChild?.uuid ? 'Сохранить изменения' : 'Добавить карточку'}</button>
-          <button type="button" onClick={onCancel}>Отмена</button>
+          <button type="submit" className="btn btn-primary">{initialChild?.uuid ? 'Сохранить изменения' : 'Добавить карточку'}</button>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>Отмена</button>
         </div>
       </form>
     // </div>

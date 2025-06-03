@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import './styles/theme.css';
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -112,6 +113,8 @@ body {
   display: block;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-primary-background); /* #1a202c */
+  color: var(--color-text-primary); /* #e2e8f0 */
 }
 
 h1 {
@@ -144,25 +147,27 @@ h1 {
     --color-neutral-130: var(--theme-light);
 
 
-    --color-text-primary: var(--color-neutral-10);
-    --color-text-secondary: var(--color-neutral-30);
-    --color-text-tertiary: var(--color-neutral-20);
-    --color-placeholder: var(--color-neutral-40);
+    /* Светлая тема макетом не предусмотрена, но для консистентности обновим на основе темной */
+    /* Фактически, макет представляет собой темную тему */
+    --color-text-primary: var(--theme-dark); /* #1a202c - Текст на светлом фоне карточек */
+    --color-text-secondary: var(--theme-gray-dark); /* #4a5568 */
+    --color-text-tertiary: var(--theme-gray-medium); /* #2d3748 */
+    --color-placeholder: var(--theme-gray-medium); /* #2d3748 */
 
-    --color-background-soft: var(--color-neutral-90);
-    --color-primary-background: var(--color-neutral-130);
-    --color-secondary-background: var(--color-neutral-120);
-    --color-tertiary-background: var(--color-neutral-100);
-    --color-modal-background: var(--color-neutral-130);
-    --color-input-background: var(--color-neutral-90);
+    --color-background-soft: var(--theme-gray-light); /* #e2e8f0 - Используем как мягкий фон для светлой темы */
+    --color-primary-background: var(--theme-light); /* #e9f5f9 - Основной фон для светлой темы (фон карточек из макета) */
+    --color-secondary-background: var(--theme-gray-light); /* #e2e8f0 */
+    --color-tertiary-background: var(--theme-light); /* #e9f5f9 */
+    --color-modal-background: var(--theme-light); /* #e9f5f9 */
+    --color-input-background: var(--theme-gray-light); /* #e2e8f0 */
 
-    --color-accent: var(--color-primary-base);
-    --color-highlight: var(--color-neutral-70);
+    --color-accent: var(--theme-primary); /* #48bb78 */
+    --color-highlight: var(--theme-gray-medium); /* #2d3748 - Используем как хайлайт для светлой темы */
 
-    --color-border-dark: var(--color-neutral-60);
-    --color-border-medium: var(--color-neutral-50);
-    --color-border-light: var(--color-neutral-20);
-    --color-dashed-border-dark: var(--color-neutral-60);
+    --color-border-dark: #cbd5e0;
+    --color-border-medium: color-mix(in srgb, #cbd5e0 70%, var(--theme-light));
+    --color-border-light: color-mix(in srgb, #cbd5e0 40%, var(--theme-light));
+    --color-dashed-border-dark: #cbd5e0;
 
     --color-blue-accent: var(--color-primary-base);
     --color-blue-accent-hover: var(--theme-secondary);
@@ -226,7 +231,7 @@ h1 {
   box-sizing: border-box;
   z-index: 1000;
   box-sizing: border-box;
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.3s ease-out;
 }
 
 #root .top-navigator.hidden {
@@ -265,26 +270,99 @@ h1 {
   padding-bottom: 80px;
 }
 
-.navigation-buttons {
+.week-navigator-container {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  position: fixed;
-  bottom: 0;
-  left: 0;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+  gap: 15px; /* Пространство между кнопками и текстом */
   width: 100%;
-  background-color: var(--color-primary-background);
-  padding: 10px;
-  box-shadow: 0 -2px 10px var(--color-shadow-dark);
-  z-index: 1000;
   box-sizing: border-box;
-  transition: transform 0.3s ease-in-out;
+  position: fixed;
+  bottom: 0; /* Фиксируем снизу */
+  background-color : var(--color-primary-background); /* Фон для контейнера */
+  background-color: var(--color-primary-background);
+  box-shadow: 0 1px 5px var(--color-shadow-light);
+  transition: transform 0.3s ease-out;
 }
 
-.navigation-buttons--hidden {
+.week-navigator-container--hidden {
   transform: translateY(100%);
 }
 
+.week-nav-button {
+  /* height: 5vh; */ /* Убрали высоту, чтобы размер определялся паддингом и контентом */
+  padding: 12px 20px; /* Как у .settings-button для сопоставимого размера */
+  margin: 0 10px; /* Отступы между кнопками */
+  font-size: 1.5rem; /* Как у .settings-button для увеличения иконки */
+  border-radius: 5px; /* Как у .settings-button для унификации */
+  border: none; /* Оставляем без границы, как было */
+  background-color: var(--color-secondary-background);
+  color: var(--color-accent);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  display: inline-flex; /* Для выравнивания иконки и текста */
+  align-items: center;
+  gap: 5px; /* Пространство между иконкой и текстом */
+  box-sizing: border-box; /* Для корректного расчета размеров с padding */
+}
+
+.week-nav-button:hover {
+  background-color: var(--color-accent);
+  color: var(--color-primary-background);
+}
+
+.week-nav-button:disabled { /* Для неактивного состояния, если будет */
+  opacity: 0.5;
+  cursor: default;
+  background-color: var(--color-secondary-background);
+  color: var(--color-accent);
+}
+
+.current-week-display {
+  font-size: 1.1em;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  padding: 0 10px; /* Небольшие отступы по бокам */
+}
+
+
+/* Старые стили для .navigation-buttons, .week-navigation, .half-week-navigation */
+/* Можно закомментировать или удалить, если они больше нигде не используются */
+/*
+.navigation-buttons { ... }
+.navigation-buttons--hidden { ... }
+.navigation-buttons button { ... }
+.week-navigation, .half-week-navigation { ... }
+.navigation-buttons button:hover { ... }
+*/
+
+/* Удаляем или комментируем .half-week-navigation, так как он больше не используется */
+/*
+.half-week-navigation {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+  width: 100%;
+}
+*/
+
+/* Стили для .week-navigation (если он остался как обертка для кнопок < >)
+   В новом TSX его нет, кнопки и текст напрямую в .week-navigator-container
+*/
+/*
+.week-navigation {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+  width: 100%;
+}
+*/
+
+/* Общие стили для кнопок внутри старого .navigation-buttons, если они еще где-то нужны.
+   Новые кнопки .week-nav-button имеют свои стили.
+*/
+/*
 .navigation-buttons button {
   padding: 12px 20px;
   font-size: 1em;
@@ -300,17 +378,11 @@ h1 {
   box-sizing: border-box;
 }
 
-.week-navigation, .half-week-navigation {
-  display: flex;
-  justify-content: space-around;
-  gap: 10px;
-  width: 100%;
-}
-
 .navigation-buttons button:hover {
   background-color: var(--color-accent);
   color: var(--color-primary-background);
 }
+*/
 
 h2 {
   color: var(--color-text-primary);
@@ -336,14 +408,6 @@ h2 {
   width: 200%;
 }
 
-
-.day-columns-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-}
-
 .first-half-of-week,
 .second-half-of-week {
   flex: 0 0 50%;
@@ -356,38 +420,6 @@ h2 {
   align-items: center;
   box-sizing: border-box;
 
-}
-
-
-.day-column-wrapper {
-  width: 100%;
-}
-
-.day-column {
-  flex: 1;
-  background-color: var(--color-tertiary-background);
-  border-radius: 8px;
-  padding: 10px;
-  min-width: 120px;
-  text-align: center;
-}
-
-.day-column.today-highlight {
-  background-color: var(--color-highlight);
-  border: 1px solid var(--color-blue-accent);
-}
-
-@media (prefers-color-scheme: light) {
-  .day-column.today-highlight {
-    background-color: var(--color-highlight);
-    border: 1px solid var(--color-blue-accent);
-  }
-}
-
-.day-column h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: var(--color-text-primary);
 }
 
 .day-cells {
@@ -431,6 +463,29 @@ h2 {
     color: var(--color-primary-background);
   }
 
+  /* Обновление стилей для светлой темы, если .week-navigator-container их наследует */
+  .week-navigator-container {
+    /* Если week-navigator-container имел фон, его нужно адаптировать для светлой темы */
+    /* background-color: var(--color-primary-background); */
+  }
+
+  .week-nav-button {
+    background-color: var(--color-secondary-background); /* Для светлой темы это может быть --color-neutral-120 */
+    color: var(--color-accent); /* Для светлой темы это --color-primary-base */
+    /* border-color: var(--color-accent); - если граница нужна */
+  }
+
+  .week-nav-button:hover {
+    background-color: var(--color-accent); /* var(--color-primary-base) */
+    color: var(--color-primary-background); /* var(--theme-light) */
+  }
+
+  .current-week-display {
+    color: var(--color-text-primary); /* var(--theme-dark) для светлой темы */
+  }
+
+  /* Старые стили для .navigation-buttons в светлой теме */
+  /*
   .navigation-buttons {
     background-color: var(--color-primary-background);
   }
@@ -441,10 +496,11 @@ h2 {
     border-color: var(--color-accent);
   }
 
-
   .navigation-buttons button:hover {
     background-color: var(--color-accent);
     color: var(--color-primary-background);
+  }
+  */
   }
 
   h2 {
@@ -456,71 +512,15 @@ h2 {
     border: 1px solid var(--color-border-dark);
   }
 
-  .day-column {
-    background-color: var(--color-tertiary-background);
-  }
-
-  .day-column h3 {
-    color: var(--color-accent);
-  }
-
   .day-cell-empty, .task-item {
     background-color: var(--color-highlight);
     border: 1px dashed var(--color-border-medium);
     color: var(--color-text-secondary);
   }
-}
+/* Лишняя закрывающая скобка удалена отсюда */
 
 
-.note-textarea {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 8px;
-  margin-top: 10px;
-  border: 1px solid var(--color-border-medium);
-  border-radius: 4px;
-  background-color: var(--color-background-soft);
-  color: var(--color-text-primary);
-  min-height: 120px;
-  resize: vertical;
-}
-
-.note-field-container button {
-
-  margin-top: 10px;
-  padding: 8px 15px;
-  border-radius: 5px;
-  border: 1px solid var(--color-accent);
-  background-color: var(--color-secondary-background);
-  color: var(--color-accent);
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-size: 0.9em;
-}
-
-.note-field-container button:hover {
-  background-color: var(--color-accent);
-  color: var(--color-primary-background);
-}
-
-@media (prefers-color-scheme: light) {
-  .note-textarea {
-    background-color: var(--color-tertiary-background);
-    border: 1px solid var(--color-border-dark);
-    color: var(--color-text-light);
-  }
-
-  .note-field-container button {
-    background-color: var(--color-background-soft);
-    color: var(--color-text-primary);
-    border-color: var(--color-accent);
-  }
-
-  .note-field-container button:hover {
-    background-color: var(--color-accent);
-    color: var(--color-primary-background);
-  }
-}
+/* Стили для .note-textarea перенесены в front/src/components/NoteField.css */
 
 .summary-block {
     background-color: var(--color-background-soft);
@@ -647,9 +647,12 @@ h2 {
     padding: 10px 15px;
   }
 
+  /* Старые стили для .week-navigation, .half-week-navigation в медиа-запросе */
+  /*
   .week-navigation, .half-week-navigation {
     flex-wrap: wrap;
   }
+  */
 
 
   .week-days-container::-webkit-scrollbar {

@@ -1,0 +1,90 @@
+.day-details-page {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: sans-serif;
+}
+
+.day-details-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.day-details-header h1 {
+  margin: 0 0 0 15px;
+  font-size: 1.8em;
+  color: var(--theme-primary-text)
+}
+
+.back-button {
+  background-color: var(--theme-gray-dark);
+  border: 1px solid #ddd;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #e0e0e0;
+}
+
+.day-details-summary {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  padding: 10px 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  font-size: 1em;
+  color: #555;
+}
+
+.day-details-tasks-section h2 {
+  font-size: 1.5em;
+  color: var(--theme-primary-text);
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.tasks-list {
+  margin-top: 15px;
+}
+
+.tasks-list p {
+  color: #777;
+  font-style: italic;
+}
+
+.day-details-loading,
+.day-details-error {
+  text-align: center;
+  font-size: 1.2em;
+  padding: 30px;
+  color: #666;
+}
+
+.day-details-error {
+  color: #d9534f; /* Bootstrap danger color */
+}
+
+/* Стили для будущей кнопки добавления задачи и карточек задач можно добавить сюда */
+.add-task-button {
+  background-color: #5cb85c; /* Bootstrap success color */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-bottom: 15px;
+  transition: background-color 0.2s;
+}
+
+.add-task-button:hover {
+  background-color: #4cae4c;
+}

@@ -5,9 +5,9 @@ const { param, query, validationResult } = require('express-validator');
 const summaryService = require('../services/summaryService.js');
 const ApiError = require('../utils/ApiError.js');
 
-// Валидация для getWeeklySummary
-const validateWeeklySummary = [
-  param('weekId').isUUID().withMessage('weekId должен быть валидным UUID.'),
+// Валидация для getSummaryForMonthByWeekStart
+const validateSummaryByWeekStart = [
+  query('weekStartDate').isISO8601().withMessage('weekStartDate должен быть валидной датой в формате YYYY-MM-DD.'),
 ];
 
 // Валидация для getDailySummary
@@ -21,15 +21,33 @@ const validateMonthlySummary = [
   param('month').isInt({ min: 1, max: 12 }).withMessage('Месяц должен быть числом от 1 до 12.'),
 ];
 
-// GET /summary/week/:weekId - Получение недельной сводки
-router.get('/week/:weekId', validateWeeklySummary, asyncHandler(async (req, res, next) => {
+// GET /summary/summary-by-week?weekStartDate=YYYY-MM-DD - Получение сводки за месяц на основе начала недели
+router.get('/summary-by-week', validateSummaryByWeekStart, asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(ApiError.badRequest('Ошибки валидации', errors.array()));
   }
-  const { weekId } = req.params;
-  const summary = await summaryService.getWeeklySummary(weekId);
-  res.status(200).json(summary);
+  const { weekStartDate } = req.query;
+  const monthlySummary = await summaryService.getSummaryForMonthByWeekStart(weekStartDate);
+
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+  const dailySummaryData = await summaryService.getDailySummary(todayString);
+
+  const response = {
+    monthlySummary: {
+      totalIncome: monthlySummary.totalIncome,
+      totalExpenses: monthlySummary.totalExpenses,
+      balance: monthlySummary.balance,
+      calculatedForMonth: monthlySummary.calculatedForMonth
+    },
+    dailySummary: {
+      totalIncome: dailySummaryData.totalEarned, // В getDailySummary это totalEarned
+      totalExpenses: dailySummaryData.totalSpent, // В getDailySummary это totalSpent
+      calculatedForDate: todayString
+    }
+  };
+  res.status(200).json(response);
 }));
 
 // GET /summary/daily?date=YYYY-MM-DD - Получение дневной сводки

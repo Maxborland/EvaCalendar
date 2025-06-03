@@ -5,13 +5,44 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Уб
 
 export interface ExpenseCategory {
   uuid: string; // Changed from id to uuid to match API response
-  category_name: string;
+  categoryName: string;
 }
 
-export interface SummaryData {
+// Переименовываем MonthlySummary в MonthSummaryValues, чтобы избежать конфликта с типом для getMonthlySummary
+export interface MonthSummaryValues {
   totalIncome: number;
-  totalExpense: number;
+  totalExpenses: number;
   balance: number;
+  calculatedForMonth: string;
+}
+
+export interface DailySummary {
+  totalIncome: number;
+  totalExpenses: number;
+  calculatedForDate: string;
+}
+
+export interface SummaryData { // Этот тип для getSummaryByWeek
+  monthlySummary: MonthSummaryValues;
+  dailySummary: DailySummary;
+}
+
+// Новый тип для ответа функции getMonthlySummary
+export interface MonthlySummaryAPIResponse {
+  totalEarned: number;
+  totalSpent: number;
+  balance: number;
+  // calculatedForMonth может отсутствовать в этом старом эндпоинте, или его нужно добавить на бэке
+  // Пока что сделаем его опциональным или будем формировать на клиенте
+}
+
+// Старый интерфейс SummaryData, который использовался для getMonthlySummary, переименуем
+// и будем использовать для возвращаемого значения getMonthlySummary
+export interface OldMonthlySummaryData {
+    totalIncome: number;
+    totalExpense: number; // В старом интерфейсе было totalExpense
+    balance: number;
+    calculatedForMonth?: string;
 }
 
 export interface Child {
@@ -25,24 +56,30 @@ export interface Child {
 }
 
 export interface Task {
-  uuid: string | undefined;
+  uuid: string; // Возвращаем uuid, так как API его возвращает
   title: string;
-  type: string; // 'fixed', 'hourly', 'expense'
-  time?: string;
+  description?: string; // Добавлено поле description
+  type: string; // 'fixed', 'hourly', 'expense', 'income' (добавим income для унификации)
+  time?: string; // Может быть eventTime или taskTime от бэкенда
+  dueDate: string; // Может быть date от бэкенда
+  completed?: boolean; // Изменено с isDone
+  childId?: string; // Изменено с child_id на camelCase для соответствия данным с бэкенда
+  childName?: string;
+  expenseTypeId?: string; // Изменено с category_id
+  expenseCategoryName?: string;
+  amount?: number; // Общее поле для суммы (доход/расход)
+  amountEarned?: number; // Добавлено для явного получения с бэкенда
+  amountSpent?: number; // Добавлено для явного получения с бэкенда
+  hourlyRate?: number; // Для почасовых задач
+  hoursWorked?: number; // Для почасовых задач
+  isPaid?: boolean; // Для отслеживания оплаты
   address?: string;
-  childId?: string; // Заменено childUuid на childId
-  hourlyRate?: number;
-  category?: string; // или ExpenseCategory если это объект
-  amountEarned?: number;
-  amountSpent?: number;
-  hoursWorked?: number;
-  // weekId: string; // Удалено
-  // dayOfWeek: number; // Удалено
-  dueDate: string;
-  comments?: string;
-  isDone?: boolean;
-  isPaid?: boolean;
-  expenseCategoryName?: string; // Добавлено для отображения имени категории расходов
+  parentName?: string;
+  parentPhone?: string;
+  childAddress?: string;
+  childHourlyRate?: number; // Добавлено для ставки ребенка
+  comments?: string; // Переименовано из description для заметок к задаче
+  taskType?: 'income' | 'expense'; // Добавлено для явного указания типа задачи фронтендом
   createdAt?: string;
   updatedAt?: string;
 }
@@ -86,15 +123,14 @@ api.interceptors.response.use(
 );
 
 // Notes API
-export const getNoteByDate = async (dateString: string): Promise<Note | null> => {
+export const getNoteByDate = async (dateString: string): Promise<Note[]> => {
   try {
-    const response = await api.get<Note>(`notes/date/${dateString}`);
-    return response.data;
+    const response = await api.get<Note[]>(`notes/date/${dateString}`);
+    return response.data; // API должен возвращать массив, даже если он пустой
   } catch (error: any) {
-    if (error.response && error.response.status === 404) {
-      return null; // Заметка не найдена
-    }
     // Ошибка будет обработана глобальным interceptor'ом
+    // Если API возвращает 404, когда заметок нет, это будет обработано как ошибка.
+    // Если ожидается пустой массив, то 404 не должно быть.
     throw error;
   }
 };
@@ -113,22 +149,31 @@ export const getAllNotes = async (): Promise<Note[]> => {
   const response = await api.get('/notes');
   return response.data as Note[];
 };
+
+export const getTasksForDay = async (dateString: string): Promise<Task[]> => {
+  const response = await api.get(`/tasks/for-day?date=${dateString}`);
+  return response.data as Task[];
+};
 // Удалена функция getTasksByWeekAndDay
 
-export const createTask = (taskData: Task) => {
-  return api.post('/tasks', taskData);
+export const createTask = (taskData: Omit<Task, 'uuid'>) => { // Убираем uuid при создании
+  console.log('[api.ts] createTask - taskData to send:', JSON.stringify(taskData, null, 2));
+  console.log('[api.ts] createTask - dueDate to send:', taskData.dueDate);
+  return api.post<Task>('/tasks', taskData); // Указываем тип возвращаемого значения
 };
 
-export const updateTask = (uuid: string, taskData: Partial<Task>) => {
-  return api.put(`/tasks/${uuid}`, taskData);
+export const updateTask = (uuid: string, taskData: Partial<Omit<Task, 'uuid'>>) => { // Используем uuid, убираем uuid из данных
+  console.log(`[api.ts] updateTask (uuid: ${uuid}) - taskData to send:`, JSON.stringify(taskData, null, 2));
+  console.log(`[api.ts] updateTask (uuid: ${uuid}) - dueDate to send:`, taskData.dueDate);
+  return api.put<Task>(`/tasks/${uuid}`, taskData); // Указываем тип возвращаемого значения
 };
 
-export const deleteTask = (id: string) => {
-  return api.delete(`/tasks/${id}`);
+export const deleteTask = (uuid: string) => {
+  return api.delete(`/tasks/${uuid}`);
 };
 
-export const duplicateTask = (id: string) => {
-  return api.post(`/tasks/${id}/duplicate`);
+export const duplicateTask = (uuid: string) => {
+  return api.post<Task>(`/tasks/${uuid}/duplicate`); // Указываем тип возвращаемого значения
 };
 
 // export const getTasksByDateRange = async (startDate: string, endDate: string): Promise<Task[]> => {
@@ -141,14 +186,16 @@ export const getAllTasks = async (): Promise<Task[]> => {
   return response.data as Task[];
 };
 
-export const moveTask = async (taskId: string, newDueDate: string): Promise<Task> => {
-  const response = await api.put(`/tasks/${taskId}`, { dueDate: newDueDate });
+export const moveTask = async (taskUuid: string, newDueDate: string): Promise<Task> => {
+  const response = await api.put(`/tasks/${taskUuid}`, { dueDate: newDueDate });
   return response.data as Task;
 };
 
-export const getWeeklySummary = async (weekId: string) => {
-  const response = await api.get(`/summary/${weekId}`);
-  return response.data as SummaryData;
+export const getSummaryByWeek = async (weekStartDate: string): Promise<SummaryData> => {
+  const response = await api.get<SummaryData>(`/summary/summary-by-week`, { // Указываем тип ответа <SummaryData>
+    params: { weekStartDate }
+  });
+  return response.data; // Не нужно as SummaryData, если Axios типизирован
 };
 
 export const getDailySummary = async (date: string): Promise<{ totalEarned: number, totalSpent: number } | null> => {
@@ -164,9 +211,19 @@ export const getDailySummary = async (date: string): Promise<{ totalEarned: numb
   }
 };
 
-export const getMonthlySummary = async (year: number, month: number) => {
-  const response = await api.get(`/summary/month/${year}/${month}`);
-  return response.data as { totalEarned: number; totalSpent: number; balance: number; };
+export const getMonthlySummary = async (year: number, month: number): Promise<OldMonthlySummaryData> => {
+  const response = await api.get<MonthlySummaryAPIResponse>(`/summary/month/${year}/${month}`);
+  // Преобразуем totalEarned и totalSpent в totalIncome и totalExpense
+  // Формируем calculatedForMonth на клиенте, если его нет в ответе
+  const monthString = month.toString().padStart(2, '0');
+  const calculatedForMonth = `${year}-${monthString}`;
+
+  return {
+    totalIncome: response.data.totalEarned,
+    totalExpense: response.data.totalSpent, // Сохраняем totalExpense как в OldMonthlySummaryData
+    balance: response.data.balance,
+    calculatedForMonth: calculatedForMonth
+  };
 };
 
 export const getExpenseCategories = async () => {
@@ -174,13 +231,13 @@ export const getExpenseCategories = async () => {
     return response.data as ExpenseCategory[];
 };
 
-export const createExpenseCategory = async (category_name: string) => {
-    const response = await api.post('/expense-categories', { category_name });
+export const createExpenseCategory = async (categoryName: string) => {
+    const response = await api.post('/expense-categories', { categoryName });
     return response.data;
 };
 
-export const updateExpenseCategory = async (id: string, category_name: string) => {
-    const response = await api.put(`/expense-categories/${id}`, { category_name });
+export const updateExpenseCategory = async (id: string, categoryName: string) => {
+    const response = await api.put(`/expense-categories/${id}`, { categoryName });
     return response.data;
 };
 

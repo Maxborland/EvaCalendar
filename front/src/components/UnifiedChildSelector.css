@@ -86,6 +86,20 @@
   background-color: rgba(var(--theme-primary-rgb), 0.1); /* Используем переменную */
   color: var(--theme-primary);
 }
+.suggestion-match {
+  font-weight: bold;
+  color: var(--theme-primary); /* Или другой цвет для выделения */
+}
+
+.suggestion-item.no-results {
+  color: var(--theme-gray-medium);
+  cursor: default;
+  font-style: italic;
+}
+
+.suggestion-item.no-results:hover {
+  background-color: transparent; /* Убираем ховер эффект для "не найдено" */
+}
 
 .add-child-button {
   padding: 10px 15px; /* Как в TaskForm.css */

@@ -22,7 +22,7 @@ exports.seed = async function(knex) {
       hoursWorked: 2,
       amountEarned: 10.50,
       amountSpent: null,
-      expenceTypeId: null
+      expenseTypeId: null
     },
     {
       uuid: uuidv4(),
@@ -34,7 +34,7 @@ exports.seed = async function(knex) {
       hoursWorked: 1,
       amountEarned: null,
       amountSpent: null,
-      expenceTypeId: null
+      expenseTypeId: null
     },
     {
       uuid: uuidv4(),
@@ -43,7 +43,7 @@ exports.seed = async function(knex) {
       dueDate: new Date().toISOString().split('T')[0],
       amountSpent: 5.75,
       comments: 'Покупки в магазине',
-      expenceTypeId: expenseCategories[0] ? expenseCategories[0].uuid : null
+      expenseTypeId: expenseCategories[0] ? expenseCategories[0].uuid : null
     },
     {
       uuid: uuidv4(),
@@ -55,7 +55,7 @@ exports.seed = async function(knex) {
       hoursWorked: 3,
       amountEarned: 15.00,
       amountSpent: null,
-      expenceTypeId: null
+      expenseTypeId: null
     },
     {
       uuid: uuidv4(),
@@ -64,7 +64,7 @@ exports.seed = async function(knex) {
       dueDate: new Date().toISOString().split('T')[0],
       amountSpent: 2.00,
       comments: 'Покупки в магазине',
-      expenceTypeId: expenseCategories[1] ? expenseCategories[1].uuid : null
+      expenseTypeId: expenseCategories[1] ? expenseCategories[1].uuid : null
     }
   ]);
 };

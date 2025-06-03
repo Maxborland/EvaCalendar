@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react'; // axios, IMask
 import { toast } from 'react-toastify';
 // import { v4 as uuidv4 } from 'uuid'; // Больше не генерируем uuid на фронте для новых детей
 import { addChild, type Child, deleteChild, getAllChildren, updateChild } from '../services/api';
-import './ChildCardManager.css';
 import ChildForm from './ChildForm'; // Импортируем ChildForm и его props
 
 const ChildCardManager: React.FC = () => {
@@ -59,7 +58,7 @@ const ChildCardManager: React.FC = () => {
       <h2>Карточки детей</h2>
 
       {!showForm && (
-        <button className="add-button" onClick={() => { setShowForm(true); setEditingChild(undefined); }}>
+        <button className="btn btn-primary add-button" onClick={() => { setShowForm(true); setEditingChild(undefined); }}>
           Добавить карточку ребенка
         </button>
       )}
@@ -75,16 +74,18 @@ const ChildCardManager: React.FC = () => {
       <div className="child-list">
         {children.length === 0 && <p>Пока нет добавленных карточек детей.</p>}
         {children.map(child => (
-          <div key={child.uuid} className="child-card"> {/* key теперь child.uuid */}
-            <h3>{child.childName}</h3>
-            <p><strong>Родитель:</strong> {child.parentName}</p>
-            {child.parentPhone && <p><strong>Телефон:</strong> {child.parentPhone}</p>}
-            {child.address && <p><strong>Адрес:</strong> {child.address}</p>}
-            {child.hourlyRate && <p><strong>Ставка в час:</strong> {child.hourlyRate}</p>}
-            {child.comment && <p><strong>Комментарий:</strong> {child.comment}</p>}
+          <div key={child.uuid} className="card"> {/* Заменяем child-card на card */}
+            <h3 className="card-heading">{child.childName}</h3>
+            <div className="card-text-detail">
+              <p><strong>Родитель:</strong> {child.parentName}</p>
+              {child.parentPhone && <p><strong>Телефон:</strong> {child.parentPhone}</p>}
+              {child.address && <p><strong>Адрес:</strong> {child.address}</p>}
+              {child.hourlyRate && <p><strong>Ставка в час:</strong> {child.hourlyRate}</p>}
+              {child.comment && <p><strong>Комментарий:</strong> {child.comment}</p>}
+            </div>
             <div className="card-actions">
-              <button onClick={() => { setEditingChild(child); setShowForm(true); }}>Редактировать</button>
-              <button onClick={() => handleDeleteChild(child.uuid)}>Удалить</button> {/* используем child.uuid */}
+              <button className="btn btn-secondary" onClick={() => { setEditingChild(child); setShowForm(true); }}>Редактировать</button>
+              <button className="btn btn-secondary" onClick={() => handleDeleteChild(child.uuid)}>Удалить</button>
             </div>
           </div>
         ))}

@@ -1,30 +1,27 @@
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import ChildCardManager from '../components/ChildCardManager';
-import ExpenseCategoryManager from '../components/ExpenseCategoryManager';
+import { Outlet, useNavigate } from 'react-router-dom';
+import SettingsMenu from '../components/SettingsMenu';
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGoBack = () => {
-    navigate(-1);
+    navigate('/'); // Перенаправляем на главную страницу
   };
 
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-md mx-auto settings-page-container">
-      <button onClick={handleGoBack} className="back-button">
-        <FontAwesomeIcon icon={faArrowLeft} /> Назад
-      </button>
-      <h1>Настройки</h1>
-      <div className="component-padding-x">
-        <ExpenseCategoryManager />
-      </div>
-      <div className="component-padding-x">
-        <ChildCardManager />
-      </div>
+        <button onClick={handleGoBack} className="btn btn-secondary">
+          <FontAwesomeIcon icon={faArrowLeft} /> Назад
+        </button>
+        <h1>Настройки</h1>
+        <SettingsMenu />
+        <div className="component-padding-x">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

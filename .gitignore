@@ -40,3 +40,7 @@ Thumbs.db
 back/database.sqlite
 back/data/database.sqlite
 back/data/test.sqlite
+
+documents/*
+docs/*
+back/data/database.sqlite

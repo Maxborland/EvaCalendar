@@ -4,6 +4,11 @@ WORKDIR /app
 
 COPY package*.json ./
 
+RUN apk update && apk add --no-cache python3 make g++ ca-certificates
+
+# Обновляем корневые сертификаты
+RUN update-ca-certificates
+
 RUN npm install
 
 COPY . .

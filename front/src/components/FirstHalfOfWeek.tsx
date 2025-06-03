@@ -1,37 +1,37 @@
-import type { Moment } from 'moment';
-import moment from 'moment'; // Импортируем moment для сравнения дат
 import React from 'react';
 import type { Task } from '../services/api'; // Импортируем Task и Note
+import { createDate, isSameDay } from '../utils/dateUtils';
 import DayColumn from './DayColumn';
 import NoteField from './NoteField'; // Добавляем импорт NoteField
 
 interface FirstHalfOfWeekProps {
-  days: Moment[];
+  days: Date[];
   tasksForWeek: Task[]; // Заменяем weekId на tasksForWeek
-  today: Moment;
-  onTaskMove: () => void;
-  onDataChange?: () => void; // Новый опциональный колбэк
+  today: Date;
+  // onTaskMove: () => void; // Заменено на onDataChange в DayColumn
+  onDataChange: () => void; // Сделаем обязательным, так как DayColumn его ожидает
+  onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => void; // Добавлен обязательный проп
 }
 
-const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, today, onTaskMove, onDataChange }) => {
+const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, today, onDataChange, onOpenTaskModal }) => { // onTaskMove удален, onOpenTaskModal добавлен
   const daysToShow = days.slice(0, 3); // Понедельник, Вторник, Среда
 
   return (
     <div className="first-half-of-week">
       <div className="day-columns-container">
-        {daysToShow.map((dayMoment, index) => {
+        {daysToShow.map((dayMoment) => {
           // Фильтруем задачи для текущего дня
           const tasksForDay = tasksForWeek.filter(task =>
-            moment(task.dueDate).isSame(dayMoment, 'day')
+            isSameDay(createDate(task.dueDate), dayMoment)
           );
           return (
-            <div key={index} className="day-column-wrapper">
+            <div key={createDate(dayMoment).toISOString().slice(0,10)} className="day-column-wrapper">
               <DayColumn
-                day={dayMoment.format('D MMMM')}
                 fullDate={dayMoment}
                 today={today}
                 tasksForDay={tasksForDay} // Передаем отфильтрованные задачи
-                onTaskMove={onTaskMove}
+                onDataChange={onDataChange} // Исправлено с onTaskMove
+                onOpenTaskModal={onOpenTaskModal} // Передаем новый проп
                 // weekId больше не передается
               />
             </div>
@@ -49,11 +49,7 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, t
             Возможно, его нужно будет привязать к startDate недели или удалить.
             Пока закомментируем, чтобы не было ошибок.
         */}
-        {days.length > 0 && <NoteField weekId={days[0].format('YYYY-MM-DD')} onNoteSaved={() => {
-          if (onDataChange) {
-            onDataChange();
-          }
-        }} />}
+        {days.length > 0 && <NoteField weekId={createDate(days[0]).toISOString().slice(0,10)} />}
       </div>
     </div>
   );

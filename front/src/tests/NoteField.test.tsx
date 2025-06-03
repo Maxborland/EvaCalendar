@@ -43,14 +43,14 @@ describe('NoteField Component', () => {
   });
 
   test('отображает компонент и состояние загрузки', () => {
-    mockGetNoteByDate.mockResolvedValueOnce(null);
+    mockGetNoteByDate.mockResolvedValueOnce([]);
     render(<NoteField weekId={initialWeekId} />);
     expect(screen.getByText('Заметки')).toBeInTheDocument();
     expect(screen.getByText('Загрузка...')).toBeInTheDocument();
   });
 
   test('загружает и отображает существующую заметку', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(existingNote);
+    mockGetNoteByDate.mockResolvedValueOnce([existingNote]);
     render(<NoteField weekId={initialWeekId} />);
 
     await waitFor(() => {
@@ -60,7 +60,7 @@ describe('NoteField Component', () => {
   });
 
   test('отображает пустое поле, если заметки нет', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(null);
+    mockGetNoteByDate.mockResolvedValueOnce([]);
     render(<NoteField weekId={initialWeekId} />);
 
     await waitFor(() => {
@@ -69,7 +69,7 @@ describe('NoteField Component', () => {
   });
 
   test('создает новую заметку', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(null);
+    mockGetNoteByDate.mockResolvedValueOnce([]);
     const createdNote = { ...existingNote, content: newNoteContent, uuid: 'new-uuid-456' };
     mockCreateNote.mockResolvedValueOnce(createdNote);
 
@@ -99,7 +99,7 @@ describe('NoteField Component', () => {
   });
 
   test('обновляет существующую заметку', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(existingNote);
+    mockGetNoteByDate.mockResolvedValueOnce([existingNote]);
     const updatedApiNote = { ...existingNote, content: updatedNoteContent };
     mockUpdateNote.mockResolvedValueOnce(updatedApiNote);
 
@@ -138,7 +138,7 @@ describe('NoteField Component', () => {
   });
 
   test('обрабатывает ошибку при создании заметки', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(null);
+    mockGetNoteByDate.mockResolvedValueOnce([]);
     const errorMessage = 'Ошибка создания';
     mockCreateNote.mockRejectedValueOnce(new Error(errorMessage));
 
@@ -159,7 +159,7 @@ describe('NoteField Component', () => {
   });
 
   test('обрабатывает ошибку при обновлении заметки', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(existingNote);
+    mockGetNoteByDate.mockResolvedValueOnce([existingNote]);
     const errorMessage = 'Ошибка обновления';
     mockUpdateNote.mockRejectedValueOnce(new Error(errorMessage));
 
@@ -180,7 +180,7 @@ describe('NoteField Component', () => {
   });
 
   test('кнопка Сохранить неактивна, если нет изменений', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(existingNote);
+    mockGetNoteByDate.mockResolvedValueOnce([existingNote]);
     render(<NoteField weekId={initialWeekId} />);
 
     await waitFor(() => {
@@ -190,7 +190,7 @@ describe('NoteField Component', () => {
   });
 
   test('кнопка Сохранить становится активной после изменений', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(null);
+    mockGetNoteByDate.mockResolvedValueOnce([]);
     render(<NoteField weekId={initialWeekId} />);
     await waitFor(() => {
         expect(screen.getByPlaceholderText('Введите заметки здесь...')).toBeInTheDocument();
@@ -202,7 +202,7 @@ describe('NoteField Component', () => {
   });
 
    test('кнопка Сохранить заблокирована во время сохранения', async () => {
-    mockGetNoteByDate.mockResolvedValueOnce(null);
+    mockGetNoteByDate.mockResolvedValueOnce([]);
     // Заставляем createNote "зависнуть", чтобы проверить состояние кнопки
     mockCreateNote.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ ...existingNote, uuid: 'new-uuid', content: newNoteContent }), 100)));
 

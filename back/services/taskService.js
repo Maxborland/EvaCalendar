@@ -11,61 +11,55 @@ async function validateExistence(table, id) {
 const taskService = {
     async createTask(taskData) {
         // Проверка обязательных полей
-        const requiredFields = ['title', 'dueDate', 'type']; // 'description' заменено на 'type' или удалено, если не обязательно. 'type' часто обязателен.
-                                                        // Если 'comments' обязательно, добавьте его сюда. Судя по тестам, 'type' обязателен.
-                                                        // Поле 'description' отсутствует в миграции, поэтому его убираем из обязательных.
+        const requiredFields = ['title', 'dueDate', 'taskType'];
         for (const field of requiredFields) {
             if (!taskData[field]) {
                 throw ApiError.badRequest(`${field} is required`);
             }
         }
 
-        // Дополнительная проверка на 'comments', если оно стало обязательным вместо 'description'
-        // if (!taskData.comments) { // Пример, если comments обязательно
-        //     throw ApiError.badRequest(`comments is required`);
-        // }
+        const dataForDb = {
+            uuid: uuidv4(),
+            title: taskData.title,
+            type: taskData.taskType, // Используем taskType от фронтенда
+            dueDate: taskData.dueDate,
+            time: taskData.time || null,
+            comments: taskData.comments || null,
+            // Обнуляем поля по умолчанию, чтобы избежать сохранения старых данных при смене типа
+            childId: null,
+            hoursWorked: null,
+            amountEarned: null,
+            amountSpent: null,
+            expenseTypeId: null
+        };
 
+        if (taskData.taskType === 'income') {
+            dataForDb.childId = taskData.childId || null;
+            dataForDb.hoursWorked = taskData.hoursWorked || null;
+            dataForDb.amountEarned = taskData.amount || null; // Изменено с earnedAmount
 
-        // Обработка имени категории для задач типа 'expense'
-        if (taskData.type === 'expense' && typeof taskData.category === 'string' && taskData.category.trim() !== '') {
-            const categoryName = taskData.category;
-            // Удаляем поле category из taskData, чтобы оно не попало в newTask и затем в БД
-            delete taskData.category;
-
-            console.log(`[taskService.createTask] Searching for expense category by name: "${categoryName}"`);
-            const expenseCategory = await knex('expense_categories').where({ category_name: categoryName }).first();
-
-            if (!expenseCategory) {
-                console.error(`[taskService.createTask] Expense category not found by name: "${categoryName}"`);
-                throw ApiError.badRequest(`Категория расхода '${categoryName}' не найдена`);
+            if (dataForDb.childId && !(await validateExistence('children', dataForDb.childId))) {
+                console.error('[taskService.createTask] Validation failed for childId:', dataForDb.childId);
+                throw ApiError.badRequest('Child not found');
             }
-            taskData.expenceTypeId = expenseCategory.uuid;
-            console.log(`[taskService.createTask] Found expense category UUID: ${expenseCategory.uuid}. Set taskData.expenceTypeId to: ${taskData.expenceTypeId}`);
+        } else if (taskData.taskType === 'expense') {
+            dataForDb.amountSpent = taskData.amount || null; // Изменено с spentAmount
+            dataForDb.expenseTypeId = taskData.expenseTypeId || null; // Используем expenseTypeId от фронтенда
+
+            if (dataForDb.expenseTypeId && !(await validateExistence('expense_categories', dataForDb.expenseTypeId))) {
+                console.error('[taskService.createTask] Validation failed for expenseTypeId (categoryId):', dataForDb.expenseTypeId);
+                throw ApiError.badRequest('Expense category not found by categoryId');
+            }
+        } else {
+            throw ApiError.badRequest(`Invalid taskType: ${taskData.taskType}`);
         }
 
-        if (taskData.childId && !(await validateExistence('children', taskData.childId))) {
-            console.error('[taskService.createTask] Validation failed for childId:', taskData.childId);
-            throw ApiError.badRequest('Child not found');
-        }
-        console.log('[taskService.createTask] Validating expenceTypeId. Received value:', taskData.expenceTypeId);
-        const categoryExists = await validateExistence('expense_categories', taskData.expenceTypeId);
-        console.log('[taskService.createTask] Result of validateExistence for expenceTypeId:', categoryExists);
+        console.log('[taskService.createTask] Prepared dataForDb for DB insert:', JSON.stringify(dataForDb));
 
-        if (taskData.expenceTypeId && !categoryExists) {
-            console.error('[taskService.createTask] Validation failed for expenceTypeId:', taskData.expenceTypeId);
-            throw ApiError.badRequest('Expense category not found');
-        }
-        console.log('[taskService.createTask] expenceTypeId after validation check:', taskData.expenceTypeId);
-
-        console.log('[taskService.createTask] Received taskData before modification:', JSON.stringify(taskData));
-        // Удаляем hourlyRate из taskData, если оно пришло, так как его нет в таблице tasks
-        if (taskData.hasOwnProperty('hourlyRate')) {
-            delete taskData.hourlyRate;
-        }
-        const newTask = { uuid: uuidv4(), ...taskData };
-        console.log('[taskService.createTask] Generated newTask object for DB insert:', JSON.stringify(newTask));
+        const newTask = dataForDb; // Используем очищенный и преобразованный объект
+        // console.log('[taskService.createTask] Generated newTask object for DB insert:', JSON.stringify(newTask)); // Дублирующий лог, можно убрать
         try {
-            console.log('[taskService.createTask] Attempting to insert newTask into DB. Current expenceTypeId in newTask:', newTask.expenceTypeId);
+            console.log('[taskService.createTask] Attempting to insert newTask into DB. Current expenseTypeId in newTask:', newTask.expenseTypeId); // Изменено с expenseTypeId
             const result = await knex('tasks').insert(newTask);
             console.log('[taskService.createTask] Knex insert result:', JSON.stringify(result));
             // Для PostgreSQL, result обычно содержит массив вставленных строк или количество вставленных строк,
@@ -91,109 +85,143 @@ const taskService = {
         return knex('tasks')
             .select(
                 'tasks.*',
-                'children.childName as childName',
-                'expense_categories.category_name as expenseCategoryName'
+                'children.childName as childName', // Унифицированный алиас
+                'children.parentName as parentName',
+                'children.parentPhone as parentPhone',
+                'children.address as childAddress',
+                'children.hourlyRate as childHourlyRate',
+                'expense_categories.categoryName as expenseCategoryName'
             )
             .leftJoin('children', 'tasks.childId', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expenceTypeId', 'expense_categories.uuid');
+            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid');
     },
 
     async getTaskById(uuid) {
-        return knex('tasks')
+        const task = await knex('tasks')
             .where('tasks.uuid', uuid)
             .select(
                 'tasks.*',
-                'children.childName as childName',
-                'expense_categories.category_name as expenseCategoryName'
+                'children.childName as childName', // Унифицированный алиас
+                'children.parentName as parentName',
+                'children.parentPhone as parentPhone',
+                'children.address as childAddress',
+                'children.hourlyRate as childHourlyRate',
+                'expense_categories.categoryName as expenseCategoryName'
             )
             .leftJoin('children', 'tasks.childId', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expenceTypeId', 'expense_categories.uuid')
+            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid')
             .first();
+        if (task) {
+            console.log(`[taskService.getTaskById] Task found (uuid: ${uuid}). dueDate from DB:`, task.dueDate);
+        } else {
+            console.log(`[taskService.getTaskById] Task not found (uuid: ${uuid}).`);
+        }
+        return task;
     },
 
     async updateTask(uuid, taskData) {
-        // Проверка обязательных полей
-        // Убираем 'description' из обязательных, так как его нет в таблице.
-        // Добавляем 'type', если он обязателен при обновлении.
-        // Судя по тестам, при обновлении передаются не все поля, а только изменяемые.
-        // Поэтому, возможно, здесь не нужно проверять все обязательные поля,
-        // а только те, которые пришли в taskData и являются частью модели.
-        // Оставим проверку только для тех полей, которые действительно должны быть в taskData при обновлении.
-        // Если какие-то поля обязательны всегда (например, title, dueDate), их нужно проверять.
-        const presentRequiredFields = ['title', 'dueDate', 'type']; // Примерный список, нужно уточнить по логике приложения
-        for (const field of presentRequiredFields) {
-            if (taskData.hasOwnProperty(field) && !taskData[field]) { // Проверяем только если поле пришло и оно пустое
-                throw ApiError.badRequest(`${field} is required`);
+        const dataToUpdate = {};
+
+        // Обязательные поля, если они переданы
+        if (taskData.hasOwnProperty('title')) {
+            if (!taskData.title) throw ApiError.badRequest('title is required');
+            dataToUpdate.title = taskData.title;
+        }
+        if (taskData.hasOwnProperty('dueDate')) {
+            if (!taskData.dueDate) throw ApiError.badRequest('dueDate is required');
+            dataToUpdate.dueDate = taskData.dueDate;
+        }
+        if (taskData.hasOwnProperty('taskType')) {
+            if (!taskData.taskType) throw ApiError.badRequest('taskType is required');
+            dataToUpdate.type = taskData.taskType; // Используем taskType от фронтенда
+        }
+
+        // Необязательные общие поля
+        if (taskData.hasOwnProperty('time')) dataToUpdate.time = taskData.time;
+        if (taskData.hasOwnProperty('comments')) dataToUpdate.comments = taskData.comments;
+
+        // Определяем текущий тип задачи, если он не меняется, или новый, если меняется
+        const currentTaskType = dataToUpdate.type || (await knex('tasks').where({ uuid }).first()).type;
+
+        if (!currentTaskType) {
+             throw ApiError.notFound('Task not found or type is missing');
+        }
+
+        // Сбрасываем поля перед установкой новых, если тип задачи меняется или это первое обновление полей типа
+        if (taskData.hasOwnProperty('taskType')) { // Если тип явно меняется
+            dataToUpdate.childId = null;
+            dataToUpdate.hoursWorked = null;
+            dataToUpdate.amountEarned = null;
+            dataToUpdate.amountSpent = null;
+            dataToUpdate.expenseTypeId = null;
+        }
+
+
+        if (currentTaskType === 'income') {
+            if (taskData.hasOwnProperty('childId')) dataToUpdate.childId = taskData.childId;
+            if (taskData.hasOwnProperty('hoursWorked')) dataToUpdate.hoursWorked = taskData.hoursWorked;
+            if (taskData.hasOwnProperty('amount')) dataToUpdate.amountEarned = taskData.amount; // Изменено с earnedAmount
+
+            // Валидация, если childId предоставлен
+            if (dataToUpdate.childId && !(await validateExistence('children', dataToUpdate.childId))) {
+                console.error('[taskService.updateTask] Validation failed for childId:', dataToUpdate.childId);
+                throw ApiError.badRequest('Child not found');
+            }
+            // Если тип 'income', убедимся, что поля расходов обнулены, если они не были явно переданы для обнуления
+             if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = null; // Изменено с spentAmount
+             if (!taskData.hasOwnProperty('categoryId')) dataToUpdate.expenseTypeId = null;
+
+
+        } else if (currentTaskType === 'expense') {
+            if (taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = taskData.amount; // Изменено с spentAmount
+            if (taskData.hasOwnProperty('categoryId')) dataToUpdate.expenseTypeId = taskData.categoryId; // Используем categoryId от фронтенда
+
+            // Валидация, если categoryId (expenceTypeId) предоставлен
+            if (dataToUpdate.expenseTypeId && !(await validateExistence('expense_categories', dataToUpdate.expenseTypeId))) {
+                console.error('[taskService.updateTask] Validation failed for expenseTypeId (categoryId):', dataToUpdate.expenseTypeId);
+                throw ApiError.badRequest('Expense category not found by categoryId');
+            }
+             // Если тип 'expense', убедимся, что поля доходов обнулены
+             if (!taskData.hasOwnProperty('childId')) dataToUpdate.childId = null;
+             if (!taskData.hasOwnProperty('hoursWorked')) dataToUpdate.hoursWorked = null;
+             if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountEarned = null; // Изменено с earnedAmount
+
+        } else if (taskData.hasOwnProperty('taskType')) { // Если пришел новый taskType, но он не 'income' и не 'expense'
+            throw ApiError.badRequest(`Invalid taskType: ${taskData.taskType}`);
+        }
+
+        // Удаляем поля, которые не должны напрямую обновляться в таблице tasks
+        // (например, если фронтенд по ошибке прислал 'category' вместо 'categoryId')
+        const disallowedFields = ['category', 'child_id', 'child_name', 'expenseCategoryName', 'hourlyRate', 'amount', 'taskType'];
+        for (const field of disallowedFields) {
+            if (dataToUpdate.hasOwnProperty(field)) { // taskType уже был использован для dataToUpdate.type
+                delete dataToUpdate[field];
+            }
+             if (taskData.hasOwnProperty(field) && field !== 'taskType') { // также удаляем из исходного taskData, чтобы не попали в dataToUpdate через spread
+                delete taskData[field]; // Это не повлияет на dataToUpdate если поле уже скопировано, но для чистоты
             }
         }
-        // Если обновляется только часть полей, то проверять все requiredFields неверно.
-        // Например, если обновляется только title, то dueDate и type не придут, и будет ошибка.
-        // Уточним: тесты передают только title, description (заменим на comments), dueDate, amountEarned.
-        // Значит, проверять нужно только те из них, которые обязательны и пришли пустыми.
-        // Или, если поле обязательно для существования записи, но не пришло на обновление - это ОК.
-        // Сервис должен проверять валидность данных, которые ему передали.
 
-        // Пример более корректной проверки для обновления:
-        if (taskData.hasOwnProperty('title') && !taskData.title) {
-            throw ApiError.badRequest('title is required');
-        }
-        if (taskData.hasOwnProperty('dueDate') && !taskData.dueDate) {
-            throw ApiError.badRequest('dueDate is required');
-        }
-        if (taskData.hasOwnProperty('type') && !taskData.type) {
-            throw ApiError.badRequest('type is required');
-        }
-
-
-        // Обработка имени категории для задач типа 'expense' при обновлении
-        if (taskData.type === 'expense' && typeof taskData.category === 'string' && taskData.category.trim() !== '') {
-            const categoryName = taskData.category;
-            // Удаляем поле category из taskData, чтобы оно не попало в запрос к БД как колонка
-            delete taskData.category;
-
-            console.log(`[taskService.updateTask] Searching for expense category by name: "${categoryName}"`);
-            const expenseCategory = await knex('expense_categories').where({ category_name: categoryName }).first();
-
-            if (!expenseCategory) {
-                console.error(`[taskService.updateTask] Expense category not found by name: "${categoryName}"`);
-                throw ApiError.badRequest(`Категория расхода '${categoryName}' не найдена`);
-            }
-            taskData.expenceTypeId = expenseCategory.uuid; // Используем uuid категории
-            console.log(`[taskService.updateTask] Found expense category UUID: ${expenseCategory.uuid}. Set taskData.expenceTypeId to: ${taskData.expenceTypeId}`);
-        } else if (taskData.hasOwnProperty('category') && taskData.category === null) {
-            // Если фронтенд явно прислал null для категории, это может означать "убрать категорию"
-            // В этом случае мы должны установить expenceTypeId в null
-            delete taskData.category; // Удаляем, чтобы не пытаться записать 'category'
-            taskData.expenceTypeId = null;
-            console.log(`[taskService.updateTask] Category explicitly set to null. Setting expenceTypeId to null.`);
-        }
-
-
-        if (taskData.childId && !(await validateExistence('children', taskData.childId))) {
-            throw ApiError.badRequest('Child not found');
-        }
-        // Валидация expenceTypeId должна происходить ПОСЛЕ его возможной установки из имени категории
-        if (taskData.hasOwnProperty('expenceTypeId') && taskData.expenceTypeId !== null && !(await validateExistence('expense_categories', taskData.expenceTypeId))) {
-            console.error('[taskService.updateTask] Validation failed for expenceTypeId:', taskData.expenceTypeId);
-            throw ApiError.badRequest('Expense category not found by expenceTypeId');
-        }
-
-        // Удаляем hourlyRate из taskData, так как это поле относится к таблице children
-        if (taskData.hasOwnProperty('hourlyRate')) {
-            delete taskData.hourlyRate;
-        }
-
-        // Удаляем поля, которых нет в таблице 'tasks' напрямую
-        if (taskData.hasOwnProperty('childName')) {
-            delete taskData.childName;
-        }
-        if (taskData.hasOwnProperty('expenseCategoryName')) {
-            delete taskData.expenseCategoryName;
-        }
 
         console.log('[taskService.updateTask] Received UUID for update:', uuid);
-        console.log('[taskService.updateTask] Cleaned taskData for update:', JSON.stringify(taskData)); // Изменено сообщение в логе
-        const updated = await knex('tasks').where({ uuid }).update(taskData);
+        console.log('[taskService.updateTask] Original taskData for update:', JSON.stringify(taskData)); // taskData здесь уже может быть изменен
+        console.log('[taskService.updateTask] Prepared dataToUpdate for DB:', JSON.stringify(dataToUpdate));
+
+        if (Object.keys(dataToUpdate).length === 0) {
+            console.log('[taskService.updateTask] No fields to update after processing. Returning 0.');
+            // Если после обработки не осталось полей для обновления (например, пришло только поле amount, которое было преобразовано)
+            // и другие поля не изменились, то можно вернуть 0 или текущий объект.
+            // Однако, если amount был единственным изменением, то update должен произойти.
+            // Эта проверка может быть излишней, если мы уверены, что всегда будут другие поля или amount изменился.
+            // Если dataToUpdate пусто, knex.update может не сработать как ожидается или вызвать ошибку.
+            // Но если пришел только amount, то он должен был быть преобразован, и dataToUpdate не будет пустым.
+            // Если пришел только, например, childName, он будет удален, и dataToUpdate может стать пустым.
+            // В таком случае, обновление не требуется.
+            const taskExists = await knex('tasks').where({ uuid }).first();
+            return taskExists ? 0 : ApiError.notFound('Task not found for update (no valid fields to update)');
+        }
+
+        const updated = await knex('tasks').where({ uuid }).update(dataToUpdate);
         console.log('[taskService.updateTask] Update result (updated count):', updated);
         return updated;
     },
@@ -207,19 +235,40 @@ async getTasksByCategoryUuid(categoryUuid) {
             return null; // Контроллер обработает это как 404
         }
 
-        console.log(`[taskService.getTasksByCategoryUuid] Found category name: ${category.category_name}. Fetching tasks.`);
+        console.log(`[taskService.getTasksByCategoryUuid] Found category name: ${category.categoryName}. Fetching tasks.`);
         return knex('tasks')
-            .where({ expenceTypeId: category.uuid })
+            .where({ expenseTypeId: category.uuid }) // Изменено с expenseTypeId
             .select(
                 'tasks.*',
                 'children.childName as childName',
-                knex.raw('? as expenseCategoryName', [category.category_name])
+                knex.raw('? as expenseCategoryName', [category.categoryName])
             )
             .leftJoin('children', 'tasks.childId', 'children.uuid');
     },
     async deleteTask(uuid) {
         const deleted = await knex('tasks').where({ uuid }).del();
         return deleted;
+    },
+
+    async getTasksByDate(dateString) {
+        // Валидация формата даты (простая проверка, можно улучшить с помощью библиотек типа moment.js или date-fns)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            throw ApiError.badRequest('Invalid date format. Please use YYYY-MM-DD.');
+        }
+        const tasks = await knex('tasks')
+            .where('tasks.dueDate', dateString) // Используем dueDate, так как это поле в таблице
+            .select(
+                'tasks.*',
+                'children.childName as childName', // Алиас для соответствия ожиданиям фронтенда
+                'children.parentName as parentName',
+                'children.parentPhone as parentPhone',
+                'children.address as childAddress',
+                'children.hourlyRate as childHourlyRate',
+                'expense_categories.categoryName as expenseCategoryName'
+            )
+            .leftJoin('children', 'tasks.childId', 'children.uuid')
+            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid');
+        return tasks;
     }
 };
 

@@ -38,7 +38,7 @@ const ExpenseCategoryManager: React.FC = () => {
 
     // SP-2: Проверка на существующее имя категории (без учета регистра)
     const existingCategory = categories.find(
-      (cat) => cat.category_name.toLowerCase() === newCategoryName.trim().toLowerCase()
+      (cat) => cat.categoryName.toLowerCase() === newCategoryName.trim().toLowerCase()
     );
     if (existingCategory) {
       alert('Категория с таким названием уже существует.');
@@ -60,13 +60,13 @@ const ExpenseCategoryManager: React.FC = () => {
 
   const handleUpdateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCategory || !editingCategory.category_name.trim()) return;
+    if (!editingCategory || !editingCategory.categoryName.trim()) return;
 
     // SP-2: Проверка на существующее имя категории (без учета регистра), исключая текущую редактируемую категорию
     const existingCategory = categories.find(
       (cat) =>
         cat.uuid !== editingCategory.uuid && // Changed from id to uuid
-        cat.category_name.toLowerCase() === editingCategory.category_name.trim().toLowerCase()
+        cat.categoryName.toLowerCase() === editingCategory.categoryName.trim().toLowerCase()
     );
     if (existingCategory) {
       alert('Категория с таким названием уже существует. Пожалуйста, выберите другое имя.');
@@ -75,10 +75,10 @@ const ExpenseCategoryManager: React.FC = () => {
 
     try {
       // Сохранить старую категорию
-      const oldCategoryName = categories.find(cat => cat.uuid === editingCategory.uuid)?.category_name || ''; // Changed from id to uuid
+      // const oldCategoryName = categories.find(cat => cat.uuid === editingCategory.uuid)?.categoryName || ''; // Changed from id to uuid
 
       // Обновить категорию
-      const updatedCategory = await updateExpenseCategory(editingCategory.uuid, editingCategory.category_name); // Changed from id to uuid
+      await updateExpenseCategory(editingCategory.uuid, editingCategory.categoryName); // Changed from id to uuid
       setEditingCategory(null); // Сбросить режим редактирования
       fetchCategories(); // Обновить список категорий
 
@@ -87,8 +87,8 @@ const ExpenseCategoryManager: React.FC = () => {
       // Отображение актуального имени категории в задачах должно происходить
       // за счет обновления списка категорий (через fetchCategories()) и последующего
       // корректного маппинга expenceTypeId на имя категории в компонентах, отображающих задачи.
-      // if (oldCategoryName && oldCategoryName !== updatedCategory.category_name) {
-      //   console.log(`Category name changed from "${oldCategoryName}" to "${updatedCategory.category_name}". Associated tasks' display should update.`);
+      // if (oldCategoryName && oldCategoryName !== updatedCategory.categoryName) {
+      //   console.log(`Category name changed from "${oldCategoryName}" to "${updatedCategory.categoryName}". Associated tasks' display should update.`);
       // }
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.message) {
@@ -145,7 +145,7 @@ const ExpenseCategoryManager: React.FC = () => {
           value={newCategoryName}
           onChange={(e) => setNewCategoryName(e.target.value)}
         />
-        <button type="submit">Добавить</button>
+        <button type="submit" className="btn btn-primary">Добавить</button>
       </form>
 
       <ul className="category-list">
@@ -157,18 +157,18 @@ const ExpenseCategoryManager: React.FC = () => {
                 <input
                   type="text"
                   style={{ color: "black" }}
-                  value={editingCategory?.category_name || ''}
+                  value={editingCategory?.categoryName || ''}
                   onChange={(e) => {
                     if (editingCategory) { // Добавлена проверка на null перед доступом к свойствам
-                      setEditingCategory({ ...editingCategory, category_name: e.target.value });
+                      setEditingCategory({ ...editingCategory, categoryName: e.target.value });
                     } else {
                       // Эта ветка не должна достигаться, если editingCategory?.category_name используется для value
                       // console.error('[ExpenseCategoryManager] onChange input - editingCategory is null, cannot set new value'); // Оставим закомментированным на всякий случай
                     }
                   }}
                 />
-                <button type="submit">{<FontAwesomeIcon icon={faFloppyDisk} />}</button>
-                <button type="button" onClick={() => {
+                <button type="submit" className="btn btn-icon">{<FontAwesomeIcon icon={faFloppyDisk} />}</button>
+                <button type="button" className="btn btn-icon" onClick={() => {
                   setEditingCategory(null);
                 }}>
                   <FontAwesomeIcon icon={faXmark} />
@@ -176,12 +176,12 @@ const ExpenseCategoryManager: React.FC = () => {
               </form>
             ) : (
               <>
-                <span>{category.category_name}</span>
+                <span>{category.categoryName}</span>
                 <div className="actions">
-                  <button onClick={() => setEditingCategory(category)} className="icon-button edit-button" title="Редактировать">
+                  <button onClick={() => setEditingCategory(category)} className="btn btn-icon icon-button edit-button" title="Редактировать">
                     <FontAwesomeIcon icon={faPencil} />
                   </button>
-                  <button onClick={() => handleDeleteCategory(category.uuid)} className="icon-button delete-button" title="Удалить"> {/* Changed from id to uuid */}
+                  <button onClick={() => handleDeleteCategory(category.uuid)} className="btn btn-icon icon-button delete-button" title="Удалить"> {/* Changed from id to uuid */}
                     <FontAwesomeIcon icon={faTrash} />
                   </button>
                 </div>
