@@ -13,7 +13,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
     const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const toggleExpansion = () => {
         setIsExpanded(!isExpanded);
@@ -103,7 +103,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
                 className={`
                     transition-all duration-300 ease-in-out overflow-hidden
                     ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}
-                    ${isExpanded ? 'rounded-b-xl' : ''} // Нижние скругления только если развернуто и есть контент
+                    ${isExpanded ? 'rounded-b-xl' : ''}
                     bg-light-background
                 `}
             >
