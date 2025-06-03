@@ -4,8 +4,8 @@ import { NavProvider } from './context/NavContext';
 import ChildCardsSettingsPage from './pages/ChildCardsSettingsPage';
 import DayDetailsPage from './pages/DayDetailsPage'; // Импортируем новую страницу
 import ExpenseCategoriesSettingsPage from './pages/ExpenseCategoriesSettingsPage';
+import NoteDetailsPage from './pages/NoteDetailsPage'; // Импортируем страницу заметок
 import SettingsPage from './pages/SettingsPage';
-
 
 function App() {
   return (
@@ -18,6 +18,7 @@ function App() {
             <Route path="child-cards" element={<ChildCardsSettingsPage />} />
           </Route>
           <Route path="/day/:dateString" element={<DayDetailsPage />} /> {/* Новый маршрут */}
+          <Route path="/notes/:date" element={<NoteDetailsPage />} /> {/* Обновленный маршрут для заметок с датой */}
         </Routes>
       </NavProvider>
     </BrowserRouter>

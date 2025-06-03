@@ -10,6 +10,7 @@ const asyncHandler = fn => (req, res, next) =>
 
 // POST /tasks - Создание новой задачи
 router.post('/', asyncHandler(async (req, res) => {
+    console.log('[taskController.js] POST /tasks - HANDLER REACHED'); // Новый лог
     console.log('[taskController.js] POST /tasks - req.body:', JSON.stringify(req.body, null, 2));
     console.log('[taskController.js] POST /tasks - req.body.dueDate:', req.body.dueDate);
     const task = await taskService.createTask(req.body);

@@ -13,7 +13,6 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
   currentWeekDisplay,
   // isNavVisible, // Больше не используется для скрытия/показа
 }) => {
-  // Классы из макета docs/new_design_main_page.html (строки 73-81)
   return (
     <nav className="flex justify-between items-center my-4 p-4 bg-card rounded-lg">
       <button
@@ -23,7 +22,7 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
       >
         <span className="material-icons">chevron_left</span>
       </button>
-      <span className="text-sm font-medium">{currentWeekDisplay}</span>
+      <span className="text-base font-medium">{currentWeekDisplay}</span>
       <button
         className="p-2 rounded-md hover:bg-gray-600"
         onClick={goToNextWeek}

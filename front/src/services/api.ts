@@ -92,15 +92,14 @@ api.interceptors.response.use(
 );
 
 // Notes API
-export const getNoteByDate = async (dateString: string): Promise<Note | null> => {
+export const getNoteByDate = async (dateString: string): Promise<Note[]> => {
   try {
-    const response = await api.get<Note>(`notes/date/${dateString}`);
-    return response.data;
+    const response = await api.get<Note[]>(`notes/date/${dateString}`);
+    return response.data; // API должен возвращать массив, даже если он пустой
   } catch (error: any) {
-    if (error.response && error.response.status === 404) {
-      return null; // Заметка не найдена
-    }
     // Ошибка будет обработана глобальным interceptor'ом
+    // Если API возвращает 404, когда заметок нет, это будет обработано как ошибка.
+    // Если ожидается пустой массив, то 404 не должно быть.
     throw error;
   }
 };
