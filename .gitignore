@@ -42,3 +42,5 @@ back/data/database.sqlite
 back/data/test.sqlite
 
 documents/*
+docs/*
+back/data/database.sqlite

@@ -1,11 +1,11 @@
-import { faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faMapMarkerAlt, faPhone, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
 import { type Task } from '../services/api';
 import './DetailedTaskCard.css';
 
 interface DetailedTaskCardProps {
-  task: Task; // Предполагается, что тип Task будет расширен полями: parentName, parentPhoneNumber, childAddress, childHourlyRate
+  task: Task; // Тип Task должен включать: parentName, parentPhone, childAddress, childHourlyRate
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   // onDuplicate: (taskId: string) => void; // Дублирование пока убрано
@@ -14,7 +14,7 @@ interface DetailedTaskCardProps {
 
 const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDelete }) => {
   const {
-    id,
+    uuid, // Используем uuid вместо id
     title,
     description,
     type, // тип используется для стилизации окантовки и условного отображения полей
@@ -22,21 +22,23 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
     address, // Адрес задачи
     child_name,
     hourlyRate, // Ставка задачи
-    amount,
+    amount, // Используется для fixed (теперь только для fixed)
+    amountEarned, // Используется для hourly и income
+    amountSpent, // Используется для expense
     hoursWorked,
     comments,
     // completed, // Удаляем, так как отметка о выполнении убирается
     isPaid,
     expenseCategoryName,
-    // Новые поля для информации о ребенке (должны быть добавлены в тип Task)
+    // Поля для информации о ребенке
     parentName,
-    parentPhone, // Изменено с parentPhoneNumber для соответствия api.ts
-    childAddress, // Адрес ребенка (отличный от адреса задачи)
-    childHourlyRate, // Ставка ребенка (информационная) - будет добавлено в api.ts
+    parentPhone,
+    childAddress,
+    childHourlyRate,
   } = task;
 
   const handleEdit = () => onEdit(task);
-  const handleDelete = () => onDelete(id);
+  const handleDelete = () => onDelete(uuid); // Используем uuid
 
   // Класс `done` больше не используется, окантовка зависит только от `type`
   const cardClasses = `detailed-task-card ${type}`;
@@ -60,17 +62,66 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
         {time && <p><strong>Время:</strong> {time}</p>}
         {/* Поле "тип задачи" убрано из отображения */}
         {child_name && <p><strong>Ребенок:</strong> {child_name}</p>}
-        {parentName && <p><strong>Имя родителя:</strong> {parentName}</p>}
-        {parentPhone && <p><strong>Телефон родителя:</strong> {parentPhone}</p>}
-        {childAddress && <p><strong>Адрес ребенка:</strong> {childAddress}</p>}
-        {childHourlyRate !== undefined && <p><strong>Ставка ребенка (инфо):</strong> {childHourlyRate} ₽/час</p>}
         {address && <p><strong>Адрес задачи:</strong> {address}</p>}
         {hourlyRate !== undefined && type === 'hourly' && <p><strong>Ставка задачи:</strong> {hourlyRate} ₽/час</p>}
         {hoursWorked !== undefined && type === 'hourly' && <p><strong>Часы работы:</strong> {hoursWorked}</p>}
-        {amount !== undefined && (type === 'fixed' || type === 'hourly' || type === 'income') && <p><strong>Заработано:</strong> {amount} ₽</p>}
+        {/* Отображение "Заработано" для 'fixed' */}
+        {amount !== undefined && type === 'fixed' && (
+          <p><strong>Заработано:</strong> {amount} ₽</p>
+        )}
+        {/* Отображение суммы для типа 'hourly' как "Доход" */}
+        {amountEarned !== undefined && type === 'hourly' && (
+          <p>
+            <strong>Доход:</strong>
+            <span className="amount-income"> {/* Используем класс для дохода */}
+              {' '}+{amountEarned} ₽ {/* Используем amountEarned и префикс + */}
+            </span>
+          </p>
+                )}
+                {/* Отображение суммы для типа 'income' */}
+                {amountEarned !== undefined && type === 'income' && (
+                  <p>
+                    <strong>Доход:</strong>
+                    <span className="amount-income">
+                      {' '}+{amountEarned} ₽
+                    </span>
+                  </p>
+                )}
+                {/* Отображение суммы для типа 'expense' */}
+                {amountSpent !== undefined && type === 'expense' && (
+                  <p>
+                    <strong>Расход:</strong>
+                    <span className="amount-expense">
+                      {' '}-{amountSpent} ₽
+                    </span>
+                  </p>
+                )}
         {expenseCategoryName && type === 'expense' && <p><strong>Категория:</strong> {expenseCategoryName}</p>}
-        {amount !== undefined && type === 'expense' && <p><strong>Потрачено:</strong> {amount} ₽</p>}
         {comments && <p><strong>Комментарий к задаче:</strong> {comments}</p>}
+
+        {(parentName || parentPhone || childAddress || childHourlyRate !== undefined) && (
+          <div className="child-info-section">
+            <h4>Информация о ребенке:</h4>
+            {parentName && <p><strong>Имя родителя:</strong> {parentName}</p>}
+            {parentPhone && (
+              <p>
+                <FontAwesomeIcon icon={faPhone} className="info-icon" />
+                <strong>Телефон:</strong> {parentPhone}
+              </p>
+            )}
+            {childAddress && (
+              <p>
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="info-icon" />
+                <strong>Адрес:</strong> {childAddress}
+              </p>
+            )}
+            {childHourlyRate !== undefined && (
+              <p>
+                <strong>Ставка:</strong> {childHourlyRate} ₽/час
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Футер с отметкой о выполнении и чекбоксом удален */}

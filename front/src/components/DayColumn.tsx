@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from 'react'; // useCallback уд�
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNavigate } from 'react-router-dom'; // Добавлен useNavigate
 import { useNav } from '../context/NavContext';
-import { deleteTask, duplicateTask, moveTask, type Note, type Task } from '../services/api'; // getTasksByWeekAndDay удален, Task и Note импортированы
+import { createTask, deleteTask, duplicateTask, moveTask, updateTask, type Note, type Task } from '../services/api'; // getTasksByWeekAndDay удален, Task и Note импортированы, добавлены createTask, updateTask
 import { createDate, formatDateForDayColumnHeader, isSameDay } from '../utils/dateUtils';
 import './DayColumn.css';
 import MiniEventCard, { type EventItem } from './MiniEventCard'; // Заменяем TaskItem на MiniEventCard
-import TaskForm from './TaskForm';
+import UnifiedTaskFormModal from './UnifiedTaskFormModal'; // Замена TaskForm
 // TaskItem больше не используется
 // import TaskItem from './TaskItem';
 
@@ -34,9 +34,11 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
 
   const { setIsNavVisible, setIsModalOpen } = useNav();
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  // Обновляем тип editingEvent для соответствия TaskFormProps.initialData
-  const [editingEvent, setEditingEvent] = useState< (Partial<Task> & { formType: 'income' | 'expense' }) | undefined >(undefined);
+  // Состояния для UnifiedTaskFormModal
+  const [isModalOpenState, setIsModalOpenState] = useState(false); // Локальное состояние для модалки
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
+  const [currentTaskType, setCurrentTaskType] = useState<'income' | 'expense'>('income');
 
 
   useEffect(() => {
@@ -76,53 +78,66 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
     setEvents(sortedEvents);
   }, [tasksForDay]);
 
-  const handleOpenForm = (eventToEdit?: EventItem) => {
+  const handleOpenModal = (eventToEdit?: EventItem, type?: 'income' | 'expense') => {
     if (eventToEdit && (eventToEdit.itemType === 'task' || eventToEdit.itemType === 'expense')) {
       const taskToEdit = eventToEdit as Task;
-      setEditingEvent({
-        ...taskToEdit,
-        formType: taskToEdit.type === 'expense' ? 'expense' : 'income', // Устанавливаем formType для формы
-      });
+      setCurrentTask(taskToEdit);
+      setModalMode('edit');
+      setCurrentTaskType(taskToEdit.type === 'expense' ? 'expense' : 'income');
     } else if (!eventToEdit) {
-      setEditingEvent({
-        formType: 'income', // Тип по умолчанию для новой задачи в форме
-        title: '',
-        dueDate: createDate(props.fullDate).toISOString().slice(0, 10),
-      });
+      setCurrentTask(undefined);
+      setModalMode('create');
+      setCurrentTaskType(type || 'income'); // Используем переданный тип или 'income' по умолчанию
     } else {
-      console.log('Editing this event type via TaskForm is not supported:', eventToEdit.itemType);
+      // console.log('Editing this event type via UnifiedTaskFormModal is not supported:', eventToEdit.itemType); // Можно оставить для редких случаев
       return;
     }
-    setShowForm(true);
+    setIsModalOpenState(true); // Используем локальное состояние
     setIsNavVisible(false);
-    setIsModalOpen(true);
+    setIsModalOpen(true); // Глобальное состояние для оверлея
   };
 
 
-  const handleCloseForm = () => {
-    setShowForm(false);
-    setEditingEvent(undefined);
+  const handleCloseModal = () => {
+    setIsModalOpenState(false); // Используем локальное состояние
+    setCurrentTask(undefined);
     setIsNavVisible(true);
-    setIsModalOpen(false);
+    setIsModalOpen(false); // Глобальное состояние
   };
 
-  // Упрощаем handleDeleteEvent и handleDuplicateEvent, так как TaskForm теперь принимает только id
-  const handleDeleteEventFromForm = async (id: string) => {
+  const handleSubmitTask = async (taskData: Task | Omit<Task, 'uuid'>) => {
+    try {
+      if ('uuid' in taskData && taskData.uuid) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { uuid, ...updateData } = taskData;
+        await updateTask(taskData.uuid, updateData as Partial<Omit<Task, 'uuid'>>);
+      } else {
+        await createTask(taskData as Omit<Task, 'uuid'>);
+      }
+      onDataChange();
+      handleCloseModal();
+    } catch (error) {
+      console.error('Ошибка при сохранении задачи в DayColumn:', error);
+      // Можно добавить toast для пользователя
+    }
+  };
+
+  const handleDeleteTask = async (id: string) => {
     try {
       await deleteTask(id);
       onDataChange();
-      handleCloseForm(); // Закрываем форму после удаления
+      handleCloseModal(); // Закрываем модальное окно после удаления
     } catch (error) {
       console.error(`Ошибка при удалении задачи:`, error);
       // Можно показать toast с ошибкой
     }
   };
 
-  const handleDuplicateEventFromForm = async (id: string) => {
+  const handleDuplicateTask = async (id: string) => {
     try {
       await duplicateTask(id);
       onDataChange();
-      handleCloseForm(); // Закрываем форму после дублирования
+      handleCloseModal(); // Закрываем модальное окно после дублирования
     } catch (error) {
       console.error(`Ошибка при дублировании задачи:`, error);
       // Можно показать toast с ошибкой
@@ -169,8 +184,11 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
     <div className={`day-header ${isToday ? 'today-header-highlight' : ''}`} onClick={handleHeaderClick} role="button" tabIndex={0}
          onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}>
       <span className="day-name">{formatDateForDayColumnHeader(fullDate)}</span>
+      {/* Обновляем кнопки для открытия модального окна с указанием типа */}
       <div className="add-task-button-container">
-        <button className="add-event-button" onClick={(e) => { e.stopPropagation(); handleOpenForm(); }}>+</button>
+        <button className="add-event-button" onClick={(e) => { e.stopPropagation(); handleOpenModal(undefined, 'income'); }}>+</button>
+        {/* Можно добавить отдельную кнопку для расхода, если это требуется по дизайну */}
+        {/* <button className="add-event-button expense" onClick={(e) => { e.stopPropagation(); handleOpenModal(undefined, 'expense'); }}>-</button> */}
       </div>
     </div>
   );
@@ -181,13 +199,13 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       <div className="tasks-list-container">
         {events.length > 0 ? (
           events.map((event) => {
-            // Определяем ключ: используем 'id' если это Task, иначе 'uuid' (для Note)
-            const key = (event as Task).id ? (event as Task).id : (event as Note).uuid;
+            // Определяем ключ: используем 'uuid' для Task и Note
+            const key = (event as Task).uuid || (event as Note).uuid;
             return (
               <MiniEventCard
                 key={key}
                 event={event}
-                onEdit={handleOpenForm}
+                onEdit={(editedEvent) => handleOpenModal(editedEvent)} // Передаем событие в handleOpenModal
               />
             );
           })
@@ -195,16 +213,16 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
           <div className="empty-day-placeholder">Нет событий</div>
         )}
       </div>
-      {showForm && editingEvent && (
-        <TaskForm
-          initialData={editingEvent}
-          onTaskSaved={() => { // onTaskSaved из TaskForm теперь не передает данные задачи напрямую
-            onDataChange(); // Просто обновляем данные в DayColumn
-            handleCloseForm();
-          }}
-          onClose={handleCloseForm}
-          onDelete={editingEvent.id ? handleDeleteEventFromForm : undefined}
-          onDuplicate={editingEvent.id ? handleDuplicateEventFromForm : undefined}
+      {isModalOpenState && ( // Используем локальное состояние для отображения
+        <UnifiedTaskFormModal
+          isOpen={isModalOpenState}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmitTask}
+          mode={modalMode}
+          initialTaskData={currentTask}
+          initialTaskType={currentTaskType} // Исправлено taskType на initialTaskType
+          onDelete={currentTask?.uuid ? handleDeleteTask : undefined}
+          onDuplicate={currentTask?.uuid ? handleDuplicateTask : undefined}
         />
       )}
     </div>

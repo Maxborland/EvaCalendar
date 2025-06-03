@@ -16,11 +16,11 @@
 .day-details-header h1 {
   margin: 0 0 0 15px;
   font-size: 1.8em;
-  color: #333;
+  color: var(--theme-primary-text)
 }
 
 .back-button {
-  background-color: #f0f0f0;
+  background-color: var(--theme-gray-dark);
   border: 1px solid #ddd;
   padding: 8px 15px;
   border-radius: 5px;
@@ -45,7 +45,7 @@
 
 .day-details-tasks-section h2 {
   font-size: 1.5em;
-  color: #444;
+  color: var(--theme-primary-text)
   margin-bottom: 10px;
   border-bottom: 1px solid #eee;
   padding-bottom: 5px;

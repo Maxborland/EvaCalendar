@@ -137,7 +137,7 @@
 }
 
 .action-button {
-  background: none;
+  background: transparent;
   border: none;
   color: var(--color-text-secondary);
   cursor: pointer;

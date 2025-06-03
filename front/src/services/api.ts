@@ -25,18 +25,20 @@ export interface Child {
 }
 
 export interface Task {
-  id: string; // Изменено с uuid на id, чтобы соответствовать бэкенду
+  uuid: string; // Возвращаем uuid, так как API его возвращает
   title: string;
   description?: string; // Добавлено поле description
   type: string; // 'fixed', 'hourly', 'expense', 'income' (добавим income для унификации)
   time?: string; // Может быть eventTime или taskTime от бэкенда
   dueDate: string; // Может быть date от бэкенда
   completed?: boolean; // Изменено с isDone
-  child_id?: string;
+  childId?: string; // Изменено с child_id на camelCase для соответствия данным с бэкенда
   child_name?: string;
-  category_id?: string;
+  expenceTypeId?: string; // Изменено с category_id
   expenseCategoryName?: string;
   amount?: number; // Общее поле для суммы (доход/расход)
+  amountEarned?: number; // Добавлено для явного получения с бэкенда
+  amountSpent?: number; // Добавлено для явного получения с бэкенда
   hourlyRate?: number; // Для почасовых задач
   hoursWorked?: number; // Для почасовых задач
   isPaid?: boolean; // Для отслеживания оплаты
@@ -46,6 +48,7 @@ export interface Task {
   childAddress?: string;
   childHourlyRate?: number; // Добавлено для ставки ребенка
   comments?: string; // Переименовано из description для заметок к задаче
+  taskType?: 'income' | 'expense'; // Добавлено для явного указания типа задачи фронтендом
   createdAt?: string;
   updatedAt?: string;
 }
@@ -123,20 +126,20 @@ export const getTasksForDay = async (dateString: string): Promise<Task[]> => {
 };
 // Удалена функция getTasksByWeekAndDay
 
-export const createTask = (taskData: Omit<Task, 'id'>) => { // Убираем id при создании
+export const createTask = (taskData: Omit<Task, 'uuid'>) => { // Убираем uuid при создании
   return api.post<Task>('/tasks', taskData); // Указываем тип возвращаемого значения
 };
 
-export const updateTask = (id: string, taskData: Partial<Omit<Task, 'id'>>) => { // Используем id, убираем id из данных
-  return api.put<Task>(`/tasks/${id}`, taskData); // Указываем тип возвращаемого значения
+export const updateTask = (uuid: string, taskData: Partial<Omit<Task, 'uuid'>>) => { // Используем uuid, убираем uuid из данных
+  return api.put<Task>(`/tasks/${uuid}`, taskData); // Указываем тип возвращаемого значения
 };
 
-export const deleteTask = (id: string) => {
-  return api.delete(`/tasks/${id}`);
+export const deleteTask = (uuid: string) => {
+  return api.delete(`/tasks/${uuid}`);
 };
 
-export const duplicateTask = (id: string) => {
-  return api.post<Task>(`/tasks/${id}/duplicate`); // Указываем тип возвращаемого значения
+export const duplicateTask = (uuid: string) => {
+  return api.post<Task>(`/tasks/${uuid}/duplicate`); // Указываем тип возвращаемого значения
 };
 
 // export const getTasksByDateRange = async (startDate: string, endDate: string): Promise<Task[]> => {
@@ -149,8 +152,8 @@ export const getAllTasks = async (): Promise<Task[]> => {
   return response.data as Task[];
 };
 
-export const moveTask = async (taskId: string, newDueDate: string): Promise<Task> => {
-  const response = await api.put(`/tasks/${taskId}`, { dueDate: newDueDate });
+export const moveTask = async (taskUuid: string, newDueDate: string): Promise<Task> => {
+  const response = await api.put(`/tasks/${taskUuid}`, { dueDate: newDueDate });
   return response.data as Task;
 };
 

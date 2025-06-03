@@ -11,6 +11,7 @@ interface UnifiedChildSelectorProps {
   label?: string;
   placeholder?: string;
   selectedChildDetails?: Child | null; // Добавляем новый проп для данных ребенка
+  className?: string; // Добавляем className для возможности внешней стилизации
 }
 
 // Helper function to sort children by name
@@ -30,6 +31,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   label,
   placeholder = "Введите имя ребенка...",
   selectedChildDetails, // Добавляем в деструктуризацию
+  className = '', // Значение по умолчанию для className
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [filteredChildren, setFilteredChildren] = useState<Child[]>([]);
@@ -183,7 +185,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
           }}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className="selector-input input" /* Добавляем input для консистентности */
+          className={`selector-input ${className}`} /* Объединяем классы */
           autoComplete="off"
         />
         {showSuggestions && (

@@ -1,6 +1,7 @@
 .detailed-task-card {
   background-color: #ffffff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--theme-primary);
+  /* Используем переменную для цвета рамки */
   border-radius: 8px;
   margin-bottom: 15px;
   padding: 15px;
@@ -8,23 +9,28 @@
   transition: box-shadow 0.2s ease-in-out;
 }
 
+.detailed-task-card h1 {
+  font-size: 1.5em;
+  color: var(--theme-primary-text);
+  margin-bottom: 10px;
+}
+
 .detailed-task-card:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .detailed-task-card.done {
-  background-color: #f0fdf4; /* Светло-зеленый для выполненных - этот стиль больше не нужен в таком виде */
-  /* border-left: 5px solid #4caf50;  Удаляем, так как окантовка теперь зависит от типа */
+  background-color: #f0fdf4;
 }
 
-/* Новые стили для окантовки по типу задачи */
+.detailed-task-card.fixed,
 .detailed-task-card.income {
-  border: 2px solid green;
+  border-left: 5px solid var(--theme-primary);
+
 }
 
 .detailed-task-card.expense {
-  border: 2px solid red;
-  /* border-left стиль ниже переопределит этот, если он нужен только слева */
+  border-left: 5px solid var(--theme-danger);
 }
 
 .detailed-task-card .card-header {
@@ -44,23 +50,31 @@
 
 .detailed-task-card .task-actions .action-button {
   background: none;
-  border: none; /* Убираем стандартную рамку для иконочных кнопок */
+  border: none;
+  /* Убираем стандартную рамку для иконочных кнопок */
   color: #555555;
-  padding: 5px; /* Немного уменьшим паддинг, т.к. иконки могут иметь свой размер */
-  margin-left: 8px; /* Немного увеличим отступ */
-  border-radius: 50%; /* Сделаем кнопки круглыми, если это подходит дизайну */
+  padding: 5px;
+  /* Немного уменьшим паддинг, т.к. иконки могут иметь свой размер */
+  margin-left: 8px;
+  /* Немного увеличим отступ */
+  border-radius: 50%;
+  /* Сделаем кнопки круглыми, если это подходит дизайну */
   cursor: pointer;
-  font-size: 1em; /* Размер шрифта для иконок не так важен, как размер самой иконки */
+  font-size: 1em;
+  /* Размер шрифта для иконок не так важен, как размер самой иконки */
   transition: background-color 0.2s, color 0.2s;
-  display: inline-flex; /* Для лучшего выравнивания иконки */
+  display: inline-flex;
+  /* Для лучшего выравнивания иконки */
   align-items: center;
   justify-content: center;
-  width: 32px; /* Задаем фиксированный размер для удобства нажатия */
+  width: 32px;
+  /* Задаем фиксированный размер для удобства нажатия */
   height: 32px;
 }
 
 .detailed-task-card .task-actions .action-button.icon-button:hover {
-  background-color: #f0f0f0; /* Легкий фон при наведении */
+  background-color: #f0f0f0;
+  /* Легкий фон при наведении */
   color: #333333;
 }
 
@@ -90,6 +104,10 @@
   color: #777777;
   display: flex;
   justify-content: space-between;
+}
+
+.detailed-task-card.hourly {
+  border-left: 5px solid #2196f3;
 }
 
 /* Стили для разных типов задач (можно расширить) */
@@ -126,3 +144,38 @@
   border-left: 5px solid #1976d2;
 }
 */
+.child-info-section {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed #ccc;
+}
+
+.child-info-section h4 {
+  margin-bottom: 8px;
+  font-size: 1.1em;
+  color: #444;
+}
+
+.child-info-section p {
+  display: flex; /* Для выравнивания иконки и текста */
+  align-items: center; /* Вертикальное выравнивание по центру */
+  margin: 4px 0; /* Уменьшенный отступ для элементов списка */
+}
+
+.child-info-section p strong {
+  margin-right: 5px; /* Отступ после жирного текста (например, "Телефон:") */
+}
+
+.info-icon {
+  margin-right: 8px;
+  color: #555;
+  width: 16px; /* Фиксированная ширина для иконки */
+  text-align: center; /* Центрирование иконки, если она меньше width */
+}
+.amount-income {
+  color: green;
+}
+
+.amount-expense {
+  color: red;
+}

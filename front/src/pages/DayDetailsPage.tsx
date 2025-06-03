@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DetailedTaskCard from '../components/DetailedTaskCard';
-import TaskForm from '../components/TaskForm';
-import { type Task, createTask, deleteTask, getTasksForDay, updateTask } from '../services/api';
+// Предполагаем, что TaskForm.tsx будет переименован в UnifiedTaskFormModal.tsx
+import UnifiedTaskFormModal from '../components/UnifiedTaskFormModal';
+import { type Task, createTask, deleteTask, getDailySummary, getTasksForDay, updateTask } from '../services/api';
 import { formatDateForDisplay, parseDateString } from '../utils/dateUtils';
 import './DayDetailsPage.css';
 
@@ -21,6 +22,8 @@ const DayDetailsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [currentTaskType, setCurrentTaskType] = useState<'income' | 'expense' | undefined>('income');
 
   // Функция для обновления данных дня (задачи и сводка)
   const fetchDayData = async (currentDateString: string) => {
@@ -30,17 +33,9 @@ const DayDetailsPage: React.FC = () => {
       const fetchedTasks = await getTasksForDay(currentDateString);
       setTasks(fetchedTasks);
 
-      // Расчет сводки на основе полученных задач
-      let totalEarned = 0;
-      let totalSpent = 0;
-      fetchedTasks.forEach(task => {
-        if (task.type === 'expense' && task.amount) {
-          totalSpent += task.amount;
-        } else if (task.amount) { // 'income', 'fixed', 'hourly'
-          totalEarned += task.amount;
-        }
-      });
-      setDailySummary({ totalEarned, totalSpent });
+      // Получение сводки с бэкенда
+      const summaryData = await getDailySummary(currentDateString);
+      setDailySummary(summaryData);
 
     } catch (err) {
       console.error("Error fetching day data:", err);
@@ -111,25 +106,40 @@ const DayDetailsPage: React.FC = () => {
   };
 
   const handleOpenTaskForm = (task?: Task) => {
-    setEditingTask(task);
+    if (task) {
+      console.log('[DayDetailsPage] handleOpenTaskForm - task to edit:', JSON.parse(JSON.stringify(task)));
+      setEditingTask(task);
+      setModalMode('edit');
+      // Определяем taskType на основе существующей задачи, если редактируем
+      setCurrentTaskType(task.type === 'expense' ? 'expense' : 'income');
+    } else {
+      setEditingTask(undefined);
+      setModalMode('create');
+      // Тип задачи будет выбран в модальном окне
+      setCurrentTaskType(undefined);
+    }
     setShowTaskForm(true);
   };
 
   const handleCloseTaskForm = () => {
     setEditingTask(undefined);
     setShowTaskForm(false);
+    // Сбрасываем режим и тип при закрытии, если это необходимо
+    // setModalMode('create');
+    // setCurrentTaskType('income');
   };
 
-  const handleTaskSave = async (taskData: Omit<Task, 'id'> | Task) => {
+  const handleTaskSave = async (taskData: Task | Omit<Task, 'uuid'>) => {
     try {
-      if ('id' in taskData && taskData.id) {
+      // Проверяем наличие uuid и что он не undefined для существующей задачи
+      if ('uuid' in taskData && taskData.uuid) { // Удаляем проверку mode === 'edit'
         // Обновление существующей задачи
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, ...updateData } = taskData; // Удаляем id из данных для обновления
-        await updateTask(taskData.id, updateData as Partial<Omit<Task, 'id'>>);
+        const { uuid, ...updateData } = taskData; // Удаляем uuid из данных для обновления
+        await updateTask(taskData.uuid, updateData as Partial<Omit<Task, 'uuid'>>);
       } else {
         // Создание новой задачи
-        await createTask(taskData as Omit<Task, 'id'>);
+        await createTask(taskData as Omit<Task, 'uuid'>);
       }
       handleCloseTaskForm();
       if (dateString) fetchDayData(dateString); // Обновить данные
@@ -166,8 +176,8 @@ const DayDetailsPage: React.FC = () => {
   const handleToggleComplete = async (task: Task) => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { id, ...updateData } = task;
-      await updateTask(task.id, { ...updateData, completed: !task.completed });
+      const { uuid, ...updateData } = task;
+      await updateTask(task.uuid, { ...updateData, completed: !task.completed });
       if (dateString) fetchDayData(dateString);
     } catch (err) {
       console.error("Error updating task completion:", err);
@@ -205,16 +215,16 @@ const DayDetailsPage: React.FC = () => {
 
       <div className="day-details-tasks-section">
         <h2>Задачи</h2>
-        <button className="add-task-button" onClick={() => handleOpenTaskForm()}>+ Добавить задачу</button>
+        <button className="add-task-button" onClick={() => handleOpenTaskForm()}>Создать задачу</button>
         <div className="tasks-list">
           {tasks.length > 0 ? (
-            sortedTasks.map(task => (
+            sortedTasks.map((task, index) => (
               <DetailedTaskCard
-                key={task.id}
+                key={`task-${task.uuid || 'no-id'}-${index}`}
                 task={task}
                 onEdit={handleOpenTaskForm}
-                onDelete={() => handleTaskDelete(task.id)}
-                // onDuplicate={() => handleTaskDuplicate(task.id)} // Дублирование пока убрано
+                onDelete={() => handleTaskDelete(task.uuid)}
+                // onDuplicate={() => handleTaskDuplicate(task.uuid)} // Дублирование пока убрано
                 // onToggleComplete={() => handleToggleComplete(task)} // Удалено согласно задаче
               />
             ))
@@ -224,40 +234,20 @@ const DayDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {showTaskForm && selectedDate && dateString &&
-        (() => {
-          let formInitialData: Partial<Task> & { formType: "income" | "expense" }; // Используем formType для формы
-
-          if (editingTask) {
-            const { type, ...restOfTask } = editingTask;
-            formInitialData = {
-              ...restOfTask,
-              formType: type === 'expense' ? 'expense' : 'income',
-              // Убедимся, что amount передается правильно
-              amount: editingTask.amount,
-            };
-          } else {
-            formInitialData = {
-              formType: 'income',
-              title: '',
-              dueDate: dateString, // Используем dateString напрямую
-              // type: 'income', // Устанавливаем тип задачи по умолчанию для новых
-            };
-          }
-          return (
-            <TaskForm
-              initialData={formInitialData}
-              onTaskSaved={(taskDataFromForm) => {
-                // Логика определения типа задачи и другие преобразования теперь внутри TaskForm.
-                // DayDetailsPage просто вызывает handleTaskSave с данными, которые возвращает TaskForm.
-                handleTaskSave(taskDataFromForm);
-              }}
-              onClose={handleCloseTaskForm}
-              onDelete={editingTask?.id ? () => handleTaskDelete(editingTask!.id!) : undefined}
-              // onDuplicate={editingTask?.id ? () => handleTaskDuplicate(editingTask!.id!) : undefined} // Дублирование пока убрано
-            />
-          );
-        })()
+      {showTaskForm && selectedDate && dateString && (
+          <UnifiedTaskFormModal
+            isOpen={showTaskForm}
+            onClose={handleCloseTaskForm}
+            onSubmit={(taskDataFromForm: Task | Omit<Task, 'uuid'>) => {
+              handleTaskSave(taskDataFromForm);
+            }}
+            mode={modalMode}
+            initialTaskData={editingTask}
+            initialTaskType={currentTaskType} // Исправлено taskType на initialTaskType
+            onDelete={editingTask?.uuid ? () => handleTaskDelete(editingTask!.uuid!) : undefined}
+            // onDuplicate={editingTask?.uuid ? () => handleTaskDuplicate(editingTask!.uuid!) : undefined}
+          />
+        )
       }
     </div>
   );
