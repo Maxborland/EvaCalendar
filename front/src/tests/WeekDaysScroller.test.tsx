@@ -62,6 +62,7 @@ describe('WeekDaysScroller', () => {
     ],
     onTaskMove: () => {},
     today: createDate('2025-05-30'),
+    onOpenTaskModal: () => {}, // Добавляем недостающий mock проп
   };
 
   it('скроллит влево (transform: translateX(0)), когда отображается первая половина недели', () => {

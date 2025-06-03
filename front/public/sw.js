@@ -1,139 +1,125 @@
-const APP_SHELL_CACHE_NAME = 'app-shell-cache-v1';
-const DYNAMIC_CACHE_NAME = 'dynamic-cache-v1';
+// Загрузка Workbox через importScripts
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js'); // Используем CDN для Workbox 7
 
-// Список URL-адресов для кэширования в App Shell
-// Важно: пути к JS/CSS бандлам (например, '/assets/index-XXXXXXXX.js', '/assets/index-YYYYYYYY.css')
-// должны быть актуализированы после каждой сборки проекта Vite, так как Vite генерирует уникальные имена файлов с хэшами.
-// Рассмотрите возможность использования инструментов/плагинов Vite для автоматической генерации этого списка (например, vite-plugin-pwa).
-const APP_SHELL_URLS = [
-  '/',
-  '/index.html',
-  '/offline.html', // Страница-фоллбэк для офлайн режима
-  // CSS - основные стили. ЗАМЕНИТЬ НА АКТУАЛЬНЫЕ ПУТИ ПОСЛЕ СБОРКИ!
-  // '/assets/index-CSSHASH.css', // Пример
-  '/src/index.css', // Оставлено для локальной разработки, если SW активен
-  '/src/styles/theme.css', // Оставлено для локальной разработки, если SW активен
-  // JS - основной бандл приложения. ЗАМЕНИТЬ НА АКТУАЛЬНЫЕ ПУТИ ПОСЛЕ СБОРКИ!
-  // '/assets/index-JSHASH.js', // Пример
-  // '/assets/vendor-JSHASH.js', // Пример
-  '/manifest.json',
-  '/favicon.ico',
-  '/icons/Assets.xcassets/AppIcon.appiconset/180.png', // Apple touch icon
-  // Добавьте сюда другие ключевые иконки из манифеста, если они используются для UI или splash
-  '/icons/android/mipmap-xxxhdpi/icon.png', // 192x192 (для splash, если используется)
-  '/icons/playstore.png', // 512x512 (для splash, если используется)
-  '/splash.jpg' // Если используется
-  // Шрифты не используются, поэтому не добавляем
-];
+let ExpirationPlugin, cleanupOutdatedCaches, precacheAndRoute, registerRoute, setCatchHandler, NetworkFirst, StaleWhileRevalidate;
 
-// Установка Service Worker: кэширование App Shell
-self.addEventListener('install', event => {
-  console.log('[SW] Installing Service Worker...');
-  event.waitUntil(
-    caches.open(APP_SHELL_CACHE_NAME)
-      .then(cache => {
-        console.log('[SW] Caching App Shell...');
-        // Используем addAll для атомарного добавления. Если один файл не загрузится, весь кэш не сохранится.
-        // Для большей устойчивости можно использовать cache.add() для каждого URL в цикле и обрабатывать ошибки индивидуально.
-        return cache.addAll(APP_SHELL_URLS.map(url => new Request(url, { cache: 'reload' })))
-          .catch(error => {
-            console.error('[SW] Failed to cache App Shell:', error);
-            // Можно добавить логику для обработки частичного кэширования или повторной попытки
-          });
-      })
-      .then(() => {
-        console.log('[SW] App Shell cached successfully.');
-        // Принудительная активация нового SW сразу после установки (если это необходимо)
-        // return self.skipWaiting();
-      })
-  );
-});
+if (workbox) {
+  workbox.setConfig({ debug: true }); // Включить логи для отладки, установить false для продакшена
 
-// Активация Service Worker: очистка старых кэшей
-self.addEventListener('activate', event => {
-  console.log('[SW] Activating Service Worker...');
-  event.waitUntil(
-    caches.keys()
-      .then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            if (cacheName !== APP_SHELL_CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
-              console.log('[SW] Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-      .then(() => {
-        console.log('[SW] Old caches deleted.');
-        // Взять под контроль все открытые клиенты (страницы)
-        return self.clients.claim();
-      })
-  );
-});
+  ExpirationPlugin = workbox.expiration.ExpirationPlugin;
+  cleanupOutdatedCaches = workbox.precaching.cleanupOutdatedCaches;
+  precacheAndRoute = workbox.precaching.precacheAndRoute;
+  registerRoute = workbox.routing.registerRoute;
+  setCatchHandler = workbox.routing.setCatchHandler;
+  NetworkFirst = workbox.strategies.NetworkFirst;
+  StaleWhileRevalidate = workbox.strategies.StaleWhileRevalidate;
+} else {
+  console.error('[SW] Workbox не удалось загрузить. Service Worker не будет работать корректно.');
+}
 
-// Обработка запросов (fetch event)
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
+// Плагин для предотвращения кэширования chrome-extension:// URL
+const выборыChromeExtensionCachingPlugin = {
+  cacheWillUpdate: async ({ request, response }) => {
+    // Убедимся, что request и request.url существуют и request.url является строкой перед вызовом startsWith
+    if (request && request.url && typeof request.url === 'string' && request.url.startsWith('chrome-extension://')) {
+      console.log(`[SW] Предотвращение кэширования (через cacheWillUpdate) для: ${request.url}`);
+      return null; // Не кэшировать
+    }
+    // В противном случае, вернуть response как есть (Workbox обработает его дальше)
+    return response;
+  },
+};
 
-  // Для навигационных запросов (HTML) и App Shell ресурсов - стратегия Cache First, then Network
-  if (APP_SHELL_URLS.includes(url.pathname) || request.mode === 'navigate') {
-    event.respondWith(
-      caches.match(request)
-        .then(cachedResponse => {
-          if (cachedResponse) {
-            // console.log('[SW] Serving from App Shell Cache:', request.url);
-            return cachedResponse;
-          }
-          // console.log('[SW] Fetching from network (App Shell or navigation):', request.url);
-          return fetch(request)
-            .then(networkResponse => {
-              // Опционально: можно кэшировать новые App Shell ресурсы, если они не были в списке,
-              // но это требует осторожности, чтобы не закэшировать лишнего.
-              return networkResponse;
-            })
-            .catch(error => {
-              // Если сетевой запрос не удался (офлайн) и это навигационный запрос,
-              // отображаем страницу offline.html
-              console.log('[SW] Network request failed for navigation, serving offline page.', error);
-              if (request.mode === 'navigate') {
-                return caches.match('/offline.html');
-              }
-              // Для других типов запросов (не навигационных) просто пробрасываем ошибку,
-              // если они не были найдены в кэше App Shell.
-              // (API запросы обрабатываются отдельно ниже)
-            });
-        })
-    );
+// Константа для имени кэша API, если потребуется специфическое управление им вне Workbox стратегий
+const API_CACHE_NAME = 'api-cache-v1'; // Переименовано из DYNAMIC_CACHE_NAME для ясности
+
+// При установке SW, Workbox автоматически обрабатывает skipWaiting через опцию в vite.config.ts (registerType: 'autoUpdate')
+// или это можно сделать явно здесь, если требуется.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
-  // Для API запросов (например, /api/) - стратегия Stale-While-Revalidate
-  else if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      caches.open(DYNAMIC_CACHE_NAME).then(cache => {
-        return cache.match(request).then(cachedResponse => {
-          const fetchPromise = fetch(request).then(networkResponse => {
-            // console.log('[SW] Fetching API from network & caching:', request.url);
-            cache.put(request, networkResponse.clone());
-            return networkResponse;
-          });
-          // Возвращаем из кэша, если есть, иначе ждем ответа от сети
-          // console.log(`[SW] API request: ${request.url}. Cached: ${!!cachedResponse}`);
-          return cachedResponse || fetchPromise;
-        });
-      })
-    );
-  }
-  // Для остальных запросов - просто выполняем сетевой запрос (например, сторонние ресурсы)
-  // else {
-  //   // console.log('[SW] Serving from network (other):', request.url);
-  //   event.respondWith(fetch(request));
-  // }
 });
 
-// Опционально: обработка skipWaiting для немедленной активации нового SW
-// self.addEventListener('message', event => {
-//   if (event.data && event.data.type === 'SKIP_WAITING') {
-//     self.skipWaiting();
-//   }
+// Workbox будет управлять активацией и clients.claim() при использовании registerType: 'autoUpdate'
+// или это можно сделать явно.
+// self.addEventListener('activate', (event) => {
+//   event.waitUntil(self.clients.claim());
 // });
+
+// Очистка старых кэшей Workbox
+cleanupOutdatedCaches();
+
+// Кэширование всех ассетов, определенных в vite.config.ts (globPatterns)
+// self.__WB_MANIFEST инжектируется плагином vite-plugin-pwa
+precacheAndRoute(self.__WB_MANIFEST || []);
+
+// Стратегия для API запросов: Stale-While-Revalidate
+// Кэширует ответы от API, быстро отдает из кэша, если есть,
+// и одновременно обновляет кэш в фоне.
+registerRoute(
+  ({ url, request }) => {
+    // Игнорировать запросы chrome-extension
+    if (request && request.url && request.url.startsWith('chrome-extension://')) {
+      return false;
+    }
+    return url.pathname.startsWith('/api/');
+  },
+  new StaleWhileRevalidate({
+    cacheName: API_CACHE_NAME,
+    plugins: [
+      выборыChromeExtensionCachingPlugin,
+      new ExpirationPlugin({
+        maxEntries: 50, // Максимальное количество записей в кэше
+        maxAgeSeconds: 24 * 60 * 60, // 1 день
+      }),
+    ],
+  })
+);
+
+// Стратегия для навигационных запросов: NetworkFirst
+// Сначала пытается получить из сети, чтобы пользователь всегда видел свежую версию страницы.
+// Если сеть недоступна, отдает из кэша.
+// Фоллбэк на offline.html обрабатывается через setCatchHandler.
+registerRoute(
+  ({ request }) => {
+    // Игнорировать запросы chrome-extension
+    if (request && request.url && request.url.startsWith('chrome-extension://')) {
+      return false;
+    }
+    return request.mode === 'navigate';
+  },
+  new NetworkFirst({
+    cacheName: 'navigation-cache', // Отдельный кэш для навигационных ответов
+    plugins: [
+      выборыChromeExtensionCachingPlugin,
+      new ExpirationPlugin({
+        maxEntries: 10,
+        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 дней
+      }),
+    ],
+  })
+);
+
+// Глобальный обработчик ошибок для всех запросов, которые не удалось выполнить
+// (например, если пользователь офлайн и ресурс не в кэше).
+// Для навигационных запросов это вернет offline.html.
+setCatchHandler(async ({ event }) => {
+  // Игнорировать запросы chrome-extension в обработчике ошибок
+  if (event && event.request && event.request.url && event.request.url.startsWith('chrome-extension://')) {
+    return Response.error(); // Просто вернуть ошибку, не пытаясь отдать offline.html или что-то кэшировать
+  }
+
+  // Возвращаем страницу offline.html для навигационных запросов
+  if (event.request.destination === 'document' || event.request.mode === 'navigate') {
+    const offlinePage = await caches.match('/offline.html');
+    if (offlinePage) {
+      return offlinePage;
+    }
+  }
+  // Для других типов запросов (изображения, стили и т.д.)
+  // можно вернуть стандартный Response.error() или специфический плейсхолдер, если есть.
+  return Response.error();
+});
+
+console.log('[SW] Service Worker configured with Workbox.');

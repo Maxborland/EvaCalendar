@@ -7,11 +7,13 @@ interface SecondHalfOfWeekProps {
   days: Date[];
   tasksForWeek: Task[]; // Заменяем weekId на tasksForWeek
   today: Date;
-  onTaskMove: () => void;
+  // onTaskMove: () => void; // Заменено на onDataChange в DayColumn
+  onDataChange: () => void; // Сделаем обязательным, так как DayColumn его ожидает
+  onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => void; // Добавлен обязательный проп
 }
 
 const SecondHalfOfWeek: React.FC<SecondHalfOfWeekProps> = (props) => {
-  const { days, tasksForWeek, today, onTaskMove } = props;
+  const { days, tasksForWeek, today, onDataChange, onOpenTaskModal } = props; // onTaskMove удален, onOpenTaskModal добавлен
   return (
     <div className="second-half-of-week">
       <div className="day-columns-container">
@@ -27,7 +29,8 @@ const SecondHalfOfWeek: React.FC<SecondHalfOfWeekProps> = (props) => {
                 fullDate={dayMoment}
                 today={today}
                 tasksForDay={tasksForDay} // Передаем отфильтрованные задачи
-                onTaskMove={onTaskMove}
+                onDataChange={onDataChange} // Исправлено с onTaskMove
+                onOpenTaskModal={onOpenTaskModal} // Передаем новый проп
                 // weekId больше не передается
               />
             </div>

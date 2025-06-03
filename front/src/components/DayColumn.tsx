@@ -3,7 +3,7 @@ import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNavigate } from 'react-router-dom'; // Добавлен useNavigate
 import { useNav } from '../context/NavContext';
 import { createTask, deleteTask, duplicateTask, moveTask, updateTask, type Note, type Task } from '../services/api'; // getTasksByWeekAndDay удален, Task и Note импортированы, добавлены createTask, updateTask
-import { createDate, formatDateForDayColumnHeader, isSameDay } from '../utils/dateUtils';
+import { createDate, formatDateForDayColumnHeader } from '../utils/dateUtils';
 import './DayColumn.css';
 import MiniEventCard, { type EventItem } from './MiniEventCard'; // Заменяем TaskItem на MiniEventCard
 import UnifiedTaskFormModal from './UnifiedTaskFormModal'; // Замена TaskForm
@@ -25,10 +25,10 @@ interface DayColumnProps {
 }
 
 const DayColumn: React.FC<DayColumnProps> = (props) => {
-  const { fullDate, today, tasksForDay, onDataChange, onOpenTaskModal } = props; // Убрано переименование onTaskMove
+  const { fullDate, tasksForDay, onDataChange, onOpenTaskModal } = props; // Убрано переименование onTaskMove
   const navigate = useNavigate(); // Инициализируем useNavigate
 
-  const isToday = isSameDay(fullDate, today);
+  // const isToday = isSameDay(fullDate, today); // Удалено, так как не используется
   // Классы из макета для карточки дня. Дополнительные классы для isToday можно добавить, если они есть в макете.
   const dayColumnClassName = `bg-card p-3 rounded-lg`; // Основные классы из макета
 

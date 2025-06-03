@@ -60,7 +60,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
   initialTaskData,
   initialTaskType,
   onDelete,
-  onDuplicate,
+  // onDuplicate, // Удалено, так как не используется
 }) => {
   const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense'>(() => {
     if (mode === 'edit' && initialTaskData?.type) {

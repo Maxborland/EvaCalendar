@@ -9,9 +9,10 @@ interface WeekDaysScrollerProps {
   firstHalfDays: Date[];
   secondHalfDays: Date[];
   today: Date;
-  onTaskMove: () => void;
+  // onTaskMove: () => void; // Больше не используется, заменен на onDataChange в дочерних компонентах
   onDataChange?: () => void; // Новый опциональный колбэк
   isFirstHalfVisible: boolean;
+  onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => void;
 }
 
 const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
@@ -21,9 +22,10 @@ const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
   firstHalfDays,
   secondHalfDays,
   today,
-  onTaskMove,
+  // onTaskMove, // Больше не используется
   onDataChange, // Добавляем onDataChange
   isFirstHalfVisible,
+  onOpenTaskModal,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -50,12 +52,12 @@ const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
           days={firstHalfDays}
           tasksForWeek={tasksForWeek} // Передаем tasksForWeek
           today={today}
-          onTaskMove={onTaskMove}
           onDataChange={() => {
             if (onDataChange) {
               onDataChange();
             }
           }}
+          onOpenTaskModal={onOpenTaskModal}
         />
       </div>
       <div className="column-half">
@@ -63,8 +65,12 @@ const WeekDaysScroller: React.FC<WeekDaysScrollerProps> = ({
           days={secondHalfDays}
           tasksForWeek={tasksForWeek} // Передаем tasksForWeek
           today={today}
-          onTaskMove={onTaskMove}
-          // onDataChange={onDataChange} // TODO: Передать, если SecondHalfOfWeek будет содержать NoteField
+          onDataChange={() => {
+            if (onDataChange) {
+              onDataChange();
+            }
+          }}
+          onOpenTaskModal={onOpenTaskModal}
         />
       </div>
     </div>

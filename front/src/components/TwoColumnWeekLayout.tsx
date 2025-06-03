@@ -22,7 +22,7 @@ const TwoColumnWeekLayout: React.FC<TwoColumnWeekLayoutProps> = ({
   const firstThreeDays = weekDays.slice(0, 3); // Пн, Вт, Ср
   const lastFourDays = weekDays.slice(3, 7);  // Чт, Пт, Сб, Вс
 
-  const currentWeekId = weekDays[0] ? createDate(weekDays[0]).toISOString().slice(0,10) : undefined;
+  // const currentWeekId = weekDays[0] ? createDate(weekDays[0]).toISOString().slice(0,10) : undefined; // Удалено, так как не используется
 
   const filterEventsForDay = (day: Date) => {
     const tasks = tasksForWeek.filter(task => isSameDay(day, createDate(task.dueDate)));

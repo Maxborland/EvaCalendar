@@ -34,10 +34,10 @@ const WeekView: React.FC = () => {
     }
     return days;
   }, [currentDate]);
-  const [dailySummary, setDailySummary] = useState<{ totalEarned: number, totalSpent: number } | null>(null); // Обновляем тип состояния для дневной сводки
-  const [monthlySummary, setMonthlySummary] = useState<{ totalEarned: number; totalSpent: number; balance: number; }>({ totalEarned: 0, totalSpent: 0, balance: 0 });
+  // const [dailySummary, setDailySummary] = useState... - удалено, так как dailySummary и setDailySummary не используются
+  // const [monthlySummary, setMonthlySummary] = useState... - удалено, так как monthlySummary и setMonthlySummary не используются
   const [isLoading, setIsLoading] = useState(true);
-  const { isNavVisible, setIsNavVisible, isModalOpen: isGlobalModalOpen, setIsModalOpen: setIsGlobalModalOpen } = useNav();
+  const { setIsNavVisible, isModalOpen: isGlobalModalOpen, setIsModalOpen: setIsGlobalModalOpen } = useNav(); // isNavVisible удалена, остальные используются
 
   // Состояния для UnifiedTaskFormModal
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -85,19 +85,14 @@ const WeekView: React.FC = () => {
     try {
       // Получаем сводку за день для текущего дня (сегодня)
       const dailyDate = createDate(today).toISOString().slice(0, 10);
-      const daily = await getDailySummary(dailyDate); // Убедимся, что дата передается в формате YYYY-MM-DD
-      if (daily) { // Проверяем, что daily не null
-        setDailySummary(daily); // daily теперь { totalEarned: number, totalSpent: number }
-      } else {
-        // Если daily равно null, устанавливаем null или объект с нулевыми значениями
-        setDailySummary(null); // или setDailySummary({ totalEarned: 0, totalSpent: 0 }); в зависимости от логики отображения
-      }
+      await getDailySummary(dailyDate); // Убедимся, что дата передается в формате YYYY-MM-DD
+      // setDailySummary больше не используется
 
       // Получаем сводку за месяц
       const year = getYear(currentDate);
       const month = getMonth(currentDate); // getMonth() из dateUtils возвращает 1-12
-      const monthly = await getMonthlySummary(year, month);
-      setMonthlySummary(monthly);
+      await getMonthlySummary(year, month);
+      // setMonthlySummary больше не используется
     } catch (error) {
       console.error('[WeekView] Error fetching summary:', error);
     } finally {

@@ -182,17 +182,17 @@ const DayDetailsPage: React.FC = () => {
   //   }
   // };
 
-  const handleToggleComplete = async (task: Task) => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { uuid, ...updateData } = task;
-      await updateTask(task.uuid, { ...updateData, completed: !task.completed });
-      if (dateString) fetchDayData(dateString);
-    } catch (err) {
-      console.error("Error updating task completion:", err);
-      setError("Ошибка при обновлении статуса задачи.");
-    }
-  };
+  // const handleToggleComplete = async (task: Task) => { // Удалено, так как не используется
+  //   try {
+  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //     const { uuid, ...updateData } = task;
+  //     await updateTask(task.uuid, { ...updateData, completed: !task.completed });
+  //     if (dateString) fetchDayData(dateString);
+  //   } catch (err) {
+  //     console.error("Error updating task completion:", err);
+  //     setError("Ошибка при обновлении статуса задачи.");
+  //   }
+  // };
 
 
   if (isLoading) {

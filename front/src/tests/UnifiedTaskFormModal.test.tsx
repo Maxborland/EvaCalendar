@@ -64,7 +64,7 @@ const mockCategories: api.ExpenseCategory[] = [
 const mockOnClose = vi.fn();
 const mockOnSubmit = vi.fn();
 const mockOnDelete = vi.fn();
-const mockOnDuplicate = vi.fn();
+// const mockOnDuplicate = vi.fn(); // Удалено, так как не используется
 
 interface TestSpecificProps {
   isOpen?: boolean;

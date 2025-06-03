@@ -45,7 +45,7 @@ describe('TaskItem', () => {
     hoursWorked: 2,
     comments: 'Хороший ученик',
     amountEarned: 1400,
-    isDone: false, // Исправлено с isCompleted на isDone
+    completed: false, // Исправлено с isDone на completed в соответствии с типом Task
     // weekId и dayOfWeek удалены, так как их нет в актуальном типе Task
   };
 
@@ -56,8 +56,8 @@ describe('TaskItem', () => {
     dueDate: '2024-01-16',
     amountSpent: 500,
     comments: 'Для саморазвития',
-    category: 'Образование',
-    isDone: false, // Исправлено с isCompleted на isDone
+    expenseCategoryName: 'Образование', // Исправлено с category на expenseCategoryName
+    completed: false, // Исправлено с isDone на completed
     // weekId и dayOfWeek удалены
   };
 
