@@ -179,9 +179,14 @@ export const getDailySummary = async (date: string): Promise<{ totalEarned: numb
   }
 };
 
-export const getMonthlySummary = async (year: number, month: number) => {
-  const response = await api.get(`/summary/month/${year}/${month}`);
-  return response.data as { totalEarned: number; totalSpent: number; balance: number; };
+export const getMonthlySummary = async (year: number, month: number): Promise<SummaryData> => {
+  const response = await api.get<{ totalEarned: number; totalSpent: number; balance: number; }>(`/summary/month/${year}/${month}`);
+  // Преобразуем totalEarned и totalSpent в totalIncome и totalExpense
+  return {
+    totalIncome: response.data.totalEarned,
+    totalExpense: response.data.totalSpent,
+    balance: response.data.balance,
+  };
 };
 
 export const getExpenseCategories = async () => {

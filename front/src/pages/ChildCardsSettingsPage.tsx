@@ -4,7 +4,7 @@ import ChildCardManager from '../components/ChildCardManager'; // Исправл
 const ChildCardsSettingsPage: React.FC = () => {
   return (
     <div>
-      <h1>Настройки карточек детей</h1>
+      <h2>Настройки карточек детей</h2>
       <ChildCardManager /> {/* Компонент интегрирован */}
     </div>
   );

@@ -236,7 +236,6 @@ const WeekView: React.FC = () => {
           <main className="flex-grow p-4 space-y-6 pb-20"> {/* Добавлен pb-20 для отступа */}
             <SummaryBlock
                 today={today}
-                monthlySummary={monthlySummary ? { totalIncome: monthlySummary.totalEarned, totalExpense: monthlySummary.totalSpent, balance: monthlySummary.balance } : { totalIncome: 0, totalExpense: 0, balance: 0 }}
                 type="balance"
             />
             {/* Кнопка "Создать задачу" теперь позиционируется абсолютно */}

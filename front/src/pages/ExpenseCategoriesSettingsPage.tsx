@@ -4,7 +4,7 @@ import ExpenseCategoryManager from '../components/ExpenseCategoryManager'; // И
 const ExpenseCategoriesSettingsPage: React.FC = () => {
   return (
     <div>
-      <h1>Настройки категорий расходов</h1>
+      <h2>Настройки категорий расходов</h2>
       <ExpenseCategoryManager /> {/* Используем компонент */}
     </div>
   );

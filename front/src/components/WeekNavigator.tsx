@@ -15,7 +15,7 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
 }) => {
   // Классы из макета docs/new_design_main_page.html (строки 73-81)
   return (
-    <nav className="flex justify-between items-center p-4 bg-card rounded-lg">
+    <nav className="flex justify-between items-center my-4 p-4 bg-card rounded-lg">
       <button
         className="p-2 rounded-md hover:bg-gray-600"
         onClick={goToPreviousWeek}

@@ -197,7 +197,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}
     >
-      <span className="text-xs text-gray-400">{formatDateForDayColumnHeader(fullDate)}</span>
+      <span className="text-sm text-gray-400">{formatDateForDayColumnHeader(fullDate)}</span>
       <button
         className="bg-button-green p-1 rounded"
         onClick={(e) => { e.stopPropagation(); onOpenTaskModal(undefined, 'income', fullDate); }}

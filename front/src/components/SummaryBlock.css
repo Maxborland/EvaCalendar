@@ -109,8 +109,8 @@
 .summary-card h3 {
     text-align: center;
     margin-top: 0;
-    margin-bottom: 5px;
-    font-size: 1em;
+    margin-bottom: 2px; /* Уменьшил отступ снизу */
+    font-size: 0.95em; /* Немного уменьшил шрифт заголовка карточки */
     color: var(--color-text-tertiary);
 }
 
@@ -128,7 +128,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 0;
+    padding: 2px 0; /* Уменьшил вертикальный padding */
     border-bottom: 1px solid var(--color-shadow-lighter);
 }
 
@@ -137,7 +137,7 @@
 }
 
 .summary-item-label {
-    font-size: 0.85em;
+    font-size: 0.8em; /* Уменьшил шрифт метки */
     color: var(--color-placeholder);
     margin: 0;
 }
@@ -145,13 +145,13 @@
 .income-value {
     color: var(--color-success-text);
     font-weight: bold;
-    font-size: 0.9em;
+    font-size: 0.85em; /* Уменьшил шрифт значения */
 }
 
 .expense-value {
     color: var(--color-danger-text);
     font-weight: bold;
-    font-size: 0.9em;
+    font-size: 0.85em; /* Уменьшил шрифт значения */
 }
 
 /* .summary-balance был интегрирован в .summary-balance-header-view */

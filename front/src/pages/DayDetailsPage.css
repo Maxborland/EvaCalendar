@@ -45,7 +45,7 @@
 
 .day-details-tasks-section h2 {
   font-size: 1.5em;
-  color: var(--theme-primary-text)
+  color: var(--theme-primary-text);
   margin-bottom: 10px;
   border-bottom: 1px solid #eee;
   padding-bottom: 5px;

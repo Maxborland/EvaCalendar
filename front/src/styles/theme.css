@@ -225,8 +225,10 @@ body {
 .settings-menu-link {
   display: block;
   padding: 10px 15px;
+  margin: 1em 0;
   text-decoration: none;
   color: var(--theme-gray-light);
+  background-color: var(--theme-gray-dark);
   border-radius: 6px;
   transition: background-color 0.2s ease-in-out;
 }

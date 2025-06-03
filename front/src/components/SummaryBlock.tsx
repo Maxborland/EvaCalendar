@@ -1,20 +1,56 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { SummaryData } from '../services/api';
-import { formatDateForTodayBlock } from '../utils/dateUtils';
+import { getDailySummary, getMonthlySummary } from '../services/api'; // Добавляем getMonthlySummary, если он будет использоваться для обновления
+import { formatDateForTodayBlock, formatDateToYYYYMMDD } from '../utils/dateUtils';
 import './SummaryBlock.css'; // Импортируем CSS
+
+interface DailySummaryData {
+  totalEarned: number;
+  totalSpent: number;
+}
 
 interface SummaryBlockProps {
   today: Date;
-  monthlySummary: SummaryData;
+  // monthlySummary будет загружаться внутри компонента
   type: 'balance' | 'notes';
 }
 
 const SummaryBlock: React.FC<SummaryBlockProps> = ({
     today,
-    monthlySummary,
     type,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const [dailySummary, setDailySummary] = useState<DailySummaryData | null>(null);
+    const [currentMonthlySummary, setCurrentMonthlySummary] = useState<SummaryData | null>(null); // Переименовано для ясности
+
+    useEffect(() => {
+        const fetchSummaries = async () => {
+            const dateStringForDailySummary = formatDateToYYYYMMDD(today); // "YYYY-MM-DD"
+            const parts = dateStringForDailySummary.split('-');
+            const year = parseInt(parts[0], 10);
+            const monthForMonthlySummary = parseInt(parts[1], 10); // Это 1-12
+
+            try {
+                const dailyData = await getDailySummary(dateStringForDailySummary);
+                setDailySummary(dailyData);
+            } catch (error) {
+                console.error("Failed to fetch daily summary:", error);
+                setDailySummary({ totalEarned: 0, totalSpent: 0 }); // Устанавливаем значения по умолчанию в случае ошибки
+            }
+
+            try {
+                // Загружаем или обновляем месячную сводку
+                // Убедимся, что month передается как 1-12
+                const monthlyData = await getMonthlySummary(year, monthForMonthlySummary);
+                setCurrentMonthlySummary(monthlyData);
+            } catch (error) {
+                console.error("Failed to fetch monthly summary:", error);
+                setCurrentMonthlySummary({ totalIncome: 0, totalExpense: 0, balance: 0 }); // Устанавливаем значения по умолчанию
+            }
+        };
+
+        fetchSummaries();
+    }, [today]); // Перезагружаем данные при изменении today
 
     const toggleExpand = () => {
         setIsExpanded(!isExpanded);
@@ -28,7 +64,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
             <div className="summary-header-info">
                 <p className="summary-today-display">Сегодня: {formatDateForTodayBlock(today)}</p>
                 <div className="summary-balance-header-view">
-                    <span className="font-semibold">Баланс: {formatCurrency(monthlySummary.balance)}</span>
+                    <span className="font-semibold">Баланс: {formatCurrency(currentMonthlySummary?.balance)}</span>
                 </div>
             </div>
     );
@@ -42,18 +78,28 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
 
             {isExpanded && (
                 <div className="summary-collapsible-content">
-                    {type === 'balance' && (
+                    {type === 'balance' && currentMonthlySummary && ( // Добавлена проверка на currentMonthlySummary
                         <div className="summary-cards-wrapper">
                             <div className="summary-card income-card">
-                                <h3>Общий доход</h3>
+                                <h3>Доход</h3>
                                 <div className="summary-item-group">
-                                    <p className="income-value">{formatCurrency(monthlySummary.totalIncome)}</p>
+                                    <span className="summary-item-label">Сегодня:</span>
+                                    <p className="income-value">{formatCurrency(dailySummary?.totalEarned)}</p>
+                                </div>
+                                <div className="summary-item-group">
+                                    <span className="summary-item-label">Месяц:</span>
+                                    <p className="income-value">{formatCurrency(currentMonthlySummary.totalIncome)}</p>
                                 </div>
                             </div>
                             <div className="summary-card expense-card">
-                                <h3>Общий расход</h3>
+                                <h3>Расход</h3>
                                 <div className="summary-item-group">
-                                    <p className="expense-value">{formatCurrency(monthlySummary.totalExpense)}</p>
+                                    <span className="summary-item-label">Сегодня:</span>
+                                    <p className="expense-value">{formatCurrency(dailySummary?.totalSpent)}</p>
+                                </div>
+                                <div className="summary-item-group">
+                                    <span className="summary-item-label">Месяц:</span>
+                                    <p className="expense-value">{formatCurrency(currentMonthlySummary.totalExpense)}</p>
                                 </div>
                             </div>
                         </div>

@@ -99,10 +99,10 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId, onNoteSaved }) => {
   return (
     // Классы из макета: docs/new_design_main_page.html строки 146-149
     <section className="bg-card rounded-lg p-4 col-span-1"> {/* Управлять col-span-* лучше из родителя (WeekView) */}
-      <h2 className="text-md font-semibold mb-2">Заметки</h2>
+      <h3 className="text-md font-semibold mb-2">Заметки</h3>
       {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
       <textarea
-        className="w-full bg-gray-700 p-3 rounded-md text-sm text-gray-300 focus:ring-1 focus:ring-green-500 focus:border-green-500"
+        className="w-full bg-gray-700 p-3 rounded-md text-xs text-gray-300 focus:ring-1 focus:ring-green-500 focus:border-green-500"
         value={noteContent}
         onChange={(e) => {
           setNoteContent(e.target.value);
