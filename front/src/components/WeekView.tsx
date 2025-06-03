@@ -318,7 +318,7 @@ const WeekView: React.FC = () => {
             onClick={() => handleOpenTaskModal(undefined, 'income', today)}
           >
             <span className="material-icons">add_circle_outline</span>
-            <span>Создать задачу</span>
+            <span>Создать дело</span>
           </button>
           {isTaskModalOpen && (
             <UnifiedTaskFormModal

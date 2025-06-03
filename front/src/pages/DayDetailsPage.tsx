@@ -223,8 +223,8 @@ const DayDetailsPage: React.FC = () => {
       )}
 
       <div className="day-details-tasks-section">
-        <h2>Задачи</h2>
-        <button className="btn btn-primary" onClick={() => handleOpenTaskForm()}>Создать задачу</button>
+        <h2>Дела</h2>
+        <button className="btn btn-primary" onClick={() => handleOpenTaskForm()}>Создать дело</button>
         <div className="tasks-list">
           {tasks.length > 0 ? (
             sortedTasks.map((task, index) => (

@@ -545,7 +545,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         <div className={modalContentClass} onClick={(e) => e.stopPropagation()}>
           <button className="btn btn-icon close-button" onClick={handleClose}>&times;</button>
           <form className="form" onSubmit={handleSubmit}>
-            <h2>{mode === 'edit' ? 'Редактирование задачи' : 'Создание задачи'}</h2>
+            <h2>{mode === 'edit' ? 'Редактирование дела' : 'Создание дела'}</h2>
 
             <div className="form-group">
               <label htmlFor="title" className="label">Название:</label>
