@@ -7,102 +7,103 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75); /* Темный полупрозрачный фон как на макете */
+  background-color: var(--bg-modal-overlay, rgba(0, 0, 0, 0.5)); /* Используем переменную или значение из макета */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1050;
-  font-family: 'Arial', sans-serif; /* Базовый шрифт, если не переопределен */
+  font-family: var(--font-family-sans, 'Inter', sans-serif); /* Используем шрифт из темы */
 }
 
 /* Контент модального окна */
 .modal-content {
-  background-color: #424242; /* Темно-серый фон модального окна из макета */
-  color: #E0E0E0; /* Светлый текст по умолчанию для темного фона */
-  padding: 20px 25px; /* Отступы внутри модального окна */
-  border-radius: 8px; /* Скругление углов */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); /* Тень для объема */
+  background-color: var(--bg-modal-content, var(--theme-gray-medium)); /* Используем переменную или значение из макета/темы */
+  color: var(--theme-gray-light); /* Используем цвет текста из темы */
+  padding: 20px 25px;
+  border-radius: 8px; /* Соответствует общему стилю */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 1051;
   width: 90%;
-  max-width: 400px; /* Ширина модального окна как на макете */
+  max-width: 400px; /* Соответствует макету */
   max-height: 90vh;
-  overflow-y: auto; /* Прокрутка для длинных форм */
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
 /* Заголовок модального окна */
 .modal-content h2 {
-  text-align: left; /* Выравнивание по левому краю как на макете */
-  color: #FFFFFF; /* Белый цвет заголовка */
+  text-align: left;
+  color: var(--theme-light); /* Используем цвет текста из темы */
   margin-top: 0;
-  margin-bottom: 25px; /* Отступ под заголовком */
-  font-size: 1.6rem; /* Размер шрифта заголовка */
-  font-weight: 500; /* Средняя жирность */
+  margin-bottom: 25px;
+  font-size: 1.25rem; /* 20px, соответствует .date-title из макета */
+  font-weight: 500;
 }
 
 /* Кнопка закрытия 'x' */
 .modal-content .close-button {
   position: absolute;
-  top: 20px; /* Отступ сверху */
-  right: 20px; /* Отступ справа */
+  top: 20px;
+  right: 20px;
   background: none;
   border: none;
-  font-size: 1.8rem; /* Размер 'x' */
-  font-weight: 300; /* Тонкий 'x' */
-  color: #BDBDBD; /* Светло-серый цвет для 'x' */
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: var(--theme-gray-light); /* Используем цвет из темы */
   cursor: pointer;
   line-height: 1;
   padding: 0;
+  transition: color 0.2s ease;
 }
 
 .modal-content .close-button:hover {
-  color: #FFFFFF; /* Белый при наведении */
+  color: var(--theme-primary); /* Акцентный цвет при наведении */
 }
 
 /* Группа полей формы */
 .form-group {
-  margin-bottom: 18px; /* Отступ между группами полей */
+  margin-bottom: 18px;
 }
 
 .form-group .label {
   display: block;
-  margin-bottom: 6px; /* Отступ под лейблом */
-  color: #BDBDBD; /* Светло-серый цвет для лейблов */
+  margin-bottom: 6px;
+  color: var(--theme-gray-light); /* Используем цвет из темы */
   font-size: 0.9rem;
-  font-weight: 400; /* Обычная жирность */
+  font-weight: 400;
 }
 
 /* Стили для инпутов, текстовых полей и селектов */
 .form-group .input,
 .form-group .textarea,
-.form-group .select { /* Добавляем .select для единообразия */
+.form-group .select {
   width: 100%;
   padding: 10px 12px;
-  background-color: #616161; /* Светло-серый фон для полей ввода */
-  border: 1px solid #757575; /* Рамка для полей */
-  border-radius: 4px; /* Небольшое скругление */
+  background-color: var(--theme-gray-dark); /* Используем цвет фона из темы */
+  border: 1px solid var(--theme-gray-dark); /* Используем цвет рамки из темы */
+  border-radius: var(--btn-secondary-border-radius, 8px); /* Используем радиус из темы для кнопок или стандартный */
   box-sizing: border-box;
   font-size: 1rem;
-  color: #FFFFFF; /* Белый текст в полях */
-  outline: none; /* Убираем стандартный outline */
+  color: var(--theme-light); /* Используем цвет текста из темы */
+  outline: none;
   transition: border-color 0.2s ease;
 }
 
 .form-group .input::placeholder,
 .form-group .textarea::placeholder {
-  color: #9E9E9E; /* Цвет плейсхолдера */
+  color: var(--theme-gray-light); /* Используем цвет из темы, возможно с opacity */
+  opacity: 0.7;
 }
 
 .form-group .input:focus,
 .form-group .textarea:focus,
 .form-group .select:focus {
-  border-color: #7575FF; /* Синеватая рамка при фокусе (пример) */
-  /* Можно добавить box-shadow для подсветки фокуса, если нужно */
+  border-color: var(--theme-primary); /* Акцентный цвет рамки при фокусе */
 }
 
 .form-group .textarea {
-  min-height: 100px; /* Высота для поля комментария */
+  min-height: 100px;
   resize: vertical;
 }
 
@@ -110,85 +111,101 @@
 .radio-group {
   display: flex;
   margin-bottom: 18px;
-  border-radius: 4px;
-  overflow: hidden; /* Чтобы скругление работало для дочерних элементов */
-  border: 1px solid #757575; /* Рамка вокруг группы */
+  border-radius: var(--btn-secondary-border-radius, 8px); /* Используем радиус из темы */
+  overflow: hidden;
+  border: 1px solid var(--theme-gray-dark); /* Используем цвет рамки из темы */
 }
 
 .radio-group label {
   flex-grow: 1;
   text-align: center;
   padding: 10px 12px;
-  background-color: #616161; /* Фон неактивной кнопки */
-  color: #BDBDBD; /* Текст неактивной кнопки */
+  background-color: var(--theme-gray-dark); /* Фон неактивной кнопки */
+  color: var(--theme-gray-light); /* Текст неактивной кнопки */
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
   font-size: 0.95rem;
-  border-left: 1px solid #757575; /* Разделитель между кнопками */
+  border-left: 1px solid var(--theme-gray-medium); /* Разделитель между кнопками */
 }
 
 .radio-group label:first-child {
-  border-left: none; /* Убираем левый бордер у первой кнопки */
+  border-left: none;
 }
 
 .radio-group input[type="radio"] {
-  display: none; /* Скрываем стандартный радио-инпут */
+  display: none;
 }
 
 .radio-group label:has(input[type="radio"]:checked) {
-  background-color: #757575; /* Фон активной кнопки (темнее фона поля) */
-  color: #FFFFFF; /* Белый текст активной кнопки */
+  background-color: var(--theme-primary); /* Акцентный фон активной кнопки */
+  color: var(--btn-primary-text-color, var(--theme-dark)); /* Текст активной кнопки из темы */
   font-weight: 500;
 }
 
 /* Кнопки действий в форме */
 .form-actions {
   display: flex;
-  justify-content: space-between; /* Кнопки по краям */
+  gap: 10px; /* Отступ между кнопками */
   margin-top: 25px;
 }
 
 .form-actions .submit-button,
 .form-actions .delete-button-form {
-  padding: 10px 0; /* Убираем горизонтальные паддинги, ширина будет через flex-basis */
-  flex-basis: calc(50% - 5px); /* Делим ширину пополам с учетом gap */
+  flex-grow: 1; /* Кнопки занимают равное доступное пространство */
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   text-align: center;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease-in-out;
+  /* Общие стили для кнопок из theme.css .btn */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
+.form-actions .submit-button:hover,
+.form-actions .delete-button-form:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+
 .form-actions .submit-button {
-  background-color: #4CAF50; /* Зеленый для "Сохранить" */
-  color: white;
+  /* Стили .btn-primary из theme.css */
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text-color);
+  padding: var(--btn-primary-padding);
+  border-radius: var(--btn-primary-border-radius);
+  font-size: var(--btn-primary-font-size);
 }
 
 .form-actions .submit-button:hover {
-  background-color: #45a049; /* Темнее при наведении */
+  background-color: color-mix(in srgb, var(--btn-primary-bg) 90%, black);
 }
 
 .form-actions .delete-button-form {
-  background-color: #F44336; /* Красный для "Удалить" */
-  color: white;
+  /* Стили для кнопки удаления, можно использовать --theme-danger */
+  background-color: var(--theme-danger);
+  color: var(--theme-danger-text, var(--theme-light)); /* Запасной цвет текста */
+  padding: var(--btn-primary-padding); /* Используем паддинг как у основной кнопки для консистентности */
+  border-radius: var(--btn-primary-border-radius); /* Используем радиус как у основной кнопки */
+  font-size: var(--btn-primary-font-size); /* Используем размер шрифта как у основной кнопки */
 }
 
 .form-actions .delete-button-form:hover {
-  background-color: #e53935; /* Темнее при наведении */
+  background-color: color-mix(in srgb, var(--theme-danger) 90%, black);
 }
 
 /* Стили для UnifiedChildSelector, если он используется внутри этой модалки */
-/* Предполагается, что UnifiedChildSelector имеет свои стили, но можно добавить переопределения */
-.unified-child-selector-container .label { /* Пример, если нужно стилизовать лейбл селектора */
- color: #BDBDBD;
+.unified-child-selector-container .label {
+ color: var(--theme-gray-light); /* Используем цвет из темы */
  font-size: 0.9rem;
 }
 
 .info-text {
   font-size: 0.8rem;
-  color: #9E9E9E;
+  color: var(--theme-gray-light); /* Используем цвет из темы */
+  opacity: 0.8; /* Немного приглушаем */
   margin-top: -10px;
   margin-bottom: 10px;
 }

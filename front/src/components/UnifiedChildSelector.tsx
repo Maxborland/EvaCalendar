@@ -222,7 +222,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
       {/* Код для мини-карточки */}
       {selectedChildDetails && (
         <>
-          <div className="card"> {/* Заменяем child-info-card на card */}
+          <div className="card mt-4"> {/* Заменяем child-info-card на card */}
             <h4 className="card-heading">{selectedChildDetails.childName}</h4>
             <div className="card-text-detail">
               <div className="info-item">

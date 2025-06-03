@@ -221,3 +221,26 @@ body {
 .bg-button-gray {
     background-color: #3E3E3E;
 }
+/* Settings Menu Styles */
+.settings-menu-link {
+  display: block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: var(--theme-gray-light);
+  border-radius: 6px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.settings-menu-link:hover {
+  background-color: var(--theme-gray-medium);
+}
+
+.settings-menu-link-active {
+  background-color: var(--theme-primary);
+  color: var(--theme-dark);
+  font-weight: bold;
+}
+
+.settings-menu-link-active:hover {
+  background-color: color-mix(in srgb, var(--theme-primary) 90%, black);
+}
