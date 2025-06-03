@@ -35,7 +35,20 @@ createRoot(document.getElementById('root')!).render(
     </DndProvider>
     <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} limit={1} theme="dark" pauseOnFocusLoss draggable pauseOnHover />
   </>,
-)
+);
+
+// Hide splashscreen after app is loaded
+const splashScreen = document.getElementById('splashscreen');
+if (splashScreen) {
+  // Wait for a bit to ensure content is loaded, then fade out
+  setTimeout(() => {
+    splashScreen.style.opacity = '0';
+    splashScreen.style.transition = 'opacity 0.5s ease-out';
+    setTimeout(() => {
+      splashScreen.style.display = 'none';
+    }, 500); // Corresponds to the transition duration
+  }, 500); // Adjust this delay as needed
+}
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {

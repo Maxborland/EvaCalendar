@@ -14,7 +14,7 @@ export default defineConfig({
       filename: 'sw.js', // Имя нашего сервис-воркера
       registerType: 'autoUpdate',
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg}'], // Шаблоны для кэширования
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,json}'], // Шаблоны для кэширования
       },
       devOptions: {
         enabled: true, // Включаем PWA в режиме разработки для тестирования
