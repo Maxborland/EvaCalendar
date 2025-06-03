@@ -49,11 +49,7 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, t
             Возможно, его нужно будет привязать к startDate недели или удалить.
             Пока закомментируем, чтобы не было ошибок.
         */}
-        {days.length > 0 && <NoteField weekId={createDate(days[0]).toISOString().slice(0,10)} onNoteSaved={() => {
-          if (onDataChange) {
-            onDataChange();
-          }
-        }} />}
+        {days.length > 0 && <NoteField weekId={createDate(days[0]).toISOString().slice(0,10)} />}
       </div>
     </div>
   );
