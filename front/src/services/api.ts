@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Уб
 
 export interface ExpenseCategory {
   uuid: string; // Changed from id to uuid to match API response
-  category_name: string;
+  categoryName: string;
 }
 
 export interface SummaryData {
@@ -33,8 +33,8 @@ export interface Task {
   dueDate: string; // Может быть date от бэкенда
   completed?: boolean; // Изменено с isDone
   childId?: string; // Изменено с child_id на camelCase для соответствия данным с бэкенда
-  child_name?: string;
-  expenceTypeId?: string; // Изменено с category_id
+  childName?: string;
+  expenseTypeId?: string; // Изменено с category_id
   expenseCategoryName?: string;
   amount?: number; // Общее поле для суммы (доход/расход)
   amountEarned?: number; // Добавлено для явного получения с бэкенда
@@ -185,13 +185,13 @@ export const getExpenseCategories = async () => {
     return response.data as ExpenseCategory[];
 };
 
-export const createExpenseCategory = async (category_name: string) => {
-    const response = await api.post('/expense-categories', { category_name });
+export const createExpenseCategory = async (categoryName: string) => {
+    const response = await api.post('/expense-categories', { categoryName });
     return response.data;
 };
 
-export const updateExpenseCategory = async (id: string, category_name: string) => {
-    const response = await api.put(`/expense-categories/${id}`, { category_name });
+export const updateExpenseCategory = async (id: string, categoryName: string) => {
+    const response = await api.put(`/expense-categories/${id}`, { categoryName });
     return response.data;
 };
 

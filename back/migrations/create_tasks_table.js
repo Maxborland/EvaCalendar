@@ -10,7 +10,7 @@ exports.up = function(knex) {
     table.float('amountEarned');
     table.float('amountSpent');
     table.text('comments');
-    table.uuid('expenceTypeId').nullable().references('uuid').inTable('expense_categories').onDelete('RESTRICT');
+    table.uuid('expenseTypeId').nullable().references('uuid').inTable('expense_categories').onDelete('RESTRICT');
   });
 };
 

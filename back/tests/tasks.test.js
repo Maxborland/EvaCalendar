@@ -27,7 +27,7 @@ describe('Task API', () => {
 
     const createCategoryRes = await request(app)
       .post('/expense-categories')
-      .send({ category_name: 'Тестовая Категория для Задачи' });
+      .send({ categoryName: 'Тестовая Категория для Задачи' });
     categoryUuid = createCategoryRes.body.uuid; // Исправлено на uuid
   });
 
@@ -42,14 +42,14 @@ describe('Task API', () => {
     amountEarned: 75,
     amountSpent: 25,
     comments: 'Тестовые комментарии',
-    expenceTypeId: null,
+    expenseTypeId: null,
   };
 
   it('should create a new task', async () => {
     const taskData = {
       ...baseTask,
       childId: childUuid,
-      expenceTypeId: categoryUuid,
+      expenseTypeId: categoryUuid,
     };
     const res = await request(app)
       .post('/tasks')
@@ -77,12 +77,12 @@ describe('Task API', () => {
     expect(createRes.body.title).toEqual(taskData.title);
     expect(createRes.body.type).toEqual('expense');
     expect(createRes.body).not.toHaveProperty('category'); // Поле category (имя) должно быть удалено
-    expect(createRes.body.expenceTypeId).toEqual(categoryUuid); // Проверяем, что UUID категории подставился
+    expect(createRes.body.expenseTypeId).toEqual(categoryUuid); // Проверяем, что UUID категории подставился
 
     // Дополнительная проверка: получаем задачу и убеждаемся, что expenceTypeId верный
     const getRes = await request(app).get(`/tasks/${createRes.body.uuid}`);
     expect(getRes.statusCode).toEqual(200);
-    expect(getRes.body.expenceTypeId).toEqual(categoryUuid);
+    expect(getRes.body.expenseTypeId).toEqual(categoryUuid);
     expect(getRes.body).not.toHaveProperty('category');
     // Также проверяем, что expenseCategoryName подтягивается правильно
     expect(getRes.body.expenseCategoryName).toEqual('Тестовая Категория для Задачи');
@@ -105,7 +105,7 @@ describe('Task API', () => {
   });
 
   it('should get all tasks', async () => {
-    const taskData = { ...baseTask, childId: childUuid, expenceTypeId: categoryUuid };
+    const taskData = { ...baseTask, childId: childUuid, expenseTypeId: categoryUuid };
     await request(app).post('/tasks').send(taskData);
     await request(app).post('/tasks').send({ ...taskData, title: 'Другая Задача' });
 
@@ -118,7 +118,7 @@ describe('Task API', () => {
   });
 
   it('should get a task by UUID', async () => {
-    const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenceTypeId: categoryUuid });
+    const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenseTypeId: categoryUuid });
     const uuidToRetrieve = createRes.body.uuid;
 
     const res = await request(app)
@@ -129,7 +129,7 @@ describe('Task API', () => {
   });
 
   it('should update a task', async () => {
-    const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenceTypeId: categoryUuid });
+    const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenseTypeId: categoryUuid });
     const taskId = createRes.body.uuid;
 
     const updatedTaskData = {
@@ -160,7 +160,7 @@ describe('Task API', () => {
   });
 
   // it('should duplicate a task', async () => {
-  //   const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenceTypeId: categoryUuid });
+  //   const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenseTypeId: categoryUuid });
   //   const taskId = createRes.body.uuid;
   //
   //   const res = await request(app)
@@ -172,7 +172,7 @@ describe('Task API', () => {
   // });
 
   it('should delete a task', async () => {
-    const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenceTypeId: categoryUuid });
+    const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenseTypeId: categoryUuid });
     const taskId = createRes.body.uuid;
 
     const res = await request(app)

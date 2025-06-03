@@ -1,7 +1,7 @@
 exports.up = function(knex) {
   return knex.schema.createTable('expense_categories', function(table) {
     table.uuid('uuid').primary().notNullable(); // Изменено с increments на uuid
-    table.string('category_name').notNullable().unique();
+    table.string('categoryName').notNullable().unique();
   });
 };
 

@@ -8,7 +8,7 @@ import './MiniEventCard.css'; // CSS файл для стилей
 
 // Объединенный тип для события, которое может быть задачей или заметкой
 // В будущем можно будет расширить для расходов, если они будут иметь другую структуру
-export type EventItem = (Task | Note) & { itemType: 'task' | 'note' | 'expense', type?: string, child_name?: string, amount?: number }; // Добавим itemType для различения и опциональные поля для дохода
+export type EventItem = (Task | Note) & { itemType: 'task' | 'note' | 'expense', type?: string, childName?: string, amount?: number }; // Добавим itemType для различения и опциональные поля для дохода
 
 interface MiniEventCardProps {
   event: EventItem;
@@ -29,7 +29,7 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.EVENT_CARD,
     item: () => { // Оборачиваем в функцию для ленивого вычисления
-      const itemId = event.itemType === 'note' ? (event as Note).uuid : (event as Task).id;
+      const itemId = event.itemType === 'note' ? (event as Note).uuid : (event as Task).uuid;
       return {
         id: itemId,
         itemType: event.itemType,
@@ -64,7 +64,7 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
             </div>
             <div className="card-details">
               <div className="card-title-wrapper">
-                <span className="card-title">{task.child_name || task.title}</span>
+                <span className="card-title">{task.childName || task.title}</span>
                 {task.amount !== undefined && <span className="card-amount"> ({task.amount?.toFixed(2)})</span>}
               </div>
             </div>

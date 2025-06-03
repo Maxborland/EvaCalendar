@@ -6,7 +6,7 @@ class ExpenseCategoryService {
     async createExpenseCategory(categoryData) {
         try {
             // Проверка обязательных полей
-            const requiredFields = ['category_name'];
+            const requiredFields = ['categoryName'];
             for (const field of requiredFields) {
                 if (!categoryData[field]) {
                     throw ApiError.badRequest(`${field} is required`);
@@ -44,7 +44,7 @@ class ExpenseCategoryService {
     async updateExpenseCategory(uuid, categoryData) {
         try {
             // Проверка обязательных полей
-            const requiredFields = ['category_name'];
+            const requiredFields = ['categoryName'];
             for (const field of requiredFields) {
                 if (!categoryData[field]) {
                     throw ApiError.badRequest(`${field} is required`);

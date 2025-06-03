@@ -57,8 +57,8 @@ const mockChildren: api.Child[] = [
 ];
 
 const mockCategories: api.ExpenseCategory[] = [
-  { uuid: 'cat-1', category_name: 'Продукты' },
-  { uuid: 'cat-2', category_name: 'Транспорт' },
+  { uuid: 'cat-1', categoryName: 'Продукты' },
+  { uuid: 'cat-2', categoryName: 'Транспорт' },
 ];
 
 const mockOnClose = vi.fn();
@@ -122,7 +122,7 @@ const renderModal = async (testSpecificProps: TestSpecificProps = {}) => {
   } else { // 'expense'
     // Check if category selector is present
     if (screen.queryByLabelText(/Категория:/i)) {
-      await screen.findByRole('option', { name: mockCategories[0].category_name }, { timeout: 3000 });
+      await screen.findByRole('option', { name: mockCategories[0].categoryName }, { timeout: 3000 });
     }
   }
   return utils!;
@@ -181,12 +181,12 @@ describe('UnifiedTaskFormModal', () => {
   describe('Предзаполнение формы в режиме edit', () => {
     const incomeTask: api.Task = {
       uuid: 'task-income-1', title: 'Доход от занятия', type: 'hourly', taskType: 'income',
-      dueDate: '2024-07-15', time: '14:00', childId: 'child-1', child_name: 'Ребенок 1',
+      dueDate: '2024-07-15', time: '14:00', childId: 'child-1', childName: 'Ребенок 1',
       hourlyRate: 100, hoursWorked: 2, amount: 200, comments: 'Комментарий к доходу',
     };
     const expenseTask: api.Task = {
       uuid: 'task-expense-1', title: 'Покупка продуктов', type: 'expense', taskType: 'expense',
-      dueDate: '2024-07-16', expenceTypeId: 'cat-1', expenseCategoryName: 'Продукты',
+      dueDate: '2024-07-16', expenseTypeId: 'cat-1', expenseCategoryName: 'Продукты',
       amount: 1500, comments: 'Комментарий к расходу',
     };
 
@@ -209,7 +209,7 @@ describe('UnifiedTaskFormModal', () => {
         taskType: 'income',
         dueDate: '2024-08-02',
         childId: mockChildren[1].uuid,
-        child_name: mockChildren[1].childName,
+        childName: mockChildren[1].childName,
         amount: 600,
         comments: 'Тестовый доход с ребенком без названия',
       };
@@ -232,7 +232,7 @@ describe('UnifiedTaskFormModal', () => {
         taskType: 'income',
         dueDate: '2024-08-01',
         childId: mockChildren[0].uuid, // Ребенок 1
-        child_name: mockChildren[0].childName,
+        childName: mockChildren[0].childName,
         amount: 500,
         comments: 'Тестовый доход с ребенком',
       };
@@ -279,7 +279,7 @@ describe('UnifiedTaskFormModal', () => {
       await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
       expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
         title: `Доход от ${mockChildren[0].childName}`, taskType: 'income', type: 'fixed', childId: mockChildren[0].uuid,
-        child_name: mockChildren[0].childName, amount: 500,
+        childName: mockChildren[0].childName, amount: 500,
       }));
     });
 
@@ -305,7 +305,7 @@ describe('UnifiedTaskFormModal', () => {
       await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
       expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
         title: `Доход от ${mockChildren[1].childName}`, taskType: 'income', type: 'hourly', childId: mockChildren[1].uuid,
-        child_name: mockChildren[1].childName, hoursWorked: 3, hourlyRate: mockChildren[1].hourlyRate,
+        childName: mockChildren[1].childName, hoursWorked: 3, hourlyRate: mockChildren[1].hourlyRate,
         amount: mockChildren[1].hourlyRate! * 3,
       }));
     });
@@ -315,14 +315,14 @@ describe('UnifiedTaskFormModal', () => {
       await act(async () => {
         fireEvent.change(screen.getByLabelText(/Название:/i), { target: { value: 'Новый расход' } });
         const categorySelect = screen.getByLabelText(/Категория:/i);
-        fireEvent.change(categorySelect, { target: { value: mockCategories[0].category_name } });
+        fireEvent.change(categorySelect, { target: { value: mockCategories[0].categoryName } });
         fireEvent.change(screen.getByLabelText(/Потрачено:/i), { target: { value: '300' } });
         fireEvent.click(screen.getByRole('button', { name: /Создать/i }));
       });
       await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
       expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
-        title: mockCategories[0].category_name, taskType: 'expense', type: 'expense', expenceTypeId: mockCategories[0].uuid,
-        expenseCategoryName: mockCategories[0].category_name, amount: 300,
+        title: mockCategories[0].categoryName, taskType: 'expense', type: 'expense', expenseTypeId: mockCategories[0].uuid,
+        expenseCategoryName: mockCategories[0].categoryName, amount: 300,
       }));
     });
 
@@ -341,7 +341,7 @@ describe('UnifiedTaskFormModal', () => {
       await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
       expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
         title: `Доход от ${mockChildren[0].childName}`,
-        child_name: mockChildren[0].childName,
+        childName: mockChildren[0].childName,
       }));
     });
 
@@ -529,13 +529,13 @@ describe('Принудительное обновление названия п�
     test('Режим CREATE: если название пустое, оно генерируется для Расхода', async () => {
       await renderModal({ mode: 'create', initialTaskType: 'expense' });
       await act(async () => {
-        fireEvent.change(screen.getByLabelText(/Категория:/i), { target: { value: mockCategories[0].category_name } });
+        fireEvent.change(screen.getByLabelText(/Категория:/i), { target: { value: mockCategories[0].categoryName } });
         fireEvent.change(screen.getByLabelText(/Потрачено:/i), { target: { value: '100' } });
         fireEvent.click(screen.getByRole('button', { name: /Создать/i }));
       });
       await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1));
       expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
-        title: mockCategories[0].category_name,
+        title: mockCategories[0].categoryName,
       }));
     });
 
@@ -570,7 +570,7 @@ describe('Принудительное обновление названия п�
 
     const initialTaskForEdit: api.Task = {
       uuid: 'edit-task-1', title: 'Старое название', type: 'fixed', taskType: 'income',
-      dueDate: '2024-01-01', childId: mockChildren[0].uuid, child_name: mockChildren[0].childName, amount: 100,
+      dueDate: '2024-01-01', childId: mockChildren[0].uuid, childName: mockChildren[0].childName, amount: 100,
     };
 
     test('Режим EDIT: ребенок изменен, старое название НЕ соответствует -> название ПЕРЕЗАПИСЫВАЕТСЯ', async () => {
@@ -591,7 +591,7 @@ describe('Принудительное обновление названия п�
       expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
         title: `Доход от ${mockChildren[1].childName}`, // Ожидаем новое автосгенерированное
         childId: mockChildren[1].uuid,
-        child_name: mockChildren[1].childName,
+        childName: mockChildren[1].childName,
       }));
     });
 
@@ -599,15 +599,15 @@ describe('Принудительное обновление названия п�
       await renderModal({ mode: 'edit', initialTaskData: initialTaskForEdit, initialTaskType: 'income' });
       await act(async () => {
         fireEvent.click(screen.getByLabelText(/Расход/i)); // Меняем тип на Расход
-        fireEvent.change(screen.getByLabelText(/Категория:/i), { target: { value: mockCategories[1].category_name } });
+        fireEvent.change(screen.getByLabelText(/Категория:/i), { target: { value: mockCategories[1].categoryName } });
         fireEvent.change(screen.getByLabelText(/Потрачено:/i), { target: { value: '200' } });
         fireEvent.click(screen.getByRole('button', { name: /Сохранить/i }));
       });
       await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1));
       expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
-        title: mockCategories[1].category_name, // Ожидаем новое автосгенерированное для расхода
+        title: mockCategories[1].categoryName, // Ожидаем новое автосгенерированное для расхода
         taskType: 'expense',
-        expenceTypeId: mockCategories[1].uuid,
+        expenseTypeId: mockCategories[1].uuid,
       }));
     });
 

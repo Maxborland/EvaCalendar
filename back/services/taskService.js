@@ -30,7 +30,7 @@ const taskService = {
             hoursWorked: null,
             amountEarned: null,
             amountSpent: null,
-            expenceTypeId: null
+            expenseTypeId: null
         };
 
         if (taskData.taskType === 'income') {
@@ -44,10 +44,10 @@ const taskService = {
             }
         } else if (taskData.taskType === 'expense') {
             dataForDb.amountSpent = taskData.amount || null; // Изменено с spentAmount
-            dataForDb.expenceTypeId = taskData.categoryId || null; // Используем categoryId от фронтенда
+            dataForDb.expenseTypeId = taskData.categoryId || null; // Используем categoryId от фронтенда
 
-            if (dataForDb.expenceTypeId && !(await validateExistence('expense_categories', dataForDb.expenceTypeId))) {
-                console.error('[taskService.createTask] Validation failed for expenceTypeId (categoryId):', dataForDb.expenceTypeId);
+            if (dataForDb.expenseTypeId && !(await validateExistence('expense_categories', dataForDb.expenseTypeId))) {
+                console.error('[taskService.createTask] Validation failed for expenseTypeId (categoryId):', dataForDb.expenseTypeId);
                 throw ApiError.badRequest('Expense category not found by categoryId');
             }
         } else {
@@ -59,7 +59,7 @@ const taskService = {
         const newTask = dataForDb; // Используем очищенный и преобразованный объект
         // console.log('[taskService.createTask] Generated newTask object for DB insert:', JSON.stringify(newTask)); // Дублирующий лог, можно убрать
         try {
-            console.log('[taskService.createTask] Attempting to insert newTask into DB. Current expenceTypeId in newTask:', newTask.expenceTypeId); // Изменено с expenceTypeId
+            console.log('[taskService.createTask] Attempting to insert newTask into DB. Current expenseTypeId in newTask:', newTask.expenseTypeId); // Изменено с expenseTypeId
             const result = await knex('tasks').insert(newTask);
             console.log('[taskService.createTask] Knex insert result:', JSON.stringify(result));
             // Для PostgreSQL, result обычно содержит массив вставленных строк или количество вставленных строк,
@@ -85,15 +85,15 @@ const taskService = {
         return knex('tasks')
             .select(
                 'tasks.*',
-                'children.childName as child_name', // Унифицированный алиас
+                'children.childName as childName', // Унифицированный алиас
                 'children.parentName as parentName',
                 'children.parentPhone as parentPhone',
                 'children.address as childAddress',
                 'children.hourlyRate as childHourlyRate',
-                'expense_categories.category_name as expenseCategoryName'
+                'expense_categories.categoryName as expenseCategoryName'
             )
             .leftJoin('children', 'tasks.childId', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expenceTypeId', 'expense_categories.uuid');
+            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid');
     },
 
     async getTaskById(uuid) {
@@ -101,15 +101,15 @@ const taskService = {
             .where('tasks.uuid', uuid)
             .select(
                 'tasks.*',
-                'children.childName as child_name', // Унифицированный алиас
+                'children.childName as childName', // Унифицированный алиас
                 'children.parentName as parentName',
                 'children.parentPhone as parentPhone',
                 'children.address as childAddress',
                 'children.hourlyRate as childHourlyRate',
-                'expense_categories.category_name as expenseCategoryName'
+                'expense_categories.categoryName as expenseCategoryName'
             )
             .leftJoin('children', 'tasks.childId', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expenceTypeId', 'expense_categories.uuid')
+            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid')
             .first();
     },
 
@@ -147,7 +147,7 @@ const taskService = {
             dataToUpdate.hoursWorked = null;
             dataToUpdate.amountEarned = null;
             dataToUpdate.amountSpent = null;
-            dataToUpdate.expenceTypeId = null;
+            dataToUpdate.expenseTypeId = null;
         }
 
 
@@ -163,16 +163,16 @@ const taskService = {
             }
             // Если тип 'income', убедимся, что поля расходов обнулены, если они не были явно переданы для обнуления
              if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = null; // Изменено с spentAmount
-             if (!taskData.hasOwnProperty('categoryId')) dataToUpdate.expenceTypeId = null;
+             if (!taskData.hasOwnProperty('categoryId')) dataToUpdate.expenseTypeId = null;
 
 
         } else if (currentTaskType === 'expense') {
             if (taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = taskData.amount; // Изменено с spentAmount
-            if (taskData.hasOwnProperty('categoryId')) dataToUpdate.expenceTypeId = taskData.categoryId; // Используем categoryId от фронтенда
+            if (taskData.hasOwnProperty('categoryId')) dataToUpdate.expenseTypeId = taskData.categoryId; // Используем categoryId от фронтенда
 
             // Валидация, если categoryId (expenceTypeId) предоставлен
-            if (dataToUpdate.expenceTypeId && !(await validateExistence('expense_categories', dataToUpdate.expenceTypeId))) {
-                console.error('[taskService.updateTask] Validation failed for expenceTypeId (categoryId):', dataToUpdate.expenceTypeId);
+            if (dataToUpdate.expenseTypeId && !(await validateExistence('expense_categories', dataToUpdate.expenseTypeId))) {
+                console.error('[taskService.updateTask] Validation failed for expenseTypeId (categoryId):', dataToUpdate.expenseTypeId);
                 throw ApiError.badRequest('Expense category not found by categoryId');
             }
              // Если тип 'expense', убедимся, что поля доходов обнулены
@@ -229,13 +229,13 @@ async getTasksByCategoryUuid(categoryUuid) {
             return null; // Контроллер обработает это как 404
         }
 
-        console.log(`[taskService.getTasksByCategoryUuid] Found category name: ${category.category_name}. Fetching tasks.`);
+        console.log(`[taskService.getTasksByCategoryUuid] Found category name: ${category.categoryName}. Fetching tasks.`);
         return knex('tasks')
-            .where({ expenceTypeId: category.uuid }) // Изменено с expenceTypeId
+            .where({ expenseTypeId: category.uuid }) // Изменено с expenseTypeId
             .select(
                 'tasks.*',
                 'children.childName as childName',
-                knex.raw('? as expenseCategoryName', [category.category_name])
+                knex.raw('? as expenseCategoryName', [category.categoryName])
             )
             .leftJoin('children', 'tasks.childId', 'children.uuid');
     },
@@ -254,15 +254,15 @@ async getTasksByCategoryUuid(categoryUuid) {
             .where('tasks.dueDate', dateString) // Используем dueDate, так как это поле в таблице
             .select(
                 'tasks.*',
-                'children.childName as child_name', // Алиас для соответствия ожиданиям фронтенда
+                'children.childName as childName', // Алиас для соответствия ожиданиям фронтенда
                 'children.parentName as parentName',
                 'children.parentPhone as parentPhone',
                 'children.address as childAddress',
                 'children.hourlyRate as childHourlyRate',
-                'expense_categories.category_name as expenseCategoryName'
+                'expense_categories.categoryName as expenseCategoryName'
             )
             .leftJoin('children', 'tasks.childId', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expenceTypeId', 'expense_categories.uuid');
+            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid');
     }
 };
 

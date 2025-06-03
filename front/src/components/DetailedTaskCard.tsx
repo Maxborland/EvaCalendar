@@ -20,7 +20,7 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
     type, // тип используется для стилизации окантовки и условного отображения полей
     time,
     address, // Адрес задачи
-    child_name,
+    childName,
     hourlyRate, // Ставка задачи
     amount, // Используется для fixed (теперь только для fixed)
     amountEarned, // Используется для hourly и income
@@ -61,7 +61,7 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
         {description && <p><strong>Описание:</strong> {description}</p>}
         {time && <p><strong>Время:</strong> {time}</p>}
         {/* Поле "тип задачи" убрано из отображения */}
-        {child_name && <p><strong>Ребенок:</strong> {child_name}</p>}
+        {childName && <p><strong>Ребенок:</strong> {childName}</p>}
         {address && <p><strong>Адрес задачи:</strong> {address}</p>}
         {hourlyRate !== undefined && type === 'hourly' && <p><strong>Ставка задачи:</strong> {hourlyRate} ₽/час</p>}
         {hoursWorked !== undefined && type === 'hourly' && <p><strong>Часы работы:</strong> {hoursWorked}</p>}
