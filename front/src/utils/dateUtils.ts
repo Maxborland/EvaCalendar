@@ -212,3 +212,15 @@ export const parseDateString = (dateString: string): Date => {
   }
   return date;
 };
+/**
+ * Форматирует дату в строку "YYYY-MM-DD".
+ * @param date - Дата для форматирования (Date, строка с датой или timestamp).
+ * @returns Отформатированная строка "YYYY-MM-DD".
+ */
+export const formatDateToYYYYMMDD = (date: Date | string | number): string => {
+  const d = normalizeDateInput(date);
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0'); // Месяцы 0-11, поэтому +1 и padStart
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};

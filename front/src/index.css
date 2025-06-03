@@ -112,6 +112,8 @@ body {
   display: block;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-primary-background); /* #1a202c */
+  color: var(--color-text-primary); /* #e2e8f0 */
 }
 
 h1 {
@@ -144,25 +146,27 @@ h1 {
     --color-neutral-130: var(--theme-light);
 
 
-    --color-text-primary: var(--color-neutral-10);
-    --color-text-secondary: var(--color-neutral-30);
-    --color-text-tertiary: var(--color-neutral-20);
-    --color-placeholder: var(--color-neutral-40);
+    /* Светлая тема макетом не предусмотрена, но для консистентности обновим на основе темной */
+    /* Фактически, макет представляет собой темную тему */
+    --color-text-primary: var(--theme-dark); /* #1a202c - Текст на светлом фоне карточек */
+    --color-text-secondary: var(--theme-gray-dark); /* #4a5568 */
+    --color-text-tertiary: var(--theme-gray-medium); /* #2d3748 */
+    --color-placeholder: var(--theme-gray-medium); /* #2d3748 */
 
-    --color-background-soft: var(--color-neutral-90);
-    --color-primary-background: var(--color-neutral-130);
-    --color-secondary-background: var(--color-neutral-120);
-    --color-tertiary-background: var(--color-neutral-100);
-    --color-modal-background: var(--color-neutral-130);
-    --color-input-background: var(--color-neutral-90);
+    --color-background-soft: var(--theme-gray-light); /* #e2e8f0 - Используем как мягкий фон для светлой темы */
+    --color-primary-background: var(--theme-light); /* #e9f5f9 - Основной фон для светлой темы (фон карточек из макета) */
+    --color-secondary-background: var(--theme-gray-light); /* #e2e8f0 */
+    --color-tertiary-background: var(--theme-light); /* #e9f5f9 */
+    --color-modal-background: var(--theme-light); /* #e9f5f9 */
+    --color-input-background: var(--theme-gray-light); /* #e2e8f0 */
 
-    --color-accent: var(--color-primary-base);
-    --color-highlight: var(--color-neutral-70);
+    --color-accent: var(--theme-primary); /* #48bb78 */
+    --color-highlight: var(--theme-gray-medium); /* #2d3748 - Используем как хайлайт для светлой темы */
 
-    --color-border-dark: var(--color-neutral-60);
-    --color-border-medium: var(--color-neutral-50);
-    --color-border-light: var(--color-neutral-20);
-    --color-dashed-border-dark: var(--color-neutral-60);
+    --color-border-dark: #cbd5e0;
+    --color-border-medium: color-mix(in srgb, #cbd5e0 70%, var(--theme-light));
+    --color-border-light: color-mix(in srgb, #cbd5e0 40%, var(--theme-light));
+    --color-dashed-border-dark: #cbd5e0;
 
     --color-blue-accent: var(--color-primary-base);
     --color-blue-accent-hover: var(--theme-secondary);

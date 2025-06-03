@@ -148,8 +148,9 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       setSelectedChildUuid(childIdToSetForSelector);
     } else if (mode === 'create') {
       setTaskTypeInternal(initialTaskType || 'income');
-      const defaultDueDate = new Date().toISOString().split('T')[0];
-      const newFormData = {
+      // const defaultDueDate = new Date().toISOString().split('T')[0]; // Больше не нужен здесь, начальное значение из useState
+      setFormData(prev => {
+        const newFormData = {
         id: undefined,
         title: '',
         time: '',
@@ -160,12 +161,13 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         expenseCategoryName: '',
         amount: undefined,
         hoursWorked: undefined,
-        dueDate: defaultDueDate,
+        dueDate: prev.dueDate, // Сохраняем dueDate из предыдущего состояния (установленного useState или handleChange)
         expenseTypeId: undefined,
         childName: undefined,
         originalTaskType: undefined,
       };
-      setFormData(newFormData);
+        return newFormData;
+    });
       setIsNameManuallyEdited(false); // Сброс при создании новой задачи
       setSelectedChildUuid(null);
     }
@@ -311,20 +313,16 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       // текущее formData.title совпадает с ним (т.е. это первая загрузка/инициализация),
       // и initialTaskData.title не пустое, то считаем, что это имя не должно автоматически меняться,
       // даже если isNameManuallyEdited еще не успело обновиться до true.
-      // Это предотвращает перезапись имени, которое было загружено из initialTaskData.
-      console.log('[UnifiedTaskFormModal DynamicTitle] In edit mode, initial title matches formData.title, skipping dynamic update for initial load.');
       return;
     }
 
     if (isNameManuallyEdited) {
-      console.log('[UnifiedTaskFormModal DynamicTitle] Skipping update: name manually edited.');
       return;
     }
 
     const newPotentialTitle = generateDynamicTaskTitle(taskTypeInternal, selectedChildDetails?.childName);
     const currentTitle = formData.title || "";
 
-    console.log(`[UnifiedTaskFormModal DynamicTitle] Current title: "${currentTitle}", Potential new: "${newPotentialTitle}", Child: ${selectedChildDetails?.childName}, Type: ${taskTypeInternal}`);
 
     let shouldUpdate = false;
 
@@ -353,10 +351,10 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     }
 
     if (shouldUpdate && currentTitle !== newPotentialTitle) {
-      console.log(`[UnifiedTaskFormModal DynamicTitle] Updating title from "${currentTitle}" to "${newPotentialTitle}"`);
-      setFormData(prev => ({ ...prev, title: newPotentialTitle }));
+      setFormData(prev => {
+        return { ...prev, title: newPotentialTitle };
+      });
     } else {
-      console.log(`[UnifiedTaskFormModal DynamicTitle] No title update needed. Current: "${currentTitle}", Potential: "${newPotentialTitle}", ShouldUpdate: ${shouldUpdate}`);
     }
 
   }, [selectedChildDetails, taskTypeInternal, isNameManuallyEdited, formData.title, setFormData]); // Вернул formData.title в зависимости, т.к. currentTitle берется из него
@@ -364,18 +362,25 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type: inputType } = e.target;
+
     if (name === 'title') {
       // Если пользователь вводит текст в поле title, устанавливаем isNameManuallyEdited в true.
       // Если пользователь стирает весь текст из поля title, устанавливаем isNameManuallyEdited в false,
       // чтобы автоматическая генерация имени снова могла сработать.
       setIsNameManuallyEdited(value.trim() !== '');
     }
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: inputType === 'number'
+    setFormData((prevData) => {
+      const newValue = inputType === 'number'
         ? (value === '' ? undefined : parseFloat(value))
-        : value,
-    }));
+        : value;
+      const newFormData = {
+        ...prevData,
+        [name]: newValue,
+      };
+      if (name === 'dueDate') {
+      }
+      return newFormData;
+    });
   };
 
   const handleUnifiedChildChange = (childUuid: string | null) => {
@@ -517,12 +522,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     }
   };
 
-  const handleDuplicateClick = () => {
-    if (mode === 'edit' && initialTaskData?.uuid && onDuplicate) {
-      onDuplicate(initialTaskData.uuid);
-    }
-  };
-
   if (!isOpen) {
     return null;
   }
@@ -531,7 +530,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     <>
       <div className="modal-overlay" onClick={onClose} data-testid="modal-overlay">
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <button className="close-button" onClick={onClose}>&times;</button>
+          <button className="btn btn-icon close-button" onClick={onClose}>&times;</button>
           <form className="form" onSubmit={handleSubmit}>
             <h2>{mode === 'edit' ? 'Редактирование задачи' : 'Создание задачи'}</h2>
 
@@ -573,7 +572,18 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
               </div>
             </div>
 
-            {/* Поле Дата скрыто согласно макету. Его значение берется из formData.dueDate */}
+            <div className="form-group">
+              <label htmlFor="dueDate" className="label">Дата:</label>
+              <input
+                type="date"
+                id="dueDate"
+                name="dueDate"
+                value={formData.dueDate}
+                onChange={handleChange}
+                className="input"
+                required
+              />
+            </div>
 
             {taskTypeInternal === 'income' && (
               <>
@@ -684,13 +694,13 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
 
             <div className="form-actions">
               {mode === 'edit' && onDelete && initialTaskData?.uuid && (
-                <button type="button" className="delete-button-form" onClick={handleDeleteClick}>
+                <button type="button" className="btn btn-secondary delete-button-form" onClick={handleDeleteClick}>
                   Удалить
                 </button>
               )}
               {!(mode === 'edit' && onDelete && initialTaskData?.uuid) && <div style={{ flexBasis: 'calc(50% - 5px)' }}></div>}
 
-              <button type="submit" className="submit-button">
+              <button type="submit" className="btn btn-primary submit-button">
                 {mode === 'edit' ? 'Сохранить' : 'Создать'}
               </button>
             </div>
@@ -700,7 +710,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       {showChildFormModal && (
         <div className="modal-overlay" onClick={handleChildFormCancel} data-testid="child-form-modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-button" onClick={handleChildFormCancel}>&times;</button>
+            <button className="btn btn-icon close-button" onClick={handleChildFormCancel}>&times;</button>
             <ChildForm
               initialChild={childFormInitialData}
               onSave={handleChildFormSave}

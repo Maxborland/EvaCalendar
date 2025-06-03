@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { Child } from '../services/api'; // Предполагаем, что тип Child экспортируется из api.ts
-import './UnifiedChildSelector.css';
 
 interface UnifiedChildSelectorProps {
   value: string | null;
@@ -150,7 +149,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
       <div className="unified-child-selector">
         {label && <label className="selector-label">{label}</label>}
         <p>Список детей пуст.</p>
-        <button type="button" onClick={onGoToCreateChildPageRequest} className="add-child-button">
+        <button type="button" onClick={onGoToCreateChildPageRequest} className="btn btn-primary add-child-button">
           Добавить ребенка
         </button>
       </div>
@@ -223,30 +222,32 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
       {/* Код для мини-карточки */}
       {selectedChildDetails && (
         <>
-          <div className="child-info-card">
-            <h4>{selectedChildDetails.childName}</h4>
-            <div className="info-item">
-            <span className="info-label">Родитель:</span>
-            <span className="info-value">{selectedChildDetails.parentName}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Телефон:</span>
-            <span className="info-value">{selectedChildDetails.parentPhone}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Адрес:</span>
-            <span className="info-value">{selectedChildDetails.address}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Ставка:</span>
-            <span className="info-value">{selectedChildDetails.hourlyRate} ₽/час</span>
-          </div>
-          {selectedChildDetails.comment && (
-            <div className="info-item">
-              <span className="info-label">Комментарий:</span>
-              <span className="info-value">{selectedChildDetails.comment}</span>
+          <div className="card"> {/* Заменяем child-info-card на card */}
+            <h4 className="card-heading">{selectedChildDetails.childName}</h4>
+            <div className="card-text-detail">
+              <div className="info-item">
+                <span className="info-label">Родитель:</span>
+                <span className="info-value">{selectedChildDetails.parentName}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Телефон:</span>
+                <span className="info-value">{selectedChildDetails.parentPhone}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Адрес:</span>
+                <span className="info-value">{selectedChildDetails.address}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Ставка:</span>
+                <span className="info-value">{selectedChildDetails.hourlyRate} ₽/час</span>
+              </div>
+              {selectedChildDetails.comment && (
+                <div className="info-item">
+                  <span className="info-label">Комментарий:</span>
+                  <span className="info-value">{selectedChildDetails.comment}</span>
+                </div>
+              )}
             </div>
-          )}
         </div>
         </>
       )}

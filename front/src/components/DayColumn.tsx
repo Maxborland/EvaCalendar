@@ -20,17 +20,17 @@ interface DayColumnProps {
   fullDate: Date;
   today: Date;
   tasksForDay: Task[];
-  onTaskMove: () => void; // Переименуем в onDataChange для общности
+  onDataChange: () => void; // Изменено с onTaskMove для соответствия WeekView
+  onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => void; // Новый проп
 }
 
 const DayColumn: React.FC<DayColumnProps> = (props) => {
-  const { fullDate, today, tasksForDay, onTaskMove: onDataChange } = props;
+  const { fullDate, today, tasksForDay, onDataChange, onOpenTaskModal } = props; // Убрано переименование onTaskMove
   const navigate = useNavigate(); // Инициализируем useNavigate
 
   const isToday = isSameDay(fullDate, today);
-  // Обновляем класс для соответствия макету (фон для today)
-  const dayColumnClassName = `day-column ${isToday ? 'today' : ''}`;
-
+  // Классы из макета для карточки дня. Дополнительные классы для isToday можно добавить, если они есть в макете.
+  const dayColumnClassName = `bg-card p-3 rounded-lg`; // Основные классы из макета
 
   const { setIsNavVisible, setIsModalOpen } = useNav();
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -85,7 +85,15 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       setModalMode('edit');
       setCurrentTaskType(taskToEdit.type === 'expense' ? 'expense' : 'income');
     } else if (!eventToEdit) {
-      setCurrentTask(undefined);
+      // При создании новой задачи, устанавливаем dueDate из fullDate колонки
+      const newInitialTask = {
+        // Убедимся, что dueDate в формате YYYY-MM-DD
+        dueDate: createDate(fullDate).toISOString().slice(0, 10),
+        // Можно добавить другие поля по умолчанию, если необходимо
+        // title: '', // Например, пустое название
+        // type: type || 'income', // Тип уже устанавливается через setCurrentTaskType
+      };
+      setCurrentTask(newInitialTask as Task); // Приводим к Task, т.к. UnifiedTaskFormModal ожидает Task или undefined
       setModalMode('create');
       setCurrentTaskType(type || 'income'); // Используем переданный тип или 'income' по умолчанию
     } else {
@@ -181,39 +189,50 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
   };
 
   const dayHeader = (
-    <div className={`day-header ${isToday ? 'today-header-highlight' : ''}`} onClick={handleHeaderClick} role="button" tabIndex={0}
-         onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}>
-      <span className="day-name">{formatDateForDayColumnHeader(fullDate)}</span>
-      {/* Обновляем кнопки для открытия модального окна с указанием типа */}
-      <div className="add-task-button-container">
-        <button className="add-event-button" onClick={(e) => { e.stopPropagation(); handleOpenModal(undefined, 'income'); }}>+</button>
-        {/* Можно добавить отдельную кнопку для расхода, если это требуется по дизайну */}
-        {/* <button className="add-event-button expense" onClick={(e) => { e.stopPropagation(); handleOpenModal(undefined, 'expense'); }}>-</button> */}
-      </div>
+    // Классы из макета: docs/new_design_main_page.html строки 84-89
+    <div
+      className="flex justify-between items-center mb-2"
+      onClick={handleHeaderClick} // Оставляем возможность клика по заголовку для перехода на страницу дня
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}
+    >
+      <span className="text-xs text-gray-400">{formatDateForDayColumnHeader(fullDate)}</span>
+      <button
+        className="bg-button-green p-1 rounded"
+        onClick={(e) => { e.stopPropagation(); onOpenTaskModal(undefined, 'income', fullDate); }}
+        aria-label="Добавить событие"
+      >
+        <span className="material-icons text-sm">add</span>
+      </button>
     </div>
   );
 
   return (
+    // Применяем dayColumnClassName к корневому элементу. isOver класс для dnd оставляем.
+    // Убираем h-[148px] для проверки влияния на NoteField
     <div ref={dropRef} className={`${dayColumnClassName} ${isOver ? 'highlighted-drop-zone' : ''}`}>
       {dayHeader}
-      <div className="tasks-list-container">
+      {/* Классы для списка событий из макета: docs/new_design_main_page.html строка 90 */}
+      {/* Добавляем max-h-24 (6rem) и overflow-y-auto для прокрутки */}
+      <div className="space-y-2 max-h-24 overflow-y-auto">
         {events.length > 0 ? (
           events.map((event) => {
-            // Определяем ключ: используем 'uuid' для Task и Note
             const key = (event as Task).uuid || (event as Note).uuid;
             return (
               <MiniEventCard
                 key={key}
                 event={event}
-                onEdit={(editedEvent) => handleOpenModal(editedEvent)} // Передаем событие в handleOpenModal
+                onEdit={(editedEvent) => handleOpenModal(editedEvent)}
               />
             );
           })
         ) : (
-          <div className="empty-day-placeholder">Нет событий</div>
+          // Класс для "Нет событий" из макета: docs/new_design_main_page.html строка 108
+          <p className="text-sm text-gray-500">Нет событий</p>
         )}
       </div>
-      {isModalOpenState && ( // Используем локальное состояние для отображения
+      {isModalOpenState && (
         <UnifiedTaskFormModal
           isOpen={isModalOpenState}
           onClose={handleCloseModal}

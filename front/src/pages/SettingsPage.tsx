@@ -15,7 +15,7 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-md mx-auto settings-page-container">
-        <button onClick={handleGoBack} className="back-button">
+        <button onClick={handleGoBack} className="btn btn-secondary">
           <FontAwesomeIcon icon={faArrowLeft} /> Назад
         </button>
         <h1>Настройки</h1>

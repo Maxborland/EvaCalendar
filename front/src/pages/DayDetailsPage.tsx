@@ -30,15 +30,18 @@ const DayDetailsPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      console.log('[DayDetailsPage] fetchDayData - currentDateString:', currentDateString); // LOG
       const fetchedTasks = await getTasksForDay(currentDateString);
       setTasks(fetchedTasks);
 
       // Получение сводки с бэкенда
       const summaryData = await getDailySummary(currentDateString);
+      console.log('[DayDetailsPage] fetchDayData - summaryData from API:', summaryData); // LOG
       setDailySummary(summaryData);
 
     } catch (err) {
       console.error("Error fetching day data:", err);
+      console.log('[DayDetailsPage] fetchDayData - full error object:', err); // LOG
       setError("Ошибка при загрузке данных дня.");
       setTasks([]); // Очищаем задачи в случае ошибки
       setDailySummary(null); // Очищаем сводку
@@ -113,10 +116,16 @@ const DayDetailsPage: React.FC = () => {
       // Определяем taskType на основе существующей задачи, если редактируем
       setCurrentTaskType(task.type === 'expense' ? 'expense' : 'income');
     } else {
-      setEditingTask(undefined);
+      // При создании новой задачи, устанавливаем dueDate из dateString текущей страницы
+      const newInitialTask = {
+        dueDate: dateString, // dateString уже в формате YYYY-MM-DD
+        // Можно добавить другие поля по умолчанию, если необходимо
+        // title: '',
+      };
+      setEditingTask(newInitialTask as Task); // Приводим к Task
       setModalMode('create');
       // Тип задачи будет выбран в модальном окне
-      setCurrentTaskType(undefined);
+      setCurrentTaskType(undefined); // или 'income' по умолчанию, если это предпочтительнее
     }
     setShowTaskForm(true);
   };
@@ -201,7 +210,7 @@ const DayDetailsPage: React.FC = () => {
   return (
     <div className="day-details-page">
       <div className="day-details-header">
-        <button onClick={handleGoBack} className="back-button">
+        <button onClick={handleGoBack} className="btn btn-secondary">
           &larr; Назад
         </button>
         <h1>{formatDateForDisplay(selectedDate)}</h1>
@@ -215,7 +224,7 @@ const DayDetailsPage: React.FC = () => {
 
       <div className="day-details-tasks-section">
         <h2>Задачи</h2>
-        <button className="add-task-button" onClick={() => handleOpenTaskForm()}>Создать задачу</button>
+        <button className="btn btn-primary" onClick={() => handleOpenTaskForm()}>Создать задачу</button>
         <div className="tasks-list">
           {tasks.length > 0 ? (
             sortedTasks.map((task, index) => (

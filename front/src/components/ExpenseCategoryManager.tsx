@@ -145,7 +145,7 @@ const ExpenseCategoryManager: React.FC = () => {
           value={newCategoryName}
           onChange={(e) => setNewCategoryName(e.target.value)}
         />
-        <button type="submit">Добавить</button>
+        <button type="submit" className="btn btn-primary">Добавить</button>
       </form>
 
       <ul className="category-list">
@@ -167,8 +167,8 @@ const ExpenseCategoryManager: React.FC = () => {
                     }
                   }}
                 />
-                <button type="submit">{<FontAwesomeIcon icon={faFloppyDisk} />}</button>
-                <button type="button" onClick={() => {
+                <button type="submit" className="btn btn-icon">{<FontAwesomeIcon icon={faFloppyDisk} />}</button>
+                <button type="button" className="btn btn-icon" onClick={() => {
                   setEditingCategory(null);
                 }}>
                   <FontAwesomeIcon icon={faXmark} />
@@ -178,10 +178,10 @@ const ExpenseCategoryManager: React.FC = () => {
               <>
                 <span>{category.categoryName}</span>
                 <div className="actions">
-                  <button onClick={() => setEditingCategory(category)} className="icon-button edit-button" title="Редактировать">
+                  <button onClick={() => setEditingCategory(category)} className="btn btn-icon icon-button edit-button" title="Редактировать">
                     <FontAwesomeIcon icon={faPencil} />
                   </button>
-                  <button onClick={() => handleDeleteCategory(category.uuid)} className="icon-button delete-button" title="Удалить"> {/* Changed from id to uuid */}
+                  <button onClick={() => handleDeleteCategory(category.uuid)} className="btn btn-icon icon-button delete-button" title="Удалить"> {/* Changed from id to uuid */}
                     <FontAwesomeIcon icon={faTrash} />
                   </button>
                 </div>

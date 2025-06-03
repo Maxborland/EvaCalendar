@@ -97,7 +97,7 @@ const taskService = {
     },
 
     async getTaskById(uuid) {
-        return knex('tasks')
+        const task = await knex('tasks')
             .where('tasks.uuid', uuid)
             .select(
                 'tasks.*',
@@ -111,6 +111,12 @@ const taskService = {
             .leftJoin('children', 'tasks.childId', 'children.uuid')
             .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid')
             .first();
+        if (task) {
+            console.log(`[taskService.getTaskById] Task found (uuid: ${uuid}). dueDate from DB:`, task.dueDate);
+        } else {
+            console.log(`[taskService.getTaskById] Task not found (uuid: ${uuid}).`);
+        }
+        return task;
     },
 
     async updateTask(uuid, taskData) {
@@ -249,8 +255,8 @@ async getTasksByCategoryUuid(categoryUuid) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
             throw ApiError.badRequest('Invalid date format. Please use YYYY-MM-DD.');
         }
-
-        return knex('tasks')
+        console.log(`[taskService.getTasksByDate] Fetching tasks for dateString from DB:`, dateString);
+        const tasks = await knex('tasks')
             .where('tasks.dueDate', dateString) // Используем dueDate, так как это поле в таблице
             .select(
                 'tasks.*',
@@ -263,6 +269,15 @@ async getTasksByCategoryUuid(categoryUuid) {
             )
             .leftJoin('children', 'tasks.childId', 'children.uuid')
             .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid');
+
+        if (tasks && tasks.length > 0) {
+            tasks.forEach(task => {
+                console.log(`[taskService.getTasksByDate] Task (uuid: ${task.uuid}) for date ${dateString} - dueDate from DB:`, task.dueDate);
+            });
+        } else {
+            console.log(`[taskService.getTasksByDate] No tasks found for dateString:`, dateString);
+        }
+        return tasks;
     }
 };
 

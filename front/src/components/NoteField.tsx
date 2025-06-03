@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { createNote, getNoteByDate, updateNote, type Note } from '../services/api';
-import './NoteField.css'; // Импортируем стили
+// import './NoteField.css'; // Стиль будет через Tailwind
 
 interface NoteFieldProps {
-  weekId: string; // weekId теперь это dateString 'YYYY-MM-DD'
+  weekId: string;
   onNoteSaved?: () => void; // Опциональный колбэк
 }
 
@@ -76,33 +76,47 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId, onNoteSaved }) => {
     }
   };
 
-  if (isLoading && !noteContent && !error) { // Показываем загрузку только при первом запросе или если нет данных/ошибок
+  // Логика автосохранения при изменении (debounce можно добавить позже)
+  useEffect(() => {
+    if (hasChanges && !isLoading) {
+      const timer = setTimeout(() => {
+        handleSaveNote();
+      }, 1500); // Автосохранение через 1.5 секунды после последнего изменения
+      return () => clearTimeout(timer);
+    }
+  }, [noteContent, hasChanges, isLoading]); // Зависимость от handleSaveNote не нужна, т.к. он useCallback-нут в оригинале не был, но здесь его нет
+
+  if (isLoading && !noteContent && !error) {
     return (
-      <div className="note-field-container note-field-loading">
-        <h3 className="note-field-header">Заметки</h3>
-        <p>Загрузка...</p>
-      </div>
+      // Используем классы из макета для обертки и заголовка
+      <section className="bg-card rounded-lg p-4 col-span-1"> {/* col-span-1 или col-span-2 будет управляться из WeekView */}
+        <h2 className="text-md font-semibold mb-2">Заметки</h2>
+        <p className="text-sm text-gray-500">Загрузка заметок...</p>
+      </section>
     );
   }
 
   return (
-    <div className="note-field-container">
-      <h3 className='note-field-header'>Заметки</h3>
-      {error && <p style={{ color: 'red', textAlign: 'center', marginBottom: '10px' }}>{error}</p>}
+    // Классы из макета: docs/new_design_main_page.html строки 146-149
+    <section className="bg-card rounded-lg p-4 col-span-1"> {/* Управлять col-span-* лучше из родителя (WeekView) */}
+      <h2 className="text-md font-semibold mb-2">Заметки</h2>
+      {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
       <textarea
-        className="note-textarea"
+        className="w-full bg-gray-700 p-3 rounded-md text-sm text-gray-300 focus:ring-1 focus:ring-green-500 focus:border-green-500"
         value={noteContent}
         onChange={(e) => {
           setNoteContent(e.target.value);
           setHasChanges(true);
         }}
         placeholder="Введите заметки здесь..."
+        rows={3} // Как в макете
         disabled={isLoading}
       />
-      <button className="save-note-button" onClick={handleSaveNote} disabled={isLoading || !hasChanges}>
-        {isLoading ? 'Сохранение...' : 'Сохранить'}
-      </button>
-    </div>
+      {/* Кнопка "Сохранить" удалена согласно макету. Логика сохранения осталась и может быть привязана к onBlur или debounce. */}
+      {/* Если нужно явно показать статус сохранения: */}
+      {/* {isLoading && hasChanges && <p className="text-xs text-gray-400 mt-1">Сохранение...</p>} */}
+      {/* {!isLoading && !hasChanges && noteUuid && <p className="text-xs text-green-400 mt-1">Сохранено</p>} */}
+    </section>
   );
 };
 

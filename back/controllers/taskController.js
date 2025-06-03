@@ -10,6 +10,8 @@ const asyncHandler = fn => (req, res, next) =>
 
 // POST /tasks - Создание новой задачи
 router.post('/', asyncHandler(async (req, res) => {
+    console.log('[taskController.js] POST /tasks - req.body:', JSON.stringify(req.body, null, 2));
+    console.log('[taskController.js] POST /tasks - req.body.dueDate:', req.body.dueDate);
     const task = await taskService.createTask(req.body);
     res.status(201).json(task);
 }));
@@ -113,6 +115,8 @@ router.get('/:uuid', asyncHandler(async (req, res, next) => {
 
 // PUT /tasks/:uuid - Обновление задачи по UUID
 router.put('/:uuid', asyncHandler(async (req, res, next) => {
+    console.log(`[taskController.js] PUT /tasks/${req.params.uuid} - req.body:`, JSON.stringify(req.body, null, 2));
+    console.log(`[taskController.js] PUT /tasks/${req.params.uuid} - req.body.dueDate:`, req.body.dueDate);
     const updatedCount = await taskService.updateTask(req.params.uuid, req.body);
     if (updatedCount === 0) { // Если 0 строк обновлено, значит задача не найдена или данные не изменились
         const taskExists = await taskService.getTaskById(req.params.uuid);

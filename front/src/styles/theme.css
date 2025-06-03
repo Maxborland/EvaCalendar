@@ -1,16 +1,16 @@
 :root {
-  --theme-primary: #44b340;
-  --theme-secondary: #44b340;
-  --theme-success: #44b340;
-  --theme-danger: #c03947;
-  --theme-info: #2196F3;
+  --theme-primary: #48bb78; /* Акцентный цвет из макета */
+  --theme-secondary: #44b340; /* Оставляем старое значение, т.к. не указано в макете */
+  --theme-success: #44b340; /* Оставляем старое значение, т.к. не указано в макете */
+  --theme-danger: #c03947; /* Оставляем старое значение, т.к. не указано в макете */
+  --theme-info: #2196F3; /* Оставляем старое значение, т.к. не указано в макете */
 
-  --theme-light: #ffffff;
-  --theme-dark: #242424;
+  --theme-light: #e9f5f9; /* Фон для карточек задач/основного контента */
+  --theme-dark: #1a202c; /* Основной фон приложения */
 
-  --theme-gray-light: #F0F0F0;
-  --theme-gray-medium: #888888;
-  --theme-gray-dark: #3A3A3A;
+  --theme-gray-light: #e2e8f0; /* Цвет текста на основном фоне (используем как светлый серый) */
+  --theme-gray-medium: #2d3748; /* Фон для второстепенных элементов (используем как средний серый) */
+  --theme-gray-dark: #4a5568; /* Цвет иконок (детали задачи) (используем как темный серый) */
 
 
 
@@ -21,16 +21,16 @@
   --theme-info-text: var(--theme-light);
 
 
-  --theme-primary-rgb: 68, 179, 64;
-  --theme-secondary-rgb: 0, 86, 179;
-  --theme-success-rgb: 40, 167, 69;
-  --theme-danger-rgb: 220, 53, 69;
-  --theme-info-rgb: 33, 150, 243;
-  --theme-light-rgb: 255, 255, 255;
-  --theme-dark-rgb: 36, 36, 36;
-  --theme-gray-light-rgb: 240, 240, 240;
-  --theme-gray-medium-rgb: 136, 136, 136;
-  --theme-gray-dark-rgb: 58, 58, 58;
+  --theme-primary-rgb: 72, 187, 120; /* #48bb78 */
+  --theme-secondary-rgb: 0, 86, 179; /* Оставляем старое значение */
+  --theme-success-rgb: 40, 167, 69; /* Оставляем старое значение */
+  --theme-danger-rgb: 220, 53, 69; /* Оставляем старое значение */
+  --theme-info-rgb: 33, 150, 243; /* Оставляем старое значение */
+  --theme-light-rgb: 233, 245, 249; /* #e9f5f9 */
+  --theme-dark-rgb: 26, 32, 44; /* #1a202c */
+  --theme-gray-light-rgb: 226, 232, 240; /* #e2e8f0 */
+  --theme-gray-medium-rgb: 45, 55, 72; /* #2d3748 */
+  --theme-gray-dark-rgb: 74, 85, 104; /* #4a5568 */
 
 /* Переменные для SummaryBlock */
 --color-light-grey-hover: #f0f0f0; /* Для ховера на шапке SummaryBlock */
@@ -41,6 +41,25 @@
 --color-info-border-subtle: #b2ebf2; /* Светлая граница для info-блоков */
 --color-text-secondary: #555555; /* Вторичный цвет текста, если стандартные не подходят */
 /* Конец переменных для SummaryBlock */
+
+  /* Переменные для кнопок */
+  --btn-primary-bg: #48bb78;
+  --btn-primary-text-color: var(--theme-dark);
+  --btn-primary-padding: 12px;
+  --btn-primary-border-radius: 8px;
+  --btn-primary-font-size: 16px;
+
+  --btn-secondary-bg: #2d3748;
+  --btn-secondary-text-color: var(--theme-light);
+  --btn-secondary-padding: 8px 12px;
+  --btn-secondary-border-radius: 8px;
+  --btn-secondary-font-size: 14px;
+
+  --btn-icon-bg: #cbd5e0;
+  --btn-icon-color: #718096;
+  --btn-icon-size: 32px; /* Может быть переопределено для конкретных иконок */
+  --btn-icon-padding: 4px; /* Отступ вокруг иконки */
+  /* Конец переменных для кнопок */
 }
 
 input[readonly] {
@@ -49,4 +68,156 @@ input[readonly] {
   color: var(--theme-gray-dark);
   cursor: default;
   opacity: 0.8;
+}
+
+/* Базовые стили для кнопок */
+.btn {
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  font-family: inherit; /* Наследуем шрифт из глобальных стилей */
+}
+
+.btn:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn .material-icons {
+  margin-right: 8px; /* Отступ для иконки, если она есть */
+  font-size: inherit; /* Размер иконки наследуется от кнопки */
+}
+
+.btn .material-icons:only-child {
+  margin-right: 0; /* Убираем отступ, если иконка единственная */
+}
+
+
+/* Основная кнопка */
+.btn-primary {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text-color);
+  padding: var(--btn-primary-padding);
+  border-radius: var(--btn-primary-border-radius);
+  font-size: var(--btn-primary-font-size);
+  font-weight: bold; /* Обычно основные кнопки имеют жирный шрифт */
+}
+
+.btn-primary:hover {
+  background-color: color-mix(in srgb, var(--btn-primary-bg) 90%, black);
+}
+
+/* Вторичная кнопка */
+.btn-secondary {
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text-color);
+  padding: var(--btn-secondary-padding);
+  border-radius: var(--btn-secondary-border-radius);
+  font-size: var(--btn-secondary-font-size);
+}
+
+.btn-secondary:hover {
+  background-color: color-mix(in srgb, var(--btn-secondary-bg) 90%, white);
+}
+
+/* Кнопка-иконка */
+.btn-icon {
+  background-color: var(--btn-icon-bg);
+  color: var(--btn-icon-color);
+  border-radius: 50%; /* Делаем кнопку круглой */
+  width: var(--btn-icon-size);
+  height: var(--btn-icon-size);
+  padding: var(--btn-icon-padding); /* Отступы для самой иконки внутри кнопки */
+}
+
+.btn-icon .material-icons {
+  font-size: calc(var(--btn-icon-size) - (var(--btn-icon-padding) * 2)); /* Иконка занимает доступное место */
+  margin: 0; /* Убираем внешние отступы для иконки */
+}
+
+.btn-icon:hover {
+  background-color: color-mix(in srgb, var(--btn-icon-bg) 90%, black);
+}
+/* Card Styles */
+.card {
+  background-color: var(--theme-light);
+  color: var(--theme-dark);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Добавим небольшую тень для лучшего визуального отделения */
+}
+
+.card-heading {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 10px; /* Отступ снизу для разделения с основным текстом */
+}
+
+.card-text-detail {
+  font-size: 14px;
+  line-height: 1.5; /* Улучшим читаемость текста */
+}
+
+/* Стили для контейнера с действиями в карточке, если он понадобится */
+.card-actions {
+  margin-top: 15px; /* Отступ сверху для отделения от основного контента */
+  display: flex;
+  gap: 10px; /* Пространство между кнопками действий */
+}
+/* Animation for SummaryBlock collapsible content */
+.summary-collapsible-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition: max-height 0.35s ease-in-out,
+                opacity 0.35s ease-in-out,
+                visibility 0s linear 0.35s; /* Delay for hiding */
+    margin-top: 10px; /* Top margin when content is expanded */
+}
+
+.summary-block-container.expanded .summary-collapsible-content {
+    max-height: 1000px; /* Sufficiently large value for content */
+    opacity: 1;
+    visibility: visible;
+    transition: max-height 0.35s ease-in-out,
+                opacity 0.35s ease-in-out,
+                visibility 0s linear 0s; /* No delay for showing */
+}
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #1E1E1E;
+    min-height: max(884px, 100dvh);
+}
+.text-accent {
+    color: #4CAF50;
+}
+.bg-card {
+    background-color: #2C2C2C;
+}
+.bg-header {
+    background-color: #1A1A1A;
+}
+.bg-button-green {
+    background-color: #4CAF50;
+}
+.border-green-custom {
+    border-color: #4CAF50;
+}
+.bg-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+.bg-modal-content {
+    background-color: #2C2C2C;
+}
+.bg-button-gray {
+    background-color: #3E3E3E;
 }

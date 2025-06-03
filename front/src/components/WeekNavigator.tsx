@@ -1,36 +1,37 @@
-import { faCircleChevronLeft, faCircleChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
 
 interface WeekNavigatorProps {
   goToPreviousWeek: () => void;
   goToNextWeek: () => void;
-  currentWeekDisplay: string; // Новое свойство для отображения диапазона дат
-  isNavVisible: boolean;
-  // showFirstHalf и showSecondHalf удалены
+  currentWeekDisplay: string;
+  isNavVisible?: boolean; // Делаем опциональным, так как он больше не управляет видимостью напрямую
 }
 
 const WeekNavigator: React.FC<WeekNavigatorProps> = ({
   goToPreviousWeek,
   goToNextWeek,
   currentWeekDisplay,
-  isNavVisible,
+  // isNavVisible, // Больше не используется для скрытия/показа
 }) => {
-  // Обновляем классы для нового макета и стилей
-  // Основной контейнер теперь будет центрировать элементы
-  const navContainerClasses = `week-navigator-container ${isNavVisible ? '' : 'week-navigator-container--hidden'}`;
-
+  // Классы из макета docs/new_design_main_page.html (строки 73-81)
   return (
-    <div className={navContainerClasses}>
-      {/* half-week-navigation удален */}
-      <button className="week-nav-button prev-week" onClick={goToPreviousWeek} aria-label="Предыдущая неделя">
-        <FontAwesomeIcon icon={faCircleChevronLeft} />
+    <nav className="flex justify-between items-center p-4 bg-card rounded-lg">
+      <button
+        className="p-2 rounded-md hover:bg-gray-600"
+        onClick={goToPreviousWeek}
+        aria-label="Предыдущая неделя"
+      >
+        <span className="material-icons">chevron_left</span>
       </button>
-      <span className="current-week-display">{currentWeekDisplay}</span>
-      <button className="week-nav-button next-week" onClick={goToNextWeek} aria-label="Следующая неделя">
-        <FontAwesomeIcon icon={faCircleChevronRight} />
+      <span className="text-sm font-medium">{currentWeekDisplay}</span>
+      <button
+        className="p-2 rounded-md hover:bg-gray-600"
+        onClick={goToNextWeek}
+        aria-label="Следующая неделя"
+      >
+        <span className="material-icons">chevron_right</span>
       </button>
-    </div>
+    </nav>
   );
 };
 

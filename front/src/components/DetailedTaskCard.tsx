@@ -2,7 +2,6 @@ import { faEdit, faMapMarkerAlt, faPhone, faTrashAlt } from '@fortawesome/free-s
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
 import { type Task } from '../services/api';
-import './DetailedTaskCard.css';
 
 interface DetailedTaskCardProps {
   task: Task; // Тип Task должен включать: parentName, parentPhone, childAddress, childHourlyRate
@@ -41,23 +40,23 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
   const handleDelete = () => onDelete(uuid); // Используем uuid
 
   // Класс `done` больше не используется, окантовка зависит только от `type`
-  const cardClasses = `detailed-task-card ${type}`;
+  const cardClasses = `card ${type}`; // Используем новый класс .card и сохраняем класс типа для специфичных стилей
 
   return (
     <div className={cardClasses}>
-      <div className="card-header">
-        <h3>{title}</h3>
-        <div className="task-actions">
-          <button onClick={handleEdit} className="action-button icon-button" aria-label="Редактировать">
+      <div className="card-header"> {/* Этот div может быть удален, если card-heading и card-actions покроют все нужды */}
+        <div className="card-heading"><h3>{title}</h3></div>
+        <div className="task-actions card-actions">
+          <button onClick={handleEdit} className="btn btn-icon action-button icon-button" aria-label="Редактировать">
             <FontAwesomeIcon icon={faEdit} size="lg" />
           </button>
-          <button onClick={handleDelete} className="action-button icon-button" aria-label="Удалить">
+          <button onClick={handleDelete} className="btn btn-icon action-button icon-button" aria-label="Удалить">
             <FontAwesomeIcon icon={faTrashAlt} size="lg" />
           </button>
         </div>
       </div>
 
-      <div className="card-body">
+      <div className="card-body card-text-detail"> {/* Добавляем card-text-detail для стилизации текста */}
         {description && <p><strong>Описание:</strong> {description}</p>}
         {time && <p><strong>Время:</strong> {time}</p>}
         {/* Поле "тип задачи" убрано из отображения */}

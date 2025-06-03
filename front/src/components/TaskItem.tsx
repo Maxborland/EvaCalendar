@@ -66,11 +66,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onDelete, onDuplicate, onEdit
           </p>
         </div>
         <div className="ButtonContainer">
-          <button className="ActionButton delete" onClick={handleDeleteClick}>
+          <button className="btn btn-icon ActionButton delete" onClick={handleDeleteClick}>
             <FontAwesomeIcon icon={faTrash} />
           </button>
           {/* Используем деструктурированный id для onDuplicate */}
-          <button className="ActionButton duplicate" onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onDuplicate(id || ''); }}>
+          <button className="btn btn-icon ActionButton duplicate" onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onDuplicate(id || ''); }}>
             <FontAwesomeIcon icon={faClone} />
           </button>
         </div>

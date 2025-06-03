@@ -127,10 +127,14 @@ export const getTasksForDay = async (dateString: string): Promise<Task[]> => {
 // Удалена функция getTasksByWeekAndDay
 
 export const createTask = (taskData: Omit<Task, 'uuid'>) => { // Убираем uuid при создании
+  console.log('[api.ts] createTask - taskData to send:', JSON.stringify(taskData, null, 2));
+  console.log('[api.ts] createTask - dueDate to send:', taskData.dueDate);
   return api.post<Task>('/tasks', taskData); // Указываем тип возвращаемого значения
 };
 
 export const updateTask = (uuid: string, taskData: Partial<Omit<Task, 'uuid'>>) => { // Используем uuid, убираем uuid из данных
+  console.log(`[api.ts] updateTask (uuid: ${uuid}) - taskData to send:`, JSON.stringify(taskData, null, 2));
+  console.log(`[api.ts] updateTask (uuid: ${uuid}) - dueDate to send:`, taskData.dueDate);
   return api.put<Task>(`/tasks/${uuid}`, taskData); // Указываем тип возвращаемого значения
 };
 
