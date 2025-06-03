@@ -298,7 +298,6 @@ const WeekView: React.FC = () => {
                   <div className="col-span-1"> {/* Обертка для NoteField с col-span-1 */}
                     <NoteField
                       weekId={createDate(weekDays[0]).toISOString().slice(0, 10)}
-                      onNoteSaved={handleDataChange}
                     />
                   </div>
                   <DayColumn

@@ -17,12 +17,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Middleware для логирования всех запросов
-app.use((req, res, next) => {
-  console.log(`[index.js] Incoming request: ${req.method} ${req.originalUrl}`);
-  next();
-});
-
 // Импорт контроллеров
 const childrenController = require('./controllers/childrenController.js');
 const expenseCategoryController = require('./controllers/expenseCategoryController.js');

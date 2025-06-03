@@ -85,7 +85,7 @@ const NoteDetailsPage: React.FC = () => {
       <header className="mb-4">
         <button
           onClick={() => navigate(-1)}
-          className="text-accent hover:text-accent-hover transition-colors"
+          className="text-accent hover:text-accent-hover transition-colors bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded-md"
           aria-label="Назад"
         >
           &larr; Назад
@@ -111,7 +111,7 @@ const NoteDetailsPage: React.FC = () => {
       <button
         onClick={handleSaveNote}
         disabled={isSaving || isLoading}
-        className="mt-4 w-full bg-accent hover:bg-accent-hover text-white font-bold py-3 px-4 rounded-md transition-colors disabled:opacity-50"
+        className="mt-4 w-full bg-accent hover:bg-accent-hover text-white font-bold py-3 px-4 rounded-md bg-green-500 disabled:opacity-50"
       >
         {isSaving ? 'Сохранение...' : 'Сохранить заметку'}
       </button>

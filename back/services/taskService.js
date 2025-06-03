@@ -44,7 +44,7 @@ const taskService = {
             }
         } else if (taskData.taskType === 'expense') {
             dataForDb.amountSpent = taskData.amount || null; // Изменено с spentAmount
-            dataForDb.expenseTypeId = taskData.categoryId || null; // Используем categoryId от фронтенда
+            dataForDb.expenseTypeId = taskData.expenseTypeId || null; // Используем expenseTypeId от фронтенда
 
             if (dataForDb.expenseTypeId && !(await validateExistence('expense_categories', dataForDb.expenseTypeId))) {
                 console.error('[taskService.createTask] Validation failed for expenseTypeId (categoryId):', dataForDb.expenseTypeId);
