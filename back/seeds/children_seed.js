@@ -4,10 +4,8 @@
  */
 const { v4: uuidv4 } = require('uuid');
 exports.seed = async function(knex) {
-  // Deletes ALL existing entries
   await knex('children').del();
 
-  // Inserts seed entries
   await knex('children').insert([
     {
       uuid: uuidv4(),

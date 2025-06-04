@@ -2,18 +2,18 @@ import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
-import type { Child } from '../services/api'; // Используем существующий тип Child
-import './ChildCardManager.css'; // Стили пока оставим от ChildCardManager, позже можно переименовать или создать ChildForm.css
+import type { Child } from '../services/api';
+import './ChildCardManager.css';
 
-export interface ChildFormProps { // Экспортируем интерфейс props
-  initialChild?: Partial<Child>; // Разрешаем Partial<Child> и делаем uuid необязательным для новых
+export interface ChildFormProps {
+  initialChild?: Partial<Child>;
   onSave: (child: Child | Partial<Child>) => void;
   onCancel: () => void;
-  // Возможно, понадобится пропс для указания, создается ли ребенок или редактируется,
-  // чтобы менять заголовок, но initialChild?.uuid может служить этой цели.
+  isEmbeddedInModal?: boolean;
+  formId?: string;
 }
 
-const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel }) => {
+const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, formId }) => {
   const [formData, setFormData] = useState<Partial<Child>>(
     initialChild || {
       childName: '',
@@ -56,8 +56,7 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
   };
 
   useEffect(() => {
-    // Обновляем formData, если initialChild изменился (например, при открытии формы для редактирования другого ребенка)
-    // или при передаче предзаполненного имени для нового ребенка
+    // Обновляем formData при изменении initialChild (например, открытие формы для другого ребенка или предзаполнение имени)
     setFormData(
       initialChild || {
         childName: '',
@@ -115,15 +114,18 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
       toast.error(`Имя ребенка не должно превышать ${MAX_CHILD_NAME_LENGTH} символов.`);
       return;
     }
+    if (formData.hourlyRate == null || isNaN(Number(formData.hourlyRate)) || Number(formData.hourlyRate) < 0) {
+      toast.error('Ставка в час должна быть указана корректно (неотрицательное число).');
+      return;
+    }
     onSave(formData);
   };
 
   return (
-    // Обертка для формы, если она будет использоваться как модальное окно в TaskForm
-    // Для ChildCardManager она уже встроена. Здесь можно добавить класс для стилизации модального окна.
-    // <div className="child-form-modal-wrapper"> {/* Пример обертки */}
-      <form onSubmit={handleSubmit} className="child-form"> {/* Используем существующий класс child-form */}
-        <h3>{initialChild?.uuid ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
+      <form onSubmit={handleSubmit} className="child-form" id={formId}>
+        {!isEmbeddedInModal && (
+          <h3>{initialChild?.uuid ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
+        )}
         <label>
           Имя ребенка:
           <input type="text" name="childName" value={formData.childName || ''} onChange={handleChange} required maxLength={50} />
@@ -175,12 +177,13 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
           Комментарий:
           <textarea name="comment" value={formData.comment || ''} onChange={handleChange} rows={3}></textarea>
         </label>
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">{initialChild?.uuid ? 'Сохранить изменения' : 'Добавить карточку'}</button>
-          <button type="button" className="btn btn-secondary" onClick={onCancel}>Отмена</button>
-        </div>
+        {!isEmbeddedInModal && (
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">{initialChild?.uuid ? 'Сохранить изменения' : 'Добавить карточку'}</button>
+            <button type="button" className="btn btn-secondary" onClick={onCancel}>Отмена</button>
+          </div>
+        )}
       </form>
-    // </div>
   );
 };
 

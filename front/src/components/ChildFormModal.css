@@ -57,11 +57,11 @@
   color: var(--theme-primary);
 }
 
-.form-group {
+.child-form-modal-form-group {
   margin-bottom: 18px;
 }
 
-.form-group .label {
+.child-form-modal-form-group .label {
   display: block;
   margin-bottom: 6px;
   color: var(--theme-gray-light);
@@ -69,80 +69,13 @@
   font-weight: 400;
 }
 
-.form-group .input,
-.form-group .textarea,
-.form-group .select {
-  width: 100%;
-  padding: 10px 12px;
-  background-color: var(--theme-gray-dark);
-  border: 1px solid var(--theme-gray-dark);
-  border-radius: var(--btn-secondary-border-radius, 8px);
-  box-sizing: border-box;
-  font-size: 1rem;
-  color: var(--theme-light);
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.form-group .input::placeholder,
-.form-group .textarea::placeholder {
-  color: var(--theme-gray-light);
-  opacity: 0.7;
-}
-
-.form-group .input:focus,
-.form-group .textarea:focus,
-.form-group .select:focus {
-  border-color: var(--theme-primary);
-}
-
-.form-group .textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.radio-group {
-  display: flex;
-  margin-bottom: 18px;
-  border-radius: var(--btn-secondary-border-radius, 8px);
-  overflow: hidden;
-  border: 1px solid var(--theme-gray-dark);
-}
-
-.radio-group label {
-  flex-grow: 1;
-  text-align: center;
-  padding: 10px 12px;
-  background-color: var(--theme-gray-dark);
-  color: var(--theme-gray-light);
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  font-size: 0.95rem;
-  border-left: 1px solid var(--theme-gray-medium);
-}
-
-.radio-group label:first-child {
-  border-left: none;
-}
-
-.radio-group input[type="radio"] {
-  display: none;
-}
-
-.radio-group label:has(input[type="radio"]:checked) {
-  background-color: var(--theme-primary);
-  color: var(--btn-primary-text-color, var(--theme-dark));
-  font-weight: 500;
-}
-
-.form-actions {
+.child-form-modal-actions {
   display: flex;
   gap: 10px;
   margin-top: 25px;
 }
 
-.form-actions .submit-button,
-.form-actions .delete-button-form {
+.child-form-modal-actions .btn {
   flex-grow: 1;
   border: none;
   font-weight: 500;
@@ -153,50 +86,44 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  padding: var(--btn-primary-padding);
+  border-radius: var(--btn-primary-border-radius);
+  font-size: var(--btn-primary-font-size);
 }
 
-.form-actions .submit-button:hover,
-.form-actions .delete-button-form:hover {
+.child-form-modal-actions .btn:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
-
-.form-actions .submit-button {
+.child-form-modal-actions .btn-primary {
   background-color: var(--btn-primary-bg);
   color: var(--btn-primary-text-color);
-  padding: var(--btn-primary-padding);
-  border-radius: var(--btn-primary-border-radius);
-  font-size: var(--btn-primary-font-size);
 }
 
-.form-actions .submit-button:hover {
+.child-form-modal-actions .btn-primary:hover {
   background-color: color-mix(in srgb, var(--btn-primary-bg) 90%, black);
 }
 
-.form-actions .delete-button-form {
-  background-color: var(--theme-danger);
-  color: var(--theme-danger-text, var(--theme-light));
-  padding: var(--btn-primary-padding);
-  border-radius: var(--btn-primary-border-radius);
-  font-size: var(--btn-primary-font-size);
+.child-form-modal-actions .btn-secondary {
+  background-color: var(--btn-secondary-bg, var(--theme-gray-dark));
+  color: var(--btn-secondary-text-color, var(--theme-gray-light));
+  border: 1px solid var(--btn-secondary-border-color, var(--theme-gray-medium));
 }
 
-.form-actions .delete-button-form:hover {
+.child-form-modal-actions .btn-secondary:hover {
+  background-color: color-mix(in srgb, var(--btn-secondary-bg, var(--theme-gray-dark)) 90%, black);
+  border-color: color-mix(in srgb, var(--btn-secondary-border-color, var(--theme-gray-medium)) 80%, black);
+}
+
+.child-form-modal-actions .btn-danger {
+  background-color: var(--theme-danger);
+  color: var(--theme-danger-text, var(--theme-light));
+}
+
+.child-form-modal-actions .btn-danger:hover {
   background-color: color-mix(in srgb, var(--theme-danger) 90%, black);
 }
 
-.unified-child-selector-container .label {
- color: var(--theme-gray-light);
- font-size: 0.9rem;
-}
-
-.info-text {
-  font-size: 0.8rem;
-  color: var(--theme-gray-light);
-  opacity: 0.8;
-  margin-top: -10px;
-  margin-bottom: 10px;
-}
 
 @keyframes fadeIn {
   from {
@@ -244,4 +171,18 @@
 
 .modal-content.closing {
   animation: scaleDown 0.3s ease-out forwards;
+}
+
+.modal-content .child-form {
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+}
+
+.modal-content .child-form h3.embedded-form-title-hidden {
+  display: none;
+}
+
+.modal-content .child-form .form-actions.embedded-form-actions-hidden {
+  display: none;
 }

@@ -1,9 +1,7 @@
 exports.seed = async function(knex) {
   const { v4: uuidv4 } = require('uuid');
-  // Deletes ALL existing entries
   await knex('expense_categories').del();
 
-  // Inserts seed entries
   await knex('expense_categories').insert([
     { uuid: uuidv4(), categoryName: '🛒' }, // Продукты
     { uuid: uuidv4(), categoryName: '🚌' }, // Транспорт

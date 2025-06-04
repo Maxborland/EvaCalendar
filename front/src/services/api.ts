@@ -122,7 +122,6 @@ api.interceptors.response.use(
   }
 );
 
-// Notes API
 export const getNoteByDate = async (dateString: string): Promise<Note[]> => {
   try {
     const response = await api.get<Note[]>(`notes/date/${dateString}`);
@@ -154,18 +153,13 @@ export const getTasksForDay = async (dateString: string): Promise<Task[]> => {
   const response = await api.get(`/tasks/for-day?date=${dateString}`);
   return response.data as Task[];
 };
-// Удалена функция getTasksByWeekAndDay
 
 export const createTask = (taskData: Omit<Task, 'uuid'>) => { // Убираем uuid при создании
-  console.log('[api.ts] createTask - taskData to send:', JSON.stringify(taskData, null, 2));
-  console.log('[api.ts] createTask - dueDate to send:', taskData.dueDate);
-  return api.post<Task>('/tasks', taskData); // Указываем тип возвращаемого значения
+  return api.post<Task>('/tasks', taskData);
 };
 
 export const updateTask = (uuid: string, taskData: Partial<Omit<Task, 'uuid'>>) => { // Используем uuid, убираем uuid из данных
-  console.log(`[api.ts] updateTask (uuid: ${uuid}) - taskData to send:`, JSON.stringify(taskData, null, 2));
-  console.log(`[api.ts] updateTask (uuid: ${uuid}) - dueDate to send:`, taskData.dueDate);
-  return api.put<Task>(`/tasks/${uuid}`, taskData); // Указываем тип возвращаемого значения
+  return api.put<Task>(`/tasks/${uuid}`, taskData);
 };
 
 export const deleteTask = (uuid: string) => {
@@ -173,13 +167,8 @@ export const deleteTask = (uuid: string) => {
 };
 
 export const duplicateTask = (uuid: string) => {
-  return api.post<Task>(`/tasks/${uuid}/duplicate`); // Указываем тип возвращаемого значения
+  return api.post<Task>(`/tasks/${uuid}/duplicate`);
 };
-
-// export const getTasksByDateRange = async (startDate: string, endDate: string): Promise<Task[]> => {
-//   const response = await api.get('/api/tasks', { params: { startDate, endDate } });
-//   return response.data as Task[];
-// };
 
 export const getAllTasks = async (): Promise<Task[]> => {
   const response = await api.get('/tasks');
@@ -192,10 +181,10 @@ export const moveTask = async (taskUuid: string, newDueDate: string): Promise<Ta
 };
 
 export const getSummaryByWeek = async (weekStartDate: string): Promise<SummaryData> => {
-  const response = await api.get<SummaryData>(`/summary/summary-by-week`, { // Указываем тип ответа <SummaryData>
+  const response = await api.get<SummaryData>(`/summary/summary-by-week`, {
     params: { weekStartDate }
   });
-  return response.data; // Не нужно as SummaryData, если Axios типизирован
+  return response.data;
 };
 
 export const getDailySummary = async (date: string): Promise<{ totalEarned: number, totalSpent: number } | null> => {
@@ -250,7 +239,6 @@ export const getTasksByCategory = async (categoryUuid: string) => {
   return api.get(`/tasks/by-category-uuid/${categoryUuid}`);
 };
 
-// Children API
 export const getAllChildren = async () => {
     const response = await api.get('/children');
     return response.data as Child[];

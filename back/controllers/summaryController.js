@@ -31,7 +31,7 @@ router.get('/summary-by-week', validateSummaryByWeekStart, asyncHandler(async (r
   const monthlySummary = await summaryService.getSummaryForMonthByWeekStart(weekStartDate);
 
   const today = new Date();
-  const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+  const todayString = today.toISOString().split('T')[0];
   const dailySummaryData = await summaryService.getDailySummary(todayString);
 
   const response = {
@@ -63,7 +63,6 @@ router.get('/daily', validateDailySummary, asyncHandler(async (req, res, next) =
 
 // GET /summary/month/:year/:month - Получение месячной сводки
 router.get('/month/:year/:month', validateMonthlySummary, asyncHandler(async (req, res, next) => {
-  // try { // Убираем try...catch, так как asyncHandler это обработает
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return next(ApiError.badRequest('Ошибки валидации', errors.array()));
@@ -71,9 +70,6 @@ router.get('/month/:year/:month', validateMonthlySummary, asyncHandler(async (re
     const { year, month } = req.params;
     const summary = await summaryService.getMonthlySummary(parseInt(year), parseInt(month));
     res.status(200).json(summary);
-  // } catch (e) {
-  //   next(e);
-  // }
 }));
 
 module.exports = router;

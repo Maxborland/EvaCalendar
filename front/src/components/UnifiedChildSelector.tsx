@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { Child } from '../services/api'; // Предполагаем, что тип Child экспортируется из api.ts
+import type { Child } from '../services/api';
 
 interface UnifiedChildSelectorProps {
   value: string | null;
@@ -9,11 +9,10 @@ interface UnifiedChildSelectorProps {
   onGoToCreateChildPageRequest: () => void;
   label?: string;
   placeholder?: string;
-  selectedChildDetails?: Child | null; // Добавляем новый проп для данных ребенка
-  className?: string; // Добавляем className для возможности внешней стилизации
+  selectedChildDetails?: Child | null;
+  className?: string;
 }
 
-// Helper function to sort children by name
 const sortChildrenByName = (children: Child[]): Child[] => {
   // Создаем копию массива перед сортировкой, чтобы не мутировать оригинальный prop childrenList
   return [...children].sort((a, b) =>
@@ -29,31 +28,29 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   onGoToCreateChildPageRequest,
   label,
   placeholder = "Введите имя ребенка...",
-  selectedChildDetails, // Добавляем в деструктуризацию
-  className = '', // Значение по умолчанию для className
+  selectedChildDetails,
+  className = '',
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [filteredChildren, setFilteredChildren] = useState<Child[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedChildNameState, setSelectedChildNameState] = useState<string | null>(null); // Локальное состояние для имени
+  const [selectedChildNameState, setSelectedChildNameState] = useState<string | null>(null);
 
   const suggestionsRef = useRef<HTMLUListElement>(null);
 
-  // Эффект для установки начального inputValue и selectedChildNameState, если value (childId) передан
   useEffect(() => {
     if (value && childrenList.length > 0) {
       const selectedChild = childrenList.find(child => child.uuid === value);
       if (selectedChild) {
         setInputValue(selectedChild.childName);
-        setSelectedChildNameState(selectedChild.childName); // Устанавливаем имя для отображения
+        setSelectedChildNameState(selectedChild.childName);
       } else {
         // Если childId есть, но ребенка нет в списке (маловероятно, но возможно)
         setInputValue('');
         setSelectedChildNameState(null);
-        // Возможно, стоит вызвать onChange(null), если такой ребенок не найден
       }
     } else if (!value) {
-        setInputValue(''); // Очищаем, если value сброшен извне
+        setInputValue('');
         setSelectedChildNameState(null);
     }
   }, [value, childrenList]);
@@ -62,24 +59,24 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newInputValue = event.target.value;
     setInputValue(newInputValue);
-    setSelectedChildNameState(null); // Сбрасываем имя, так как пользователь редактирует
+    setSelectedChildNameState(null);
 
     if (newInputValue.trim() === '') {
       if (childrenList.length > 0) {
-        setFilteredChildren(sortChildrenByName(childrenList)); // Показываем всех отсортированных
+        setFilteredChildren(sortChildrenByName(childrenList));
       } else {
         setFilteredChildren([]);
       }
       setShowSuggestions(childrenList.length > 0);
-      onChange(null); // Сбрасываем выбор
+      onChange(null);
       return;
     }
 
-    const lowercasedInput = newInputValue.trim().toLowerCase(); // Используем trim() здесь тоже
+    const lowercasedInput = newInputValue.trim().toLowerCase();
     const filtered = childrenList.filter(child =>
       child.childName.toLowerCase().includes(lowercasedInput)
     );
-    setFilteredChildren(sortChildrenByName(filtered)); // Фильтруем и сортируем
+    setFilteredChildren(sortChildrenByName(filtered));
     setShowSuggestions(true); // Всегда показываем, если есть ввод, даже если filtered пуст (для "не найдено")
   };
 
@@ -102,7 +99,6 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
     }
   };
 
-  // Закрытие выпадающего списка при клике вне его
   const handleClickOutside = useCallback((event: MouseEvent) => {
     if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
       // Дополнительная проверка, чтобы не закрывать, если клик был по инпуту
@@ -119,32 +115,17 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
     };
   }, [handleClickOutside]);
 
-  // Обработка потери фокуса
   const handleBlur = () => {
     // Небольшая задержка перед скрытием, чтобы успел сработать клик по предложению
     setTimeout(() => {
-        // Если инпут не пуст, но ребенок не выбран (selectedChildNameState is null)
-        // и нет активных предложений (filteredChildren пуст или showSuggestions false)
-        // Это может означать, что пользователь ввел что-то и ушел, не выбрав.
-        // В этом случае, если inputValue не соответствует selectedChildNameState (если он был),
-        // то это новое имя, которое не было выбрано для создания.
-        // Если selectedChildNameState есть, и inputValue не равен ему, значит пользователь изменил имя уже выбранного ребенка.
-        // Это сложный кейс, пока оставим так: если ушли с поля и ничего не выбрали из списка,
-        // и inputValue не соответствует ранее выбранному, то это может быть попытка ввести новое имя,
-        // но без явного клика на "создать".
-        // Пока что, если есть selectedChildNameState (т.е. был выбран ребенок), и inputValue изменился,
-        // но не был выбран новый ребенок или опция "создать", вернем inputValue к selectedChildNameState.
-        // Это предотвратит ситуацию, когда в поле одно имя, а выбран другой childId.
         if (selectedChildNameState && inputValue !== selectedChildNameState && !showSuggestions) {
-            // setInputValue(selectedChildNameState); // Пока закомментируем, чтобы дать пользователю возможность исправить
+            // console.log("User changed input but didn't select or create, potential revert needed or clear state");
         }
-        // Если просто ушли с поля, не скрываем предложения, если они должны быть видны
-        // setShowSuggestions(false); // Это скрывается по клику снаружи
     }, 150);
   };
 
 
-  if (childrenList.length === 0 && !inputValue) { // Показываем кнопку, только если список реально пуст и нет попытки ввода
+  if (childrenList.length === 0 && !inputValue) {
     return (
       <div className="unified-child-selector">
         {label && <label className="selector-label">{label}</label>}
@@ -157,9 +138,9 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   }
 
   return (
-    <div className="unified-child-selector form-group"> {/* Добавляем form-group для консистентности */}
-      {label && <label htmlFor="child-input" className="selector-label label">{label}</label>} {/* Добавляем label для консистентности */}
-      <div style={{ position: 'relative' }}> {/* Обертка для инпута и списка подсказок */}
+    <div className="unified-child-selector form-group">
+      {label && <label htmlFor="child-input" className="selector-label label">{label}</label>}
+      <div style={{ position: 'relative' }}>
         <input
           type="text"
           id="child-input"
@@ -177,14 +158,13 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
               setFilteredChildren(sortChildrenByName(listToShow));
               setShowSuggestions(true);
             } else {
-              // Если childrenList пуст, но мы все равно фокусируемся
-              setFilteredChildren([]); // Убедимся, что filteredChildren пуст
+              setFilteredChildren([]);
               setShowSuggestions(true); // Показываем, чтобы отобразить "Дети не найдены" или кнопку "Создать"
             }
           }}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={`selector-input ${className}`} /* Объединяем классы */
+          className={`selector-input ${className}`}
           autoComplete="off"
         />
         {showSuggestions && (
@@ -204,7 +184,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
                 );
               })
             ) : (
-              inputValue.trim() !== '' && ( // Показываем "не найдено" только если есть ввод
+              inputValue.trim() !== '' && (
                 <li className="suggestion-item no-results">Дети не найдены</li>
               )
             )}
@@ -219,10 +199,9 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
           </ul>
         )}
       </div>
-      {/* Код для мини-карточки */}
       {selectedChildDetails && (
         <>
-          <div className="card mt-4"> {/* Заменяем child-info-card на card */}
+          <div className="card mt-4">
             <h4 className="card-heading">{selectedChildDetails.childName}</h4>
             <div className="card-text-detail">
               <div className="info-item">

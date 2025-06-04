@@ -40,57 +40,59 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
     onEdit(event);
   };
 
-  // Иконка и текст события согласно макету
-  // docs/new_design_main_page.html строки 91-98
-  // <div class="bg-gray-700 p-2 rounded-md border-l-2 border-green-custom flex items-center text-sm">
-  //   <span class="material-icons text-xs mr-1 text-green-400">add</span>
-  //   11:16 Хер
-  // </div>
 
-  let eventIcon = 'event'; // Иконка по умолчанию
-  let eventText = '';
-  let iconColorClass = 'text-green-400'; // По умолчанию зеленый для "дохода" или общей задачи
+  let displayTime = '&nbsp;';
+  let eventTitleText = '';
 
-  // Проверяем, является ли событие задачей и какого типа
   if (event.itemType === 'task' && 'type' in event) {
     const task = event as Task;
-    if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') {
-      eventIcon = 'add'; // Иконка для дохода
-      iconColorClass = 'text-green-400';
-      eventText = `${task.time ? task.time + ' ' : ''}${task.childName || task.title || 'Доход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}`;
-    } else if (task.type === 'expense') { // Это условие должно быть здесь, если itemType === 'task' может быть расходом
-      eventIcon = 'remove'; // Иконка для расхода
-      iconColorClass = 'text-red-400';
-      eventText = `${task.title || 'Расход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}${task.expenseCategoryName ? ` [${task.expenseCategoryName}]` : ''}`;
-    } else { // Обычная задача без явного типа дохода/расхода
-      eventIcon = 'task'; // Иконка для обычной задачи
-      iconColorClass = 'text-blue-400';
-      eventText = `${task.time ? task.time + ' ' : ''}${task.title || 'Задача'}`;
+    if (task.time) {
+      displayTime = task.time;
     }
-  } else if (event.itemType === 'expense') { // Если itemType сам по себе 'expense' (на случай если 'type' в Task не используется для расходов)
+    if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') {
+      eventTitleText = `${task.childName || task.title || 'Доход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}`;
+    } else if (task.type === 'expense') {
+      eventTitleText = `${task.title || 'Расход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}${task.expenseCategoryName ? ` [${task.expenseCategoryName}]` : ''}`;
+    } else {
+      eventTitleText = task.title || 'Задача';
+    }
+  } else if (event.itemType === 'expense') {
     const expense = event as Task;
-    eventIcon = 'remove'; // Для расходов
-    iconColorClass = 'text-red-400'; // Красный для расходов
-    eventText = `${expense.title || 'Расход'}${expense.amount ? ` (${expense.amount.toFixed(2)})` : ''}${expense.expenseCategoryName ? ` [${expense.expenseCategoryName}]` : ''}`;
+    // Для расходов время обычно не указывается, оставляем &nbsp;
+    eventTitleText = `${expense.title || 'Расход'}${expense.amount ? ` (${expense.amount.toFixed(2)})` : ''}${expense.expenseCategoryName ? ` [${expense.expenseCategoryName}]` : ''}`;
   } else if (event.itemType === 'note') {
     const note = event as Note;
-    eventIcon = 'notes'; // Иконка для заметок
-    iconColorClass = 'text-yellow-400'; // Желтый для заметок
-    eventText = note.content || 'Заметка';
+    // Для заметок время обычно не указывается, оставляем &nbsp;
+    eventTitleText = note.content || 'Заметка';
   }
 
+  let borderColorClass = 'border-gray-300';
+  if (event.itemType === 'task' && 'type' in event) {
+    const task = event as Task;
+    if (task.type === 'income') {
+      borderColorClass = 'border-green-500';
+    } else if (task.type === 'expense') {
+      borderColorClass = 'border-red-500';
+    }
+  } else if (event.itemType === 'expense') {
+    borderColorClass = 'border-red-500';
+  }
 
   return (
     <div
       ref={ref}
-      className={`bg-gray-700 p-2 rounded-md border-l-2 border-green-custom flex items-center text-sm ${isDragging ? 'opacity-50' : ''}`}
+      className={`bg-gray-700 p-2 rounded-md border-l-4 ${borderColorClass} flex items-center text-sm ${isDragging ? 'opacity-50' : ''}`}
       onClick={handleEditClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleEditClick()}
     >
-      <span className={`material-icons text-xs mr-1 ${iconColorClass}`}>{eventIcon}</span>
-      <span className="truncate">{eventText}</span>
+      <div className="w-12 flex-shrink-0 pr-2 text-left border-r border-gray-600">
+        {displayTime === '&nbsp;' ? <span dangerouslySetInnerHTML={{ __html: '&nbsp;' }} /> : displayTime}
+      </div>
+      <div className="flex-grow pl-2 truncate">
+        {eventTitleText}
+      </div>
     </div>
   );
 };

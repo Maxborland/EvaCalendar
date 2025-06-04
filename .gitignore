@@ -1,46 +1,60 @@
-# Logs
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+
+.DS_Store
+Thumbs.db
+/docs/
+
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 lerna-debug.log*
 
-# Dependency directories
-node_modules/
-jspm_packages/
+/node_modules/
+/jspm_packages/
 
-# Production build files
-dist/
-build/
-.next/
-out/
-
-# Environments
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
+.env.development
+.env.production
+.env.test
 
-# IDE and Editor files
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-.DS_Store
-Thumbs.db
+/dist/
+/build/
+/out/
+/.next/
 
-# Misc
 *.backup
-*.swp
-*.swo
 
-# Database
-back/database.sqlite
-back/data/database.sqlite
-back/data/test.sqlite
 
-documents/*
-docs/*
-back/data/database.sqlite
+/back/node_modules/
+/back/dist/
+/back/build/
+/back/npm-debug.log*
+/back/yarn-debug.log*
+/back/yarn-error.log*
+/back/.env*
+/back/data/
+/back/database.sqlite
+
+/front/node_modules/
+/front/dist/
+/front/dist-ssr/
+/front/.env*
+/front/coverage/
+/front/*.local
+
+/coverage/

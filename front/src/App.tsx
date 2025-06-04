@@ -1,4 +1,6 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react'; // Добавляем импорты
+import { createBrowserRouter, Outlet, RouterProvider, useNavigation } from 'react-router-dom';
+import LoadingAnimation from './components/LoadingAnimation'; // Импортируем компонент анимации
 import WeekView from './components/WeekView';
 import { NavProvider } from './context/NavContext';
 import ChildCardsSettingsPage from './pages/ChildCardsSettingsPage';
@@ -6,23 +8,167 @@ import DayDetailsPage from './pages/DayDetailsPage'; // Импортируем �
 import ExpenseCategoriesSettingsPage from './pages/ExpenseCategoriesSettingsPage';
 import NoteDetailsPage from './pages/NoteDetailsPage'; // Импортируем страницу заметок
 import SettingsPage from './pages/SettingsPage';
+import { getAllTasks, getDailySummary, getNoteByDate, getTasksForDay } from './services/api'; // Импортируем необходимые API функции, включая getNoteByDate
+
+// Компонент для отображения глобального индикатора загрузки страницы
+const PageLoader: React.FC = () => {
+  const navigation = useNavigation();
+  const startTime = useRef<number | null>(null);
+  const [finalSpeed, setFinalSpeed] = useState(1);
+
+  const animationNominalFrames = 196.000007983244;
+  const animationFps = 29.9700012207031;
+  const animationNominalDurationSeconds = animationNominalFrames / animationFps; // Примерно 6.54 сек
+
+  useEffect(() => {
+    console.log('[PageLoader] navigation.state:', navigation.state);
+    if (navigation.state === 'loading') {
+      startTime.current = Date.now();
+      console.log('[PageLoader] startTime:', startTime.current);
+    } else if (navigation.state === 'idle' && startTime.current !== null) {
+      const endTime = Date.now();
+      console.log('[PageLoader] endTime:', endTime);
+      const loadDuration = endTime - startTime.current;
+      console.log('[PageLoader] loadDuration:', loadDuration);
+      startTime.current = null; // Сбрасываем для следующей загрузки
+
+      const loadDurationSeconds = loadDuration / 1000;
+
+      let calculatedSpeed;
+      if (loadDurationSeconds > 0.1) { // Избегаем деления на ноль или слишком малое значение
+        calculatedSpeed = animationNominalDurationSeconds / loadDurationSeconds;
+      } else {
+        calculatedSpeed = 3.0; // Используем максимальную скорость, если загрузка очень быстрая
+      }
+      console.log('[PageLoader] calculatedSpeed:', calculatedSpeed);
+
+      const newFinalSpeed = Math.max(0.5, Math.min(calculatedSpeed, 3.0));
+      console.log('[PageLoader] finalSpeed:', newFinalSpeed);
+      setFinalSpeed(newFinalSpeed);
+    }
+  }, [navigation.state, animationNominalDurationSeconds]);
+
+  // Определяем, должен ли лоадер быть видим.
+  // Он должен быть видим, когда navigation.state === 'loading' или 'submitting'
+  // CSS transition позаботится о плавности.
+  // Обертка всегда рендерится, чтобы анимация затухания работала.
+  // Видимость контролируется классами CSS.
+  const isLoading = navigation.state === 'loading' || navigation.state === 'submitting';
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(214, 239, 199, 1)', // Сделаем фон чуть прозрачнее для эффекта
+        zIndex: 9999,
+        // pointerEvents управляются через CSS для лучшей организации
+      }}
+      className={isLoading ? 'loader-visible' : 'loader-hidden'}
+    >
+      <LoadingAnimation speed={finalSpeed} />
+    </div>
+  );
+};
+
+// Корневой компонент макета для PageLoader и NavProvider
+const RootLayout: React.FC = () => {
+  return (
+    <NavProvider>
+      <PageLoader />
+      <Outlet /> {/* Здесь будут рендериться дочерние маршруты */}
+    </NavProvider>
+  );
+};
+
+// Loader для WeekView
+const weekViewLoader = async () => {
+  const tasks = await getAllTasks();
+  return { tasks };
+};
+
+// Loader для DayDetailsPage
+const dayDetailsLoader = async ({ params }: any) => {
+  const dateString = params.dateString;
+  if (!dateString) {
+    throw new Response("Bad Request: dateString is required", { status: 400 });
+  }
+  try {
+    const tasks = await getTasksForDay(dateString);
+    const summary = await getDailySummary(dateString);
+    return { tasks, summary, dateString }; // Возвращаем dateString для использования в компоненте, если нужно
+  } catch (error) {
+    // Обработка ошибок, например, если API возвращает 404 для несуществующей даты
+    console.error("Error in dayDetailsLoader:", error);
+    // Можно выбросить ошибку, чтобы react-router отобразил ErrorBoundary
+    // или вернуть специальный объект/статус
+    throw new Response("Not Found or Error Loading Data", { status: 404 }); // Пример
+  }
+};
+
+// Loader для NoteDetailsPage
+const noteDetailsLoader = async ({ params }: any) => {
+  const date = params.date;
+  if (!date) {
+    throw new Response("Bad Request: date is required", { status: 400 });
+  }
+  try {
+    const notes = await getNoteByDate(date); // API возвращает Note[]
+    // Мы ожидаем одну заметку или ее отсутствие. Берем первую, если есть.
+    const note = notes && notes.length > 0 ? notes[0] : null;
+    return { note, date }; // Возвращаем заметку и дату
+  } catch (error) {
+    console.error("Error in noteDetailsLoader:", error);
+    throw new Response("Not Found or Error Loading Note Data", { status: 404 });
+  }
+};
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      {
+        index: true,
+        element: <WeekView />,
+        loader: weekViewLoader, // Добавляем loader
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />, // SettingsPage должен использовать <Outlet /> для вложенных маршрутов
+        children: [
+          {
+            path: "expense-categories",
+            element: <ExpenseCategoriesSettingsPage />,
+          },
+          {
+            path: "child-cards",
+            element: <ChildCardsSettingsPage />,
+          },
+        ],
+      },
+      {
+        path: "day/:dateString",
+        element: <DayDetailsPage />,
+        loader: dayDetailsLoader, // Добавляем loader
+      },
+      {
+        path: "notes/:date",
+        element: <NoteDetailsPage />,
+        loader: noteDetailsLoader, // Добавляем loader
+      },
+    ],
+  },
+]);
 
 function App() {
-  return (
-    <BrowserRouter>
-      <NavProvider>
-        <Routes>
-          <Route path="/" element={<WeekView />} />
-          <Route path="/settings" element={<SettingsPage />}>
-            <Route path="expense-categories" element={<ExpenseCategoriesSettingsPage />} />
-            <Route path="child-cards" element={<ChildCardsSettingsPage />} />
-          </Route>
-          <Route path="/day/:dateString" element={<DayDetailsPage />} /> {/* Новый маршрут */}
-          <Route path="/notes/:date" element={<NoteDetailsPage />} /> {/* Обновленный маршрут для заметок с датой */}
-        </Routes>
-      </NavProvider>
-    </BrowserRouter>
-  )
+  return <RouterProvider router={router} />;
 }
 
-export default App
+export default App;

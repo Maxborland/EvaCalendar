@@ -108,7 +108,7 @@ input[readonly] {
   padding: var(--btn-primary-padding);
   border-radius: var(--btn-primary-border-radius);
   font-size: var(--btn-primary-font-size);
-  font-weight: bold; /* Обычно основные кнопки имеют жирный шрифт */
+  font-weight: normal; /* Убираем жирный шрифт для основных кнопок */
 }
 
 .btn-primary:hover {
@@ -151,6 +151,7 @@ input[readonly] {
   background-color: var(--theme-light);
   color: var(--theme-dark);
   padding: 20px;
+  margin: 20px 0 0 0; /* Отступ снизу для разделения карточек */
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Добавим небольшую тень для лучшего визуального отделения */
 }

@@ -1,10 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+// import './TopNavigator.css'; // Оставляем закомментированным, если он не нужен
 
-// Удаляем isNavVisible из пропсов, так как хэдер всегда виден
-interface TopNavigatorProps {}
+interface TopNavigatorProps {
+  title: string;
+  showButtons?: boolean;
+}
 
-const TopNavigator: React.FC<TopNavigatorProps> = () => {
+const TopNavigator: React.FC<TopNavigatorProps> = ({ title, showButtons = true }) => {
   const navigate = useNavigate();
 
   const handleSettingsClick = () => {
@@ -12,11 +15,28 @@ const TopNavigator: React.FC<TopNavigatorProps> = () => {
   };
 
   return (
-    <header className="p-4 flex justify-between items-baseline text-white shadow-md bg-gradient-to-b from-[#4a5568] to-transparent">
-      <h2 className="text-xl font-semibold">Zyaka's Calendar</h2>
-      <button onClick={handleSettingsClick} className="p-2 rounded-md hover:bg-gray-700 flex items-center"> {/* p-2 added back here */}
-        <span className="material-icons">settings</span> {/* p-2 removed from here */}
-      </button>
+    <header className="px-4 py-3 flex items-center justify-between text-white bg-gradient-to-b from-[#2C2C2C] to-transparent">
+      {/* Логотип слева */}
+      <div className="flex items-center flex-shrink-0">
+        <img src="/icons/web/icon-512.png" alt="app icon" className="h-10 mr-2" />
+      </div>
+      {/* Заголовок по центру */}
+      <h2 className="text-xl font-semibold leading-6 text-center flex-grow mx-2">
+        {title}
+      </h2>
+      {/* Иконка настроек справа */}
+      <div className="flex items-center flex-shrink-0">
+        {showButtons ? (
+          <button onClick={handleSettingsClick} className="p-2 rounded-md hover:bg-gray-700 flex items-center">
+            <span className="material-icons">settings</span>
+          </button>
+        ) : (
+          // Placeholder для сохранения пространства, если кнопка скрыта
+          <div className="p-2 invisible flex items-center w-10 h-10"> {/* Примерные размеры кнопки для сохранения баланса */}
+            <span className="material-icons">settings</span>
+          </div>
+        )}
+      </div>
     </header>
   );
 };

@@ -34,7 +34,6 @@ describe('Task API', () => {
   const baseTask = {
     type: 'babysitting',
     title: 'Тестовая Задача',
-    // description: 'Test task description', // Удалено, используется comments
     dueDate: '2025-05-30',
     time: new Date().toISOString(),
     childId: null,
@@ -62,7 +61,7 @@ describe('Task API', () => {
   it('should create a new expense task with category name and link it correctly', async () => {
     const taskData = {
       ...baseTask,
-      type: 'expense', // Указываем тип expense
+      type: 'expense',
       title: 'Тестовая Задача Расхода с Именем Категории',
       category: 'Тестовая Категория для Задачи', // Используем имя категории, созданной в beforeEach
       // childId не обязателен для expense, но если нужен, можно добавить childUuid
@@ -77,7 +76,7 @@ describe('Task API', () => {
     expect(createRes.body.title).toEqual(taskData.title);
     expect(createRes.body.type).toEqual('expense');
     expect(createRes.body).not.toHaveProperty('category'); // Поле category (имя) должно быть удалено
-    expect(createRes.body.expenseTypeId).toEqual(categoryUuid); // Проверяем, что UUID категории подставился
+    expect(createRes.body.expenseTypeId).toEqual(categoryUuid);
 
     // Дополнительная проверка: получаем задачу и убеждаемся, что expenceTypeId верный
     const getRes = await request(app).get(`/tasks/${createRes.body.uuid}`);
@@ -135,7 +134,6 @@ describe('Task API', () => {
     const updatedTaskData = {
       type: 'babysitting', // Добавлено обязательное поле
       title: 'Обновленная Задача',
-      // description: 'Updated task description', // Удалено
       comments: 'Updated task comments', // Используем comments
       dueDate: '2025-05-31',
       amountEarned: 100,
@@ -158,18 +156,6 @@ describe('Task API', () => {
     expect(getRes.body.amountEarned).toEqual(updatedTaskData.amountEarned);
     expect(getRes.body.comments).toEqual(updatedTaskData.comments);
   });
-
-  // it('should duplicate a task', async () => {
-  //   const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenseTypeId: categoryUuid });
-  //   const taskId = createRes.body.uuid;
-  //
-  //   const res = await request(app)
-  //     .post(`/tasks/${taskId}/duplicate`);
-  //   expect(res.statusCode).toEqual(201);
-  //   expect(res.body).toHaveProperty('uuid');
-  //   expect(res.body.uuid).not.toEqual(taskId);
-  //   expect(res.body.title).toEqual(baseTask.title);
-  // });
 
   it('should delete a task', async () => {
     const createRes = await request(app).post('/tasks').send({ ...baseTask, childId: childUuid, expenseTypeId: categoryUuid });
@@ -202,7 +188,7 @@ describe('Task API', () => {
         .post('/tasks')
         .send(invalidTask);
       expect(res.statusCode).toEqual(400);
-      expect(res.body).toHaveProperty('message'); // Проверяем наличие сообщения об ошибке
+      expect(res.body).toHaveProperty('message');
     }
   });
 

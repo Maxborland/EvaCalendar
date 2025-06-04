@@ -7,7 +7,6 @@ const TABLE_NAME = 'notes';
 class NoteService {
     async createNote(noteData) {
         try {
-            // Проверка обязательных полей
             const requiredFields = ['date', 'content'];
             for (const field of requiredFields) {
                 if (!noteData[field]) {
@@ -23,7 +22,7 @@ class NoteService {
             return newNote;
         } catch (error) {
             console.error('Ошибка при создании заметки:', error);
-            throw error; // Пробрасываем оригинальную ошибку
+            throw error;
         }
     }
 
@@ -44,9 +43,8 @@ class NoteService {
             throw new Error('Не удалось получить заметку по UUID.');
         }
     }
-async getNotesByDate(dateString) { // Изменено имя метода и логика для возврата массива
+async getNotesByDate(dateString) {
         try {
-            // Возвращаем массив заметок. Если заметок нет, вернется пустой массив.
             return await knex(TABLE_NAME).where({ date: dateString }).select('*');
         } catch (error) {
             console.error(`Ошибка при получении заметок по дате ${dateString}:`, error);
@@ -56,7 +54,6 @@ async getNotesByDate(dateString) { // Изменено имя метода и л
 
     async updateNote(uuid, noteData) {
         try {
-            // Для обновления заметки обязательно только поле content
             if (!noteData || typeof noteData.content === 'undefined') {
                 // Если content не предоставлен или равен undefined, считаем это ошибкой.
                 // Пустая строка для content может быть допустима, если бизнес-логика это позволяет.
@@ -74,7 +71,7 @@ async getNotesByDate(dateString) { // Изменено имя метода и л
 
             if (!updatedNote) {
                 // Это условие сработает, если uuid не найден, и update ничего не вернул
-                return null; // Заметка не найдена
+                return null;
             }
             return updatedNote;
         } catch (error) {
@@ -88,7 +85,7 @@ async getNotesByDate(dateString) { // Изменено имя метода и л
     async deleteNote(uuid) {
         try {
             const deletedRows = await knex(TABLE_NAME).where({ uuid }).del();
-            return deletedRows > 0; // true, если заметка была удалена, false в противном случае
+            return deletedRows > 0;
         } catch (error) {
             console.error(`Ошибка при удалении заметки с UUID ${uuid}:`, error);
             throw new Error('Не удалось удалить заметку.');

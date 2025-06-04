@@ -1,16 +1,16 @@
 const express = require('express');
 const expenseCategoryService = require('../services/expenseCategoryService');
-const ApiError = require('../utils/ApiError'); // Импортируем ApiError
+const ApiError = require('../utils/ApiError');
 const router = express.Router();
 
 // Создание новой категории расхода
-router.post('/', async (req, res, next) => { // Добавляем next
+router.post('/', async (req, res, next) => {
     try {
         const categoryData = req.body;
         const newCategory = await expenseCategoryService.createExpenseCategory(categoryData);
         res.status(201).json(newCategory);
     } catch (error) {
-        next(error); // Передаем ошибку в middleware
+        next(error);
     }
 });
 
@@ -42,7 +42,7 @@ router.get('/:uuid', async (req, res) => {
 });
 
 // Обновление информации о категории расхода
-router.put('/:uuid', async (req, res, next) => { // Добавляем next
+router.put('/:uuid', async (req, res, next) => {
     try {
         const { uuid } = req.params;
         const categoryData = req.body;
@@ -50,25 +50,25 @@ router.put('/:uuid', async (req, res, next) => { // Добавляем next
         if (updatedCategory) {
             res.status(200).json(updatedCategory);
         } else {
-            return next(ApiError.notFound('Expense category not found')); // Используем ApiError
+            return next(ApiError.notFound('Expense category not found'));
         }
     } catch (error) {
-        next(error); // Передаем ошибку в middleware
+        next(error);
     }
 });
 
 // Удаление категории расхода
-router.delete('/:uuid', async (req, res, next) => { // Добавляем next
+router.delete('/:uuid', async (req, res, next) => {
     try {
         const { uuid } = req.params;
         const deleted = await expenseCategoryService.deleteExpenseCategory(uuid);
         if (deleted) {
             res.status(204).send(); // No Content
         } else {
-            return next(ApiError.notFound('Expense category not found')); // Используем ApiError
+            return next(ApiError.notFound('Expense category not found'));
         }
     } catch (error) {
-        next(error); // Передаем ошибку в middleware
+        next(error);
     }
 });
 

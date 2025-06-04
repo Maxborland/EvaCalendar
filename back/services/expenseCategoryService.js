@@ -5,7 +5,6 @@ const ApiError = require('../utils/ApiError');
 class ExpenseCategoryService {
     async createExpenseCategory(categoryData) {
         try {
-            // Проверка обязательных полей
             const requiredFields = ['categoryName'];
             for (const field of requiredFields) {
                 if (!categoryData[field]) {
@@ -43,7 +42,6 @@ class ExpenseCategoryService {
 
     async updateExpenseCategory(uuid, categoryData) {
         try {
-            // Проверка обязательных полей
             const requiredFields = ['categoryName'];
             for (const field of requiredFields) {
                 if (!categoryData[field]) {

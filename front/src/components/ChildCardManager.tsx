@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react'; // axios, IMaskInput, useRef больше не нужны здесь напрямую
+import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-// import { v4 as uuidv4 } from 'uuid'; // Больше не генерируем uuid на фронте для новых детей
 import { addChild, type Child, deleteChild, getAllChildren, updateChild } from '../services/api';
-import ChildForm from './ChildForm'; // Импортируем ChildForm и его props
+import ChildFormModal from './ChildFormModal';
 
 const ChildCardManager: React.FC = () => {
   const [children, setChildren] = useState<Child[]>([]);
-  const [editingChild, setEditingChild] = useState<Child | undefined>(undefined);
-  const [showForm, setShowForm] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [currentEditingChild, setCurrentEditingChild] = useState<Child | undefined>(undefined);
 
   const fetchChildren = useCallback(async () => {
     try {
@@ -22,31 +22,46 @@ const ChildCardManager: React.FC = () => {
     fetchChildren();
   }, [fetchChildren]);
 
-  const handleAddOrUpdateChild = async (childData: Child | Partial<Child>) => {
+  const handleOpenCreateModal = () => {
+    setModalMode('create');
+    setCurrentEditingChild(undefined);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (child: Child) => {
+    setModalMode('edit');
+    setCurrentEditingChild(child);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setCurrentEditingChild(undefined);
+  };
+
+  const handleModalSubmit = async (childData: Child | Omit<Child, 'uuid'>) => {
     try {
-      if (childData.uuid) { // Если UUID существует, это обновление
-        await updateChild(childData.uuid, childData as Child); // childData здесь точно Child
+      if (modalMode === 'edit' && currentEditingChild?.uuid) {
+        await updateChild(currentEditingChild.uuid, childData as Child);
         toast.success('Карточка ребенка успешно обновлена!');
-      } else { // Иначе, это новый ребенок
-        // Убедимся, что не передаем uuid, если он случайно есть и undefined
-        const { uuid, ...dataToSend } = childData;
-        await addChild(dataToSend as Omit<Child, 'uuid'>);
+      } else {
+        await addChild(childData as Omit<Child, 'uuid'>);
         toast.success('Новая карточка ребенка успешно добавлена!');
       }
-      setShowForm(false);
-      setEditingChild(undefined);
-      fetchChildren(); // Обновляем список
+      handleModalClose();
+      fetchChildren();
     } catch (error) {
       toast.error('Ошибка при сохранении карточки ребенка.');
     }
   };
 
-  const handleDeleteChild = async (uuid: string) => { // параметр теперь uuid
+  const handleModalDelete = async (uuid: string) => {
     if (window.confirm('Вы уверены, что хотите удалить эту карточку ребенка?')) {
       try {
-        await deleteChild(uuid); // используем uuid
+        await deleteChild(uuid);
         toast.success('Карточка ребенка успешно удалена!');
-        fetchChildren(); // Обновляем список
+        handleModalClose();
+        fetchChildren();
       } catch (error) {
         toast.error('Ошибка при удалении карточки ребенка.');
       }
@@ -57,24 +72,23 @@ const ChildCardManager: React.FC = () => {
     <div className="child-card-manager">
       <h2>Карточки детей</h2>
 
-      {!showForm && (
-        <button className="btn btn-primary add-button" onClick={() => { setShowForm(true); setEditingChild(undefined); }}>
-          Добавить карточку ребенка
-        </button>
-      )}
+      <button className="btn btn-primary add-button" onClick={handleOpenCreateModal}>
+        Добавить карточку ребенка
+      </button>
 
-      {showForm && (
-        <ChildForm
-          initialChild={editingChild}
-          onSave={handleAddOrUpdateChild}
-          onCancel={() => { setShowForm(false); setEditingChild(undefined); }}
-        />
-      )}
+      <ChildFormModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSubmit={handleModalSubmit}
+        mode={modalMode}
+        initialChildData={currentEditingChild}
+        onDelete={modalMode === 'edit' ? handleModalDelete : undefined}
+      />
 
       <div className="child-list">
         {children.length === 0 && <p>Пока нет добавленных карточек детей.</p>}
         {children.map(child => (
-          <div key={child.uuid} className="card"> {/* Заменяем child-card на card */}
+          <div key={child.uuid} className="card">
             <h3 className="card-heading">{child.childName}</h3>
             <div className="card-text-detail">
               <p><strong>Родитель:</strong> {child.parentName}</p>
@@ -84,8 +98,7 @@ const ChildCardManager: React.FC = () => {
               {child.comment && <p><strong>Комментарий:</strong> {child.comment}</p>}
             </div>
             <div className="card-actions">
-              <button className="btn btn-secondary" onClick={() => { setEditingChild(child); setShowForm(true); }}>Редактировать</button>
-              <button className="btn btn-secondary" onClick={() => handleDeleteChild(child.uuid)}>Удалить</button>
+              <button className="btn btn-secondary" onClick={() => handleOpenEditModal(child)}>Редактировать</button>
             </div>
           </div>
         ))}

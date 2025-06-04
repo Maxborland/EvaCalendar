@@ -17,19 +17,16 @@ interface UnifiedTaskFormModalProps {
   onDuplicate?: (uuid: string) => void;
 }
 
-// Вспомогательные функции для генерации имени задачи
 const generateDynamicTaskTitle = (
   taskType: 'income' | 'expense',
   childName: string | undefined | null
 ): string => {
   if (taskType === 'income') {
     if (childName && childName.trim() !== '') {
-      return `Доход от ${childName}`;
+      return `${childName}`;
     }
-    return ""; // Очищаем, если ребенок не выбран (для динамического обновления)
+    return "";
   }
-  // Для расхода имя динамически от ребенка не зависит,
-  // если было авто-имя от дохода, оно очистится в useEffect
   return "";
 };
 
@@ -40,7 +37,7 @@ const generateFinalTaskTitleOnSubmit = (
 ): string => {
   if (taskType === 'income') {
     if (childName && childName.trim() !== '') {
-      return `Доход от ${childName}`;
+      return `${childName}`;
     }
     return "Доход";
   } else if (taskType === 'expense') {
@@ -49,18 +46,17 @@ const generateFinalTaskTitleOnSubmit = (
     }
     return "Расход";
   }
-  return "Задача без названия"; // Фоллбэк
+  return "Задача без названия";
 };
 
 const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
   isOpen,
-  onClose: originalOnClose, // Переименовываем для внутреннего использования
+  onClose: originalOnClose,
   onSubmit,
   mode,
   initialTaskData,
   initialTaskType,
   onDelete,
-  // onDuplicate, // Удалено, так как не используется
 }) => {
   const [isClosing, setIsClosing] = useState(false);
 
@@ -69,12 +65,11 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     setTimeout(() => {
       originalOnClose();
       setIsClosing(false);
-    }, 300); // Длительность анимации
+    }, 300);
   }, [originalOnClose]);
 
   const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense'>(() => {
     if (mode === 'edit' && initialTaskData?.type) {
-      // Если initialTaskType передан, он имеет приоритет
       if (initialTaskType) return initialTaskType;
       return initialTaskData.type === 'expense' ? 'expense' : 'income';
     }
@@ -123,7 +118,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
 
   useEffect(() => {
     if (mode === 'edit' && initialTaskData) {
-      // Установка taskTypeInternal при редактировании
       const determinedTaskType = initialTaskType || (initialTaskData.type === 'expense' ? 'expense' : 'income');
       setTaskTypeInternal(determinedTaskType);
 
@@ -134,7 +128,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         title: initialTaskData.title ?? '',
         time: initialTaskData.time || '',
         address: initialTaskData.address || '',
-        childId: initialTaskData.childId || null, // Используем childId из initialTaskData
+        childId: initialTaskData.childId || null,
         hourlyRate: initialTaskData.hourlyRate ?? undefined,
         comments: initialTaskData.comments || '',
         expenseCategoryName: initialTaskData.expenseCategoryName || '',
@@ -142,15 +136,11 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         hoursWorked: initialTaskData.hoursWorked ?? undefined,
         dueDate: initialTaskData.dueDate ?? new Date().toISOString().split('T')[0],
         expenseTypeId: initialTaskData.expenseTypeId,
-        childName: initialTaskData.childName, // Используем childName из initialTaskData
+        childName: initialTaskData.childName,
         originalTaskType: initialTaskData.type,
       };
       setFormData(newFormData);
-      // Логируем состояние newFormData *после* вызова setFormData, используя JSON.parse(JSON.stringify()) для получения снимка состояния
-      // Однако, прямой доступ к formData сразу после setFormData не даст обновленное значение из-за асинхронности.
-      // Лог ниже покажет то, что БЫЛО передано в setFormData.
 
-      // Устанавливаем isNameManuallyEdited на основе initialTaskData.title в режиме редактирования
       const isInitialTitlePresentAndNotEmpty = !!(initialTaskData.title && initialTaskData.title.trim() !== '');
       setIsNameManuallyEdited(isInitialTitlePresentAndNotEmpty);
 
@@ -158,7 +148,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       setSelectedChildUuid(childIdToSetForSelector);
     } else if (mode === 'create') {
       setTaskTypeInternal(initialTaskType || 'income');
-      // const defaultDueDate = new Date().toISOString().split('T')[0]; // Больше не нужен здесь, начальное значение из useState
       setFormData(prev => {
         const newFormData = {
         id: undefined,
@@ -171,7 +160,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         expenseCategoryName: '',
         amount: undefined,
         hoursWorked: undefined,
-        dueDate: prev.dueDate, // Сохраняем dueDate из предыдущего состояния (установленного useState или handleChange)
+        dueDate: prev.dueDate,
         expenseTypeId: undefined,
         childName: undefined,
         originalTaskType: undefined,
@@ -184,8 +173,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
   }, [mode, initialTaskData, initialTaskType]); // initialTaskType добавлен, чтобы isNameManuallyEdited правильно сбрасывалось/устанавливалось при его изменении
 
   useEffect(() => {
-    // Сброс полей при изменении taskTypeInternal
-    // Этот эффект должен срабатывать ПОСЛЕ инициализации formData
     setFormData(prev => {
       const newFormData = { ...prev };
 
@@ -196,7 +183,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       const preserveAmountFromInitial =
         mode === 'edit' &&
         initialTaskData &&
-        (initialAmount !== undefined || initialAmountEarned !== undefined || initialAmountSpent !== undefined) && // Проверяем любое из полей суммы
+        (initialAmount !== undefined || initialAmountEarned !== undefined || initialAmountSpent !== undefined) &&
         initialTaskData.type &&
         (
           ((initialTaskData.type === 'income' || initialTaskData.type === 'hourly' || initialTaskData.type === 'fixed') && taskTypeInternal === 'income') ||
@@ -232,15 +219,15 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         const isAutoCalculated = taskTypeInternal === 'income' &&
                                  typeof newFormData.hourlyRate === 'number' && newFormData.hourlyRate > 0 &&
                                  typeof newFormData.hoursWorked === 'number' && newFormData.hoursWorked > 0;
-        if (!isAutoCalculated) {
-             newFormData.amount = undefined; // Сбрасываем, если не авто-расчет и не сохранено из initial
-        } else {
-            }
-          }
-          return newFormData;
-        });
-        setIsNameManuallyEdited(false); // Сбрасываем флаг при смене типа
-      }, [taskTypeInternal, mode, initialTaskData]);
+       if (!isAutoCalculated) {
+            newFormData.amount = undefined;
+       } else {
+           }
+         }
+         return newFormData;
+       });
+       setIsNameManuallyEdited(false);
+     }, [taskTypeInternal, mode, initialTaskData]);
 
 
       const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -276,10 +263,10 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         });
       } else if (children.length > 0 || (mode === 'create' && !initialTaskData?.childId) || (mode === 'edit' && initialTaskData && selectedChildUuid !== initialTaskData.childId)) {
         setSelectedChildDetails(null);
-        if (!initialTaskData?.childId || selectedChildUuid !== initialTaskData.childId) { // Keep childId here as it's from initialTaskData
-            setFormData(prev => {
-              const resetData = {
-                ...prev,
+        if (!initialTaskData?.childId || selectedChildUuid !== initialTaskData.childId) { // Оставляем childId здесь, так как он из initialTaskData
+          setFormData(prev => {
+            const resetData = {
+              ...prev,
                 childId: null,
                 childName: undefined,
               };
@@ -315,7 +302,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     }
   }, [formData.hourlyRate, formData.hoursWorked, taskTypeInternal]);
 
-  // useEffect для динамического обновления имени задачи
   useEffect(() => {
     // Дополнительная проверка для режима редактирования при первой загрузке
     if (mode === 'edit' && initialTaskData?.title && formData.title === initialTaskData.title && initialTaskData.title.trim() !== '') {
@@ -435,7 +421,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    let titleForSubmit = formData.title; // Берем текущее название из формы
+    let titleForSubmit = formData.title;
     const childNameForTitle = selectedChildUuid ? children.find(c => c.uuid === selectedChildUuid)?.childName : undefined;
     const expectedTitle = generateFinalTaskTitleOnSubmit(
       taskTypeInternal,
@@ -449,7 +435,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     if (isTitleFieldEmpty) {
       shouldForceUpdateTitle = true;
     } else {
-      // Название не пустое, проверяем другие условия
       let configChangedSinceLoadOrManualEditImpliesOutdated = false;
       if (mode === 'edit' && initialTaskData) {
         const loadedChildId = initialTaskData.childId;
@@ -489,7 +474,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     let taskTypeForApi: string;
     if (taskTypeInternal === 'expense') {
       taskTypeForApi = 'expense';
-    } else { // income
+    } else {
       // hourlyRate может быть невидимым, но если оно есть и часы есть, то тип hourly
       if (formData.hoursWorked && formData.hourlyRate) {
         taskTypeForApi = 'hourly';
@@ -506,7 +491,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       type: taskTypeForApi,
       time: taskTypeInternal === 'income' ? (formData.time || undefined) : undefined, // Время только для дохода
       dueDate: formData.dueDate, // Дата остается, хоть и невидима
-      childId: taskTypeInternal === 'income' ? (selectedChildUuid || undefined) : undefined, // Это уже childId, все верно
+      childId: taskTypeInternal === 'income' ? (selectedChildUuid || undefined) : undefined,
       childName: taskTypeInternal === 'income' ? (childNameForTitle || undefined) : undefined,
       expenseTypeId: taskTypeInternal === 'expense'
         ? categories.find(c => c.categoryName === formData.expenseCategoryName)?.uuid
@@ -545,7 +530,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         <div className={modalContentClass} onClick={(e) => e.stopPropagation()}>
           <button className="btn btn-icon close-button" onClick={handleClose}>&times;</button>
           <form className="form" onSubmit={handleSubmit}>
-            <h2>{mode === 'edit' ? 'Редактирование задачи' : 'Создание задачи'}</h2>
+            <h2>{mode === 'edit' ? 'Редактирование дела' : 'Создание дела'}</h2>
 
             <div className="form-group">
               <label htmlFor="title" className="label">Название:</label>
@@ -720,7 +705,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
           </form>
         </div>
       </div>
-      {showChildFormModal && ( // Вложенное модальное окно также должно использовать handleClose для основного
+      {showChildFormModal && (
         <div className={`modal-overlay ${isClosing && !showChildFormModal ? 'closing' : ''}`} onClick={handleChildFormCancel} data-testid="child-form-modal-overlay">
           <div className={`modal-content ${isClosing && !showChildFormModal ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
             <button className="btn btn-icon close-button" onClick={handleChildFormCancel}>&times;</button>

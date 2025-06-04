@@ -217,380 +217,27 @@ h1 {
 }
 
 
-#root .top-navigator {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background-color: var(--color-primary-background);
-  padding: 10px;
-  box-shadow: 0 2px 10px var(--color-shadow-dark);
-  box-sizing: border-box;
-  z-index: 1000;
-  box-sizing: border-box;
-  transition: transform 0.3s ease-out;
-}
-
-#root .top-navigator.hidden {
-  transform: translateY(-100%);
-}
-
-#root .top-navigator .logo {
-  color: var(--color-accent);
-  font-size: 1.2em;
-  font-weight: bold;
-}
-
-#root .top-navigator .settings-button {
-  padding: 12px 20px;
-  font-size: 1em;
-  border-radius: 5px;
-  border: 1px solid var(--color-accent);
-  background-color: var(--color-secondary-background);
-  color: var(--color-accent);
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  box-sizing: border-box;
-}
-
-#root .top-navigator .settings-button:hover {
-  background-color: var(--color-accent);
-  color: var(--color-primary-background);
-}
 
 
-.week-view {
-  width: 100%;
-  text-align: center;
-  box-sizing: border-box;
-  margin-top: 50px;
-  padding-bottom: 80px;
-}
 
-.week-navigator-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px 0;
-  gap: 15px; /* Пространство между кнопками и текстом */
-  width: 100%;
-  box-sizing: border-box;
-  position: fixed;
-  bottom: 0; /* Фиксируем снизу */
-  background-color : var(--color-primary-background); /* Фон для контейнера */
-  background-color: var(--color-primary-background);
-  box-shadow: 0 1px 5px var(--color-shadow-light);
-  transition: transform 0.3s ease-out;
-}
+/* Все стили, специфичные для компонентов TopNavigator, WeekView, WeekNavigator, SummaryBlock, SettingsMenu,
+   а также связанные с ними закомментированные блоки и устаревшие стили, были удалены.
+   Их стили теперь находятся в соответствующих CSS-файлах этих компонентов. */
 
-.week-navigator-container--hidden {
-  transform: translateY(100%);
-}
-
-.week-nav-button {
-  /* height: 5vh; */ /* Убрали высоту, чтобы размер определялся паддингом и контентом */
-  padding: 12px 20px; /* Как у .settings-button для сопоставимого размера */
-  margin: 0 10px; /* Отступы между кнопками */
-  font-size: 1.5rem; /* Как у .settings-button для увеличения иконки */
-  border-radius: 5px; /* Как у .settings-button для унификации */
-  border: none; /* Оставляем без границы, как было */
-  background-color: var(--color-secondary-background);
-  color: var(--color-accent);
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  display: inline-flex; /* Для выравнивания иконки и текста */
-  align-items: center;
-  gap: 5px; /* Пространство между иконкой и текстом */
-  box-sizing: border-box; /* Для корректного расчета размеров с padding */
-}
-
-.week-nav-button:hover {
-  background-color: var(--color-accent);
-  color: var(--color-primary-background);
-}
-
-.week-nav-button:disabled { /* Для неактивного состояния, если будет */
-  opacity: 0.5;
-  cursor: default;
-  background-color: var(--color-secondary-background);
-  color: var(--color-accent);
-}
-
-.current-week-display {
-  font-size: 1.1em;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  padding: 0 10px; /* Небольшие отступы по бокам */
-}
-
-
-/* Старые стили для .navigation-buttons, .week-navigation, .half-week-navigation */
-/* Можно закомментировать или удалить, если они больше нигде не используются */
-/*
-.navigation-buttons { ... }
-.navigation-buttons--hidden { ... }
-.navigation-buttons button { ... }
-.week-navigation, .half-week-navigation { ... }
-.navigation-buttons button:hover { ... }
-*/
-
-/* Удаляем или комментируем .half-week-navigation, так как он больше не используется */
-/*
-.half-week-navigation {
-  display: flex;
-  justify-content: space-around;
-  gap: 10px;
-  width: 100%;
-}
-*/
-
-/* Стили для .week-navigation (если он остался как обертка для кнопок < >)
-   В новом TSX его нет, кнопки и текст напрямую в .week-navigator-container
-*/
-/*
-.week-navigation {
-  display: flex;
-  justify-content: space-around;
-  gap: 10px;
-  width: 100%;
-}
-*/
-
-/* Общие стили для кнопок внутри старого .navigation-buttons, если они еще где-то нужны.
-   Новые кнопки .week-nav-button имеют свои стили.
-*/
-/*
-.navigation-buttons button {
-  padding: 12px 20px;
-  font-size: 1em;
-  border-radius: 5px;
-  border: 1px solid var(--color-accent);
-  background-color: var(--color-secondary-background);
-  color: var(--color-accent);
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  flex-grow: 1;
-  min-width: 120px;
-  max-width: none;
-  box-sizing: border-box;
-}
-
-.navigation-buttons button:hover {
-  background-color: var(--color-accent);
-  color: var(--color-primary-background);
-}
-*/
-
-h2 {
+h2 { /* Общие стили для h2, если они все еще нужны глобально */
   color: var(--color-text-primary);
   font-size: 1.5em;
   margin-bottom: 20px;
 }
 
-.half-navigation {
-  margin-bottom: 20px;
-}
-
-.week-days-container {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 20px;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  transition: transform 0.3s ease-in-out;
-  width: 200%;
-}
-
-.first-half-of-week,
-.second-half-of-week {
-  flex: 0 0 50%;
-  padding: 10px;
-  border: 1px solid var(--color-border-dark);
-  border-radius: 8px;
-  margin: 0 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-sizing: border-box;
-
-}
-
-.day-cells {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-height: calc(4 * 40px + 3 * 5px);
-}
-
-.day-cell-empty, .task-item {
-  background-color: var(--color-background-soft);
-  border: 1px dashed var(--color-border-medium);
-  border-radius: 4px;
-  min-height: 55px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-secondary);
-  font-size: 0.9em;
-  padding: 8px;
-}
-
 @media (prefers-color-scheme: light) {
-  #root .top-navigator {
-    background-color: var(--color-primary-background);
-    box-shadow: 0 2px 10px var(--color-shadow-dark);
-  }
-
-  #root .top-navigator .logo {
-    color: var(--color-text-primary);
-  }
-
-  #root .top-navigator .settings-button {
-    background-color: var(--color-background-soft);
-    color: var(--color-text-primary);
-    border-color: var(--color-accent);
-  }
-
-  #root .top-navigator .settings-button:hover {
-    background-color: var(--color-accent);
-    color: var(--color-primary-background);
-  }
-
-  /* Обновление стилей для светлой темы, если .week-navigator-container их наследует */
-  .week-navigator-container {
-    /* Если week-navigator-container имел фон, его нужно адаптировать для светлой темы */
-    /* background-color: var(--color-primary-background); */
-  }
-
-  .week-nav-button {
-    background-color: var(--color-secondary-background); /* Для светлой темы это может быть --color-neutral-120 */
-    color: var(--color-accent); /* Для светлой темы это --color-primary-base */
-    /* border-color: var(--color-accent); - если граница нужна */
-  }
-
-  .week-nav-button:hover {
-    background-color: var(--color-accent); /* var(--color-primary-base) */
-    color: var(--color-primary-background); /* var(--theme-light) */
-  }
-
-  .current-week-display {
-    color: var(--color-text-primary); /* var(--theme-dark) для светлой темы */
-  }
-
-  /* Старые стили для .navigation-buttons в светлой теме */
-  /*
-  .navigation-buttons {
-    background-color: var(--color-primary-background);
-  }
-
-  .navigation-buttons button {
-    background-color: var(--color-background-soft);
-    color: var(--color-text-primary);
-    border-color: var(--color-accent);
-  }
-
-  .navigation-buttons button:hover {
-    background-color: var(--color-accent);
-    color: var(--color-primary-background);
-  }
-  */
-  }
-
+  /* Глобальные стили для h2 в светлой теме остаются, если они нужны */
   h2 {
     color: var(--color-text-primary);
   }
-
-  .first-half-of-week,
-  .second-half-of-week {
-    border: 1px solid var(--color-border-dark);
-  }
-
-  .day-cell-empty, .task-item {
-    background-color: var(--color-highlight);
-    border: 1px dashed var(--color-border-medium);
-    color: var(--color-text-secondary);
-  }
-/* Лишняя закрывающая скобка удалена отсюда */
-
-
-/* Стили для .note-textarea перенесены в front/src/components/NoteField.css */
-
-.summary-block {
-    background-color: var(--color-background-soft);
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 8px var(--color-shadow-light);
 }
 
-
-.summary-wrap {
-  margin: 10px;
-  margin-top: 70px;
-  padding: 10px;
-}
-
-.summary-block p {
-    margin: 8px 0;
-    color: var(--color-text-tertiary);
-    font-size: 1.1em;
-}
-
-.summary-block .summary-block-title {
-    font-size: 1.3em;
-    font-weight: bold;
-    color: var(--color-accent);
-    margin-bottom: 15px;
-}
-
-.summary-block .summary-block-week {
-    font-size: 1em;
-    color: var(--color-text-secondary);
-    margin-top: 15px;
-}
-
-.summary-block .summary-block-row {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.summary-block .summary-block-row span {
-    white-space: nowrap;
-}
-
-.summary-block .summary-block-value {
-    font-weight: bold;
-    color: var(--color-accent);
-    font-size: 1.2em;
-}
-
-@media (prefers-color-scheme: light) {
-    .summary-block {
-        background-color: var(--color-background-soft);
-        box-shadow: 0 4px 8px var(--color-shadow-light);
-    }
-    .summary-block p {
-        color: var(--color-text-tertiary);
-    }
-    .summary-block .summary-block-title,
-    .summary-block .summary-block-value {
-        color: var(--color-black);
-    }
-    .summary-block .summary-block-week {
-        color: var(--color-text-secondary);
-    }
-
-
+/* Стили .no-tasks-message остаются, так как они не относятся к конкретному изолируемому компоненту */
     .no-tasks-message {
         text-align: center;
         padding: 15px;
@@ -608,7 +255,6 @@ h2 {
             border: 1px dashed var(--color-dashed-border-dark);
         }
     }
-}
 
 
 .loading-indicator {
@@ -640,38 +286,8 @@ h2 {
     }
 }
 
-
+/* Глобальные медиа-запросы для #root, body, html остаются */
 @media (max-width: 768px) {
-  .navigation-buttons button {
-    font-size: 0.9em;
-    padding: 10px 15px;
-  }
-
-  /* Старые стили для .week-navigation, .half-week-navigation в медиа-запросе */
-  /*
-  .week-navigation, .half-week-navigation {
-    flex-wrap: wrap;
-  }
-  */
-
-
-  .week-days-container::-webkit-scrollbar {
-    display: none;
-  }
-
-  .column-half {
-    flex: 0 0 50%;
-    box-sizing: border-box;
-    padding: 0 10px;
-  }
-}
-
-
-@media (max-width: 768px) {
-  .week-view {
-    padding: 0;
-    max-width: none;
-  }
   #root {
     max-width: none;
   }
@@ -685,76 +301,33 @@ h2 {
     max-width: 1200px;
     padding: 0 20px;
   }
-  .week-view {
-    padding: 20px;
+}
+/* Стили для PageLoader анимации */
+.loader-visible {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: auto; /* Разрешаем события мыши, когда лоадер видим */
+}
+
+.loader-hidden {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none; /* Запрещаем события мыши, когда лоадер скрыт */
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  .week-days-container {
-    justify-content: center;
-    flex-wrap: nowrap;
-  }
-  .column-half {
-    flex: 0 0 50%;
-    padding: 10px;
-  }
-  .first-half-of-week,
-  .second-half-of-week {
-    flex: 1;
-
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.settings-page-container {
-  padding: 16px;
-}
-
-.component-padding-x {
-}
-
-.top-navigator {
-    background-color: var(--color-background-soft);
-    color: var(--color-text-primary);
-    box-shadow: 0 2px 4px var(--color-shadow-light);
-    z-index: 1000;
-}
-
-.logo {
-    font-weight: bold;
-    font-size: 1.5em;
-    color: var(--color-accent);
-    margin-left: 1rem;
-}
-
-.top-navigator {
-  height: var(--navigation-height);
-  background-color: var(--theme-gray-dark);
-  box-shadow: 0 2px 5px var(--color-shadow-light);
-  transition: transform 0.3s ease-in-out;
-  z-index: 1000;
-}
-
-.top-navigator.hidden {
-  transform: translateY(-100%);
-}
-
-.top-navigator.visible {
-  transform: translateY(0);
-}
-
-.top-navigator .nav-items {
-  display: flex;
-  width: 100%;
-  justify-content: flex-start;
-}
-
-.top-navigator .settings-button {
-  background: none;
-  border: none;
-  color: var(--theme-light);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0 1rem;
-}
-
-.top-navigator .settings-button:hover {
-  color: var(--theme-primary);
+.animate-fadeInUp {
+  animation-name: fadeInUp;
+  animation-duration: 0.8s;
+  animation-timing-function: ease-out;
+  /* animation-fill-mode: forwards; */
 }

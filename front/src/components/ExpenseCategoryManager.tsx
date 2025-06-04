@@ -1,7 +1,3 @@
-import { faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { faFloppyDisk } from '@fortawesome/free-solid-svg-icons/faFloppyDisk';
-import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useEffect, useState } from 'react';
 import type { ExpenseCategory } from '../services/api';
 import {
@@ -28,7 +24,6 @@ const ExpenseCategoryManager: React.FC = () => {
       setCategories(data);
     } catch (error) {
       console.error('Ошибка при загрузке категорий расходов:', error);
-      // Обработка ошибок, например, показ сообщения пользователю
     }
   };
 
@@ -36,7 +31,6 @@ const ExpenseCategoryManager: React.FC = () => {
     e.preventDefault();
     if (!newCategoryName.trim()) return;
 
-    // SP-2: Проверка на существующее имя категории (без учета регистра)
     const existingCategory = categories.find(
       (cat) => cat.categoryName.toLowerCase() === newCategoryName.trim().toLowerCase()
     );
@@ -48,10 +42,9 @@ const ExpenseCategoryManager: React.FC = () => {
     try {
       await createExpenseCategory(newCategoryName);
       setNewCategoryName('');
-      fetchCategories(); // Обновить список категорий
+      fetchCategories();
     } catch (error) {
       console.error('Ошибка при создании категории:', error);
-      // SP-2: Дополнительная обработка ошибки с сервера, если она все же возникнет
       if ((error as any)?.response?.data?.message === 'Category with this name already exists') {
         alert('Категория с таким названием уже существует (проверка на сервере).');
       }
@@ -62,10 +55,9 @@ const ExpenseCategoryManager: React.FC = () => {
     e.preventDefault();
     if (!editingCategory || !editingCategory.categoryName.trim()) return;
 
-    // SP-2: Проверка на существующее имя категории (без учета регистра), исключая текущую редактируемую категорию
     const existingCategory = categories.find(
       (cat) =>
-        cat.uuid !== editingCategory.uuid && // Changed from id to uuid
+        cat.uuid !== editingCategory.uuid &&
         cat.categoryName.toLowerCase() === editingCategory.categoryName.trim().toLowerCase()
     );
     if (existingCategory) {
@@ -74,22 +66,15 @@ const ExpenseCategoryManager: React.FC = () => {
     }
 
     try {
-      // Сохранить старую категорию
-      // const oldCategoryName = categories.find(cat => cat.uuid === editingCategory.uuid)?.categoryName || ''; // Changed from id to uuid
-
-      // Обновить категорию
-      await updateExpenseCategory(editingCategory.uuid, editingCategory.categoryName); // Changed from id to uuid
-      setEditingCategory(null); // Сбросить режим редактирования
-      fetchCategories(); // Обновить список категорий
+      await updateExpenseCategory(editingCategory.uuid, editingCategory.categoryName);
+      setEditingCategory(null);
+      fetchCategories();
 
       // Обновление категорий в задачах теперь не требуется здесь,
       // так как UUID категории не меняется, и expenceTypeId в задачах остается корректным.
       // Отображение актуального имени категории в задачах должно происходить
       // за счет обновления списка категорий (через fetchCategories()) и последующего
       // корректного маппинга expenceTypeId на имя категории в компонентах, отображающих задачи.
-      // if (oldCategoryName && oldCategoryName !== updatedCategory.categoryName) {
-      //   console.log(`Category name changed from "${oldCategoryName}" to "${updatedCategory.categoryName}". Associated tasks' display should update.`);
-      // }
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.message) {
         const errorMessage = error.response.data.message;
@@ -104,15 +89,14 @@ const ExpenseCategoryManager: React.FC = () => {
     }
   };
 
-  const handleDeleteCategory = async (uuid: string) => { // Changed parameter name from id to uuid
-    // SP-1: Проверка, связана ли категория с расходами
+  const handleDeleteCategory = async (uuid: string) => {
     try {
-      const categoryToDelete = categories.find(cat => cat.uuid === uuid); // Changed from id to uuid
+      const categoryToDelete = categories.find(cat => cat.uuid === uuid);
       if (!categoryToDelete) {
         console.error('Категория для удаления не найдена');
         return;
       }
-      const tasksResponse = await getTasksByCategory(categoryToDelete.uuid); // Используем UUID для проверки связанных задач
+      const tasksResponse = await getTasksByCategory(categoryToDelete.uuid);
       if (tasksResponse.data && tasksResponse.data.length > 0) {
         alert('Невозможно удалить категорию, так как с ней связаны расходы. Сначала измените или удалите эти расходы.');
         return;
@@ -126,8 +110,8 @@ const ExpenseCategoryManager: React.FC = () => {
     if (!window.confirm('Вы уверены, что хотите удалить эту категорию? Это действие необратимо.')) return;
 
     try {
-      await deleteExpenseCategory(uuid); // Changed from id to uuid
-      fetchCategories(); // Обновить список категорий
+      await deleteExpenseCategory(uuid);
+      fetchCategories();
     } catch (error) {
       console.error('Ошибка при удалении категории:', error);
       alert('Ошибка при удалении категории. Пожалуйста, попробуйте еще раз.');
@@ -151,27 +135,25 @@ const ExpenseCategoryManager: React.FC = () => {
       <ul className="category-list">
         {categories.map((category, index) => {
           return (
-          <li key={category.uuid || `category-${index}`} className="category-item"> {/* Changed from id to uuid, kept fallback */}
-            {editingCategory?.uuid === category.uuid ? ( // Changed from id to uuid
+          <li key={category.uuid || `category-${index}`} className="category-item">
+            {editingCategory?.uuid === category.uuid ? (
               <form onSubmit={handleUpdateCategory} className="edit-form">
                 <input
                   type="text"
                   style={{ color: "black" }}
                   value={editingCategory?.categoryName || ''}
                   onChange={(e) => {
-                    if (editingCategory) { // Добавлена проверка на null перед доступом к свойствам
+                    if (editingCategory) {
                       setEditingCategory({ ...editingCategory, categoryName: e.target.value });
                     } else {
-                      // Эта ветка не должна достигаться, если editingCategory?.category_name используется для value
-                      // console.error('[ExpenseCategoryManager] onChange input - editingCategory is null, cannot set new value'); // Оставим закомментированным на всякий случай
                     }
                   }}
                 />
-                <button type="submit" className="btn btn-icon">{<FontAwesomeIcon icon={faFloppyDisk} />}</button>
+                <button type="submit" className="btn btn-icon"><span className="material-icons">save</span></button>
                 <button type="button" className="btn btn-icon" onClick={() => {
                   setEditingCategory(null);
                 }}>
-                  <FontAwesomeIcon icon={faXmark} />
+                  <span className="material-icons">close</span>
                 </button>
               </form>
             ) : (
@@ -179,10 +161,10 @@ const ExpenseCategoryManager: React.FC = () => {
                 <span>{category.categoryName}</span>
                 <div className="actions">
                   <button onClick={() => setEditingCategory(category)} className="btn btn-icon icon-button edit-button" title="Редактировать">
-                    <FontAwesomeIcon icon={faPencil} />
+                    <span className="material-icons">edit</span>
                   </button>
-                  <button onClick={() => handleDeleteCategory(category.uuid)} className="btn btn-icon icon-button delete-button" title="Удалить"> {/* Changed from id to uuid */}
-                    <FontAwesomeIcon icon={faTrash} />
+                  <button onClick={() => handleDeleteCategory(category.uuid)} className="btn btn-icon icon-button delete-button" title="Удалить">
+                    <span className="material-icons">delete</span>
                   </button>
                 </div>
               </>

@@ -4,7 +4,6 @@ const ApiError = require('../utils/ApiError.js');
 
 class ChildrenService {
   async createChild(childData) {
-    // Проверка обязательных полей
     const requiredFields = ['childName', 'parentName', 'parentPhone', 'address', 'hourlyRate'];
     for (const field of requiredFields) {
       if (!childData[field]) {
@@ -25,7 +24,6 @@ class ChildrenService {
   }
 
   async updateChild(uuid, childData) {
-    // Проверка обязательных полей
     const requiredFields = ['childName', 'parentName', 'parentPhone', 'address', 'hourlyRate'];
     for (const field of requiredFields) {
       if (!childData[field]) {

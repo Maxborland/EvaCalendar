@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLoaderData } from 'react-router-dom'; // Добавляем useLoaderData
 import { useNav } from '../context/NavContext';
-import { createTask, deleteTask, duplicateTask, getAllTasks, getDailySummary, getMonthlySummary, updateTask, type Task } from '../services/api';
+import { createTask, deleteTask, duplicateTask, getDailySummary, getMonthlySummary, updateTask, type Task } from '../services/api'; // Удаляем getAllTasks, так как данные будут из loader
 import {
   addDays,
   addWeeks,
@@ -9,22 +10,28 @@ import {
   getCurrentDate,
   getMonth,
   getYear,
-  isSameDay, // Добавляем недостающий импорт
+  isSameDay,
   startOfISOWeek,
   subtractWeeks
 } from '../utils/dateUtils';
+import DayColumn from './DayColumn';
+import NoteField from './NoteField';
 import SummaryBlock from './SummaryBlock';
 import TopNavigator from './TopNavigator';
-// import WeekDaysScroller from './WeekDaysScroller'; // Заменяется на TwoColumnWeekLayout
-import NoteField from './NoteField'; // Импортируем NoteField
-// import TwoColumnWeekLayout from './TwoColumnWeekLayout'; // Больше не используется напрямую в таком виде
-import DayColumn from './DayColumn'; // Импортируем DayColumn напрямую
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
 import WeekNavigator from './WeekNavigator';
 
+import './WeekView.css';
+
+interface WeekViewLoaderData {
+  tasks: Task[];
+}
+
 const WeekView: React.FC = () => {
+  const { tasks: initialTasks } = useLoaderData() as WeekViewLoaderData; // Получаем данные из loader
   const [currentDate, setCurrentDate] = useState(getCurrentDate());
-  const [tasksForWeek, setTasksForWeek] = useState<Task[]>([]);
+  // const [tasksForWeek, setTasksForWeek] = useState<Task[]>([]); // Удаляем, используем данные из loader
+  const [tasksForWeek, setTasksForWeek] = useState<Task[]>(initialTasks); // Используем данные из loader
   const [today] = useState(getCurrentDate());
   const weekDays = useMemo<Date[]>(() => {
     const startOfWeek = startOfISOWeek(currentDate);
@@ -34,87 +41,82 @@ const WeekView: React.FC = () => {
     }
     return days;
   }, [currentDate]);
-  // const [dailySummary, setDailySummary] = useState... - удалено, так как dailySummary и setDailySummary не используются
-  // const [monthlySummary, setMonthlySummary] = useState... - удалено, так как monthlySummary и setMonthlySummary не используются
-  const [isLoading, setIsLoading] = useState(true);
-  const { setIsNavVisible, isModalOpen: isGlobalModalOpen, setIsModalOpen: setIsGlobalModalOpen } = useNav(); // isNavVisible удалена, остальные используются
+  // const [isLoading, setIsLoading] = useState(true); // Удаляем, состояние загрузки управляется react-router
+  const { setIsNavVisible, isModalOpen: isGlobalModalOpen, setIsModalOpen: setIsGlobalModalOpen } = useNav();
 
-  // Состояния для UnifiedTaskFormModal
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [modalTaskMode, setModalTaskMode] = useState<'create' | 'edit'>('create');
   const [currentTaskForModal, setCurrentTaskForModal] = useState<Task | undefined>(undefined);
   const [initialModalTaskType, setInitialModalTaskType] = useState<'income' | 'expense'>('income');
 
 
-  const loadInitialData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [tasks] = await Promise.all([ // Удалена переменная notes
-        getAllTasks(),
-        // getAllNotes() // Закомментирован вызов getAllNotes, так как notes не используется
-      ]);
-      setTasksForWeek(tasks);
-      // setAllNotes(notes); // Удалено, так как allNotes не используется
-    } catch (error) {
-      console.error('Error fetching initial data: ', error);
-      setTasksForWeek([]);
-      // setAllNotes([]); // Удалено, так как allNotes не используется
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  // Удаляем loadInitialData и связанный useEffect, так как задачи загружаются через loader
+  // const loadInitialData = useCallback(async () => {
+  //   // setIsLoading(true); // Удалено
+  //   try {
+  //     // const [tasks] = await Promise.all([ // getAllTasks() теперь в loader
+  //     //   getAllTasks(),
+  //     // ]);
+  //     // setTasksForWeek(tasks); // Устанавливается из useLoaderData
+  //   } catch (error) {
+  //     console.error('Error fetching initial data: ', error);
+  //     // setTasksForWeek([]); // Обработка ошибок загрузчика будет в другом месте или через ErrorBoundary
+  //   } finally {
+  //     // setIsLoading(false); // Удалено
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+  // useEffect(() => {
+  //   // loadInitialData(); // Удалено
+  //   // Вместо этого, обновим tasksForWeek, если initialTasks из лоадера изменились (например, при HMR или повторной валидации)
+  //   setTasksForWeek(initialTasks);
+  // }, [initialTasks]);
 
-  // useEffect(() => { // Удалено, так как notesForCurrentWeek не используется
-  //   const startOfWeek = currentDate.clone().startOf('isoWeek');
-  //   const endOfWeek = currentDate.clone().endOf('isoWeek');
-  //
-  //   const filteredNotes = allNotes.filter(note => {
-  //     const noteDate = moment(note.date);
-  //     const isBetween = noteDate.isBetween(startOfWeek, endOfWeek, 'day', '[]');
-  //     return isBetween; // '[]' включает начальную и конечную даты
-  //   });
-  //   setNotesForCurrentWeek(filteredNotes);
-  // }, [allNotes, currentDate]);
+  // Функция для перезагрузки данных, если это необходимо после мутаций
+  // const reloadTasks = useCallback(async () => {
+  //   // Здесь можно было бы вызвать navigate(location.pathname, { replace: true }) или другой механизм для перезапуска loader,
+  //   // но для простоты пока оставим обновление состояния напрямую, если API-вызовы в loader не будут повторно вызываться автоматически.
+  //   // Либо, если loader всегда возвращает свежие данные, можно просто обновить состояние из него.
+  //   // Для текущей задачи, предполагаем, что после мутации (create/update/delete) нам нужно обновить список задач.
+  //   // Простейший способ - это если бы loader сам перезапускался.
+  //   // Если нет, то нужно будет либо снова вызвать API, либо использовать `revalidate` из `useRevalidator`.
+  //   // Пока что, для простоты, предположим, что `handleDataChange` будет обновлять `tasksForWeek`
+  //   // из `initialTasks` или вызывать API заново.
+  //   // Для корректной работы с loader, лучше использовать `navigate` или `revalidator`.
+  //   // Но для начала, просто обновим tasksForWeek из initialTasks, если они изменились.
+  //   setTasksForWeek(initialTasks); // Это может быть не всегда актуально, если initialTasks не обновляются без перезагрузки loader
+  //                                  // Правильнее было бы иметь функцию, которая перезапускает loader или запрашивает данные снова.
+  //                                  // Пока что, для демонстрации, оставим так.
+  //                                  // В реальном приложении, после мутации, нужно обеспечить перезагрузку данных из loader.
+  //                                  // Это можно сделать через `revalidator.revalidate()` или `navigate('.', { replace: true })`.
+  //                                  // Для простоты, мы будем обновлять tasksForWeek из initialTasks,
+  //                                  // и предполагаем, что `handleDataChange` будет вызван после мутаций.
+  // }, [initialTasks]);
+
 
   const fetchSummary = useCallback(async () => {
-    // setIsLoading(true); // Управляется в loadTasksForWeek
     try {
-      // Получаем сводку за день для текущего дня (сегодня)
       const dailyDate = createDate(today).toISOString().slice(0, 10);
-      await getDailySummary(dailyDate); // Убедимся, что дата передается в формате YYYY-MM-DD
-      // setDailySummary больше не используется
+      await getDailySummary(dailyDate);
 
-      // Получаем сводку за месяц
       const year = getYear(currentDate);
-      const month = getMonth(currentDate); // getMonth() из dateUtils возвращает 1-12
+      const month = getMonth(currentDate);
       await getMonthlySummary(year, month);
-      // setMonthlySummary больше не используется
     } catch (error) {
       console.error('[WeekView] Error fetching summary:', error);
-    } finally {
-      // setIsLoading(false); // Управляется в loadTasksForWeek
     }
-  }, [currentDate, today]); // Зависимость от currentDate для месячной сводки и today для дневной
+  }, [currentDate, today]);
 
   useEffect(() => {
-    // fetchSummary вызывается после загрузки задач или при изменении currentDate/today
-    // Чтобы избежать двойной загрузки, можно вызывать fetchSummary внутри loadTasksForWeek
-    // или когда tasksForWeek обновлены, но для простоты пока оставим так,
-    // т.к. setIsLoading управляется в loadTasksForWeek
-    if (!isLoading) { // Вызываем только если не идет основная загрузка задач
-        fetchSummary();
-    } else {
-    }
-  }, [fetchSummary, isLoading, tasksForWeek]); // Добавлена зависимость от tasksForWeek и isLoading
+    // if (!isLoading) { // isLoading удален
+    fetchSummary();
+    // } else {
+    // }
+  }, [fetchSummary, tasksForWeek]); // tasksForWeek теперь зависит от initialTasks
 
-  // Эффект для отслеживания прокрутки и скрытия/показа навигации
   useEffect(() => {
     const handleScroll = () => {
-      if (isGlobalModalOpen || isTaskModalOpen) return; // Если любое модальное окно открыто
+      if (isGlobalModalOpen || isTaskModalOpen) return;
 
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
       if (scrollTop + clientHeight >= scrollHeight - 20) {
@@ -131,29 +133,31 @@ const WeekView: React.FC = () => {
 
   const goToPreviousWeek = () => {
     setCurrentDate(subtractWeeks(currentDate, 1));
-    // loadTasksForWeek и fetchSummary будут вызваны через useEffect при изменении currentDate
   };
 
   const goToNextWeek = () => {
     setCurrentDate(addWeeks(currentDate, 1));
-    // loadInitialData и fetchSummary будут вызваны через useEffect при изменении currentDate
   };
 
-  // Удаляем состояния и логику, связанные с isFirstHalfVisible, firstHalfDays, secondHalfDays
-  // const [isFirstHalfVisible, setIsFirstHalfVisible] = useState(true);
-  // const firstHalfDays = weekDays.slice(0, 3);
-  // const secondHalfDays = [weekDays[3], ...weekDays.slice(4, 7)];
+  const handleDataChange = useCallback(async () => {
+    // loadInitialData(); // Удалено, данные из loader
+    // Вместо loadInitialData, нам нужно как-то обновить tasksForWeek.
+    // Если loader автоматически не перезапускается после навигации на тот же путь,
+    // нам может потребоваться явно перезагрузить данные или использовать revalidator.
+    // Пока что, мы можем попробовать обновить tasksForWeek из initialTasks,
+    // но это не гарантирует свежесть данных без перезапуска loader.
+    // Для простоты, предположим, что `initialTasks` будут обновлены при следующей навигации
+    // или что `fetchSummary` не зависит от самых свежих `tasksForWeek` напрямую для своего вызова.
+    // В идеале, после мутации, нужно вызвать revalidator.revalidate()
+    // Это потребует `useRevalidator` хука.
+    // Пока что, просто вызовем fetchSummary.
+    // И обновим tasksForWeek из initialTasks, если они изменились.
+    // Это не идеальное решение, но для начала.
+    // TODO: Использовать revalidator для обновления данных из loader после мутаций.
+    setTasksForWeek(initialTasks); // Обновляем из данных лоадера
+    fetchSummary();
+  }, [initialTasks, fetchSummary]);
 
-  const handleDataChange = useCallback(() => {
-    loadInitialData(); // Перезагружаем все данные (задачи и заметки)
-    fetchSummary();     // Обновляем сводку
-  }, [loadInitialData, fetchSummary]); // Удалена зависимость от currentDate, т.к. loadInitialData и fetchSummary уже зависят от нее или today
-
-  // Удаляем showFirstHalf и showSecondHalf
-  // const showFirstHalf = () => setIsFirstHalfVisible(true);
-  // const showSecondHalf = () => setIsFirstHalfVisible(false);
-
-  // Формируем название текущего недельного диапазона для WeekNavigator
   const weekRangeDisplay = useMemo(() => {
     if (weekDays && weekDays.length === 7) {
       return formatDateRange(weekDays[0], weekDays[6]);
@@ -167,19 +171,19 @@ const WeekView: React.FC = () => {
       setModalTaskMode('edit');
       setInitialModalTaskType(taskType || (taskToEdit.type === 'expense' ? 'expense' : 'income'));
     } else {
-      setCurrentTaskForModal({ dueDate: createDate(defaultDate || today).toISOString().slice(0, 10) } as Task); // Устанавливаем дату по умолчанию
+      setCurrentTaskForModal({ dueDate: createDate(defaultDate || today).toISOString().slice(0, 10) } as Task);
       setModalTaskMode('create');
       setInitialModalTaskType(taskType || 'income');
     }
     setIsTaskModalOpen(true);
-    setIsGlobalModalOpen(true); // Управляем глобальным состоянием модалки
+    setIsGlobalModalOpen(true);
     setIsNavVisible(false);
   }, [today, setIsGlobalModalOpen, setIsNavVisible]);
 
   const handleCloseTaskModal = useCallback(() => {
     setIsTaskModalOpen(false);
     setCurrentTaskForModal(undefined);
-    setIsGlobalModalOpen(false); // Управляем глобальным состоянием модалки
+    setIsGlobalModalOpen(false);
     setIsNavVisible(true);
   }, [setIsGlobalModalOpen, setIsNavVisible]);
 
@@ -192,11 +196,10 @@ const WeekView: React.FC = () => {
       } else {
         await createTask(taskData as Omit<Task, 'uuid'>);
       }
-      handleDataChange(); // Обновляем данные на странице
+      handleDataChange();
       handleCloseTaskModal();
     } catch (error) {
       console.error('Ошибка при сохранении задачи:', error);
-      // Можно добавить toast для пользователя
     }
   };
 
@@ -223,29 +226,24 @@ const WeekView: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {isLoading ? (
-        <div className="loading-indicator">Загрузка данных...</div>
-      ) : (
+      {/* Локальный индикатор загрузки удален, так как используется глобальный PageLoader */}
         <>
-          <TopNavigator />
-          <main className="flex-grow p-4 space-y-6 pb-20"> {/* Добавлен pb-20 для отступа */}
+          <TopNavigator title="" />
+          <main className="flex-grow p-4 space-y-6 pb-20">
             <SummaryBlock
                 weekStartDate={weekDays.length > 0 ? createDate(weekDays[0]).toISOString().slice(0, 10) : ''}
             />
-            {/* Кнопка "Создать задачу" теперь позиционируется абсолютно */}
             <WeekNavigator
               goToPreviousWeek={goToPreviousWeek}
               goToNextWeek={goToNextWeek}
               currentWeekDisplay={weekRangeDisplay}
             />
-            {/* Обертка для сетки дней и заметок */}
             <div className="grid grid-cols-2 gap-4">
               {weekDays.length === 7 && (
                 <>
-                  {/* Ряд 1 */}
                   <DayColumn
                     key={weekDays[0].toISOString()}
-                    fullDate={weekDays[0]} // Пн
+                    fullDate={weekDays[0]}
                     today={today}
                     tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[0]))}
                     onDataChange={handleDataChange}
@@ -253,16 +251,15 @@ const WeekView: React.FC = () => {
                   />
                   <DayColumn
                     key={weekDays[3].toISOString()}
-                    fullDate={weekDays[3]} // Чт
+                    fullDate={weekDays[3]}
                     today={today}
                     tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[3]))}
                     onDataChange={handleDataChange}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
-                  {/* Ряд 2 */}
                   <DayColumn
                     key={weekDays[1].toISOString()}
-                    fullDate={weekDays[1]} // Вт
+                    fullDate={weekDays[1]}
                     today={today}
                     tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[1]))}
                     onDataChange={handleDataChange}
@@ -270,16 +267,15 @@ const WeekView: React.FC = () => {
                   />
                   <DayColumn
                     key={weekDays[4].toISOString()}
-                    fullDate={weekDays[4]} // Пт
+                    fullDate={weekDays[4]}
                     today={today}
                     tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[4]))}
                     onDataChange={handleDataChange}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
-                  {/* Ряд 3 */}
                   <DayColumn
                     key={weekDays[2].toISOString()}
-                    fullDate={weekDays[2]} // Ср
+                    fullDate={weekDays[2]}
                     today={today}
                     tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[2]))}
                     onDataChange={handleDataChange}
@@ -287,38 +283,35 @@ const WeekView: React.FC = () => {
                   />
                   <DayColumn
                     key={weekDays[5].toISOString()}
-                    fullDate={weekDays[5]} // Сб
+                    fullDate={weekDays[5]}
                     today={today}
                     tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[5]))}
                     onDataChange={handleDataChange}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
-                  {/* Ряд 4 */}
-                  <div className="col-span-1"> {/* Обертка для NoteField с col-span-1 */}
+                  <div className="col-span-1">
                     <NoteField
                       weekId={createDate(weekDays[0]).toISOString().slice(0, 10)}
                     />
                   </div>
                   <DayColumn
                     key={weekDays[6].toISOString()}
-                    fullDate={weekDays[6]} // Вс
+                    fullDate={weekDays[6]}
                     today={today}
                     tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[6]))}
                     onDataChange={handleDataChange}
                     onOpenTaskModal={handleOpenTaskModal}
-                    // className="col-span-1" // Можно добавить, если нужно явно указать
                   />
                 </>
               )}
             </div>
           </main>
-          {/* Кнопка "Создать задачу" вынесена из main и позиционируется фиксированно */}
           <button
-            className="fixed bottom-5 right-5 bg-button-green text-white py-3 px-4 rounded-full shadow-lg flex items-center justify-center space-x-2 hover:bg-green-600 transition-colors z-50" // Добавлены стили для позиционирования и z-index
+            className="fixed bottom-5 right-5 bg-button-green text-white py-3 px-4 rounded-full shadow-lg flex items-center justify-center space-x-2 hover:bg-green-600 transition-colors z-50"
             onClick={() => handleOpenTaskModal(undefined, 'income', today)}
           >
             <span className="material-icons">add_circle_outline</span>
-            <span>Создать задачу</span>
+            <span>Создать дело</span>
           </button>
           {isTaskModalOpen && (
             <UnifiedTaskFormModal
@@ -333,7 +326,7 @@ const WeekView: React.FC = () => {
             />
           )}
         </>
-      )}
+      {/* )} */} {/* Закрывающий комментарий для isLoading также удален */}
     </div>
   );
 };

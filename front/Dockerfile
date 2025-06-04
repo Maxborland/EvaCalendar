@@ -9,7 +9,10 @@ RUN echo "VITE_API_URL=$VITE_API_URL" > .env.production
 
 COPY package*.json ./
 
-RUN npm install
+# Используем npm ci для установки зависимостей и очищаем кеш
+RUN npm ci && rm -rf /root/.npm
+# Если devDependencies нужны для сборки, можно использовать:
+# RUN npm install && npm cache clean --force
 
 COPY . .
 
@@ -21,6 +24,7 @@ FROM nginx:alpine
 # Подменяем конфигурацию Nginx для проксирования /api на back
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Копируем только собранные статические файлы из этапа builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80

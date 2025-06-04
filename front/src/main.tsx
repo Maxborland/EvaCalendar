@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import App from './App.tsx';
+import LoadingAnimation from './components/LoadingAnimation.tsx'; // Импортируем компонент анимации
 import './index.css';
 
 // Создаем "MultiBackend"
@@ -37,17 +38,26 @@ createRoot(document.getElementById('root')!).render(
   </>,
 );
 
+// Render LoadingAnimation into the splashscreen div
+const splashScreenElement = document.getElementById('splashscreen');
+if (splashScreenElement) {
+  const splashRoot = createRoot(splashScreenElement);
+  splashRoot.render(<LoadingAnimation />);
+}
+
 // Hide splashscreen after app is loaded
-const splashScreen = document.getElementById('splashscreen');
+const splashScreen = document.getElementById('splashscreen'); // Переменная splashScreen уже объявлена выше, но здесь она нужна для логики скрытия
 if (splashScreen) {
   // Wait for a bit to ensure content is loaded, then fade out
   setTimeout(() => {
     splashScreen.style.opacity = '0';
     splashScreen.style.transition = 'opacity 0.5s ease-out';
     setTimeout(() => {
-      splashScreen.style.display = 'none';
+      if (splashScreen) { // Дополнительная проверка, так как splashScreenElement мог быть удален
+        splashScreen.style.display = 'none';
+      }
     }, 500); // Corresponds to the transition duration
-  }, 500); // Adjust this delay as needed
+  }, 1500); // Увеличим задержку, чтобы анимация успела показаться
 }
 
 // Register Service Worker

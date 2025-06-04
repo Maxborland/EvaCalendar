@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { SummaryData } from '../services/api';
 import { getSummaryByWeek } from '../services/api';
 import { createDate } from '../utils/dateUtils';
+import './SummaryBlock.css';
 
 interface SummaryBlockProps {
     weekStartDate: string;
@@ -13,7 +14,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
     const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const toggleExpansion = () => {
         setIsExpanded(!isExpanded);
@@ -49,13 +50,13 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
 
     const formatMonthYear = (dateString?: string) => {
         if (!dateString) return '';
-        const date = createDate(dateString + '-01'); // Assuming YYYY-MM format
+        const date = createDate(dateString + '-01');
         return date.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
     };
 
     const formatFullDate = (dateString?: string) => {
         if (!dateString) return '';
-        // Expects YYYY-MM-DD from dailySummary.calculatedForDate
+
         const date = createDate(dateString);
         return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
     };
@@ -75,19 +76,20 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
 
     return (
         <section className="rounded-xl mb-2.5 bg-light-background shadow-[0_4px_12px_var(--color-shadow-light)] flex flex-col">
-            {/* Кликабельный заголовок */}
+
             <div
                 className={`p-4 cursor-pointer transition-colors duration-200 ease-in-out
                     ${isExpanded
-                        ? 'bg-sky-100 hover:bg-sky-200 rounded-t-xl' // Только верхние скругления, если развернуто
-                        : 'bg-sky-100 hover:bg-sky-200 rounded-xl' // Все скругления, если свернуто
+                        ? 'bg-sky-100 hover:bg-sky-200 rounded-t-xl'
+                        : 'bg-sky-100 hover:bg-sky-200 rounded-xl'
                     }`}
                 onClick={toggleExpansion}
             >
                 {isExpanded ? (
                     <div className="text-gray-800 text-lg font-semibold text-center">
-                        Сводка за {titleMonthYear}<br/>(на {todayDateFormatted})
+                        Сводка за {titleMonthYear}
                     </div>
+
                 ) : (
                     <>
                         <div className="text-sm text-gray-700">Сегодня: {todayDateFormatted}</div>
@@ -98,25 +100,25 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
                 )}
             </div>
 
-            {/* Анимируемый блок с деталями */}
+
             <div
                 className={`
-                    transition-all duration-300 ease-in-out overflow-hidden
+                    transition-all duration-700 ease-out overflow-hidden
                     ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}
-                    ${isExpanded ? 'rounded-b-xl' : ''} // Нижние скругления только если развернуто и есть контент
+                    ${isExpanded ? 'rounded-b-xl' : ''}
                     bg-light-background
                 `}
             >
-                {/* Внутренний контейнер для padding и gap, видим только если isExpanded */}
+
                 {isExpanded && (
                     <div className="p-4 flex flex-col gap-3 bg-gray-600">
-                        {/* Баланс в развернутом виде */}
+
                         <div className="p-3 rounded-lg bg-sky-100 text-gray-800 text-base font-semibold text-center shadow-sm">
                              Баланс ({titleMonthYear}): <span className="font-semibold text-gray-800">{formatCurrency(monthlySummary.balance)}</span>
                         </div>
 
-                        {/* Доход */}
-                        <div className="p-3 rounded-lg bg-emerald-100 shadow-sm">
+
+                        <div className="p-3 rounded-lg bg-green-200 shadow-sm">
                             <h4 className="text-md font-bold text-emerald-800 mb-2">Доход:</h4>
                             <div className="flex justify-between items-center gap-2 w-full text-sm">
                                 <p className="text-emerald-700 mb-0">
@@ -128,7 +130,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
                             </div>
                         </div>
 
-                        {/* Расход */}
+
                         <div className="p-3 rounded-lg bg-rose-100 shadow-sm">
                             <h4 className="text-md font-bold text-rose-800 mb-2">Расход:</h4>
                             <div className="flex justify-between items-center gap-2 w-full text-sm">

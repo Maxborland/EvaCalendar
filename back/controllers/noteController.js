@@ -9,7 +9,6 @@ router.post('/', async (req, res, next) => {
         const newNote = await noteService.createNote(req.body);
         res.status(201).json(newNote);
     } catch (error) {
-        // Передаем ошибку как есть (уже содержит statusCode)
         next(error);
     }
 });
@@ -40,9 +39,7 @@ router.get('/:uuid', async (req, res, next) => {
 // GET /notes/date/:dateString - Получение информации о заметке по дате
 router.get('/date/:dateString', async (req, res, next) => {
     try {
-        // Используем обновленный метод сервиса, который возвращает массив
         const notes = await noteService.getNotesByDate(req.params.dateString);
-        // Всегда возвращаем 200 OK и массив заметок (может быть пустым)
         res.status(200).json(notes);
     } catch (error) {
         next(error);
@@ -68,7 +65,7 @@ router.delete('/:uuid', async (req, res, next) => {
     try {
         const deleted = await noteService.deleteNote(req.params.uuid);
         if (deleted) {
-            res.status(204).send(); // No Content
+            res.status(204).send();
         } else {
             next(ApiError.notFound('Заметка не найдена для удаления'));
         }
