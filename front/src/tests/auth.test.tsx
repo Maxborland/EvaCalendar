@@ -100,7 +100,7 @@ const renderWithAuth = (ui: React.ReactElement, { route = '/' } = {}) => {
             </>
           } />
           {/* Дополнительные маршруты для навигации */}
-          <Route path="/login" element={<><h1>Login Page Redirect</h1><AuthStateChecker /></>} />
+          <Route path="/login" element={<><LoginPage /><AuthStateChecker /></>} />
           <Route path="/dashboard" element={<><h1>Dashboard Page Redirect</h1><AuthStateChecker /></>} />
         </Routes>
       </MemoryRouter>
@@ -282,6 +282,7 @@ describe('Auth Workflow Tests', () => {
       const mockToken = 'mock-jwt-token-login';
 
       (api.post as Mock).mockResolvedValueOnce({
+        status: 200, // Явно указываем статус для успешного ответа
         data: { user: mockUserData, token: mockToken },
       });
       // Предполагаем, что после входа происходит запрос /users/me
@@ -408,7 +409,7 @@ describe('Auth Workflow Tests', () => {
 
       // Сначала убедимся, что логин API был вызван
       await waitFor(() => {
-        expect(api.post).toHaveBeenCalledWith('/auth/login', {
+        expect(api.post).toHaveBeenCalledWith('/api/auth/login', { // Исправлен ожидаемый URL
           email: 'test@example.com',
           password: 'password123',
         });
@@ -422,7 +423,11 @@ describe('Auth Workflow Tests', () => {
       // И что /api/users/me был вызван (первый раз, из AuthContext.login)
       await waitFor(() => {
         // Проверяем первый вызов /api/users/me
-        expect(api.get).toHaveBeenNthCalledWith(1, '/api/users/me');
+        expect(api.get).toHaveBeenNthCalledWith(1, '/api/users/me', expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${mockToken}`, // mockToken из этого теста ('mock-jwt-token-authed')
+          }),
+        }));
       });
 
       // Важно: После логина и установки токена, AuthProvider может асинхронно обновить состояние.
@@ -481,7 +486,11 @@ describe('Auth Workflow Tests', () => {
 
       // Проверяем вызов API /api/auth/logout
       await waitFor(() => {
-        expect(api.post).toHaveBeenCalledWith('/api/auth/logout');
+        expect(api.post).toHaveBeenCalledWith('/api/auth/logout', {}, expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${mockToken}`, // mockToken из этого теста ('mock-jwt-token-logout')
+          }),
+        }));
       });
 
       // Проверяем, что токен удален из localStorage
@@ -646,21 +655,41 @@ describe('Auth Workflow Tests', () => {
       //    В AuthProvider это делается так: setAuthErrorHandler(logout);
       //    Мы можем симулировать это, сохранив обработчик и вызвав его.
 
-      let capturedLogoutHandler: () => void = () => {};
-      // Теперь setAuthErrorHandler - это уже мокированная функция, импортированная вверху файла.
-      // Мы можем использовать ее напрямую.
-      (setAuthErrorHandler as Mock).mockImplementation((handler: () => void) => {
-        capturedLogoutHandler = handler;
+      let capturedLogoutHandler: () => Promise<void> | void = async () => { /* no-op */ };
+      (setAuthErrorHandler as Mock).mockImplementation((handler: () => Promise<void> | void) => {
+        // console.log('TokenExpiryTest: setAuthErrorHandler - Capturing logout handler.'); // Удален лог
+        capturedLogoutHandler = async () => {
+          // console.log('TokenExpiryTest: capturedLogoutHandler - CALLED. Executing original handler...'); // Удален лог
+          await handler(); // Вызываем оригинальный logout
+          // console.log('TokenExpiryTest: capturedLogoutHandler - Original handler finished.'); // Удален лог
+        };
       });
+
+      // Сохраняем оригинальную реализацию мока api.post (если она есть)
+      // const originalPostMockImpl = (api.post as Mock).getMockImplementation(); // Vitest может не иметь getMockImplementation
+      // Вместо этого, если нужно вызывать "оригинальный" мок, его нужно передать или восстановить позже.
+      // Для этого теста мы просто переопределяем поведение api.post.
+
+      (api.post as Mock).mockImplementation(async (url: string, data?: any, config?: any) => {
+        if (url === '/api/auth/logout') {
+          // console.log('TokenExpiryTest: Mocked api.post - /api/auth/logout called.'); // Удален лог
+          return Promise.resolve({ status: 200, data: { message: 'Logged out successfully via test mock' } });
+        }
+        // Для других вызовов api.post в этом тесте (если они неожиданно произойдут)
+        // console.warn(`TokenExpiryTest: Mocked api.post - Unexpected call to ${url}`); // Удален лог
+        // Если бы был originalPostMockImpl, можно было бы вызвать его:
+        // if (originalPostMockImpl) return originalPostMockImpl(url, data, config);
+        return Promise.reject(new Error(`Unexpected api.post call to ${url} in Token Expiry test`));
+      });
+
 
       (api.get as Mock).mockImplementation(async (url: string) => {
         if (url === '/api/users/me') {
-          // Симулируем, что обработчик ошибки 401 был вызван
-          // Это должно привести к вызову logout из AuthContext
-          // Так как logout асинхронный, добавим await, хотя capturedLogoutHandler сам по себе может быть синхронным
-          await capturedLogoutHandler(); // Вызываем сохраненный обработчик (logout из AuthContext)
+          // console.log('TokenExpiryTest: api.get /api/users/me mock - Calling capturedLogoutHandler.'); // Удален лог
+          await capturedLogoutHandler();
+          // console.log('TokenExpiryTest: api.get /api/users/me mock - capturedLogoutHandler finished. Throwing 401.'); // Удален лог
           throw { // Затем выбрасываем ошибку, как это сделал бы axios
-            response: { status: 401, data: { message: 'Unauthorized' } },
+            response: { status: 401, data: { message: 'Unauthorized from test mock' } },
             isAxiosError: true,
           };
         }
@@ -668,11 +697,8 @@ describe('Auth Workflow Tests', () => {
         return Promise.resolve({ data: {} });
       });
 
-
-      // Мокируем /api/auth/logout, который будет вызван AuthContext.logout()
-      // Этот мок должен быть здесь, так как logout() в AuthContext его вызывает
-      (api.post as Mock).mockResolvedValueOnce({ status: 200, data: { message: 'Logged out' } });
-
+      // Старый мок (api.post as Mock).mockResolvedValueOnce(...) для /api/auth/logout УДАЛЕН,
+      // так как мы используем mockImplementation выше для большей надежности в этом тесте.
 
       // Рендерим приложение, пытаясь получить доступ к защищенному маршруту.
       // AuthProvider попытается проверить токен (вызвав /users/me), получит 401,

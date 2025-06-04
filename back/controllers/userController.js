@@ -15,6 +15,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      role: user.role, // Добавляем роль
       created_at: user.created_at,
       updated_at: user.updated_at,
     });
@@ -68,7 +69,52 @@ const changePassword = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Пароль успешно изменен' });
 });
 
+// @desc    Get all users
+// @route   GET /api/users
+// @access  Private (Admin)
+const getAllUsers = asyncHandler(async (req, res) => {
+  // TODO: Implement actual logic
+  res.status(501).json({ message: 'Not Implemented: getAllUsers. Please implement.' });
+});
+
+// @desc    Create a new user
+// @route   POST /api/users
+// @access  Private (Admin)
+const createUser = asyncHandler(async (req, res) => {
+  // TODO: Implement actual logic
+  res.status(501).json({ message: 'Not Implemented: createUser. Please implement.' });
+});
+
+// @desc    Get user by ID
+// @route   GET /api/users/:id
+// @access  Private (Admin)
+const getUserById = asyncHandler(async (req, res) => {
+  // TODO: Implement actual logic
+  res.status(501).json({ message: 'Not Implemented: getUserById. Please implement.' });
+});
+
+// @desc    Update user by ID
+// @route   PUT /api/users/:id
+// @access  Private (Admin)
+const updateUser = asyncHandler(async (req, res) => {
+  // TODO: Implement actual logic
+  res.status(501).json({ message: 'Not Implemented: updateUser. Please implement.' });
+});
+
+// @desc    Delete user by ID
+// @route   DELETE /api/users/:id
+// @access  Private (Admin)
+const deleteUser = asyncHandler(async (req, res) => {
+  // TODO: Implement actual logic
+  res.status(501).json({ message: 'Not Implemented: deleteUser. Please implement.' });
+});
+
 module.exports = {
   getCurrentUser,
   changePassword,
+  getAllUsers,
+  createUser,
+  getUserById,
+  updateUser,
+  deleteUser,
 };

@@ -5,6 +5,7 @@ import PrivateRoute from './components/PrivateRoute'; // Добавляем им
 import WeekView from './components/WeekView';
 import { NavProvider } from './context/NavContext';
 import LoginPage from './pages/Auth/LoginPage'; // Добавляем импорт LoginPage
+import RegistrationPage from './pages/Auth/RegistrationPage'; // Добавляем импорт RegistrationPage
 import ChangePasswordPage from './pages/ChangePasswordPage'; // Импортируем страницу смены пароля
 import ChildCardsSettingsPage from './pages/ChildCardsSettingsPage';
 import DashboardPage from './pages/DashboardPage'; // Добавляем импорт DashboardPage
@@ -141,13 +142,21 @@ const routes: RouteObject[] = [
     element: <LoginPage />,
   },
   {
+    path: "/register",
+    element: <RegistrationPage />,
+  },
+  {
     path: "/",
     element: <RootLayout />,
     children: [
       {
-        index: true,
-        element: <WeekView />,
-        loader: weekViewLoader,
+        index: true, // Главная страница
+        element: (
+          <PrivateRoute>
+            <WeekView />
+          </PrivateRoute>
+        ),
+        loader: weekViewLoader, // loader остается на том же уровне
       },
       {
         path: "dashboard",
@@ -161,7 +170,11 @@ const routes: RouteObject[] = [
       },
       {
         path: "settings",
-        element: <SettingsPage />,
+        element: (
+          <PrivateRoute>
+            <SettingsPage />
+          </PrivateRoute>
+        ),
         children: [
           {
             path: "expense-categories",
@@ -175,13 +188,21 @@ const routes: RouteObject[] = [
       },
       {
         path: "day/:dateString",
-        element: <DayDetailsPage />,
-        loader: dayDetailsLoader,
+        element: (
+          <PrivateRoute>
+            <DayDetailsPage />
+          </PrivateRoute>
+        ),
+        loader: dayDetailsLoader, // loader остается на том же уровне
       },
       {
         path: "notes/:date",
-        element: <NoteDetailsPage />,
-        loader: noteDetailsLoader,
+        element: (
+          <PrivateRoute>
+            <NoteDetailsPage />
+          </PrivateRoute>
+        ),
+        loader: noteDetailsLoader, // loader остается на том же уровне
       },
       {
         path: "change-password",

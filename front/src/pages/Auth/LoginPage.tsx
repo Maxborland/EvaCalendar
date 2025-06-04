@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
 
     if (validateForm()) {
       try {
-        const response = await api.post('/auth/login', {
+        const response = await api.post('/api/auth/login', { // Исправлен URL
           email: username, // API ожидает 'email'
           password: password,
         });
