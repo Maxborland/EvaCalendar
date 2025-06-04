@@ -67,6 +67,7 @@ registerRoute(
   },
   new StaleWhileRevalidate({
     cacheName: API_CACHE_NAME,
+    ignoreVary: true, // Добавлено для обработки Vary: Origin
     plugins: [
       выборыChromeExtensionCachingPlugin,
       new ExpirationPlugin({
@@ -96,6 +97,23 @@ registerRoute(
       new ExpirationPlugin({
         maxEntries: 10,
         maxAgeSeconds: 7 * 24 * 60 * 60, // 7 дней
+      }),
+    ],
+  })
+);
+
+// Кэширование шрифтов Google
+registerRoute(
+  ({url}) => url.origin === 'https://fonts.gstatic.com',
+  new workbox.strategies.CacheFirst({ // Убедимся, что workbox.strategies.CacheFirst используется, если CacheFirst не был деструктурирован
+    cacheName: 'google-fonts-webfonts',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 10,
+        maxAgeSeconds: 60 * 60 * 24 * 365, // 1 год
+      }),
+      new workbox.cacheableResponse.CacheableResponsePlugin({ // Аналогично для CacheableResponsePlugin
+        statuses: [0, 200],
       }),
     ],
   })

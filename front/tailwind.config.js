@@ -23,7 +23,7 @@ export default {
         'header-custom': 'var(--color-primary-background, #1A1A1A)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'], // Из index.css
+        sans: ['Rubik', 'Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'], // Из index.css
       },
       spacing: {
         // Добавить по результатам анализа используемых отступов

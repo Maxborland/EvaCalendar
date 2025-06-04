@@ -109,3 +109,7 @@
     color: var(--color-primary-background);
   }
 }
+/* Стили для TopNavigator h2 для переопределения глобальных стилей */
+.top-navigator h2 {
+  margin-bottom: 0 !important;
+}

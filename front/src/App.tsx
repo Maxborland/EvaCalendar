@@ -82,7 +82,9 @@ const RootLayout: React.FC = () => {
   return (
     <NavProvider>
       <PageLoader />
-      <Outlet /> {/* Здесь будут рендериться дочерние маршруты */}
+      <div className="pt-20"> {/* Добавляем padding-top для компенсации высоты TopNavigator */}
+        <Outlet /> {/* Здесь будут рендериться дочерние маршруты */}
+      </div>
     </NavProvider>
   );
 };

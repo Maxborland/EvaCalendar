@@ -228,7 +228,7 @@ const WeekView: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       {/* Локальный индикатор загрузки удален, так как используется глобальный PageLoader */}
         <>
-          <TopNavigator title="" />
+          <TopNavigator title="Zyaka's Calendar" />
           <main className="flex-grow p-4 space-y-6 pb-20">
             <SummaryBlock
                 weekStartDate={weekDays.length > 0 ? createDate(weekDays[0]).toISOString().slice(0, 10) : ''}
