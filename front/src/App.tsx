@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react'; // Добавляем импорты
-import { createBrowserRouter, Outlet, RouterProvider, useNavigation } from 'react-router-dom';
+import { createBrowserRouter, Outlet, type RouteObject, RouterProvider, useNavigation } from 'react-router-dom';
 import LoadingAnimation from './components/LoadingAnimation'; // Импортируем компонент анимации
+import PrivateRoute from './components/PrivateRoute'; // Добавляем импорт PrivateRoute
 import WeekView from './components/WeekView';
 import { NavProvider } from './context/NavContext';
+import LoginPage from './pages/Auth/LoginPage'; // Добавляем импорт LoginPage
+import ChangePasswordPage from './pages/ChangePasswordPage'; // Импортируем страницу смены пароля
 import ChildCardsSettingsPage from './pages/ChildCardsSettingsPage';
+import DashboardPage from './pages/DashboardPage'; // Добавляем импорт DashboardPage
 import DayDetailsPage from './pages/DayDetailsPage'; // Импортируем новую страницу
 import ExpenseCategoriesSettingsPage from './pages/ExpenseCategoriesSettingsPage';
 import NoteDetailsPage from './pages/NoteDetailsPage'; // Импортируем страницу заметок
@@ -131,7 +135,11 @@ const noteDetailsLoader = async ({ params }: any) => {
   }
 };
 
-const router = createBrowserRouter([
+const routes: RouteObject[] = [
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
   {
     path: "/",
     element: <RootLayout />,
@@ -139,11 +147,21 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <WeekView />,
-        loader: weekViewLoader, // Добавляем loader
+        loader: weekViewLoader,
+      },
+      {
+        path: "dashboard",
+        element: (
+          <PrivateRoute>
+            <DashboardPage />
+          </PrivateRoute>
+        ),
+        // Если для DashboardPage нужен loader, его можно добавить здесь
+        // loader: dashboardLoader,
       },
       {
         path: "settings",
-        element: <SettingsPage />, // SettingsPage должен использовать <Outlet /> для вложенных маршрутов
+        element: <SettingsPage />,
         children: [
           {
             path: "expense-categories",
@@ -158,16 +176,26 @@ const router = createBrowserRouter([
       {
         path: "day/:dateString",
         element: <DayDetailsPage />,
-        loader: dayDetailsLoader, // Добавляем loader
+        loader: dayDetailsLoader,
       },
       {
         path: "notes/:date",
         element: <NoteDetailsPage />,
-        loader: noteDetailsLoader, // Добавляем loader
+        loader: noteDetailsLoader,
+      },
+      {
+        path: "change-password",
+        element: (
+          <PrivateRoute>
+            <ChangePasswordPage />
+          </PrivateRoute>
+        ),
       },
     ],
   },
-]);
+];
+
+const router = createBrowserRouter(routes);
 
 function App() {
   return <RouterProvider router={router} />;

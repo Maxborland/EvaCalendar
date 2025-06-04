@@ -24,7 +24,7 @@ export default defineConfig({
     globals: true,
     mockReset: true,
     environment: 'jsdom',
-    setupFiles: './src/setupTests.ts',
+    setupFiles: './src/setupTests.tsx', // Изменено на .tsx
     include: ['**/*.test.{ts,tsx}'],
   },
   server: {

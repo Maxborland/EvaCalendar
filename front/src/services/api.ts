@@ -1,6 +1,12 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+// Функция для установки обработчика выхода из системы, будет вызвана из AuthContext
+let logoutHandler: (() => void) | null = null;
+export const setAuthErrorHandler = (handler: () => void) => {
+  logoutHandler = handler;
+};
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
 
 export interface ExpenseCategory {
@@ -99,13 +105,51 @@ const api = axios.create({
   },
 });
 
+// Перехватчик запросов для добавления JWT токена
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    // Исключаем пути аутентификации из добавления токена
+    const authPaths = ['/api/auth/login', '/api/auth/register'];
+    if (token && config.url && !authPaths.some(path => config.url!.includes(path))) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 api.interceptors.response.use(
   response => response,
   error => {
     let errorMessage = 'Произошла неизвестная ошибка!';
     if (error.response) {
       // Сервер ответил со статусом, отличным от 2xx
-      if (error.response.data && error.response.data.message) {
+      if (error.response.status === 401) {
+        // Не обрабатываем 401 для login эндпоинта, т.к. это ожидаемая ошибка
+        if (error.config.url && !error.config.url.includes('/api/auth/login')) {
+          if (logoutHandler) {
+            logoutHandler(); // Вызываем logout из AuthContext
+            toast.info('Ваша сессия истекла. Пожалуйста, войдите снова.');
+          } else {
+            // Это не должно произойти, если AuthContext правильно инициализирует обработчик
+            console.error('logoutHandler не установлен в api.ts. Не удалось выполнить автоматический выход.');
+            errorMessage = 'Сессия истекла, но не удалось выполнить автоматический выход. Обновите страницу.';
+            toast.error(errorMessage);
+          }
+          // Важно прервать цепочку промисов, чтобы компонент не пытался обработать ошибку дальше
+          return Promise.reject(new Error('Сессия истекла и был выполнен выход.'));
+        } else if (error.config.url && error.config.url.includes('/api/auth/login')) {
+           // Для /api/auth/login, 401 означает неверные учетные данные, позволяем стандартной обработке ошибок показать это
+           if (error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else {
+            errorMessage = 'Неверные учетные данные.';
+          }
+        }
+      } else if (error.response.data && error.response.data.message) {
         errorMessage = error.response.data.message;
       } else {
         errorMessage = `Ошибка: ${error.response.status} - ${error.response.statusText}`;
@@ -117,7 +161,12 @@ api.interceptors.response.use(
       // Что-то пошло не так при настройке запроса
       errorMessage = error.message;
     }
-    toast.error(errorMessage);
+
+    // Показываем toast только если это не специально обработанный 401 с выходом
+    // или если это 401 на логин (где сообщение уже установлено)
+    if (!(error.response && error.response.status === 401 && error.config.url && !error.config.url.includes('/api/auth/login'))) {
+        toast.error(errorMessage);
+    }
     return Promise.reject(error);
   }
 );
