@@ -151,7 +151,7 @@ input[readonly] {
   background-color: var(--theme-light);
   color: var(--theme-dark);
   padding: 20px;
-  margin: 20px 0 20px 0; /* Отступ снизу для разделения карточек */
+  margin: 20px 0 0 0; /* Отступ снизу для разделения карточек */
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Добавим небольшую тень для лучшего визуального отделения */
 }

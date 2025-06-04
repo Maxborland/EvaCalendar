@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
+import TopNavigator from '../components/TopNavigator'; // Импортируем TopNavigator
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -9,12 +10,13 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-900 text-white flex flex-col min-h-screen">
-      <header className="bg-slate-800 shadow-md">
+    <div className="text-white flex flex-col min-h-screen">
+      <TopNavigator title="Настройки" showButtons={false} /> {/* Используем TopNavigator */}
+      {/* <header className="bg-slate-800 shadow-md">
         <div className="container mx-auto px-4 flex justify-start h-16">
           <h2 className="text-xl font-semibold flex items-center h-full">Настройки</h2>
         </div>
-      </header>
+      </header> */} {/* Старый header закомментирован или удален */}
 
       <main className="flex-grow p-6 pb-24">
         <nav className="space-y-4">
