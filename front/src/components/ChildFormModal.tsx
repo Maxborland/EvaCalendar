@@ -76,7 +76,7 @@ const ChildFormModal: React.FC<ChildFormModalProps> = ({
   const modalOverlayClass = `modal-overlay ${isClosing ? 'closing' : ''}`;
   const modalContentClass = `modal-content ${isClosing ? 'closing' : ''}`;
 
-  const title = mode === 'create' ? 'Добавить ребенка' : 'Редактировать информацию о ребенке';
+  const title = mode === 'create' ? 'Добавить' : 'Редактировать';
 
   // Пропсы для ChildForm
   const childFormId = `child-form-${mode}-${initialChildData?.uuid || 'new'}`;
@@ -117,55 +117,8 @@ const ChildFormModal: React.FC<ChildFormModalProps> = ({
             type="button"
             className="btn btn-primary"
             onClick={() => {
-              // Триггерим submit формы ChildForm программно, если это необходимо,
-              // или ChildForm должен вызывать onSave при нажатии своей кнопки "Сохранить",
-              // которая теперь будет единственной кнопкой сохранения.
-              // Для этого ChildForm должен иметь доступ к своей кнопке submit или вызывать onSave.
-              // Проще всего, если ChildForm сам обрабатывает свой submit и вызывает onSave.
-              // А эти кнопки - это кнопки самого модального окна.
-              // Чтобы это работало, ChildForm должен иметь ref на свою форму и метод для submit.
-              // Или, что проще, ChildForm не будет иметь своих кнопок "Сохранить/Отмена",
-              // а будет полагаться на кнопки модального окна.
-              // В этом случае, нам нужен способ получить данные из ChildForm.
-              // Самый простой способ - ChildForm вызывает onSave при изменении и валидации,
-              // но это не стандартно.
-              // Лучше, если ChildForm предоставляет ref для доступа к его данным или методу submit.
-
-              // ВАРИАНТ: ChildForm не имеет своих кнопок "Сохранить", "Отмена", когда isEmbeddedInModal=true.
-              // Модальное окно имеет свои кнопки. При нажатии "Сохранить" в модальном окне,
-              // мы должны как-то получить данные из ChildForm и вызвать onSubmit.
-              // Это можно сделать через ref на ChildForm, если ChildForm предоставляет метод для получения данных.
-
-              // ТЕКУЩИЙ ПОДХОД: ChildForm будет иметь свои поля, но не кнопки "Сохранить"/"Отмена",
-              // когда isEmbeddedInModal. Кнопки "Сохранить"/"Отмена" будут в модальном окне.
-              // При нажатии "Сохранить" в модальном окне, мы должны вызвать onSave из ChildForm.
-              // Это означает, что ChildForm должен иметь кнопку submit, которая вызывает его onSave.
-              // И эта кнопка должна быть скрыта, а мы нажимаем ее программно.
-              // Либо ChildFormProps.onSave вызывается из ChildForm при его внутреннем submit.
-              // И мы просто вызываем submit формы ChildForm.
-
-              // Для простоты, предположим, что ChildForm будет иметь скрытую кнопку submit,
-              // или мы найдем способ вызвать его handleSubmit.
-              // Пока что, ChildForm.onSave будет вызван из ChildForm.handleSubmit.
-              // Эта кнопка "Сохранить" в модальном окне будет имитировать нажатие submit в ChildForm.
-              // Это можно сделать, если ChildForm принимает ref на свою форму.
-
-              // ИДЕЯ: ChildForm будет иметь проп `submitTrigger` (функция, которую ChildForm вызывает для получения триггера).
-              // Модальное окно передает функцию, которая сохраняет триггер.
-              // При нажатии "Сохранить" в модальном окне, вызывается этот триггер.
-              // Это сложно.
-
-              // ПРОЩЕ: ChildForm будет иметь ref. Модальное окно вызывает метод submit на этом ref.
-              // ChildForm должен будет использовать useImperativeHandle.
-
-              // САМЫЙ ПРОСТОЙ ВАРИАНT:
-              // Кнопка "Сохранить" в модальном окне имеет form="id-формы-внутри-childform"
-              // Это стандартный HTML атрибут. ChildForm должен установить id на свою <form>.
-              // ChildFormProps будет включать formId: string.
-              // const childFormId = `child-form-${mode}-${initialChildData?.uuid || 'new'}`; // ID уже определен выше
               const formElement = document.getElementById(childFormId) as HTMLFormElement | null;
               if (formElement) {
-                // Программный вызов submit для формы. ChildForm.handleSubmit вызовет onSave.
                 formElement.requestSubmit();
               }
             }}
