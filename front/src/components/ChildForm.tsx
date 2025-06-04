@@ -9,11 +9,13 @@ export interface ChildFormProps { // Экспортируем интерфейс
   initialChild?: Partial<Child>; // Разрешаем Partial<Child> и делаем uuid необязательным для новых
   onSave: (child: Child | Partial<Child>) => void;
   onCancel: () => void;
+  isEmbeddedInModal?: boolean; // Добавляем новый проп
+  formId?: string; // Добавляем ID формы для связи с кнопками модального окна
   // Возможно, понадобится пропс для указания, создается ли ребенок или редактируется,
   // чтобы менять заголовок, но initialChild?.uuid может служить этой цели.
 }
 
-const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel }) => {
+const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, formId }) => {
   const [formData, setFormData] = useState<Partial<Child>>(
     initialChild || {
       childName: '',
@@ -115,6 +117,11 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
       toast.error(`Имя ребенка не должно превышать ${MAX_CHILD_NAME_LENGTH} символов.`);
       return;
     }
+    // Валидация hourlyRate
+    if (formData.hourlyRate == null || isNaN(Number(formData.hourlyRate)) || Number(formData.hourlyRate) < 0) {
+      toast.error('Ставка в час должна быть указана корректно (неотрицательное число).');
+      return;
+    }
     onSave(formData);
   };
 
@@ -122,8 +129,10 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
     // Обертка для формы, если она будет использоваться как модальное окно в TaskForm
     // Для ChildCardManager она уже встроена. Здесь можно добавить класс для стилизации модального окна.
     // <div className="child-form-modal-wrapper"> {/* Пример обертки */}
-      <form onSubmit={handleSubmit} className="child-form"> {/* Используем существующий класс child-form */}
-        <h3>{initialChild?.uuid ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
+      <form onSubmit={handleSubmit} className="child-form" id={formId}> {/* Используем существующий класс child-form и добавляем ID */}
+        {!isEmbeddedInModal && (
+          <h3>{initialChild?.uuid ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
+        )}
         <label>
           Имя ребенка:
           <input type="text" name="childName" value={formData.childName || ''} onChange={handleChange} required maxLength={50} />
@@ -175,10 +184,12 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel })
           Комментарий:
           <textarea name="comment" value={formData.comment || ''} onChange={handleChange} rows={3}></textarea>
         </label>
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">{initialChild?.uuid ? 'Сохранить изменения' : 'Добавить карточку'}</button>
-          <button type="button" className="btn btn-secondary" onClick={onCancel}>Отмена</button>
-        </div>
+        {!isEmbeddedInModal && (
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">{initialChild?.uuid ? 'Сохранить изменения' : 'Добавить карточку'}</button>
+            <button type="button" className="btn btn-secondary" onClick={onCancel}>Отмена</button>
+          </div>
+        )}
       </form>
     // </div>
   );

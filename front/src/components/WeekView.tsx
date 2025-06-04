@@ -22,6 +22,7 @@ import DayColumn from './DayColumn'; // Импортируем DayColumn нап�
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
 import WeekNavigator from './WeekNavigator';
 
+import './WeekView.css';
 const WeekView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(getCurrentDate());
   const [tasksForWeek, setTasksForWeek] = useState<Task[]>([]);

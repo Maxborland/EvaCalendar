@@ -1,4 +1,5 @@
 import React from 'react';
+import './WeekNavigator.css';
 
 interface WeekNavigatorProps {
   goToPreviousWeek: () => void;

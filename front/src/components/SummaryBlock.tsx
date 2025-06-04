@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { SummaryData } from '../services/api';
 import { getSummaryByWeek } from '../services/api';
 import { createDate } from '../utils/dateUtils';
+import './SummaryBlock.css';
 
 interface SummaryBlockProps {
     weekStartDate: string;
@@ -86,8 +87,9 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
             >
                 {isExpanded ? (
                     <div className="text-gray-800 text-lg font-semibold text-center">
-                        Сводка за {titleMonthYear}<br/>(на {todayDateFormatted})
+                        Сводка за {titleMonthYear}
                     </div>
+
                 ) : (
                     <>
                         <div className="text-sm text-gray-700">Сегодня: {todayDateFormatted}</div>
@@ -101,7 +103,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
             {/* Анимируемый блок с деталями */}
             <div
                 className={`
-                    transition-all duration-300 ease-in-out overflow-hidden
+                    transition-all duration-700 ease-out overflow-hidden
                     ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}
                     ${isExpanded ? 'rounded-b-xl' : ''}
                     bg-light-background

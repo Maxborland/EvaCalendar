@@ -1,0 +1,107 @@
+.week-view {
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+  margin-top: 50px; /* Зависит от высоты TopNavigator */
+  padding-bottom: 80px; /* Зависит от высоты WeekNavigator */
+}
+
+.week-days-container {
+  display: flex;
+  justify-content: flex-start; /* Для начального выравнивания */
+  margin-bottom: 20px;
+  flex-wrap: nowrap; /* Запрещаем перенос на новую строку */
+  flex-direction: row; /* Явно указываем направление */
+  overflow-x: hidden; /* Скрываем горизонтальный скроллбар по умолчанию */
+  -webkit-overflow-scrolling: touch; /* Плавная прокрутка на iOS */
+  -ms-overflow-style: none;  /* Скрыть скроллбар в IE/Edge */
+  scrollbar-width: none;  /* Скрыть скроллбар в Firefox */
+  transition: transform 0.3s ease-in-out; /* Для анимации смены недель */
+  width: 200%; /* Две "страницы" для прокрутки */
+}
+
+.first-half-of-week,
+.second-half-of-week {
+  flex: 0 0 50%; /* Каждая половина занимает 50% ширины .week-days-container */
+  padding: 10px;
+  border: 1px solid var(--color-border-dark);
+  border-radius: 8px;
+  margin: 0 10px; /* Отступы между половинами недели */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.day-cells {
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* Пространство между ячейками дней */
+  min-height: calc(4 * 40px + 3 * 5px); /* Примерная минимальная высота для 4 ячеек */
+}
+
+.day-cell-empty, .task-item { /* .task-item может быть отдельным компонентом, но стилизуется здесь */
+  background-color: var(--color-background-soft);
+  border: 1px dashed var(--color-border-medium);
+  border-radius: 4px;
+  min-height: 55px; /* Минимальная высота ячейки/задачи */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: 0.9em;
+  padding: 8px;
+}
+
+/* Стили для светлой темы */
+@media (prefers-color-scheme: light) {
+  .first-half-of-week,
+  .second-half-of-week {
+    border: 1px solid var(--color-border-dark);
+  }
+
+  .day-cell-empty, .task-item {
+    background-color: var(--color-highlight);
+    border: 1px dashed var(--color-border-medium);
+    color: var(--color-text-secondary);
+  }
+}
+
+/* Медиа-запросы по ширине экрана */
+@media (max-width: 768px) {
+  .week-view {
+    padding: 0;
+    max-width: none;
+  }
+
+  .week-days-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .column-half {
+    flex: 0 0 50%;
+    box-sizing: border-box;
+    padding: 0 10px;
+  }
+}
+
+@media (min-width: 769px) {
+  .week-view {
+    padding: 20px;
+  }
+
+  .week-days-container {
+    justify-content: center;
+    flex-wrap: nowrap;
+  }
+
+  .column-half {
+    flex: 0 0 50%;
+    padding: 10px;
+  }
+
+  .first-half-of-week,
+  .second-half-of-week {
+    flex: 1;
+  }
+}

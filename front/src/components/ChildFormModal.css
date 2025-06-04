@@ -1,0 +1,207 @@
+/* Стили для модального окна ChildFormModal */
+
+/* Оверлей */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-modal-overlay, rgba(0, 0, 0, 0.5)); /* Используем переменную или значение из макета */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  font-family: var(--font-family-sans, 'Inter', sans-serif); /* Используем шрифт из темы */
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Контент модального окна */
+.modal-content {
+  background-color: var(--bg-modal-content, var(--theme-gray-medium)); /* Используем переменную или значение из макета/темы */
+  color: var(--theme-gray-light); /* Используем цвет текста из темы */
+  padding: 20px 25px;
+  border-radius: 8px; /* Соответствует общему стилю */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 1051;
+  width: 90%;
+  max-width: 400px; /* Соответствует макету */
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  animation: scaleUp 0.3s ease-out forwards;
+}
+
+/* Заголовок модального окна */
+.modal-content h2 {
+  text-align: left;
+  color: var(--theme-light); /* Используем цвет текста из темы */
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 1.25rem; /* 20px, соответствует .date-title из макета */
+  font-weight: 500;
+}
+
+/* Кнопка закрытия 'x' */
+.modal-content .close-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: var(--theme-gray-light); /* Используем цвет из темы */
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.modal-content .close-button:hover {
+  color: var(--theme-primary); /* Акцентный цвет при наведении */
+}
+
+/* Группа полей формы - если ChildForm будет иметь свои отступы, это может не понадобиться */
+.child-form-modal-form-group { /* Переименовано для избежания конфликтов, если ChildForm использует .form-group */
+  margin-bottom: 18px;
+}
+
+.child-form-modal-form-group .label { /* Переименовано */
+  display: block;
+  margin-bottom: 6px;
+  color: var(--theme-gray-light);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+/* Стили для инпутов, текстовых полей и селектов внутри ChildForm, если они не наследуются */
+/* Обычно ChildForm будет иметь свои стили для полей, но можно добавить переопределения тут при необходимости */
+
+/* Кнопки действий в модальном окне ChildFormModal */
+.child-form-modal-actions { /* Переименовано */
+  display: flex;
+  gap: 10px; /* Отступ между кнопками */
+  margin-top: 25px;
+}
+
+.child-form-modal-actions .btn { /* Общие стили для кнопок в модалке */
+  flex-grow: 1;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: var(--btn-primary-padding); /* Используем паддинг как у основной кнопки для консистентности */
+  border-radius: var(--btn-primary-border-radius); /* Используем радиус как у основной кнопки */
+  font-size: var(--btn-primary-font-size); /* Используем размер шрифта как у основной кнопки */
+}
+
+.child-form-modal-actions .btn:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.child-form-modal-actions .btn-primary {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text-color);
+}
+
+.child-form-modal-actions .btn-primary:hover {
+  background-color: color-mix(in srgb, var(--btn-primary-bg) 90%, black);
+}
+
+.child-form-modal-actions .btn-secondary {
+  background-color: var(--btn-secondary-bg, var(--theme-gray-dark)); /* Фон для "Отмена" */
+  color: var(--btn-secondary-text-color, var(--theme-gray-light)); /* Текст для "Отмена" */
+  border: 1px solid var(--btn-secondary-border-color, var(--theme-gray-medium)); /* Рамка для "Отмена" */
+}
+
+.child-form-modal-actions .btn-secondary:hover {
+  background-color: color-mix(in srgb, var(--btn-secondary-bg, var(--theme-gray-dark)) 90%, black);
+  border-color: color-mix(in srgb, var(--btn-secondary-border-color, var(--theme-gray-medium)) 80%, black);
+}
+
+.child-form-modal-actions .btn-danger {
+  background-color: var(--theme-danger);
+  color: var(--theme-danger-text, var(--theme-light));
+}
+
+.child-form-modal-actions .btn-danger:hover {
+  background-color: color-mix(in srgb, var(--theme-danger) 90%, black);
+}
+
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scaleDown {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Классы для анимации закрытия */
+.modal-overlay.closing {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+
+.modal-content.closing {
+  animation: scaleDown 0.3s ease-out forwards;
+}
+
+/* Специфичные стили для ChildForm внутри модального окна, если нужны */
+.modal-content .child-form {
+  /* Например, убрать внешние отступы у самой формы, если они есть */
+  margin: 0;
+  padding: 0;
+  /* Убедиться, что фон формы прозрачный или соответствует фону модального окна,
+     если ChildForm имеет свой фон */
+  background-color: transparent;
+}
+
+/* Если у ChildForm есть свой заголовок h3, который мы хотим скрыть */
+.modal-content .child-form h3.embedded-form-title-hidden {
+  display: none;
+}
+
+/* Если у ChildForm есть свои .form-actions, которые мы хотим скрыть */
+.modal-content .child-form .form-actions.embedded-form-actions-hidden {
+  display: none;
+}

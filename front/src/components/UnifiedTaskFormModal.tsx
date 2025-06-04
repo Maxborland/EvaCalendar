@@ -24,7 +24,7 @@ const generateDynamicTaskTitle = (
 ): string => {
   if (taskType === 'income') {
     if (childName && childName.trim() !== '') {
-      return `Доход от ${childName}`;
+      return `${childName}`;
     }
     return ""; // Очищаем, если ребенок не выбран (для динамического обновления)
   }
@@ -40,7 +40,7 @@ const generateFinalTaskTitleOnSubmit = (
 ): string => {
   if (taskType === 'income') {
     if (childName && childName.trim() !== '') {
-      return `Доход от ${childName}`;
+      return `${childName}`;
     }
     return "Доход";
   } else if (taskType === 'expense') {
