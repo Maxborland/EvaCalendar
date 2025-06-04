@@ -1,7 +1,3 @@
-import { faPencil, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { faFloppyDisk } from '@fortawesome/free-solid-svg-icons/faFloppyDisk';
-import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useEffect, useState } from 'react';
 import type { ExpenseCategory } from '../services/api';
 import {
@@ -167,11 +163,11 @@ const ExpenseCategoryManager: React.FC = () => {
                     }
                   }}
                 />
-                <button type="submit" className="btn btn-icon">{<FontAwesomeIcon icon={faFloppyDisk} />}</button>
+                <button type="submit" className="btn btn-icon"><span className="material-icons">save</span></button>
                 <button type="button" className="btn btn-icon" onClick={() => {
                   setEditingCategory(null);
                 }}>
-                  <FontAwesomeIcon icon={faXmark} />
+                  <span className="material-icons">close</span>
                 </button>
               </form>
             ) : (
@@ -179,10 +175,10 @@ const ExpenseCategoryManager: React.FC = () => {
                 <span>{category.categoryName}</span>
                 <div className="actions">
                   <button onClick={() => setEditingCategory(category)} className="btn btn-icon icon-button edit-button" title="Редактировать">
-                    <FontAwesomeIcon icon={faPencil} />
+                    <span className="material-icons">edit</span>
                   </button>
                   <button onClick={() => handleDeleteCategory(category.uuid)} className="btn btn-icon icon-button delete-button" title="Удалить"> {/* Changed from id to uuid */}
-                    <FontAwesomeIcon icon={faTrash} />
+                    <span className="material-icons">delete</span>
                   </button>
                 </div>
               </>

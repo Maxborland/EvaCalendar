@@ -1,5 +1,3 @@
-import { faEdit, faMapMarkerAlt, faPhone, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
 import { type Task } from '../services/api';
 
@@ -48,10 +46,10 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
         <div className="card-heading"><h3>{title}</h3></div>
         <div className="task-actions card-actions">
           <button onClick={handleEdit} className="btn btn-icon action-button icon-button" aria-label="Редактировать">
-            <FontAwesomeIcon icon={faEdit} size="lg" />
+            <span className="material-icons text-lg">edit</span>
           </button>
           <button onClick={handleDelete} className="btn btn-icon action-button icon-button" aria-label="Удалить">
-            <FontAwesomeIcon icon={faTrashAlt} size="lg" />
+            <span className="material-icons text-lg">delete</span>
           </button>
         </div>
       </div>
@@ -104,13 +102,13 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
             {parentName && <p><strong>Имя родителя:</strong> {parentName}</p>}
             {parentPhone && (
               <p>
-                <FontAwesomeIcon icon={faPhone} className="info-icon" />
+                <span className="material-icons info-icon">phone</span>
                 <strong>Телефон:</strong> {parentPhone}
               </p>
             )}
             {childAddress && (
               <p>
-                <FontAwesomeIcon icon={faMapMarkerAlt} className="info-icon" />
+                <span className="material-icons info-icon">location_on</span>
                 <strong>Адрес:</strong> {childAddress}
               </p>
             )}

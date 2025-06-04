@@ -1,5 +1,3 @@
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 
@@ -51,7 +49,7 @@ const SettingsPage: React.FC = () => {
           className="flex items-center text-sm text-slate-300 hover:text-white transition-colors w-1/2 justify-center py-3 bg-slate-800 hover:bg-slate-700 rounded-lg"
           aria-label="Go back"
         >
-          <FontAwesomeIcon icon={faArrowLeft} size="lg" className="mr-2" />
+          <span className="material-icons mr-2 text-lg">arrow_back</span>
           Назад
         </button>
         <p className="mt-4 text-center text-xs text-slate-500"></p>
