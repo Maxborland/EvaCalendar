@@ -1,4 +1,3 @@
-// Вспомогательная функция для нормализации ввода даты
 const normalizeDateInput = (date: Date | string | number): Date => {
   if (date instanceof Date) {
     return date;
@@ -33,8 +32,6 @@ export const formatDateForTodayBlock = (date: Date | string | number): string =>
  */
 export const formatDateForDayColumnHeader = (date: Date | string | number): string => {
   const d = normalizeDateInput(date);
-  // Используем 'short' для дня недели и 'long' для месяца,
-  // 'ru-RU' локаль автоматически обработает правильные падежи для месяцев.
   return new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' }).format(d);
 };
 
@@ -92,7 +89,6 @@ export const getCurrentDate = (): Date => {
 
 /**
  * Создает объект Date из различных входных данных.
- * Эта функция является оберткой для `new Date()` и используется для согласованности.
  * @param value - Значение для создания даты (Date, строка или число).
  * @returns Объект Date.
  */

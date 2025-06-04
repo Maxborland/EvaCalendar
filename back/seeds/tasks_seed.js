@@ -4,10 +4,8 @@
  */
 exports.seed = async function(knex) {
   const { v4: uuidv4 } = require('uuid');
-  // Deletes ALL existing entries
   await knex('tasks').del();
 
-  // Inserts seed entries
   const children = await knex('children').select('uuid').limit(3);
   const expenseCategories = await knex('expense_categories').select('uuid').limit(2);
 

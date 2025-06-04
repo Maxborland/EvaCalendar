@@ -12,7 +12,6 @@ const WeekNavigator: React.FC<WeekNavigatorProps> = ({
   goToPreviousWeek,
   goToNextWeek,
   currentWeekDisplay,
-  // isNavVisible, // Больше не используется для скрытия/показа
 }) => {
   return (
     <nav className="flex justify-between items-center my-4 p-4 bg-card rounded-lg">

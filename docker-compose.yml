@@ -4,7 +4,7 @@ services:
       context: ./back
       dockerfile: Dockerfile
     ports:
-      - "3001:3001" # Проброс порта 3001 контейнера на порт 3001 хоста
+      - "3001:3001"
     volumes:
       - ./back/data:/app/data # Привязка папки для сохранения данных SQLite
     environment:
@@ -19,7 +19,7 @@ services:
       args:
         VITE_API_URL: /api
     ports:
-      - "80:80" # Проброс порта 80 из контейнера на порт 80 хоста
+      - "80:80"
     depends_on:
-      - back # Зависимость от бэкенд-сервиса
+      - back
     restart: always

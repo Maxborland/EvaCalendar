@@ -63,7 +63,6 @@ describe('Expense Category API', () => {
     expect(getRes.statusCode).toEqual(404);
   });
 
-  // Тесты на валидацию
   it('should return 400 if categoryName is missing when creating', async () => {
     const res = await request(app)
       .post('/expense-categories')

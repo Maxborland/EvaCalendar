@@ -7,9 +7,9 @@
     box-shadow: 0 4px 8px var(--color-shadow-light);
 }
 
-.summary-wrap { /* Этот класс используется в WeekView.tsx для обертки SummaryBlock */
+.summary-wrap {
   margin: 10px;
-  margin-top: 70px; /* Может потребоваться корректировка в зависимости от высоты TopNavigator */
+  margin-top: 70px;
   padding: 10px;
 }
 
@@ -49,7 +49,6 @@
     font-size: 1.2em;
 }
 
-/* Стили для светлой темы */
 @media (prefers-color-scheme: light) {
     .summary-block {
         background-color: var(--color-background-soft);
@@ -60,7 +59,7 @@
     }
     .summary-block .summary-block-title,
     .summary-block .summary-block-value {
-        color: var(--color-black); /* В светлой теме акцентный цвет может быть черным для контраста */
+        color: var(--color-black);
     }
     .summary-block .summary-block-week {
         color: var(--color-text-secondary);

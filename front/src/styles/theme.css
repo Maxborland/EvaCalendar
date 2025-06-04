@@ -108,7 +108,7 @@ input[readonly] {
   padding: var(--btn-primary-padding);
   border-radius: var(--btn-primary-border-radius);
   font-size: var(--btn-primary-font-size);
-  font-weight: bold; /* Обычно основные кнопки имеют жирный шрифт */
+  font-weight: normal; /* Убираем жирный шрифт для основных кнопок */
 }
 
 .btn-primary:hover {

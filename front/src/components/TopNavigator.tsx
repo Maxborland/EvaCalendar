@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TopNavigator.css';
 
-// Добавляем пропсы title и showButtons
 interface TopNavigatorProps {
   title: string;
   showButtons?: boolean;

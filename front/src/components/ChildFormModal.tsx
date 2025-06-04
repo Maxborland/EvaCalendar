@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import type { Child } from '../services/api';
-import ChildForm, { type ChildFormProps } from './ChildForm'; // Импортируем ChildFormProps
+import ChildForm, { type ChildFormProps } from './ChildForm';
 import './ChildFormModal.css';
 
 export interface ChildFormModalProps {
@@ -28,13 +28,9 @@ const ChildFormModal: React.FC<ChildFormModalProps> = ({
     setTimeout(() => {
       originalOnClose();
       setIsClosing(false);
-    }, 300); // Длительность анимации закрытия
+    }, 300);
   }, [originalOnClose]);
 
-  // Состояние для данных формы ChildForm.
-  // ChildForm сам управляет своим состоянием, но нам нужно передать initialData
-  // и получить данные при submit.
-  // Этот стейт не используется для прямого управления полями, а для передачи initialChildData
   const [currentChildData, setCurrentChildData] = useState<Partial<Child> | undefined>(undefined);
 
   useEffect(() => {
@@ -42,8 +38,7 @@ const ChildFormModal: React.FC<ChildFormModalProps> = ({
       if (mode === 'edit' && initialChildData) {
         setCurrentChildData(initialChildData);
       } else if (mode === 'create') {
-        // Для создания можно передать пустой объект или объект с предзаполненными полями, если они есть
-        setCurrentChildData(initialChildData || {}); // Позволяем передать initialChildData для 'create'
+        setCurrentChildData(initialChildData || {});
       }
     }
   }, [isOpen, mode, initialChildData]);
@@ -78,16 +73,15 @@ const ChildFormModal: React.FC<ChildFormModalProps> = ({
 
   const title = mode === 'create' ? 'Добавить' : 'Редактировать';
 
-  // Пропсы для ChildForm
-  const childFormId = `child-form-${mode}-${initialChildData?.uuid || 'new'}`;
-  const childFormProps: ChildFormProps = {
-    initialChild: currentChildData, // Передаем актуальные данные
-    onSave: handleFormSave,
-    onCancel: handleClose, // Кнопка "Отмена" в ChildForm закрывает модальное окно
-    isEmbeddedInModal: true, // Новый проп для ChildForm
-    formId: childFormId, // Передаем ID формы
-  };
 
+    const childFormId = `child-form-${mode}-${initialChildData?.uuid || 'new'}`;
+    const childFormProps: ChildFormProps = {
+      initialChild: currentChildData,
+      onSave: handleFormSave,
+      onCancel: handleClose,
+      isEmbeddedInModal: true,
+      formId: childFormId,
+    };
   const modalContent = (
     <div className={modalOverlayClass} onClick={handleClose} data-testid="modal-overlay">
       <div className={modalContentClass} onClick={(e) => e.stopPropagation()}>

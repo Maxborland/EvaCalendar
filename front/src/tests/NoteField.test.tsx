@@ -92,9 +92,8 @@ describe('NoteField Component', () => {
     await waitFor(() => {
       expect(mockToastSuccess).toHaveBeenCalledWith('Заметка создана!');
     });
-    // Проверяем, что UUID обновился и контент тоже
     await waitFor(() => {
-        expect(textarea).toHaveValue(newNoteContent); // Контент должен остаться
+        expect(textarea).toHaveValue(newNoteContent);
     });
   });
 
@@ -154,7 +153,7 @@ describe('NoteField Component', () => {
       expect(mockToastError).toHaveBeenCalledWith(errorMessage);
     });
      await waitFor(() => {
-      expect(screen.getByText(errorMessage)).toBeInTheDocument(); // Ошибка должна отобразиться в компоненте
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
   });
 
@@ -175,7 +174,7 @@ describe('NoteField Component', () => {
       expect(mockToastError).toHaveBeenCalledWith(errorMessage);
     });
     await waitFor(() => {
-      expect(screen.getByText(errorMessage)).toBeInTheDocument(); // Ошибка должна отобразиться в компоненте
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
   });
 

@@ -50,13 +50,13 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
 
     const formatMonthYear = (dateString?: string) => {
         if (!dateString) return '';
-        const date = createDate(dateString + '-01'); // Assuming YYYY-MM format
+        const date = createDate(dateString + '-01');
         return date.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
     };
 
     const formatFullDate = (dateString?: string) => {
         if (!dateString) return '';
-        // Expects YYYY-MM-DD from dailySummary.calculatedForDate
+
         const date = createDate(dateString);
         return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
     };
@@ -76,12 +76,12 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
 
     return (
         <section className="rounded-xl mb-2.5 bg-light-background shadow-[0_4px_12px_var(--color-shadow-light)] flex flex-col">
-            {/* Кликабельный заголовок */}
+
             <div
                 className={`p-4 cursor-pointer transition-colors duration-200 ease-in-out
                     ${isExpanded
-                        ? 'bg-sky-100 hover:bg-sky-200 rounded-t-xl' // Только верхние скругления, если развернуто
-                        : 'bg-sky-100 hover:bg-sky-200 rounded-xl' // Все скругления, если свернуто
+                        ? 'bg-sky-100 hover:bg-sky-200 rounded-t-xl'
+                        : 'bg-sky-100 hover:bg-sky-200 rounded-xl'
                     }`}
                 onClick={toggleExpansion}
             >
@@ -100,7 +100,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
                 )}
             </div>
 
-            {/* Анимируемый блок с деталями */}
+
             <div
                 className={`
                     transition-all duration-700 ease-out overflow-hidden
@@ -109,15 +109,15 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
                     bg-light-background
                 `}
             >
-                {/* Внутренний контейнер для padding и gap, видим только если isExpanded */}
+
                 {isExpanded && (
                     <div className="p-4 flex flex-col gap-3 bg-gray-600">
-                        {/* Баланс в развернутом виде */}
+
                         <div className="p-3 rounded-lg bg-sky-100 text-gray-800 text-base font-semibold text-center shadow-sm">
                              Баланс ({titleMonthYear}): <span className="font-semibold text-gray-800">{formatCurrency(monthlySummary.balance)}</span>
                         </div>
 
-                        {/* Доход */}
+
                         <div className="p-3 rounded-lg bg-emerald-100 shadow-sm">
                             <h4 className="text-md font-bold text-emerald-800 mb-2">Доход:</h4>
                             <div className="flex justify-between items-center gap-2 w-full text-sm">
@@ -130,7 +130,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
                             </div>
                         </div>
 
-                        {/* Расход */}
+
                         <div className="p-3 rounded-lg bg-rose-100 shadow-sm">
                             <h4 className="text-md font-bold text-rose-800 mb-2">Расход:</h4>
                             <div className="flex justify-between items-center gap-2 w-full text-sm">

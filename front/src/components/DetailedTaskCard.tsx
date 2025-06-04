@@ -2,32 +2,28 @@ import React from 'react';
 import { type Task } from '../services/api';
 
 interface DetailedTaskCardProps {
-  task: Task; // Тип Task должен включать: parentName, parentPhone, childAddress, childHourlyRate
+  task: Task;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
-  // onDuplicate: (taskId: string) => void; // Дублирование пока убрано
-  // onToggleComplete больше не нужен, так как отметка о выполнении удаляется
 }
 
 const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDelete }) => {
   const {
-    uuid, // Используем uuid вместо id
+    uuid,
     title,
     description,
     type, // тип используется для стилизации окантовки и условного отображения полей
     time,
-    address, // Адрес задачи
+    address,
     childName,
-    hourlyRate, // Ставка задачи
+    hourlyRate,
     amount, // Используется для fixed (теперь только для fixed)
     amountEarned, // Используется для hourly и income
     amountSpent, // Используется для expense
     hoursWorked,
     comments,
-    // completed, // Удаляем, так как отметка о выполнении убирается
     isPaid,
     expenseCategoryName,
-    // Поля для информации о ребенке
     parentName,
     parentPhone,
     childAddress,
@@ -35,7 +31,7 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
   } = task;
 
   const handleEdit = () => onEdit(task);
-  const handleDelete = () => onDelete(uuid); // Используем uuid
+  const handleDelete = () => onDelete(uuid);
 
   // Класс `done` больше не используется, окантовка зависит только от `type`
   const cardClasses = `card ${type}`; // Используем новый класс .card и сохраняем класс типа для специфичных стилей
@@ -57,25 +53,21 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
       <div className="card-body card-text-detail"> {/* Добавляем card-text-detail для стилизации текста */}
         {description && <p><strong>Описание:</strong> {description}</p>}
         {time && <p><strong>Время:</strong> {time}</p>}
-        {/* Поле "тип задачи" убрано из отображения */}
         {childName && <p><strong>Ребенок:</strong> {childName}</p>}
         {address && <p><strong>Адрес задачи:</strong> {address}</p>}
         {hourlyRate !== undefined && type === 'hourly' && <p><strong>Ставка задачи:</strong> {hourlyRate} ₽/час</p>}
         {hoursWorked !== undefined && type === 'hourly' && <p><strong>Часы работы:</strong> {hoursWorked}</p>}
-        {/* Отображение "Заработано" для 'fixed' */}
         {amount !== undefined && type === 'fixed' && (
           <p><strong>Заработано:</strong> {amount} ₽</p>
         )}
-        {/* Отображение суммы для типа 'hourly' как "Доход" */}
         {amountEarned !== undefined && type === 'hourly' && (
           <p>
             <strong>Доход:</strong>
-            <span className="amount-income"> {/* Используем класс для дохода */}
-              {' '}+{amountEarned} ₽ {/* Используем amountEarned и префикс + */}
+            <span className="amount-income">
+              {' '}+{amountEarned} ₽
             </span>
           </p>
                 )}
-                {/* Отображение суммы для типа 'income' */}
                 {amountEarned !== undefined && type === 'income' && (
                   <p>
                     <strong>Доход:</strong>
@@ -84,7 +76,6 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
                     </span>
                   </p>
                 )}
-                {/* Отображение суммы для типа 'expense' */}
                 {amountSpent !== undefined && type === 'expense' && (
                   <p>
                     <strong>Расход:</strong>
@@ -121,8 +112,6 @@ const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDel
         )}
       </div>
 
-      {/* Футер с отметкой о выполнении и чекбоксом удален */}
-      {/* Отображение информации об оплате остается, если это актуально и есть данные */}
       {(type === 'fixed' || type === 'hourly' || type === 'income') && isPaid !== undefined && (
         <div className="card-footer">
           <span>Оплата: {isPaid ? 'Оплачено' : 'Не оплачено'}</span>

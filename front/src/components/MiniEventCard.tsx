@@ -40,42 +40,23 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
     onEdit(event);
   };
 
-  // Иконка и текст события согласно макету
-  // docs/new_design_main_page.html строки 91-98
-  // <div class="bg-gray-700 p-2 rounded-md border-l-2 border-green-custom flex items-center text-sm">
-  //   <span class="material-icons text-xs mr-1 text-green-400">add</span>
-  //   11:16 Хер
-  // </div>
 
-  // let eventIcon = 'event'; // Иконка по умолчанию - УДАЛЕНО
   let eventText = '';
-  // let iconColorClass = 'text-green-400'; // По умолчанию зеленый для "дохода" или общей задачи - УДАЛЕНО
 
-  // Проверяем, является ли событие задачей и какого типа
   if (event.itemType === 'task' && 'type' in event) {
     const task = event as Task;
     if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') {
-      // eventIcon = 'add'; // Иконка для дохода - УДАЛЕНО
-      // iconColorClass = 'text-green-400'; - УДАЛЕНО
       eventText = `${task.time ? task.time + ' ' : ''}${task.childName || task.title || 'Доход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}`;
     } else if (task.type === 'expense') { // Это условие должно быть здесь, если itemType === 'task' может быть расходом
-      // eventIcon = 'remove'; // Иконка для расхода - УДАЛЕНО
-      // iconColorClass = 'text-red-400'; - УДАЛЕНО
       eventText = `${task.title || 'Расход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}${task.expenseCategoryName ? ` [${task.expenseCategoryName}]` : ''}`;
-    } else { // Обычная задача без явного типа дохода/расхода
-      // eventIcon = 'task'; // Иконка для обычной задачи - УДАЛЕНО
-      // iconColorClass = 'text-blue-400'; - УДАЛЕНО
+    } else {
       eventText = `${task.time ? task.time + ' ' : ''}${task.title || 'Задача'}`;
     }
   } else if (event.itemType === 'expense') { // Если itemType сам по себе 'expense' (на случай если 'type' в Task не используется для расходов)
     const expense = event as Task;
-    // eventIcon = 'remove'; // Для расходов - УДАЛЕНО
-    // iconColorClass = 'text-red-400'; // Красный для расходов - УДАЛЕНО
     eventText = `${expense.title || 'Расход'}${expense.amount ? ` (${expense.amount.toFixed(2)})` : ''}${expense.expenseCategoryName ? ` [${expense.expenseCategoryName}]` : ''}`;
   } else if (event.itemType === 'note') {
     const note = event as Note;
-    // eventIcon = 'notes'; // Иконка для заметок - УДАЛЕНО
-    // iconColorClass = 'text-yellow-400'; // Желтый для заметок - УДАЛЕНО
     eventText = note.content || 'Заметка';
   }
 
@@ -100,7 +81,6 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleEditClick()}
     >
-      {/* <span className={`material-icons text-xs mr-1 ${iconColorClass}`}>{eventIcon}</span> - УДАЛЕНО */}
       <span className="truncate">{eventText}</span>
     </div>
   );

@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { addChild, type Child, deleteChild, getAllChildren, updateChild } from '../services/api';
-import ChildFormModal from './ChildFormModal'; // Импортируем ChildFormModal
-// ChildForm больше не используется здесь напрямую
+import ChildFormModal from './ChildFormModal';
 
 const ChildCardManager: React.FC = () => {
   const [children, setChildren] = useState<Child[]>([]);
-  // Состояния для модального окна
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentEditingChild, setCurrentEditingChild] = useState<Child | undefined>(undefined);
@@ -51,7 +49,7 @@ const ChildCardManager: React.FC = () => {
         toast.success('Новая карточка ребенка успешно добавлена!');
       }
       handleModalClose();
-      fetchChildren(); // Обновляем список
+      fetchChildren();
     } catch (error) {
       toast.error('Ошибка при сохранении карточки ребенка.');
     }
@@ -63,7 +61,7 @@ const ChildCardManager: React.FC = () => {
         await deleteChild(uuid);
         toast.success('Карточка ребенка успешно удалена!');
         handleModalClose();
-        fetchChildren(); // Обновляем список
+        fetchChildren();
       } catch (error) {
         toast.error('Ошибка при удалении карточки ребенка.');
       }
@@ -101,8 +99,6 @@ const ChildCardManager: React.FC = () => {
             </div>
             <div className="card-actions">
               <button className="btn btn-secondary" onClick={() => handleOpenEditModal(child)}>Редактировать</button>
-              {/* Кнопка удаления теперь в модальном окне, но можно оставить и здесь для быстрого удаления без открытия модалки, если нужно */}
-              {/* <button className="btn btn-secondary" onClick={() => handleModalDelete(child.uuid)}>Удалить</button> */}
             </div>
           </div>
         ))}

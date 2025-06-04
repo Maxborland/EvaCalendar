@@ -1,49 +1,43 @@
-/* Стили для модального окна UnifiedTaskFormModal */
-
-/* Оверлей */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--bg-modal-overlay, rgba(0, 0, 0, 0.5)); /* Используем переменную или значение из макета */
+  background-color: var(--bg-modal-overlay, rgba(0, 0, 0, 0.5));
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1050;
-  font-family: var(--font-family-sans, 'Inter', sans-serif); /* Используем шрифт из темы */
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
   animation: fadeIn 0.3s ease-out forwards;
 }
 
-/* Контент модального окна */
 .modal-content {
-  background-color: var(--bg-modal-content, var(--theme-gray-medium)); /* Используем переменную или значение из макета/темы */
-  color: var(--theme-gray-light); /* Используем цвет текста из темы */
+  background-color: var(--bg-modal-content, var(--theme-gray-medium));
+  color: var(--theme-gray-light);
   padding: 20px 25px;
-  border-radius: 8px; /* Соответствует общему стилю */
+  border-radius: 8px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 1051;
   width: 90%;
-  max-width: 400px; /* Соответствует макету */
+  max-width: 400px;
   max-height: 90vh;
   overflow-y: auto;
   box-sizing: border-box;
   animation: scaleUp 0.3s ease-out forwards;
 }
 
-/* Заголовок модального окна */
 .modal-content h2 {
   text-align: left;
-  color: var(--theme-light); /* Используем цвет текста из темы */
+  color: var(--theme-light);
   margin-top: 0;
   margin-bottom: 25px;
-  font-size: 1.25rem; /* 20px, соответствует .date-title из макета */
+  font-size: 1.25rem;
   font-weight: 500;
 }
 
-/* Кнопка закрытия 'x' */
 .modal-content .close-button {
   position: absolute;
   top: 20px;
@@ -52,7 +46,7 @@
   border: none;
   font-size: 1.8rem;
   font-weight: 300;
-  color: var(--theme-gray-light); /* Используем цвет из темы */
+  color: var(--theme-gray-light);
   cursor: pointer;
   line-height: 1;
   padding: 0;
@@ -60,10 +54,9 @@
 }
 
 .modal-content .close-button:hover {
-  color: var(--theme-primary); /* Акцентный цвет при наведении */
+  color: var(--theme-primary);
 }
 
-/* Группа полей формы */
 .form-group {
   margin-bottom: 18px;
 }
@@ -71,37 +64,36 @@
 .form-group .label {
   display: block;
   margin-bottom: 6px;
-  color: var(--theme-gray-light); /* Используем цвет из темы */
+  color: var(--theme-gray-light);
   font-size: 0.9rem;
   font-weight: 400;
 }
 
-/* Стили для инпутов, текстовых полей и селектов */
 .form-group .input,
 .form-group .textarea,
 .form-group .select {
   width: 100%;
   padding: 10px 12px;
-  background-color: var(--theme-gray-dark); /* Используем цвет фона из темы */
-  border: 1px solid var(--theme-gray-dark); /* Используем цвет рамки из темы */
-  border-radius: var(--btn-secondary-border-radius, 8px); /* Используем радиус из темы для кнопок или стандартный */
+  background-color: var(--theme-gray-dark);
+  border: 1px solid var(--theme-gray-dark);
+  border-radius: var(--btn-secondary-border-radius, 8px);
   box-sizing: border-box;
   font-size: 1rem;
-  color: var(--theme-light); /* Используем цвет текста из темы */
+  color: var(--theme-light);
   outline: none;
   transition: border-color 0.2s ease;
 }
 
 .form-group .input::placeholder,
 .form-group .textarea::placeholder {
-  color: var(--theme-gray-light); /* Используем цвет из темы, возможно с opacity */
+  color: var(--theme-gray-light);
   opacity: 0.7;
 }
 
 .form-group .input:focus,
 .form-group .textarea:focus,
 .form-group .select:focus {
-  border-color: var(--theme-primary); /* Акцентный цвет рамки при фокусе */
+  border-color: var(--theme-primary);
 }
 
 .form-group .textarea {
@@ -109,25 +101,24 @@
   resize: vertical;
 }
 
-/* Переключатель "Тип задачи" (Доход/Расход) */
 .radio-group {
   display: flex;
   margin-bottom: 18px;
-  border-radius: var(--btn-secondary-border-radius, 8px); /* Используем радиус из темы */
+  border-radius: var(--btn-secondary-border-radius, 8px);
   overflow: hidden;
-  border: 1px solid var(--theme-gray-dark); /* Используем цвет рамки из темы */
+  border: 1px solid var(--theme-gray-dark);
 }
 
 .radio-group label {
   flex-grow: 1;
   text-align: center;
   padding: 10px 12px;
-  background-color: var(--theme-gray-dark); /* Фон неактивной кнопки */
-  color: var(--theme-gray-light); /* Текст неактивной кнопки */
+  background-color: var(--theme-gray-dark);
+  color: var(--theme-gray-light);
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
   font-size: 0.95rem;
-  border-left: 1px solid var(--theme-gray-medium); /* Разделитель между кнопками */
+  border-left: 1px solid var(--theme-gray-medium);
 }
 
 .radio-group label:first-child {
@@ -139,27 +130,25 @@
 }
 
 .radio-group label:has(input[type="radio"]:checked) {
-  background-color: var(--theme-primary); /* Акцентный фон активной кнопки */
-  color: var(--btn-primary-text-color, var(--theme-dark)); /* Текст активной кнопки из темы */
+  background-color: var(--theme-primary);
+  color: var(--btn-primary-text-color, var(--theme-dark));
   font-weight: 500;
 }
 
-/* Кнопки действий в форме */
 .form-actions {
   display: flex;
-  gap: 10px; /* Отступ между кнопками */
+  gap: 10px;
   margin-top: 25px;
 }
 
 .form-actions .submit-button,
 .form-actions .delete-button-form {
-  flex-grow: 1; /* Кнопки занимают равное доступное пространство */
+  flex-grow: 1;
   border: none;
   font-weight: 500;
   cursor: pointer;
   text-align: center;
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease-in-out;
-  /* Общие стили для кнопок из theme.css .btn */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -173,7 +162,6 @@
 
 
 .form-actions .submit-button {
-  /* Стили .btn-primary из theme.css */
   background-color: var(--btn-primary-bg);
   color: var(--btn-primary-text-color);
   padding: var(--btn-primary-padding);
@@ -186,33 +174,30 @@
 }
 
 .form-actions .delete-button-form {
-  /* Стили для кнопки удаления, можно использовать --theme-danger */
   background-color: var(--theme-danger);
-  color: var(--theme-danger-text, var(--theme-light)); /* Запасной цвет текста */
-  padding: var(--btn-primary-padding); /* Используем паддинг как у основной кнопки для консистентности */
-  border-radius: var(--btn-primary-border-radius); /* Используем радиус как у основной кнопки */
-  font-size: var(--btn-primary-font-size); /* Используем размер шрифта как у основной кнопки */
+  color: var(--theme-danger-text, var(--theme-light));
+  padding: var(--btn-primary-padding);
+  border-radius: var(--btn-primary-border-radius);
+  font-size: var(--btn-primary-font-size);
 }
 
 .form-actions .delete-button-form:hover {
   background-color: color-mix(in srgb, var(--theme-danger) 90%, black);
 }
 
-/* Стили для UnifiedChildSelector, если он используется внутри этой модалки */
 .unified-child-selector-container .label {
- color: var(--theme-gray-light); /* Используем цвет из темы */
+ color: var(--theme-gray-light);
  font-size: 0.9rem;
 }
 
 .info-text {
   font-size: 0.8rem;
-  color: var(--theme-gray-light); /* Используем цвет из темы */
-  opacity: 0.8; /* Немного приглушаем */
+  color: var(--theme-gray-light);
+  opacity: 0.8;
   margin-top: -10px;
   margin-bottom: 10px;
 }
 
-/* Анимации */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -253,7 +238,6 @@
   }
 }
 
-/* Классы для анимации закрытия */
 .modal-overlay.closing {
   animation: fadeOut 0.3s ease-out forwards;
 }

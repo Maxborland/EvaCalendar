@@ -52,7 +52,6 @@ describe('Note API', () => {
     const originalDate = createRes.body.date; // Сохраняем исходную дату
 
     const updatedContent = 'Обновленное содержание заметки';
-    // const updatedDate = '2025-06-01'; // Это поле больше не должно влиять на обновление даты
 
     const res = await request(app)
       .put(`/notes/${uuidToUpdate}`)
@@ -104,8 +103,8 @@ describe('GET /notes/date/:dateString', () => {
 
     beforeEach(async () => {
       // Убедимся, что в базе нет заметки для этой даты перед тестом на "не найдено"
-      // и создаем заметку для теста на "найдено"
-      await db('notes').where({ date: testDate }).del(); // Сначала удаляем, если есть
+      // и создаем заметку для теста на "найдено".
+      await db('notes').where({ date: testDate }).del();
       await request(app).post('/notes').send(noteForDate); // Затем создаем
     });
 

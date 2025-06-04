@@ -24,7 +24,6 @@ describe('Children API', () => {
   });
 
   it('should get all children', async () => {
-    // Создаем минимум 2 записи для проверки "get all"
     await request(app).post('/children').send(baseChild);
     await request(app).post('/children').send({ ...baseChild, childName: 'Второй Ребенок' });
 
@@ -90,7 +89,6 @@ describe('Children API', () => {
     expect(getRes.body).toHaveProperty('message');
   });
 
-  // Тесты на валидацию
   it('should return 400 if childName is missing when creating', async () => {
     const invalidChild = { ...baseChild, childName: undefined };
     const res = await request(app)
@@ -112,7 +110,7 @@ describe('Children API', () => {
   it('should return 400 if childName is missing when updating', async () => {
     const createRes = await request(app).post('/children').send(baseChild);
     const uuidToUpdate = createRes.body.uuid;
-    const invalidUpdate = { childName: undefined, parentName: 'ValidParentName', parentPhone: '123', address: '123', hourlyRate: 100 }; // Добавил обязательные поля
+    const invalidUpdate = { childName: undefined, parentName: 'ValidParentName', parentPhone: '123', address: '123', hourlyRate: 100 };
 
     const res = await request(app)
       .put(`/children/${uuidToUpdate}`)
@@ -124,7 +122,7 @@ describe('Children API', () => {
   it('should return 400 if parentName is missing when updating', async () => {
     const createRes = await request(app).post('/children').send(baseChild);
     const uuidToUpdate = createRes.body.uuid;
-    const invalidUpdate = { childName: 'ValidChildName', parentName: undefined, parentPhone: '123', address: '123', hourlyRate: 100 }; // Добавил обязательные поля
+    const invalidUpdate = { childName: 'ValidChildName', parentName: undefined, parentPhone: '123', address: '123', hourlyRate: 100 };
 
     const res = await request(app)
       .put(`/children/${uuidToUpdate}`)
@@ -136,7 +134,7 @@ describe('Children API', () => {
   it('should return 404 if child not found when updating', async () => {
     const res = await request(app)
       .put(`/children/00000000-0000-0000-0000-000000000000`) // Используем валидный формат UUID, который вряд ли существует
-      .send({ childName: 'Несуществующий', parentName: 'Несуществующий', parentPhone: '123', address: '123', hourlyRate: 100 }); // Добавил обязательные поля
+      .send({ childName: 'Несуществующий', parentName: 'Несуществующий', parentPhone: '123', address: '123', hourlyRate: 100 });
     expect(res.statusCode).toEqual(404);
     // Сообщение об ошибке может отличаться, проверим что тело ответа содержит message
     expect(res.body).toHaveProperty('message');

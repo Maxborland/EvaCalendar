@@ -1,20 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Импортируем useNavigate
+import { useNavigate } from 'react-router-dom';
 import { getNoteByDate } from '../services/api';
-// import './NoteField.css'; // Стиль будет через Tailwind
+// import './NoteField.css';
 
 interface NoteFieldProps {
   weekId: string;
-  // onNoteSaved больше не нужен, так как сохранение убрано из этого компонента
 }
 
 const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
-  const navigate = useNavigate(); // Инициализируем useNavigate
+  const navigate = useNavigate();
   const [noteContent, setNoteContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Состояния noteUuid, hasChanges и функция handleSaveNote удалены,
-  // так как редактирование и сохранение переносятся на другую страницу.
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -23,12 +20,11 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
       setIsLoading(true);
       setError(null);
       try {
-        const notes = await getNoteByDate(weekId); // Теперь notes это Note[]
+        const notes = await getNoteByDate(weekId);
         if (notes && notes.length > 0) {
-          // Используем первую заметку из массива для превью
           setNoteContent(notes[0].content);
         } else {
-          setNoteContent(''); // Если массив пуст, значит заметки нет
+          setNoteContent('');
         }
       } catch (err: any) {
         console.error('Error fetching note:', err);
@@ -43,9 +39,9 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
   }, [weekId]);
 
   const handleNavigateToNoteDetails = () => {
-    navigate(`/notes/${weekId}`); // Используем navigate для перехода и передаем weekId
-    console.log(`Переход к /notes/${weekId}`);
-  };
+      navigate(`/notes/${weekId}`);
+      console.log(`Переход к /notes/${weekId}`);
+    };
 
   const getPreviewText = (text: string, maxLength: number = 60): string => {
     if (!text) return "Добавить заметку...";
@@ -53,14 +49,14 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
     // Попробуем обрезать по последнему пробелу, чтобы не резать слова
     const trimmedText = text.substring(0, maxLength);
     const lastSpaceIndex = trimmedText.lastIndexOf(' ');
-    if (lastSpaceIndex > 0 && text.length > maxLength) { // Только если есть пробел и текст действительно длиннее
+    if (lastSpaceIndex > 0 && text.length > maxLength) {
         return trimmedText.substring(0, lastSpaceIndex) + "...";
     }
     return trimmedText + "...";
   };
 
 
-  if (isLoading && !error) { // Показываем состояние загрузки, если нет ошибки
+  if (isLoading && !error) {
     return (
       <section className="bg-card rounded-lg p-4 col-span-1">
         <h2 className="text-md font-semibold mb-2">Заметки</h2>
@@ -75,12 +71,12 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
   return (
     <section className="bg-card rounded-lg p-4 col-span-1">
       <h3 className="text-md font-semibold mb-2">Заметки</h3>
-      {error && !isLoading && ( // Показываем ошибку только если загрузка завершена и есть ошибка
+      {error && !isLoading && (
         <div className="w-full bg-red-800 p-3 rounded-md text-xs text-white min-h-[60px] flex items-center justify-center">
           <p>{error}</p>
         </div>
       )}
-      {!error && !isLoading && ( // Показываем кликабельный блок, если нет ошибки и загрузка завершена
+      {!error && !isLoading && (
         <div
           className="w-full bg-gray-700 p-3 rounded-md text-xs text-gray-300 cursor-pointer hover:bg-gray-600 min-h-[60px] flex items-center"
           onClick={handleNavigateToNoteDetails}

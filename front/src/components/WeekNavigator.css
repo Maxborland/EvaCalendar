@@ -3,15 +3,15 @@
   justify-content: center;
   align-items: center;
   padding: 10px 0;
-  gap: 15px; /* Пространство между кнопками и текстом */
+  gap: 15px;
   width: 100%;
   box-sizing: border-box;
   position: fixed;
-  bottom: 0; /* Фиксируем снизу */
-  background-color: var(--color-primary-background); /* Фон для контейнера */
-  box-shadow: 0 -1px 5px var(--color-shadow-light); /* Тень сверху, так как элемент внизу */
+  bottom: 0;
+  background-color: var(--color-primary-background);
+  box-shadow: 0 -1px 5px var(--color-shadow-light);
   transition: transform 0.3s ease-out;
-  z-index: 900; /* Ниже чем TopNavigator, но выше основного контента */
+  z-index: 900;
 }
 
 .week-navigator-container--hidden {
@@ -20,8 +20,8 @@
 
 .week-nav-button {
   padding: 12px 20px;
-  margin: 0 10px; /* Отступы между кнопками */
-  font-size: 1.5rem; /* Размер иконки */
+  margin: 0 10px;
+  font-size: 1.5rem;
   border-radius: 5px;
   border: none;
   background-color: var(--color-secondary-background);
@@ -53,10 +53,9 @@
   padding: 0 10px;
 }
 
-/* Стили для светлой темы */
 @media (prefers-color-scheme: light) {
   .week-navigator-container {
-    background-color: var(--color-primary-background); /* Адаптация фона для светлой темы */
+    background-color: var(--color-primary-background);
     box-shadow: 0 -1px 5px var(--color-shadow-light);
   }
 

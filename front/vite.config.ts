@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -19,13 +18,6 @@ export default defineConfig({
       devOptions: {
         enabled: true, // Включаем PWA в режиме разработки для тестирования
       },
-      // Манифест PWA уже настроен в public/manifest.json,
-      // поэтому мы не будем его здесь переопределять,
-      // если только не потребуется специфическая конфигурация для плагина.
-      // manifest: false // Можно установить в false, если manifest.json полностью управляется вручную
-      // или оставить как есть, если плагин должен его учитывать/обрабатывать.
-      // Для текущей задачи, явное указание manifest: false не требуется,
-      // так как мы фокусируемся на sw.js и кэшировании.
     }),
   ],
   test: {

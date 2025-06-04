@@ -2,31 +2,30 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  /* margin-bottom: 1rem; -- убрано, отступы управляются родителем (TaskForm) */
-  width: 100%; /* Занимаем всю доступную ширину */
+  width: 100%;
 }
 
 .selector-label {
-  margin-bottom: 5px; /* Как в TaskForm.css .label */
-  font-weight: bold; /* Как в TaskForm.css .label */
-  color: var(--color-border-light); /* Как в TaskForm.css .label */
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: var(--color-border-light);
 }
 
 .selector-input {
-  padding: 8px; /* Как в TaskForm.css */
-  border: 1px solid var(--theme-gray-dark); /* Изменено для соответствия стилю */
-  border-radius: 4px; /* Как в TaskForm.css */
-  font-size: 1em; /* Как в TaskForm.css */
-  color: var(--theme-light); /* Изменено для соответствия стилю */
-  background-color: var(--theme-gray-dark); /* Изменено для соответствия стилю */
+  padding: 8px;
+  border: 1px solid var(--theme-gray-dark);
+  border-radius: 4px;
+  font-size: 1em;
+  color: var(--theme-light);
+  background-color: var(--theme-gray-dark);
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  width: 100%; /* Явно указываем ширину */
-  box-sizing: border-box; /* Чтобы padding и border не влияли на общую ширину */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .selector-input:focus {
-  border-color: var(--theme-primary); /* Используем переменную */
-  box-shadow: 0 0 0 2px rgba(var(--theme-primary-rgb), 0.25); /* Используем переменную */
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 2px rgba(var(--theme-primary-rgb), 0.25);
   outline: none;
 }
 
@@ -35,7 +34,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  background-color: var(--theme-light); /* Используем переменную */
+  background-color: var(--theme-light);
   border: 1px solid var(--theme-gray-medium);
   border-top: none;
   border-radius: 0 0 4px 4px;
@@ -45,50 +44,35 @@
   max-height: 200px;
   overflow-y: auto;
   z-index: 1000;
-  box-shadow: 0 4px 8px rgba(var(--theme-dark-rgb), 0.1); /* Используем переменную */
+  box-shadow: 0 4px 8px rgba(var(--theme-dark-rgb), 0.1);
 }
 
-/*
-  Комментарий по поводу позиционирования suggestions-list остается актуальным.
-  Для более точного позиционирования может потребоваться обертка для input и suggestions-list
-  или вычисление позиции в JavaScript.
-*/
 .unified-child-selector:has(.selector-label) .suggestions-list {
-  /* Пока оставляем top: 100% от родителя. Если input и label имеют фиксированную высоту,
-     можно будет скорректировать с помощью calc(), например:
-     top: calc( <высота_лейбла> + <отступ_лейбла> + <высота_инпута> );
-     Или, если input является непосредственным соседом, можно использовать относительное позиционирование
-     и top: <высота_инпута>.
-     Для текущей структуры flex-direction: column, top: 100% от .unified-child-selector
-     может смещать список ниже, чем ожидается, если label имеет значительную высоту.
-     Оптимально, если .selector-input и .suggestions-list находятся в общем div-контейнере,
-     для которого .suggestions-list позиционируется абсолютно.
-  */
 }
 
 
 .suggestion-item {
-  padding: 8px; /* Как в TaskForm.css */
+  padding: 8px;
   cursor: pointer;
-  color: var(--theme-gray-dark); /* Используем переменную */
+  color: var(--theme-gray-dark);
 }
 
 .suggestion-item:hover {
-  background-color: var(--theme-gray-light); /* Используем переменную */
+  background-color: var(--theme-gray-light);
 }
 
 .suggestion-item.create-new-item {
   font-style: italic;
-  color: var(--theme-primary); /* Используем переменную */
+  color: var(--theme-primary);
 }
 
 .suggestion-item.create-new-item:hover {
-  background-color: rgba(var(--theme-primary-rgb), 0.1); /* Используем переменную */
+  background-color: rgba(var(--theme-primary-rgb), 0.1);
   color: var(--theme-primary);
 }
 .suggestion-match {
   font-weight: bold;
-  color: var(--theme-primary); /* Или другой цвет для выделения */
+  color: var(--theme-primary);
 }
 
 .suggestion-item.no-results {
@@ -98,29 +82,26 @@
 }
 
 .suggestion-item.no-results:hover {
-  background-color: transparent; /* Убираем ховер эффект для "не найдено" */
+  background-color: transparent;
 }
 
 .add-child-button {
-  padding: 10px 15px; /* Как в TaskForm.css */
+  padding: 10px 15px;
   background-color: var(--theme-primary);
   color: var(--theme-primary-text);
   border: none;
-  border-radius: 5px; /* Как в TaskForm.css (было 4px) */
+  border-radius: 5px;
   cursor: pointer;
-  font-size: 1em; /* Как в TaskForm.css */
+  font-size: 1em;
   transition: background-color 0.2s ease-in-out;
   align-self: flex-start;
 }
 
 .add-child-button:hover {
-  /* Для hover эффекта можно использовать более темный оттенок основного цвета,
-     но в theme.css нет такой переменной. Пока оставим осветление через opacity или rgba.
-     Или можно создать новую переменную, например --theme-primary-dark */
   background-color: rgba(var(--theme-primary-rgb), 0.85);
 }
 
-.unified-child-selector p { /* Стили для сообщения "Список детей пуст" */
+.unified-child-selector p {
     margin-top: 0.25rem;
     margin-bottom: 0.75rem;
     color: var(--theme-gray-medium);
@@ -160,5 +141,5 @@
 
 .child-info-card .info-value {
   color: var(--theme-gray-dark);
-  word-break: break-word; /* Для переноса длинных строк адреса и комментариев */
+  word-break: break-word;
 }

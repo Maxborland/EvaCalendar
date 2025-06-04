@@ -2,17 +2,15 @@ import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
-import type { Child } from '../services/api'; // Используем существующий тип Child
-import './ChildCardManager.css'; // Стили пока оставим от ChildCardManager, позже можно переименовать или создать ChildForm.css
+import type { Child } from '../services/api';
+import './ChildCardManager.css';
 
-export interface ChildFormProps { // Экспортируем интерфейс props
-  initialChild?: Partial<Child>; // Разрешаем Partial<Child> и делаем uuid необязательным для новых
+export interface ChildFormProps {
+  initialChild?: Partial<Child>;
   onSave: (child: Child | Partial<Child>) => void;
   onCancel: () => void;
-  isEmbeddedInModal?: boolean; // Добавляем новый проп
-  formId?: string; // Добавляем ID формы для связи с кнопками модального окна
-  // Возможно, понадобится пропс для указания, создается ли ребенок или редактируется,
-  // чтобы менять заголовок, но initialChild?.uuid может служить этой цели.
+  isEmbeddedInModal?: boolean;
+  formId?: string;
 }
 
 const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, formId }) => {
@@ -58,8 +56,7 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
   };
 
   useEffect(() => {
-    // Обновляем formData, если initialChild изменился (например, при открытии формы для редактирования другого ребенка)
-    // или при передаче предзаполненного имени для нового ребенка
+    // Обновляем formData при изменении initialChild (например, открытие формы для другого ребенка или предзаполнение имени)
     setFormData(
       initialChild || {
         childName: '',
@@ -117,7 +114,6 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
       toast.error(`Имя ребенка не должно превышать ${MAX_CHILD_NAME_LENGTH} символов.`);
       return;
     }
-    // Валидация hourlyRate
     if (formData.hourlyRate == null || isNaN(Number(formData.hourlyRate)) || Number(formData.hourlyRate) < 0) {
       toast.error('Ставка в час должна быть указана корректно (неотрицательное число).');
       return;
@@ -126,10 +122,7 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
   };
 
   return (
-    // Обертка для формы, если она будет использоваться как модальное окно в TaskForm
-    // Для ChildCardManager она уже встроена. Здесь можно добавить класс для стилизации модального окна.
-    // <div className="child-form-modal-wrapper"> {/* Пример обертки */}
-      <form onSubmit={handleSubmit} className="child-form" id={formId}> {/* Используем существующий класс child-form и добавляем ID */}
+      <form onSubmit={handleSubmit} className="child-form" id={formId}>
         {!isEmbeddedInModal && (
           <h3>{initialChild?.uuid ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
         )}
@@ -191,7 +184,6 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
           </div>
         )}
       </form>
-    // </div>
   );
 };
 

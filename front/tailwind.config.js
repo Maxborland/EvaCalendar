@@ -20,7 +20,7 @@ export default {
         'theme-gray-dark': 'var(--color-neutral-90, #4a5568)', // или --color-neutral-20 для светлой
         'accent-custom': 'var(--color-accent, #4CAF50)',
         'card-custom': 'var(--color-modal-background, #2C2C2C)', // Пример использования переменной из index.css
-        'header-custom': 'var(--color-primary-background, #1A1A1A)', // Пример
+        'header-custom': 'var(--color-primary-background, #1A1A1A)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'], // Из index.css
