@@ -41,23 +41,29 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
   };
 
 
-  let eventText = '';
+  let displayTime = '&nbsp;';
+  let eventTitleText = '';
 
   if (event.itemType === 'task' && 'type' in event) {
     const task = event as Task;
-    if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') {
-      eventText = `${task.time ? task.time + ' ' : ''}${task.childName || task.title || 'Доход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}`;
-    } else if (task.type === 'expense') { // Это условие должно быть здесь, если itemType === 'task' может быть расходом
-      eventText = `${task.title || 'Расход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}${task.expenseCategoryName ? ` [${task.expenseCategoryName}]` : ''}`;
-    } else {
-      eventText = `${task.time ? task.time + ' ' : ''}${task.title || 'Задача'}`;
+    if (task.time) {
+      displayTime = task.time;
     }
-  } else if (event.itemType === 'expense') { // Если itemType сам по себе 'expense' (на случай если 'type' в Task не используется для расходов)
+    if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') {
+      eventTitleText = `${task.childName || task.title || 'Доход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}`;
+    } else if (task.type === 'expense') {
+      eventTitleText = `${task.title || 'Расход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}${task.expenseCategoryName ? ` [${task.expenseCategoryName}]` : ''}`;
+    } else {
+      eventTitleText = task.title || 'Задача';
+    }
+  } else if (event.itemType === 'expense') {
     const expense = event as Task;
-    eventText = `${expense.title || 'Расход'}${expense.amount ? ` (${expense.amount.toFixed(2)})` : ''}${expense.expenseCategoryName ? ` [${expense.expenseCategoryName}]` : ''}`;
+    // Для расходов время обычно не указывается, оставляем &nbsp;
+    eventTitleText = `${expense.title || 'Расход'}${expense.amount ? ` (${expense.amount.toFixed(2)})` : ''}${expense.expenseCategoryName ? ` [${expense.expenseCategoryName}]` : ''}`;
   } else if (event.itemType === 'note') {
     const note = event as Note;
-    eventText = note.content || 'Заметка';
+    // Для заметок время обычно не указывается, оставляем &nbsp;
+    eventTitleText = note.content || 'Заметка';
   }
 
   let borderColorClass = 'border-gray-300';
@@ -75,13 +81,18 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
   return (
     <div
       ref={ref}
-      className={`bg-gray-700 p-2 rounded-md border-l-2 ${borderColorClass} flex items-center text-sm ${isDragging ? 'opacity-50' : ''}`}
+      className={`bg-gray-700 p-2 rounded-md border-l-4 ${borderColorClass} flex items-center text-sm ${isDragging ? 'opacity-50' : ''}`}
       onClick={handleEditClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleEditClick()}
     >
-      <span className="truncate">{eventText}</span>
+      <div className="w-12 flex-shrink-0 pr-2 text-left border-r border-gray-600">
+        {displayTime === '&nbsp;' ? <span dangerouslySetInnerHTML={{ __html: '&nbsp;' }} /> : displayTime}
+      </div>
+      <div className="flex-grow pl-2 truncate">
+        {eventTitleText}
+      </div>
     </div>
   );
 };
