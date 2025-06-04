@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './TopNavigator.css';
+// import './TopNavigator.css'; // Оставляем закомментированным, если он не нужен
 
 interface TopNavigatorProps {
   title: string;
@@ -15,15 +15,24 @@ const TopNavigator: React.FC<TopNavigatorProps> = ({ title, showButtons = true }
   };
 
   return (
-    <header className="px-4 py-3 flex justify-between items-baseline text-white bg-gradient-to-b from-[#2C2C2C] to-transparent">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <div className="flex items-center">
+    <header className="px-4 py-3 flex items-center justify-between text-white bg-gradient-to-b from-[#2C2C2C] to-transparent">
+      {/* Логотип слева */}
+      <div className="flex items-center flex-shrink-0">
+        <img src="/icons/web/icon-512.png" alt="app icon" className="h-10 mr-2" />
+      </div>
+      {/* Заголовок по центру */}
+      <h2 className="text-xl font-semibold leading-6 text-center flex-grow mx-2">
+        {title}
+      </h2>
+      {/* Иконка настроек справа */}
+      <div className="flex items-center flex-shrink-0">
         {showButtons ? (
           <button onClick={handleSettingsClick} className="p-2 rounded-md hover:bg-gray-700 flex items-center">
             <span className="material-icons">settings</span>
           </button>
         ) : (
-          <div className="p-2 invisible flex items-center">
+          // Placeholder для сохранения пространства, если кнопка скрыта
+          <div className="p-2 invisible flex items-center w-10 h-10"> {/* Примерные размеры кнопки для сохранения баланса */}
             <span className="material-icons">settings</span>
           </div>
         )}

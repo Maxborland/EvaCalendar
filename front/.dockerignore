@@ -5,4 +5,33 @@ npm-debug.log
 .gitignore
 Dockerfile
 .env
-.env.production
+.env.*
+!.env.production
+# Оставляем .env.production, так как он генерируется в Dockerfile и нужен для сборки
+
+# Локальные файлы разработки и кеши
+.vscode
+*.log
+.DS_Store
+coverage
+# Файлы, специфичные для Vite/React/Vue и т.п. (если есть)
+# .eslintcache
+# .stylelintcache
+# .vite
+# /public/mockServiceWorker.js (если используется msw)
+
+# Тесты
+/src/tests
+/src/__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+jest.config.*
+cypress
+/cypress
+/playwright
+playwright-report
+playwright/.cache
+
+README.md

@@ -1,53 +1,38 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { createNote, getNoteByDate, type Note, updateNote } from '../services/api';
+import React, { useEffect, useState } from 'react'; // useCallback удален
+import { useLoaderData, useNavigate } from 'react-router-dom'; // useParams удален, useLoaderData добавлен
+// getNoteByDate удален из импортов
+import { createNote, type Note, updateNote } from '../services/api';
 // import './NoteDetailsPage.css'; // Стили будут через Tailwind или позже
 
+interface NoteDetailsLoaderData {
+  note: Note | null;
+  date: string;
+}
+
 const NoteDetailsPage: React.FC = () => {
-  const { date } = useParams<{ date: string }>();
+  const { note: initialNote, date } = useLoaderData() as NoteDetailsLoaderData;
   const navigate = useNavigate();
 
-  const [noteContent, setNoteContent] = useState<string>('');
-  const [noteUuid, setNoteUuid] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [noteContent, setNoteContent] = useState<string>(initialNote?.content || '');
+  const [noteUuid, setNoteUuid] = useState<string | null>(initialNote?.uuid || null);
+  // isLoading удален
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchNoteDetails = useCallback(async () => {
-    if (!date) {
-      setError('Дата не указана в URL.');
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      const notes = await getNoteByDate(date); // API теперь возвращает Note[]
-      if (notes && notes.length > 0) {
-        // Используем первую заметку из массива
-        const currentNote = notes[0];
-        setNoteContent(currentNote.content);
-        setNoteUuid(currentNote.uuid);
-      } else {
-        setNoteContent(''); // Нет существующей заметки для этой даты
-        setNoteUuid(null);
-      }
-    } catch (err: any) {
-      console.error('Error fetching note details:', err);
-      setError(err.message || 'Не удалось загрузить детали заметки.');
-      setNoteContent('');
-      setNoteUuid(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [date]);
+  // fetchNoteDetails и связанный useEffect удалены
 
+  // Обновляем состояние, если данные из loader'а изменились
   useEffect(() => {
-    fetchNoteDetails();
-  }, [fetchNoteDetails]);
+    setNoteContent(initialNote?.content || '');
+    setNoteUuid(initialNote?.uuid || null);
+    if (!initialNote) {
+        setNoteContent('');
+        setNoteUuid(null);
+    }
+  }, [initialNote]);
 
   const handleSaveNote = async () => {
-    if (!date) {
+    if (!date) { // date теперь из useLoaderData
       setError('Невозможно сохранить заметку без даты.');
       return;
     }
@@ -67,7 +52,8 @@ const NoteDetailsPage: React.FC = () => {
       }
       // Опционально: показать сообщение об успехе или перенаправить
       console.log('Заметка сохранена:', savedNote);
-      // navigate(-1); // Вернуться на предыдущую страницу после сохранения
+      // Перезагружаем данные через loader, чтобы обновить initialNote
+      navigate('.', { replace: true });
     } catch (err: any) {
       console.error('Error saving note:', err);
       setError(err.message || 'Не удалось сохранить заметку.');
@@ -76,9 +62,10 @@ const NoteDetailsPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return <div className="p-4">Загрузка данных заметки...</div>;
-  }
+  // Локальный индикатор загрузки удален
+  // if (isLoading) {
+  //   return <div className="p-4">Загрузка данных заметки...</div>;
+  // }
 
   return (
     <div className="p-4 flex flex-col h-screen bg-background text-text-primary">
@@ -110,7 +97,7 @@ const NoteDetailsPage: React.FC = () => {
       />
       <button
         onClick={handleSaveNote}
-        disabled={isSaving || isLoading}
+        disabled={isSaving} // isLoading удален из условия disabled
         className="mt-4 w-full bg-accent hover:bg-accent-hover text-white font-bold py-3 px-4 rounded-md bg-green-500 disabled:opacity-50"
       >
         {isSaving ? 'Сохранение...' : 'Сохранить заметку'}

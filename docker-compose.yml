@@ -9,7 +9,7 @@ services:
       - ./back/data:/app/data # Привязка папки для сохранения данных SQLite
     environment:
       NODE_ENV: production
-    command: sh -c "npm run migrate:latest && npm start"
+    command: sh -c "npm run migrate:latest && node index.js"
     restart: always
 
   front:

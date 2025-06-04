@@ -302,3 +302,32 @@ h2 { /* Общие стили для h2, если они все еще нужн�
     padding: 0 20px;
   }
 }
+/* Стили для PageLoader анимации */
+.loader-visible {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: auto; /* Разрешаем события мыши, когда лоадер видим */
+}
+
+.loader-hidden {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none; /* Запрещаем события мыши, когда лоадер скрыт */
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation-name: fadeInUp;
+  animation-duration: 0.8s;
+  animation-timing-function: ease-out;
+  /* animation-fill-mode: forwards; */
+}

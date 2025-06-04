@@ -118,7 +118,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
                         </div>
 
 
-                        <div className="p-3 rounded-lg bg-emerald-100 shadow-sm">
+                        <div className="p-3 rounded-lg bg-green-200 shadow-sm">
                             <h4 className="text-md font-bold text-emerald-800 mb-2">Доход:</h4>
                             <div className="flex justify-between items-center gap-2 w-full text-sm">
                                 <p className="text-emerald-700 mb-0">

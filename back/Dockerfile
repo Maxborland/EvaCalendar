@@ -1,17 +1,55 @@
-FROM node:20-alpine
+# Этап сборки (builder)
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Установка системных зависимостей, необходимых для сборки
+RUN apk update && \
+    apk add --no-cache python3 make g++ ca-certificates && \
+    update-ca-certificates && \
+    rm -rf /var/cache/apk/*
+
 COPY package*.json ./
 
-RUN apk update && apk add --no-cache python3 make g++ ca-certificates
+# Установка только производственных зависимостей и очистка кеша npm
+RUN npm ci --only=production && npm cache clean --force
 
-# Обновляем корневые сертификаты
-RUN update-ca-certificates
+COPY db.cjs knexfile.cjs index.js pm2.config.js babel.config.js ./
+COPY controllers ./controllers
+COPY middleware ./middleware
+COPY migrations ./migrations
+COPY seeds ./seeds
+COPY services ./services
+COPY utils ./utils
+# Копируем только необходимые для работы приложения файлы и директории
+# COPY db.cjs knexfile.cjs index.js pm2.config.js babel.config.js ./
+# COPY controllers ./controllers
+# COPY middleware ./middleware
+# COPY migrations ./migrations
+# COPY seeds ./seeds
+# COPY services ./services
+# COPY utils ./utils
 
-RUN npm install
 
-COPY . .
+# Этап выполнения (runner)
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Копируем необходимые артефакты из этапа сборки
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/db.cjs ./db.cjs
+COPY --from=builder /app/knexfile.cjs ./knexfile.cjs
+COPY --from=builder /app/index.js ./index.js
+# COPY --from=builder /app/pm2.config.js ./pm2.config.js # Не копируем, т.к. CMD ["node", "index.js"]
+# COPY --from=builder /app/babel.config.js ./babel.config.js # Предполагаем, что babel не нужен в runtime
+COPY --from=builder /app/controllers ./controllers
+COPY --from=builder /app/middleware ./middleware
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/seeds ./seeds
+COPY --from=builder /app/services ./services
+COPY --from=builder /app/utils ./utils
 
 # При использовании SQLite, база данных будет создана в VOLUME, если она не существует.
 # Это позволит сохранять данные даже при пересоздании контейнера.
@@ -19,4 +57,5 @@ VOLUME /app/data
 
 EXPOSE 3001
 
-CMD ["npm", "start"]
+# Запуск приложения напрямую через node
+CMD ["node", "index.js"]
