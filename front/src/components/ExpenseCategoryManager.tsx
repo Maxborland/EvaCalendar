@@ -23,7 +23,7 @@ const ExpenseCategoryManager: React.FC = () => {
       const data = await getExpenseCategories();
       setCategories(data);
     } catch (error) {
-      console.error('Ошибка при загрузке категорий расходов:', error);
+      // Ошибка при загрузке категорий расходов
     }
   };
 
@@ -44,7 +44,7 @@ const ExpenseCategoryManager: React.FC = () => {
       setNewCategoryName('');
       fetchCategories();
     } catch (error) {
-      console.error('Ошибка при создании категории:', error);
+      // Ошибка при создании категории
       if ((error as any)?.response?.data?.message === 'Category with this name already exists') {
         alert('Категория с таким названием уже существует (проверка на сервере).');
       }
@@ -69,12 +69,6 @@ const ExpenseCategoryManager: React.FC = () => {
       await updateExpenseCategory(editingCategory.uuid, editingCategory.categoryName);
       setEditingCategory(null);
       fetchCategories();
-
-      // Обновление категорий в задачах теперь не требуется здесь,
-      // так как UUID категории не меняется, и expenceTypeId в задачах остается корректным.
-      // Отображение актуального имени категории в задачах должно происходить
-      // за счет обновления списка категорий (через fetchCategories()) и последующего
-      // корректного маппинга expenceTypeId на имя категории в компонентах, отображающих задачи.
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.message) {
         const errorMessage = error.response.data.message;
@@ -84,7 +78,7 @@ const ExpenseCategoryManager: React.FC = () => {
           alert(`Ошибка: ${errorMessage}`);
         }
       } else {
-        console.error('Ошибка при обновлении категории:', error);
+        // Ошибка при обновлении категории
       }
     }
   };
@@ -93,7 +87,7 @@ const ExpenseCategoryManager: React.FC = () => {
     try {
       const categoryToDelete = categories.find(cat => cat.uuid === uuid);
       if (!categoryToDelete) {
-        console.error('Категория для удаления не найдена');
+        // Категория для удаления не найдена
         return;
       }
       const tasksResponse = await getTasksByCategory(categoryToDelete.uuid);
@@ -102,7 +96,7 @@ const ExpenseCategoryManager: React.FC = () => {
         return;
       }
     } catch (error) {
-      console.error('Ошибка при проверке связанных задач:', error);
+      // Ошибка при проверке связанных задач
       alert('Произошла ошибка при проверке связанных задач. Попробуйте еще раз.');
       return;
     }
@@ -113,7 +107,7 @@ const ExpenseCategoryManager: React.FC = () => {
       await deleteExpenseCategory(uuid);
       fetchCategories();
     } catch (error) {
-      console.error('Ошибка при удалении категории:', error);
+      // Ошибка при удалении категории
       alert('Ошибка при удалении категории. Пожалуйста, попробуйте еще раз.');
     }
   };

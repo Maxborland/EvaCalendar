@@ -19,9 +19,6 @@ const NoteDetailsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // fetchNoteDetails и связанный useEffect удалены
-
-  // Обновляем состояние, если данные из loader'а изменились
   useEffect(() => {
     setNoteContent(initialNote?.content || '');
     setNoteUuid(initialNote?.uuid || null);
@@ -50,22 +47,14 @@ const NoteDetailsPage: React.FC = () => {
           setNoteUuid(savedNote.uuid); // Сохраняем uuid новой заметки
         }
       }
-      // Опционально: показать сообщение об успехе или перенаправить
-      console.log('Заметка сохранена:', savedNote);
-      // Перезагружаем данные через loader, чтобы обновить initialNote
       navigate('.', { replace: true });
     } catch (err: any) {
-      console.error('Error saving note:', err);
+      // Error saving note
       setError(err.message || 'Не удалось сохранить заметку.');
     } finally {
       setIsSaving(false);
     }
   };
-
-  // Локальный индикатор загрузки удален
-  // if (isLoading) {
-  //   return <div className="p-4">Загрузка данных заметки...</div>;
-  // }
 
   return (
     <div className="p-4 flex flex-col h-screen bg-background text-text-primary">

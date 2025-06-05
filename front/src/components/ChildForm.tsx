@@ -49,14 +49,13 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
       setSuggestions(response.data.suggestions.map((s: any) => s.value));
       setShowSuggestions(true);
     } catch (error) {
-      console.error('Error fetching suggestions:', error);
+      // Error fetching suggestions
       setSuggestions([]);
       setShowSuggestions(false);
     }
   };
 
   useEffect(() => {
-    // Обновляем formData при изменении initialChild (например, открытие формы для другого ребенка или предзаполнение имени)
     setFormData(
       initialChild || {
         childName: '',

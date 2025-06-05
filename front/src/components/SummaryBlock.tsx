@@ -30,7 +30,7 @@ const SummaryBlock: React.FC<SummaryBlockProps> = ({
                 const data = await getSummaryByWeek(weekStartDate);
                 setSummaryData(data);
             } catch (err) {
-                console.error("Failed to fetch week summary:", err);
+                // Failed to fetch week summary
                 setError("Не удалось загрузить сводку за неделю.");
                 setSummaryData({
                     monthlySummary: { totalIncome: 0, totalExpenses: 0, balance: 0, calculatedForMonth: '' },

@@ -111,7 +111,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       const fetchedChildren = await getAllChildren();
       setChildren(fetchedChildren);
     } catch (error) {
-      console.error('Ошибка при загрузке детей:', error);
+      // Ошибка при загрузке детей
       toast.error('Ошибка при загрузке списка детей.');
     }
   }, []);
@@ -238,7 +238,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         const fetchedCategories = await getExpenseCategories();
         setCategories(fetchedCategories);
       } catch (error) {
-        console.error('Ошибка при загрузке категорий:', error);
+        // Ошибка при загрузке категорий
         toast.error('Ошибка при загрузке списка категорий.');
       }
     };
@@ -409,7 +409,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       setSelectedChildUuid(savedOrUpdatedChild.uuid);
     } catch (error) {
       toast.error('Ошибка при сохранении карточки ребенка.');
-      console.error("Ошибка при сохранении карточки ребенка из TaskForm:", error);
+      // Ошибка при сохранении карточки ребенка из TaskForm
     }
   };
 
@@ -517,7 +517,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     }
   };
 
-  if (!isOpen && !isClosing) { // Не рендерим, только если не открыто И не в процессе закрытия
+  if (!isOpen && !isClosing) {
     return null;
   }
 
@@ -622,7 +622,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
                     placeholder="0"
                   />
                 </div>
-                {/* Поле "Ставка в час" скрыто согласно макету */}
                 <div className="form-group">
                   <label htmlFor="amount" className="label">Заработано:</label>
                   <input
@@ -722,7 +721,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
 
   const modalRoot = document.getElementById('modal-root');
   if (!modalRoot) {
-    console.error("Элемент с id 'modal-root' не найден в DOM.");
+    // Элемент с id 'modal-root' не найден в DOM.
     return null;
   }
   return ReactDOM.createPortal(modalContent, modalRoot);

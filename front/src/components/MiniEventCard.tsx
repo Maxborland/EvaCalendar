@@ -58,11 +58,9 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
     }
   } else if (event.itemType === 'expense') {
     const expense = event as Task;
-    // Для расходов время обычно не указывается, оставляем &nbsp;
     eventTitleText = `${expense.title || 'Расход'}${expense.amount ? ` (${expense.amount.toFixed(2)})` : ''}${expense.expenseCategoryName ? ` [${expense.expenseCategoryName}]` : ''}`;
   } else if (event.itemType === 'note') {
     const note = event as Note;
-    // Для заметок время обычно не указывается, оставляем &nbsp;
     eventTitleText = note.content || 'Заметка';
   }
 

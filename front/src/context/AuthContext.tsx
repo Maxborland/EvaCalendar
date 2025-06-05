@@ -34,28 +34,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const logout = useCallback(async () => { // Сделать async
-    console.log('AuthContext: logout called. Attempting to call API.');
+  const logout = useCallback(async () => {
     try {
-      // Вызов API для инвалидации сессии на бэкенде
       await api.post('/auth/logout');
-      console.log('AuthContext: API call /api/auth/logout successful.');
     } catch (error) {
-      console.error('AuthContext: Failed to call /api/auth/logout or error during logout API call:', error);
+      // Failed to call /api/auth/logout or error during logout API call
     } finally {
-      // Эта часть остается - очистка локального состояния
-      console.log('AuthContext: Clearing local state (token, user, etc.).');
       localStorage.removeItem('token');
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
     }
-  }, []); // Зависимости useCallback остаются пустыми, если api не меняется
+  }, []);
 
   useEffect(() => {
-    // Устанавливаем обработчик ошибок аутентификации при монтировании компонента
-    // или при изменении функции logout
-    initializeAuthCallbackForApi(logout); // Передаем функцию logout в сервис API
+    initializeAuthCallbackForApi(logout);
 
     const verifyToken = async () => {
       const storedToken = localStorage.getItem('token');
@@ -73,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setToken(storedToken);
           setIsAuthenticated(true);
         } catch (error) {
-          console.error('Failed to verify token:', error);
+          // Failed to verify token
           localStorage.removeItem('token');
           setUser(null);
           setToken(null);
@@ -82,12 +75,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsLoading(false);
         }
       } else {
-        setIsLoading(false); // Нет токена, загрузка завершена
+        setIsLoading(false);
       }
     };
 
     verifyToken();
-  }, [logout]); // Добавляем logout в зависимости useEffect
+  }, [logout]);
 
   const login = async (newToken: string) => {
     setIsLoading(true);
@@ -102,19 +95,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(newToken);
       setIsAuthenticated(true);
     } catch (error) {
-      console.error('Login failed:', error);
+      // Login failed
       localStorage.removeItem('token');
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
-      // Можно пробросить ошибку дальше, если нужно обработать в компоненте
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
-
-  // const logout была перемещена выше и обернута в useCallback
 
   return (
     <AuthContext.Provider value={{ user, token, isAuthenticated, isLoading, login, logout }}>

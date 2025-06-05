@@ -5,17 +5,14 @@ const { v4: uuidv4 } = require('uuid');
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  // Удаляем существующие записи
   await knex('children').del();
 
-  // Получаем uuid администратора
   const adminUser = await knex('users').where({ email: 'admin@example.com' }).first();
   if (!adminUser) {
     throw new Error('Admin user with email admin@example.com not found. Please run the user seeds first.');
   }
   const adminUserUuid = adminUser.uuid;
 
-  // Вставляем новые записи
   await knex('children').insert([
     {
       uuid: uuidv4(),

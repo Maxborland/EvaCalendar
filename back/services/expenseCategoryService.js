@@ -12,7 +12,6 @@ class ExpenseCategoryService {
                 }
             }
             const newUuid = uuidv4();
-            // Добавляем user_uuid при создании
             const [createdCategory] = await knex('expense_categories')
                 .insert({ uuid: newUuid, user_uuid: userId, ...categoryData })
                 .returning('*');
@@ -25,7 +24,6 @@ class ExpenseCategoryService {
 
     async getAllExpenseCategories(userId) {
         try {
-            // Фильтруем по user_uuid
             return await knex('expense_categories').where({ user_uuid: userId }).select('*');
         } catch (error) {
             console.error('Error getting all expense categories:', error);
@@ -35,7 +33,6 @@ class ExpenseCategoryService {
 
     async getExpenseCategoryById(uuid, userId) {
         try {
-            // Фильтруем по uuid и user_uuid
             return await knex('expense_categories').where({ uuid, user_uuid: userId }).first();
         } catch (error) {
             console.error('Error getting expense category by UUID:', error);
@@ -45,20 +42,17 @@ class ExpenseCategoryService {
 
     async updateExpenseCategory(uuid, categoryData, userId) {
         try {
-            // Сначала проверяем, существует ли категория и принадлежит ли она пользователю
             const existingCategory = await knex('expense_categories').where({ uuid, user_uuid: userId }).first();
             if (!existingCategory) {
-                return null; // Контроллер вернет 404
+                return null;
             }
 
             const requiredFields = ['categoryName'];
             for (const field of requiredFields) {
-                // Проверяем только если поле есть в categoryData и оно пустое
                 if (categoryData.hasOwnProperty(field) && !categoryData[field]) {
                     throw ApiError.badRequest(`${field} is required`);
                 }
             }
-            // Обновляем только для данного пользователя
             const [updatedCategory] = await knex('expense_categories')
                 .where({ uuid, user_uuid: userId })
                 .update(categoryData)
@@ -72,7 +66,6 @@ class ExpenseCategoryService {
 
     async deleteExpenseCategory(uuid, userId) {
         try {
-            // Удаляем только для данного пользователя
             const deletedCount = await knex('expense_categories').where({ uuid, user_uuid: userId }).del();
             return deletedCount > 0;
         } catch (error) {

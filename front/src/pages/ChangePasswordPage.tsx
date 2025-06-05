@@ -58,7 +58,7 @@ const ChangePasswordPage: React.FC = () => {
       else {
         setError('Произошла ошибка при смене пароля.');
       }
-      console.error('Change password error:', err);
+      // Change password error
     } finally {
       setIsLoading(false);
     }

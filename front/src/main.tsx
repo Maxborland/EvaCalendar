@@ -6,20 +6,19 @@ import { createRoot } from 'react-dom/client';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import App from './App.tsx';
-import LoadingAnimation from './components/LoadingAnimation.tsx'; // Импортируем компонент анимации
-import { AuthProvider } from './context/AuthContext.tsx'; // Импортируем AuthProvider
+import LoadingAnimation from './components/LoadingAnimation.tsx';
+import { AuthProvider } from './context/AuthContext.tsx';
 import './index.css';
 
-// Создаем "MultiBackend"
 const MyMultiBackend = MultiBackend;
 
 const backends = [
   {
-    id: 'html5', // Добавлен id
+    id: 'html5',
     backend: HTML5Backend
   },
   {
-    id: 'touch', // Добавлен id
+    id: 'touch',
     backend: TouchBackend,
     options: { enableTouchEvents: true },
     preview: true,
@@ -41,37 +40,33 @@ createRoot(document.getElementById('root')!).render(
   </>,
 );
 
-// Render LoadingAnimation into the splashscreen div
 const splashScreenElement = document.getElementById('splashscreen');
 if (splashScreenElement) {
   const splashRoot = createRoot(splashScreenElement);
   splashRoot.render(<LoadingAnimation />);
 }
 
-// Hide splashscreen after app is loaded
-const splashScreen = document.getElementById('splashscreen'); // Переменная splashScreen уже объявлена выше, но здесь она нужна для логики скрытия
+const splashScreen = document.getElementById('splashscreen');
 if (splashScreen) {
-  // Wait for a bit to ensure content is loaded, then fade out
   setTimeout(() => {
     splashScreen.style.opacity = '0';
     splashScreen.style.transition = 'opacity 0.5s ease-out';
     setTimeout(() => {
-      if (splashScreen) { // Дополнительная проверка, так как splashScreenElement мог быть удален
+      if (splashScreen) {
         splashScreen.style.display = 'none';
       }
-    }, 500); // Corresponds to the transition duration
-  }, 1500); // Увеличим задержку, чтобы анимация успела показаться
+    }, 500);
+  }, 1500);
 }
 
-// Register Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        // ServiceWorker registration successful
       })
       .catch(error => {
-        console.log('ServiceWorker registration failed: ', error);
+        // ServiceWorker registration failed
       });
   });
 }

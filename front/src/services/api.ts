@@ -280,10 +280,7 @@ export const getDailySummary = async (date: string): Promise<{ totalEarned: numb
     const response = await api.get(`/summary/daily?date=${date}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching daily summary:', error);
-    // Возвращаем null или выбрасываем ошибку в зависимости от требований к обработке ошибок
-    // В данном случае, чтобы соответствовать возможному null из Promise.resolve(null) ранее, вернем null
-    // Если API всегда должен возвращать данные или ошибку, то лучше throw error;
+    // Error fetching daily summary
     return null;
   }
 };

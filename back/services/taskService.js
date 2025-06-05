@@ -19,13 +19,12 @@ const taskService = {
 
         const dataForDb = {
             uuid: uuidv4(),
-            user_uuid: userId, // Добавляем user_uuid
+            user_uuid: userId,
             title: taskData.title,
             type: taskData.taskType,
             dueDate: taskData.dueDate,
             time: taskData.time || null,
             comments: taskData.comments || null,
-            // Обнуляем поля по умолчанию, чтобы избежать сохранения старых данных при смене типа
             child_uuid: null,
             hoursWorked: null,
             amountEarned: null,
@@ -39,7 +38,6 @@ const taskService = {
             dataForDb.amountEarned = taskData.amount || null;
 
             if (dataForDb.child_uuid && !(await validateExistence('children', dataForDb.child_uuid))) {
-                console.error('[taskService.createTask] Validation failed for childId:', dataForDb.child_uuid);
                 throw ApiError.badRequest('Child not found');
             }
         } else if (taskData.taskType === 'expense') {
@@ -47,7 +45,6 @@ const taskService = {
             dataForDb.expense_category_uuid = taskData.expenseTypeId || null;
 
             if (dataForDb.expense_category_uuid && !(await validateExistence('expense_categories', dataForDb.expense_category_uuid))) {
-                console.error('[taskService.createTask] Validation failed for expense_category_uuid (categoryId):', dataForDb.expense_category_uuid);
                 throw ApiError.badRequest('Expense category not found by categoryId');
             }
         } else {
@@ -57,12 +54,10 @@ const taskService = {
         const newTask = dataForDb;
         try {
             const result = await knex('tasks').insert(newTask);
-            // Knex insert: result - кол-во строк для большинства БД, или массив ID для PostgreSQL с .returning().
-            // Ошибка обычно вызывает исключение.
             if (Array.isArray(result) && result.length === 0 && newTask) {
-                 console.warn('[taskService.createTask] Knex insert result is an empty array, task might not have been inserted if returning IDs was expected.');
+                 // console.warn('[taskService.createTask] Knex insert result is an empty array, task might not have been inserted if returning IDs was expected.'); // Удалено для уменьшения логирования
             } else if (typeof result === 'number' && result === 0) {
-                 console.warn('[taskService.createTask] Knex insert result is 0, task might not have been inserted.');
+                 // console.warn('[taskService.createTask] Knex insert result is 0, task might not have been inserted.'); // Удалено для уменьшения логирования
             }
             return newTask;
         } catch (error) {
@@ -73,7 +68,7 @@ const taskService = {
 
     async getAllTasks(userId) {
         return knex('tasks')
-            .where('tasks.user_uuid', userId) // Фильтруем по user_uuid
+            .where('tasks.user_uuid', userId)
             .select(
                 'tasks.*',
                 'children.childName as childName',
@@ -90,7 +85,7 @@ const taskService = {
     async getTaskById(uuid, userId) {
         const task = await knex('tasks')
             .where('tasks.uuid', uuid)
-            .andWhere('tasks.user_uuid', userId) // Фильтруем по user_uuid
+            .andWhere('tasks.user_uuid', userId)
             .select(
                 'tasks.*',
                 'children.childName as childName',
@@ -103,16 +98,12 @@ const taskService = {
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
             .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid')
             .first();
-        if (task) {
-        } else {
-        }
         return task;
     },
 
     async updateTask(uuid, taskData, userId) {
         const dataToUpdate = {};
 
-        // Сначала проверим, существует ли задача и принадлежит ли она пользователю
         const existingTask = await knex('tasks').where({ uuid, user_uuid: userId }).first();
         if (!existingTask) {
             throw ApiError.notFound('Task not found or access denied');
@@ -135,15 +126,12 @@ const taskService = {
         if (taskData.hasOwnProperty('time')) dataToUpdate.time = taskData.time;
         if (taskData.hasOwnProperty('comments')) dataToUpdate.comments = taskData.comments;
 
-        // Определяем текущий тип задачи, если он не меняется, или новый, если меняется
-        const currentTaskType = dataToUpdate.type || existingTask.type; // Используем тип из existingTask
+        const currentTaskType = dataToUpdate.type || existingTask.type;
 
         if (!currentTaskType) {
-             // Эта проверка теперь избыточна из-за existingTask, но оставим на всякий случай
              throw ApiError.notFound('Task type is missing');
         }
 
-        // Сбрасываем поля перед установкой новых, если тип задачи меняется или это первое обновление полей типа
         if (taskData.hasOwnProperty('taskType')) {
             dataToUpdate.child_uuid = null;
             dataToUpdate.hoursWorked = null;
@@ -159,10 +147,8 @@ const taskService = {
             if (taskData.hasOwnProperty('amount')) dataToUpdate.amountEarned = taskData.amount;
 
             if (dataToUpdate.child_uuid && !(await validateExistence('children', dataToUpdate.child_uuid))) {
-                console.error('[taskService.updateTask] Validation failed for childId:', dataToUpdate.child_uuid);
                 throw ApiError.badRequest('Child not found');
             }
-            // Если тип 'income', убедимся, что поля расходов обнулены, если они не были явно переданы для обнуления
              if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = null;
              if (!taskData.hasOwnProperty('categoryId')) dataToUpdate.expense_category_uuid = null;
 
@@ -172,10 +158,8 @@ const taskService = {
             if (taskData.hasOwnProperty('categoryId')) dataToUpdate.expense_category_uuid = taskData.categoryId;
 
             if (dataToUpdate.expense_category_uuid && !(await validateExistence('expense_categories', dataToUpdate.expense_category_uuid))) {
-                console.error('[taskService.updateTask] Validation failed for expense_category_uuid (categoryId):', dataToUpdate.expense_category_uuid);
                 throw ApiError.badRequest('Expense category not found by categoryId');
             }
-             // Если тип 'expense', убедимся, что поля доходов обнулены
              if (!taskData.hasOwnProperty('childId')) dataToUpdate.child_uuid = null;
              if (!taskData.hasOwnProperty('hoursWorked')) dataToUpdate.hoursWorked = null;
              if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountEarned = null;
@@ -184,8 +168,6 @@ const taskService = {
             throw ApiError.badRequest(`Invalid taskType: ${taskData.taskType}`);
         }
 
-        // Удаляем поля, которые не должны напрямую обновляться в таблице tasks
-        // (например, если фронтенд по ошибке прислал 'category' вместо 'categoryId')
         const disallowedFields = ['category', 'child_id', 'child_name', 'expenseCategoryName', 'hourlyRate', 'amount', 'taskType'];
         for (const field of disallowedFields) {
             if (dataToUpdate.hasOwnProperty(field)) {
@@ -198,11 +180,10 @@ const taskService = {
 
 
         if (Object.keys(dataToUpdate).length === 0) {
-            // Нет полей для обновления, но задача существует (проверено в начале)
             return 0;
         }
 
-        const updated = await knex('tasks').where({ uuid, user_uuid: userId }).update(dataToUpdate); // Фильтруем по user_uuid
+        const updated = await knex('tasks').where({ uuid, user_uuid: userId }).update(dataToUpdate);
         return updated;
     },
 
@@ -221,7 +202,7 @@ async getTasksByCategoryUuid(categoryUuid, userId) {
         }
 
         return knex('tasks')
-            .where({ expense_category_uuid: category.uuid, user_uuid: userId }) // Фильтруем по user_uuid
+            .where({ expense_category_uuid: category.uuid, user_uuid: userId })
             .select(
                 'tasks.*',
                 'children.childName as childName',
@@ -230,18 +211,17 @@ async getTasksByCategoryUuid(categoryUuid, userId) {
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid');
     },
     async deleteTask(uuid, userId) {
-        const deleted = await knex('tasks').where({ uuid, user_uuid: userId }).del(); // Фильтруем по user_uuid
+        const deleted = await knex('tasks').where({ uuid, user_uuid: userId }).del();
         return deleted;
     },
 
     async getTasksByDate(dateString, userId) {
-        // Валидация формата даты (простая проверка, можно улучшить с помощью библиотек типа moment.js или date-fns)
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
             throw ApiError.badRequest('Invalid date format. Please use YYYY-MM-DD.');
         }
         const tasks = await knex('tasks')
             .where('tasks.dueDate', dateString)
-            .andWhere('tasks.user_uuid', userId) // Фильтруем по user_uuid
+            .andWhere('tasks.user_uuid', userId)
             .select(
                 'tasks.*',
                 'children.childName as childName',

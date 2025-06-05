@@ -8,8 +8,8 @@ const {
   getUserById,
   updateUser,
   deleteUser,
-  changeUserRole, // Добавляем новую функцию
-  adminChangeUserPassword // Добавляем новую функцию
+  changeUserRole,
+  adminChangeUserPassword
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -36,26 +36,26 @@ router.post('/', protect, authorize(['admin']), createUser);
 // @route   GET /api/users/:uuid
 // @desc    Get user by UUID
 // @access  Private (Admin)
-router.get('/:uuid', protect, authorize(['admin']), getUserById); // Используем :uuid
+router.get('/:uuid', protect, authorize(['admin']), getUserById);
 
 // @route   PUT /api/users/:uuid
 // @desc    Update user by UUID
 // @access  Private (Admin)
-router.put('/:uuid', protect, authorize(['admin']), updateUser); // Используем :uuid
+router.put('/:uuid', protect, authorize(['admin']), updateUser);
 
 // @route   DELETE /api/users/:uuid
 // @desc    Delete user by UUID
 // @access  Private (Admin)
-router.delete('/:uuid', protect, authorize(['admin']), deleteUser); // Используем :uuid
+router.delete('/:uuid', protect, authorize(['admin']), deleteUser);
 
 // @route   PUT /api/users/:userUuid/role
 // @desc    Change user role by UUID
 // @access  Private (Admin)
-router.put('/:userUuid/role', protect, authorize(['admin']), changeUserRole); // Используем :userUuid
+router.put('/:userUuid/role', protect, authorize(['admin']), changeUserRole);
 
 // @route   PUT /api/users/:userUuid/password
 // @desc    Admin changes user password by UUID
 // @access  Private (Admin)
-router.put('/:userUuid/password', protect, authorize(['admin']), adminChangeUserPassword); // Используем :userUuid
+router.put('/:userUuid/password', protect, authorize(['admin']), adminChangeUserPassword);
 
 module.exports = router;

@@ -45,7 +45,6 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
         setInputValue(selectedChild.childName);
         setSelectedChildNameState(selectedChild.childName);
       } else {
-        // Если childId есть, но ребенка нет в списке (маловероятно, но возможно)
         setInputValue('');
         setSelectedChildNameState(null);
       }
@@ -77,7 +76,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
       child.childName.toLowerCase().includes(lowercasedInput)
     );
     setFilteredChildren(sortChildrenByName(filtered));
-    setShowSuggestions(true); // Всегда показываем, если есть ввод, даже если filtered пуст (для "не найдено")
+    setShowSuggestions(true);
   };
 
   const handleSuggestionClick = (child: Child) => {
@@ -91,9 +90,6 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   const handleCreateNewChildClick = () => {
     if (inputValue.trim()) {
       onAddNewChildRequest(inputValue.trim());
-      // Не очищаем inputValue здесь, чтобы пользователь видел, какое имя он предложил
-      // Очистка или дальнейшие действия должны быть обработаны в родительском компоненте
-      // после фактического создания ребенка.
       setShowSuggestions(false);
       setFilteredChildren([]);
     }
@@ -101,7 +97,6 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
 
   const handleClickOutside = useCallback((event: MouseEvent) => {
     if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
-      // Дополнительная проверка, чтобы не закрывать, если клик был по инпуту
       if ((event.target as HTMLElement).tagName.toLowerCase() !== 'input') {
           setShowSuggestions(false);
       }
@@ -116,10 +111,9 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   }, [handleClickOutside]);
 
   const handleBlur = () => {
-    // Небольшая задержка перед скрытием, чтобы успел сработать клик по предложению
     setTimeout(() => {
         if (selectedChildNameState && inputValue !== selectedChildNameState && !showSuggestions) {
-            // console.log("User changed input but didn't select or create, potential revert needed or clear state");
+            // User changed input but didn't select or create, potential revert needed or clear state
         }
     }, 150);
   };
@@ -159,7 +153,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
               setShowSuggestions(true);
             } else {
               setFilteredChildren([]);
-              setShowSuggestions(true); // Показываем, чтобы отобразить "Дети не найдены" или кнопку "Создать"
+              setShowSuggestions(true);
             }
           }}
           onBlur={handleBlur}

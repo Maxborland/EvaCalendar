@@ -57,7 +57,7 @@ describe('Expense Category API', () => {
 
     const res = await request(app)
       .delete(`/expense-categories/${uuidToDelete}`);
-    expect(res.statusCode).toEqual(204); // Контроллер возвращает 204 при успешном удалении
+    expect(res.statusCode).toEqual(204);
 
     const getRes = await request(app).get(`/expense-categories/${uuidToDelete}`);
     expect(getRes.statusCode).toEqual(404);

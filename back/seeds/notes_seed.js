@@ -1,7 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 
 exports.seed = async function(knex) {
-  // Получаем uuid администратора
   const adminUser = await knex('users').where({ email: 'admin@example.com' }).first();
   if (!adminUser) {
     throw new Error('Admin user with email admin@example.com not found. Make sure to run the 01_add_admin_user.js seed first.');

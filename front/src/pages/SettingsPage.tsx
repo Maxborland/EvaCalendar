@@ -11,12 +11,7 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="text-white flex flex-col min-h-screen">
-      <TopNavigator title="Настройки" showButtons={false} /> {/* Используем TopNavigator */}
-      {/* <header className="bg-slate-800 shadow-md">
-        <div className="container mx-auto px-4 flex justify-start h-16">
-          <h2 className="text-xl font-semibold flex items-center h-full">Настройки</h2>
-        </div>
-      </header> */} {/* Старый header закомментирован или удален */}
+      <TopNavigator title="Настройки" showButtons={false} />
 
       <main className="flex-grow p-6 pb-24">
         <nav className="space-y-4">
@@ -38,7 +33,6 @@ const SettingsPage: React.FC = () => {
               Настройка и управление карточками детей.
             </p>
           </Link>
-          {/* Другие ссылки на настройки могут быть добавлены здесь */}
         </nav>
         <div className="mt-8">
           <Outlet />

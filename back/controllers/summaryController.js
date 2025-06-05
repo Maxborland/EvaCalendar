@@ -28,7 +28,7 @@ router.get('/summary-by-week', validateSummaryByWeekStart, asyncHandler(async (r
     return next(ApiError.badRequest('Ошибки валидации', errors.array()));
   }
   const { weekStartDate } = req.query;
-  const user_uuid = req.user.uuid; // Извлекаем user_uuid
+  const user_uuid = req.user.uuid;
   const monthlySummary = await summaryService.getSummaryForMonthByWeekStart(weekStartDate, user_uuid);
 
   const today = new Date();
@@ -43,8 +43,8 @@ router.get('/summary-by-week', validateSummaryByWeekStart, asyncHandler(async (r
       calculatedForMonth: monthlySummary.calculatedForMonth
     },
     dailySummary: {
-      totalIncome: dailySummaryData.totalEarned, // В getDailySummary это totalEarned
-      totalExpenses: dailySummaryData.totalSpent, // В getDailySummary это totalSpent
+      totalIncome: dailySummaryData.totalEarned,
+      totalExpenses: dailySummaryData.totalSpent,
       calculatedForDate: todayString
     }
   };
@@ -58,7 +58,7 @@ router.get('/daily', validateDailySummary, asyncHandler(async (req, res, next) =
     return next(ApiError.badRequest('Ошибки валидации', errors.array()));
   }
   const { date } = req.query;
-  const user_uuid = req.user.uuid; // Извлекаем user_uuid
+  const user_uuid = req.user.uuid;
   const summary = await summaryService.getDailySummary(date, user_uuid);
   res.status(200).json(summary);
 }));
@@ -70,7 +70,7 @@ router.get('/month/:year/:month', validateMonthlySummary, asyncHandler(async (re
       return next(ApiError.badRequest('Ошибки валидации', errors.array()));
     }
     const { year, month } = req.params;
-    const user_uuid = req.user.uuid; // Извлекаем user_uuid
+    const user_uuid = req.user.uuid;
     const summary = await summaryService.getMonthlySummary(parseInt(year), parseInt(month), user_uuid);
     res.status(200).json(summary);
 }));

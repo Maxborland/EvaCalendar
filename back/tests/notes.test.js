@@ -49,18 +49,17 @@ describe('Note API', () => {
       .post('/notes')
       .send({ ...baseNote, content: 'Заметка для обновления' });
     const uuidToUpdate = createRes.body.uuid;
-    const originalDate = createRes.body.date; // Сохраняем исходную дату
+    const originalDate = createRes.body.date;
 
     const updatedContent = 'Обновленное содержание заметки';
 
     const res = await request(app)
       .put(`/notes/${uuidToUpdate}`)
-      .send({ content: updatedContent }); // Отправляем только content, как и делает фронтенд
-      // Если бы мы отправили date, сервис бы его проигнорировал, но тест должен отражать реальное использование
+      .send({ content: updatedContent });
 
     expect(res.statusCode).toEqual(200);
     expect(res.body.content).toEqual(updatedContent);
-    expect(res.body.date).toEqual(originalDate); // Проверяем, что дата не изменилась
+    expect(res.body.date).toEqual(originalDate);
   });
 
   it('should delete a note', async () => {
@@ -86,7 +85,7 @@ describe('Note API', () => {
   it('should return 404 if note not found when updating', async () => {
     const res = await request(app)
       .put('/notes/00000000-0000-0000-0000-000000000000')
-      .send({ content: 'Попытка обновить несуществующую' }); // Отправляем только content
+      .send({ content: 'Попытка обновить несуществующую' });
     expect(res.statusCode).toEqual(404);
   });
 
@@ -102,10 +101,8 @@ describe('GET /notes/date/:dateString', () => {
     };
 
     beforeEach(async () => {
-      // Убедимся, что в базе нет заметки для этой даты перед тестом на "не найдено"
-      // и создаем заметку для теста на "найдено".
       await db('notes').where({ date: testDate }).del();
-      await request(app).post('/notes').send(noteForDate); // Затем создаем
+      await request(app).post('/notes').send(noteForDate);
     });
 
     it('should get a note by date if it exists', async () => {

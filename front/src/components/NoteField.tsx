@@ -27,7 +27,7 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
           setNoteContent('');
         }
       } catch (err: any) {
-        console.error('Error fetching note:', err);
+        // Error fetching note
         setError(err.message || 'Не удалось загрузить заметку.');
         setNoteContent('');
       } finally {
@@ -40,13 +40,11 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
 
   const handleNavigateToNoteDetails = () => {
       navigate(`/notes/${weekId}`);
-      console.log(`Переход к /notes/${weekId}`);
     };
 
   const getPreviewText = (text: string, maxLength: number = 60): string => {
     if (!text) return "Добавить заметку...";
     if (text.length <= maxLength) return text;
-    // Попробуем обрезать по последнему пробелу, чтобы не резать слова
     const trimmedText = text.substring(0, maxLength);
     const lastSpaceIndex = trimmedText.lastIndexOf(' ');
     if (lastSpaceIndex > 0 && text.length > maxLength) {
@@ -85,7 +83,7 @@ const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateToNoteDetails(); }}
           aria-label={noteContent ? `Просмотреть или изменить заметку: ${getPreviewText(noteContent)}` : "Добавить заметку"}
         >
-          <p className="truncate whitespace-pre-wrap"> {/* whitespace-pre-wrap для сохранения переносов строк в превью */}
+          <p className="truncate whitespace-pre-wrap">
             {getPreviewText(noteContent)}
           </p>
         </div>

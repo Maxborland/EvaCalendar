@@ -44,7 +44,6 @@ const LoginPage: React.FC = () => {
 
         if (response.status === 200 && response.data.token) {
           await login(response.data.token);
-          console.log('Успешный вход через AuthContext');
           navigate('/');
         } else {
           setServerError(response.data.message || 'Произошла ошибка при входе.');
@@ -57,7 +56,7 @@ const LoginPage: React.FC = () => {
         } else {
           setServerError('Не удалось подключиться к серверу или произошла неизвестная ошибка.');
         }
-        console.error('Ошибка входа:', error);
+        // Ошибка входа
       }
     }
   };

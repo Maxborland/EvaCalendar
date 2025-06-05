@@ -45,22 +45,16 @@ const ChildFormModal: React.FC<ChildFormModalProps> = ({
 
 
   const handleFormSave = (childDataFromForm: Child | Partial<Child>) => {
-    // В ChildForm onSave возвращает полные данные или Partial<Child>
-    // Нам нужно убедиться, что мы передаем правильный тип в onSubmit модального окна
     if (mode === 'create') {
       onSubmit(childDataFromForm as Omit<Child, 'uuid'>);
     } else if (mode === 'edit' && initialChildData?.uuid) {
-      // Для редактирования, ChildForm может вернуть Partial<Child>, но нам нужен Child с uuid
-      // Однако, ChildForm должен вернуть Child с uuid, если он был в initialChild
       onSubmit({ ...initialChildData, ...childDataFromForm } as Child);
     }
-    // handleClose(); // Закрытие модального окна должно происходить в родительском компоненте после успешного onSubmit
   };
 
   const handleDeleteClick = () => {
     if (mode === 'edit' && initialChildData?.uuid && onDelete) {
       onDelete(initialChildData.uuid);
-      // handleClose(); // Закрытие также в родительском компоненте
     }
   };
 
@@ -92,16 +86,12 @@ const ChildFormModal: React.FC<ChildFormModalProps> = ({
 
         <ChildForm {...childFormProps} />
 
-        {/* Кнопки управления модальным окном, если они не дублируют кнопки ChildForm */}
-        {/* Согласно UI/UX, кнопки "Отмена", "Добавить/Сохранить", "Удалить" должны быть здесь */}
-        {/* ChildForm будет модифицирован, чтобы не показывать свои кнопки, когда isEmbeddedInModal=true */}
         <div className="child-form-modal-actions">
           {mode === 'edit' && onDelete && initialChildData?.uuid && (
             <button type="button" className="btn btn-danger" onClick={handleDeleteClick}>
               Удалить
             </button>
           )}
-          {/* Заполнитель, чтобы кнопки "Отмена" и "Сохранить" были справа, если "Удалить" нет */}
           {!(mode === 'edit' && onDelete && initialChildData?.uuid) && <div style={{ flexGrow: 1 }}></div>}
 
           <button type="button" className="btn btn-secondary" onClick={handleClose}>
@@ -126,7 +116,8 @@ const ChildFormModal: React.FC<ChildFormModalProps> = ({
 
   const modalRoot = document.getElementById('modal-root');
   if (!modalRoot) {
-    console.error("Элемент с id 'modal-root' не найден в DOM.");
+    // Элемент с id 'modal-root' не найден в DOM.
+    // Это критическая ошибка, но обработка должна быть выше или приложение не сможет использовать модальные окна.
     return null;
   }
   return ReactDOM.createPortal(modalContent, modalRoot);

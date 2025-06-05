@@ -9,14 +9,12 @@ interface LoadingAnimationProps {
 
 const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ speed = 1 }) => {
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);
-  console.log('[LoadingAnimation] Received speed prop:', speed);
 
   useEffect(() => {
     if (lottieRef.current) {
       lottieRef.current.setSpeed(speed);
-    } else {
     }
-  }, [speed]); // Зависимость только от speed
+  }, [speed]);
 
   return (
     <div className="flex flex-col justify-center items-center h-full">
@@ -32,8 +30,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ speed = 1 }) => {
           }}
         />
       </div>
-      {/* Новая надпись */}
-      <div className="mt-4 text-center text-green-700 text-2xl font-bold font-sans animate-fadeInUp"> {/* Стили для новой надписи */}
+      <div className="mt-4 text-center text-green-700 text-2xl font-bold font-sans animate-fadeInUp">
         Zyaka's Calendar
       </div>
     </div>

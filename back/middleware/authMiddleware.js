@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
-const knex = require('../db.cjs'); // Предполагаем, что db.cjs экспортирует настроенный экземпляр Knex
+const knex = require('../db.cjs');
 
-// Секретный ключ для JWT. Должен совпадать с ключом в authController.js.
 const JWT_SECRET = process.env.JWT_SECRET || 'YOUR_VERY_SECRET_KEY_REPLACE_LATER';
 
 const protect = async (req, res, next) => {
@@ -9,21 +8,16 @@ const protect = async (req, res, next) => {
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
-      // Получаем токен из заголовка
       token = req.headers.authorization.split(' ')[1];
 
-      // Верифицируем токен
       const decoded = jwt.verify(token, JWT_SECRET);
 
-      // Ищем пользователя в БД по UUID из токена (decoded.userId теперь содержит uuid)
-      // Исключаем поле hashed_password из выборки
-      // Добавляем 'role' и 'uuid' в выборку
       const user = await knex('users')
-        .where({ uuid: decoded.userId }) // decoded.userId теперь это uuid
+        .where({ uuid: decoded.userId })
         .select('uuid', 'username', 'email', 'role', 'created_at', 'updated_at')
         .first();
 
-      if (!user || !user.uuid) { // Дополнительная проверка на наличие uuid
+      if (!user || !user.uuid) {
         return res.status(401).json({ message: 'Пользователь не найден или неполные данные пользователя, авторизация отклонена' });
       }
 
@@ -44,8 +38,6 @@ const protect = async (req, res, next) => {
 };
 
 const authorize = (roles = []) => {
-  // roles param can be a single role string (e.g., 'admin')
-  // or an array of roles (e.g., ['admin', 'editor'])
   if (typeof roles === 'string') {
     roles = [roles];
   }
@@ -57,11 +49,9 @@ const authorize = (roles = []) => {
     }
 
     if (roles.length && !roles.includes(req.user.role)) {
-      // user's role is not authorized
       return res.status(403).json({ message: 'Доступ запрещен: недостаточные права.' });
     }
 
-    // authentication and authorization successful
     next();
   };
 };

@@ -1,8 +1,7 @@
 import request from 'supertest';
-const db = require('../db.cjs'); // Импортируем db напрямую
-const { app } = require('../index.js'); // Импортируем app и server напрямую
+const db = require('../db.cjs');
+const { app } = require('../index.js');
 
-// Устанавливаем NODE_ENV до всех импортов, которые могут от него зависеть
 process.env.NODE_ENV = 'test';
 
 
@@ -12,7 +11,6 @@ describe('Task API', () => {
   let categoryUuid;
 
   beforeEach(async () => {
-    // Создаем тестового ребенка и категорию расхода для внешних ключей
     const createChildRes = await request(app)
       .post('/children')
       .send({
@@ -23,12 +21,12 @@ describe('Task API', () => {
         hourlyRate: 100.00,
         comment: 'Тестовый Комментарий',
       });
-    childUuid = createChildRes.body.uuid; // Исправлено на uuid
+    childUuid = createChildRes.body.uuid;
 
     const createCategoryRes = await request(app)
       .post('/expense-categories')
       .send({ categoryName: 'Тестовая Категория для Задачи' });
-    categoryUuid = createCategoryRes.body.uuid; // Исправлено на uuid
+    categoryUuid = createCategoryRes.body.uuid;
   });
 
   const baseTask = {
@@ -63,8 +61,7 @@ describe('Task API', () => {
       ...baseTask,
       type: 'expense',
       title: 'Тестовая Задача Расхода с Именем Категории',
-      category: 'Тестовая Категория для Задачи', // Используем имя категории, созданной в beforeEach
-      // childId не обязателен для expense, но если нужен, можно добавить childUuid
+      category: 'Тестовая Категория для Задачи',
     };
 
     const createRes = await request(app)
@@ -75,15 +72,13 @@ describe('Task API', () => {
     expect(createRes.body).toHaveProperty('uuid');
     expect(createRes.body.title).toEqual(taskData.title);
     expect(createRes.body.type).toEqual('expense');
-    expect(createRes.body).not.toHaveProperty('category'); // Поле category (имя) должно быть удалено
+    expect(createRes.body).not.toHaveProperty('category');
     expect(createRes.body.expenseTypeId).toEqual(categoryUuid);
 
-    // Дополнительная проверка: получаем задачу и убеждаемся, что expenceTypeId верный
     const getRes = await request(app).get(`/tasks/${createRes.body.uuid}`);
     expect(getRes.statusCode).toEqual(200);
     expect(getRes.body.expenseTypeId).toEqual(categoryUuid);
     expect(getRes.body).not.toHaveProperty('category');
-    // Также проверяем, что expenseCategoryName подтягивается правильно
     expect(getRes.body.expenseCategoryName).toEqual('Тестовая Категория для Задачи');
   });
 
@@ -132,9 +127,9 @@ describe('Task API', () => {
     const taskId = createRes.body.uuid;
 
     const updatedTaskData = {
-      type: 'babysitting', // Добавлено обязательное поле
+      type: 'babysitting',
       title: 'Обновленная Задача',
-      comments: 'Updated task comments', // Используем comments
+      comments: 'Updated task comments',
       dueDate: '2025-05-31',
       amountEarned: 100,
     };
@@ -143,13 +138,9 @@ describe('Task API', () => {
       .put(`/tasks/${taskId}`)
       .send(updatedTaskData);
     expect(res.statusCode).toEqual(200);
-    // Сервис возвращает количество обновленных записей, а не сам объект
-    // Поэтому проверяем, что ответ содержит число (количество обновленных записей)
     expect(typeof res.body).toBe('number');
-    // Дополнительно можно проверить, что была обновлена 1 запись
     expect(res.body).toEqual(1);
 
-    // Проверим, что задача действительно обновилась, запросив ее снова
     const getRes = await request(app).get(`/tasks/${taskId}`);
     expect(getRes.statusCode).toEqual(200);
     expect(getRes.body.title).toEqual(updatedTaskData.title);
@@ -170,19 +161,18 @@ describe('Task API', () => {
     expect(checkRes.statusCode).toEqual(404);
   });
 
-  // Дополнительные тесты на валидацию, если они отсутствуют в текущем контроллере для tasks
   it('should return 400 if type is missing when creating a task', async () => {
     const invalidTask = { ...baseTask, type: undefined };
     const res = await request(app)
       .post('/tasks')
       .send(invalidTask);
-    expect(res.statusCode).toEqual(400); // Ожидаем 400, если контроллер валидирует
+    expect(res.statusCode).toEqual(400);
   });
 
   it('should return 400 if required fields are missing when creating a task', async () => {
-    const requiredFields = ['title', 'dueDate']; // description удалено
+    const requiredFields = ['title', 'dueDate'];
     for (const field of requiredFields) {
-      const invalidTask = { ...baseTask, type: 'someType' }; // type обязателен
+      const invalidTask = { ...baseTask, type: 'someType' };
       delete invalidTask[field];
       const res = await request(app)
         .post('/tasks')
@@ -195,7 +185,7 @@ describe('Task API', () => {
   it('should return 404 if task not found when updating', async () => {
     const res = await request(app)
       .put('/tasks/00000000-0000-0000-0000-000000000000')
-      .send({ ...baseTask, title: 'Non Existent', type: 'someType' }); // Добавляем обязательные поля
+      .send({ ...baseTask, title: 'Non Existent', type: 'someType' });
     expect(res.statusCode).toEqual(404);
   });
 

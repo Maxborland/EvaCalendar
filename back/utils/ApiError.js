@@ -2,10 +2,9 @@ class ApiError extends Error {
   constructor(statusCode, message, errors = []) {
     super(message);
     this.statusCode = statusCode;
-    this.isOperational = true; // Для различения операционных ошибок от программных
-    this.errors = errors; // Для хранения ошибок валидации, если применимо
+    this.isOperational = true;
+    this.errors = errors;
 
-    // Сохраняем Stack Trace
     Error.captureStackTrace(this, this.constructor);
   }
 

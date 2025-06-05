@@ -63,7 +63,6 @@ describe('Children API', () => {
       .put(`/children/${uuidToUpdate}`)
       .send(updatedChildData);
     expect(res.statusCode).toEqual(200);
-    // Сервис возвращает обновленный объект, а не сообщение
     expect(res.body).toHaveProperty('uuid', uuidToUpdate);
     expect(res.body.childName).toEqual(updatedChildData.childName);
 
@@ -80,12 +79,9 @@ describe('Children API', () => {
     const res = await request(app)
       .delete(`/children/${uuidToDelete}`);
     expect(res.statusCode).toEqual(204);
-    // Сервис возвращает количество удаленных записей или true/false, а не сообщение
-    // Для простоты проверим только статус код. Код 204 означает успех без содержимого.
 
     const getRes = await request(app).get(`/children/${uuidToDelete}`);
     expect(getRes.statusCode).toEqual(404);
-    // Сообщение об ошибке может отличаться, проверим что тело ответа содержит message
     expect(getRes.body).toHaveProperty('message');
   });
 
@@ -133,18 +129,16 @@ describe('Children API', () => {
 
   it('should return 404 if child not found when updating', async () => {
     const res = await request(app)
-      .put(`/children/00000000-0000-0000-0000-000000000000`) // Используем валидный формат UUID, который вряд ли существует
+      .put(`/children/00000000-0000-0000-0000-000000000000`)
       .send({ childName: 'Несуществующий', parentName: 'Несуществующий', parentPhone: '123', address: '123', hourlyRate: 100 });
     expect(res.statusCode).toEqual(404);
-    // Сообщение об ошибке может отличаться, проверим что тело ответа содержит message
     expect(res.body).toHaveProperty('message');
   });
 
   it('should return 404 if child not found when deleting', async () => {
     const res = await request(app)
-      .delete(`/children/00000000-0000-0000-0000-000000000000`); // Используем валидный формат UUID, который вряд ли существует
+      .delete(`/children/00000000-0000-0000-0000-000000000000`);
     expect(res.statusCode).toEqual(404);
-    // Сообщение об ошибке может отличаться, проверим что тело ответа содержит message
     expect(res.body).toHaveProperty('message');
   });
 });

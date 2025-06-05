@@ -1,11 +1,11 @@
 import React from 'react';
-import ExpenseCategoryManager from '../components/ExpenseCategoryManager'; // Импортируем компонент
+import ExpenseCategoryManager from '../components/ExpenseCategoryManager';
 
 const ExpenseCategoriesSettingsPage: React.FC = () => {
   return (
     <div>
       <h2>Настройки категорий расходов</h2>
-      <ExpenseCategoryManager /> {/* Используем компонент */}
+      <ExpenseCategoryManager />
     </div>
   );
 };

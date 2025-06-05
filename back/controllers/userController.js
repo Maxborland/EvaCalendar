@@ -1,19 +1,17 @@
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid'); // Для генерации UUID
-const knex = require('../db.cjs'); // Предполагаем, что knex экспортируется из db.cjs
+const { v4: uuidv4 } = require('uuid');
+const knex = require('../db.cjs');
 
 // @desc    Get current user
 // @route   GET /api/users/me
 // @access  Private
 const getCurrentUser = asyncHandler(async (req, res) => {
-  // req.user уже должен быть установлен middleware 'protect'
-  // и содержать данные пользователя без пароля
-  const user = req.user; // req.user должен содержать uuid после обновления middleware
+  const user = req.user;
 
-  if (user && user.uuid) { // Проверяем наличие uuid
+  if (user && user.uuid) {
     res.status(200).json({
-      uuid: user.uuid, // Используем uuid
+      uuid: user.uuid,
       username: user.username,
       email: user.email,
       role: user.role,
@@ -22,7 +20,6 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(404);
-    // Либо пользователь не найден, либо в req.user нет uuid (ошибка в middleware)
     throw new Error('Пользователь не найден или информация о пользователе неполная.');
   }
 });
@@ -32,10 +29,10 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 // @access  Private
 const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
-  const userUuid = req.user.uuid; // Используем uuid из req.user
+  const userUuid = req.user.uuid;
 
   if (!userUuid) {
-    res.status(401); // Unauthorized
+    res.status(401);
     throw new Error('Не удалось идентифицировать пользователя для смены пароля.');
   }
 
@@ -52,7 +49,6 @@ const changePassword = asyncHandler(async (req, res) => {
   const user = await knex('users').where({ uuid: userUuid }).first();
 
   if (!user) {
-    // Это маловероятно, если пользователь аутентифицирован через 'protect'
     res.status(404);
     throw new Error('Пользователь не найден');
   }
@@ -60,16 +56,16 @@ const changePassword = asyncHandler(async (req, res) => {
   const isMatch = await bcrypt.compare(currentPassword, user.hashed_password);
 
   if (!isMatch) {
-    res.status(401); // Или 400, в зависимости от предпочтений
+    res.status(401);
     throw new Error('Неверный текущий пароль');
   }
 
   const salt = await bcrypt.genSalt(10);
   const hashedNewPassword = await bcrypt.hash(newPassword, salt);
 
-  await knex('users').where({ uuid: userUuid }).update({ // Используем uuid
+  await knex('users').where({ uuid: userUuid }).update({
     hashed_password: hashedNewPassword,
-    updated_at: knex.fn.now(), // Обновляем время последнего изменения
+    updated_at: knex.fn.now(),
   });
 
   res.status(200).json({ message: 'Пароль успешно изменен' });
@@ -79,7 +75,7 @@ const changePassword = asyncHandler(async (req, res) => {
 // @route   GET /api/users
 // @access  Private (Admin)
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await knex('users').select('uuid', 'username', 'email', 'role', 'created_at', 'updated_at'); // Выбираем uuid
+  const users = await knex('users').select('uuid', 'username', 'email', 'role', 'created_at', 'updated_at');
   res.status(200).json(users);
 });
 
@@ -89,7 +85,6 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const createUser = asyncHandler(async (req, res) => {
   const { username, email, password, role } = req.body;
 
-  // 1. Валидация входных данных
   if (!username || !email || !password || !role) {
     res.status(400);
     throw new Error('Пожалуйста, предоставьте username, email, password и role');
@@ -111,7 +106,6 @@ const createUser = asyncHandler(async (req, res) => {
     throw new Error("Роль должна быть 'user' или 'admin'");
   }
 
-  // 2. Проверка уникальности username и email
   const existingUserByUsername = await knex('users').where({ username }).first();
   if (existingUserByUsername) {
     res.status(409);
@@ -124,24 +118,21 @@ const createUser = asyncHandler(async (req, res) => {
     throw new Error('Пользователь с таким email уже существует');
   }
 
-  // 3. Хеширование пароля
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // 4. Сохранение пользователя
   const [newUser] = await knex('users')
     .insert({
       username,
       email,
       hashed_password: hashedPassword,
-      role, // Добавляем роль
-      uuid: uuidv4(), // Генерируем UUID
+      role,
+      uuid: uuidv4(),
     })
-    .returning(['uuid', 'username', 'email', 'role', 'created_at', 'updated_at']); // Возвращаем uuid
+    .returning(['uuid', 'username', 'email', 'role', 'created_at', 'updated_at']);
 
-  // 5. Ответ клиенту
   res.status(201).json({
-    uuid: newUser.uuid, // Используем uuid
+    uuid: newUser.uuid,
     username: newUser.username,
     email: newUser.email,
     role: newUser.role,
@@ -153,7 +144,7 @@ const createUser = asyncHandler(async (req, res) => {
 // @desc    Get user by UUID
 // @route   GET /api/users/:uuid
 // @access  Private (Admin)
-const getUserById = asyncHandler(async (req, res) => { // Имя функции оставим getUserById для единообразия, но параметр будет uuid
+const getUserById = asyncHandler(async (req, res) => {
   const { uuid } = req.params;
   const user = await knex('users')
     .select('uuid', 'username', 'email', 'role', 'created_at', 'updated_at')
@@ -173,9 +164,8 @@ const getUserById = asyncHandler(async (req, res) => { // Имя функции 
 // @access  Private (Admin)
 const updateUser = asyncHandler(async (req, res) => {
   const { uuid } = req.params;
-  const { username, email, role } = req.body; // Пароль меняется через другой эндпоинт
+  const { username, email, role } = req.body;
 
-  // Валидация
   if (!username && !email && !role) {
     res.status(400);
     throw new Error('Необходимо предоставить хотя бы одно поле для обновления: username, email или role.');
@@ -189,7 +179,6 @@ const updateUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error('Некорректный формат email');
     }
-    // Проверка уникальности нового email, если он меняется
     const existingUserByEmail = await knex('users').where({ email }).whereNot({ uuid }).first();
     if (existingUserByEmail) {
       res.status(409);
@@ -243,7 +232,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 
   // Проверка, что администратор не пытается удалить сам себя
   if (userUuidToDelete === adminUserUuid) {
-    res.status(403); // Forbidden
+    res.status(403);
     throw new Error('Администратор не может удалить сам себя.');
   }
 
@@ -263,7 +252,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/:userUuid/role
 // @access  Private (Admin)
 const changeUserRole = asyncHandler(async (req, res) => {
-  const { userUuid } = req.params; // параметр маршрута теперь userUuid
+  const { userUuid } = req.params;
   const { role } = req.body;
   const adminUserUuid = req.user.uuid;
 
@@ -305,7 +294,7 @@ const changeUserRole = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/:userUuid/password
 // @access  Private (Admin)
 const adminChangeUserPassword = asyncHandler(async (req, res) => {
-  const { userUuid } = req.params; // параметр маршрута теперь userUuid
+  const { userUuid } = req.params;
   const { newPassword } = req.body;
   const adminUserUuid = req.user.uuid;
 
@@ -355,6 +344,6 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
-  changeUserRole, // Добавляем новую функцию
-  adminChangeUserPassword, // Добавляем новую функцию
+  changeUserRole,
+  adminChangeUserPassword,
 };

@@ -36,8 +36,6 @@ const UserManagement: React.FC<UserManagementProps> = () => {
       setUsers(data);
     } catch (err) {
       setError('Не удалось загрузить пользователей.');
-      // Ошибка уже должна быть обработана глобальным обработчиком в api.ts
-      // toast.error('Не удалось загрузить пользователей.');
     } finally {
       setIsLoading(false);
     }
@@ -133,10 +131,6 @@ const UserManagement: React.FC<UserManagementProps> = () => {
       fetchUsers();
       handleCloseAddUserModal();
     } catch (err) {
-      // Ошибка уже должна быть обработана глобальным обработчиком в api.ts
-      // и показана через toast.error там.
-      // Если нужно специфическое сообщение, можно добавить здесь.
-      // toast.error('Не удалось создать пользователя.');
     }
   };
 
@@ -147,13 +141,12 @@ const UserManagement: React.FC<UserManagementProps> = () => {
         toast.success(`Пользователь ${username} успешно удален!`);
         fetchUsers();
       } catch (err) {
-        // toast.error('Не удалось удалить пользователя.');
       }
     }
   };
 
   if (currentUser?.role !== 'admin') {
-    return null; // Или сообщение о том, что доступ запрещен
+    return null;
   }
 
   if (isLoading) {
@@ -262,7 +255,6 @@ const UserManagement: React.FC<UserManagementProps> = () => {
         </div>
       )}
 
-      {/* Модальное окно для добавления пользователя */}
       {isAddUserModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-lg mx-auto">

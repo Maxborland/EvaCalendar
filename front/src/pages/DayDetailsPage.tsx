@@ -22,39 +22,31 @@ const DayDetailsPage: React.FC = () => {
   const { tasks: initialTasks, summary: initialSummary, dateString } = useLoaderData() as DayDetailsLoaderData;
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks); // Инициализируем tasks из initialTasks
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [sortedTasks, setSortedTasks] = useState<Task[]>([]);
-  const [dailySummary, setDailySummary] = useState<{ totalEarned: number; totalSpent: number } | null>(initialSummary); // Инициализируем dailySummary из initialSummary
-  // const [isLoading, setIsLoading] = useState(true); // Удалено, состояние загрузки управляется react-router
+  const [dailySummary, setDailySummary] = useState<{ totalEarned: number; totalSpent: number } | null>(initialSummary);
   const [error, setError] = useState<string | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentTaskType, setCurrentTaskType] = useState<'income' | 'expense' | undefined>('income');
 
-  // const fetchDayData = async (currentDateString: string) => { ... }; // Удаляем, данные из loader
-
   useEffect(() => {
-    if (dateString) { // Используем dateString из useLoaderData
+    if (dateString) {
       try {
         const parsedDate = parseDateString(dateString);
         setSelectedDate(parsedDate);
-        setError(null); // Сбрасываем ошибку, если дата успешно распарсилась
+        setError(null);
       } catch (e) {
-        console.error("Error parsing date string:", e);
+        // Error parsing date string
         setError("Неверный формат даты в URL.");
-        // setIsLoading(false); // Удалено
         return;
       }
     } else {
-      // Эта ситуация не должна возникать, если loader требует dateString
       setError("Дата не указана.");
-      // setIsLoading(false); // Удалено
     }
   }, [dateString]);
 
-  // Обновляем tasks и dailySummary, если initialTasks или initialSummary из loader'а изменились
-  // Это полезно для HMR или если loader перезапускается (например, через revalidate)
   useEffect(() => {
     setTasks(initialTasks);
   }, [initialTasks]);
@@ -83,40 +75,34 @@ const DayDetailsPage: React.FC = () => {
       if (a.time && b.time) {
         return a.time.localeCompare(b.time);
       }
-      if (a.time) return -1; // a имеет время, b - нет, a идет раньше
-      if (b.time) return 1;  // b имеет время, a - нет, b идет раньше
-      return 0; // у обоих нет времени
+      if (a.time) return -1;
+      if (b.time) return 1;
+      return 0;
     };
 
     timeSpecificTasks.sort(sortTasksByTime);
-    otherTasks.sort(sortTasksByTime); // Сортируем "другие" задачи также по времени, если оно есть
+    otherTasks.sort(sortTasksByTime);
     expenseTasks.sort(sortTasksByTime);
 
     setSortedTasks([...timeSpecificTasks, ...otherTasks, ...expenseTasks]);
   }, [tasks]);
 
   const handleGoBack = () => {
-    navigate(-1); // Возвращает на предыдущую страницу в истории
+    navigate(-1);
   };
 
   const handleOpenTaskForm = (task?: Task) => {
     if (task) {
-      console.log('[DayDetailsPage] handleOpenTaskForm - task to edit:', JSON.parse(JSON.stringify(task)));
       setEditingTask(task);
       setModalMode('edit');
-      // Определяем taskType на основе существующей задачи, если редактируем
       setCurrentTaskType(task.type === 'expense' ? 'expense' : 'income');
     } else {
-      // При создании новой задачи, устанавливаем dueDate из dateString текущей страницы
       const newInitialTask = {
-        dueDate: dateString, // dateString уже в формате YYYY-MM-DD
-        // Можно добавить другие поля по умолчанию, если необходимо
-        // title: '',
+        dueDate: dateString,
       };
-      setEditingTask(newInitialTask as Task); // Приводим к Task
+      setEditingTask(newInitialTask as Task);
       setModalMode('create');
-      // Тип задачи будет выбран в модальном окне
-      setCurrentTaskType(undefined); // или 'income' по умолчанию, если это предпочтительнее
+      setCurrentTaskType(undefined);
     }
     setShowTaskForm(true);
   };
@@ -124,38 +110,23 @@ const DayDetailsPage: React.FC = () => {
   const handleCloseTaskForm = () => {
     setEditingTask(undefined);
     setShowTaskForm(false);
-    // Сбрасываем режим и тип при закрытии, если это необходимо
-    // setModalMode('create');
-    // setCurrentTaskType('income');
   };
 
   const handleTaskSave = async (taskData: Task | Omit<Task, 'uuid'>) => {
     try {
-      // Проверяем наличие uuid и что он не undefined для существующей задачи
-      if ('uuid' in taskData && taskData.uuid) { // Удаляем проверку mode === 'edit'
-        // Обновление существующей задачи
+      if ('uuid' in taskData && taskData.uuid) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { uuid, ...updateData } = taskData; // Удаляем uuid из данных для обновления
+        const { uuid, ...updateData } = taskData;
         await updateTask(taskData.uuid, updateData as Partial<Omit<Task, 'uuid'>>);
       } else {
-        // Создание новой задачи
         await createTask(taskData as Omit<Task, 'uuid'>);
       }
       handleCloseTaskForm();
-      // if (dateString) fetchDayData(dateString); // Обновить данные
       // TODO: Использовать revalidator.revalidate() или navigate('.', { replace: true }) для перезагрузки данных из loader'а
-      // Временное решение: предполагаем, что initialTasks и initialSummary обновятся при следующей навигации или HMR.
-      // Для немедленного обновления можно было бы снова установить tasks и summary из initialTasks,
-      // но это не вызовет перезагрузку loader'а.
-      // Для простоты пока оставим так, PageLoader должен сработать при следующей навигации, если loader будет вызван.
-      // Чтобы увидеть эффект PageLoader при мутации, нужно обеспечить перезапуск loader'а.
-      // Например, можно использовать navigate(location.pathname, { replace: true });
-      // Это вызовет перезапуск loader'а для текущего пути.
-      navigate('.', { replace: true }); // Перезагружаем данные через loader
+      navigate('.', { replace: true });
     } catch (err) {
-      console.error("Error saving task:", err);
+      // Error saving task
       setError("Ошибка при сохранении задачи.");
-      // Можно добавить более специфичную обработку ошибок, например, вывод сообщения пользователю
     }
   };
 
@@ -163,11 +134,10 @@ const DayDetailsPage: React.FC = () => {
     if (window.confirm('Вы уверены, что хотите удалить эту задачу?')) {
       try {
         await deleteTask(taskId);
-        // if (dateString) fetchDayData(dateString); // Обновить данные
         // TODO: Использовать revalidator.revalidate() или navigate('.', { replace: true })
-        navigate('.', { replace: true }); // Перезагружаем данные через loader
+        navigate('.', { replace: true });
       } catch (err) {
-        console.error("Error deleting task:", err);
+        // Error deleting task
         setError("Ошибка при удалении задачи.");
       }
     }
@@ -206,8 +176,6 @@ const DayDetailsPage: React.FC = () => {
                 task={task}
                 onEdit={handleOpenTaskForm}
                 onDelete={() => handleTaskDelete(task.uuid)}
-                // onDuplicate={() => handleTaskDuplicate(task.uuid)} // Дублирование пока убрано
-                // onToggleComplete={() => handleToggleComplete(task)} // Удалено согласно задаче
               />
             ))
           ) : (

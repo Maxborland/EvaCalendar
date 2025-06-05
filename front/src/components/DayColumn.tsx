@@ -43,7 +43,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
 
     const incomeEvents: EventItem[] = [];
     const expenseEvents: EventItem[] = [];
-    const otherEvents: EventItem[] = []; // Для задач, которые не являются явным доходом или расходом по времени
+    const otherEvents: EventItem[] = [];
 
     taskEvents.forEach(event => {
       const task = event as Task;
@@ -55,7 +55,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       } else if (isExpense) {
         expenseEvents.push(event);
       } else {
-        otherEvents.push(event); // Остальные задачи (без времени или не расходы)
+        otherEvents.push(event);
       }
     });
 
@@ -78,14 +78,12 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       setModalMode('edit');
       setCurrentTaskType(taskToEdit.type === 'expense' ? 'expense' : 'income');
     } else if (!eventToEdit) {
-      // При создании новой задачи, устанавливаем dueDate из fullDate колонки
       const newInitialTask = {
-        // Убедимся, что dueDate в формате YYYY-MM-DD
         dueDate: createDate(fullDate).toISOString().slice(0, 10),
       };
-      setCurrentTask(newInitialTask as Task); // Приводим к Task, т.к. UnifiedTaskFormModal ожидает Task или undefined
+      setCurrentTask(newInitialTask as Task);
       setModalMode('create');
-      setCurrentTaskType(type || 'income'); // Используем переданный тип или 'income' по умолчанию
+      setCurrentTaskType(type || 'income');
     } else {
       return;
     }
@@ -114,7 +112,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       onDataChange();
       handleCloseModal();
     } catch (error) {
-      console.error('Ошибка при сохранении задачи в DayColumn:', error);
+      // Ошибка при сохранении задачи в DayColumn
     }
   };
 
@@ -124,7 +122,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       onDataChange();
       handleCloseModal();
     } catch (error) {
-      console.error(`Ошибка при удалении задачи:`, error);
+      // Ошибка при удалении задачи
     }
   };
 
@@ -134,22 +132,21 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       onDataChange();
       handleCloseModal();
     } catch (error) {
-      console.error(`Ошибка при дублировании задачи:`, error);
+      // Ошибка при дублировании задачи
     }
   };
 
 
   const handleMoveEvent = async (eventId: string, itemTypeFromDrop: string, newDueDate: string) => {
-    // Используем itemTypeFromDrop, который приходит из useDrop
     if (itemTypeFromDrop === 'task' || itemTypeFromDrop === 'income' || itemTypeFromDrop === 'expense') {
       try {
         await moveTask(eventId, newDueDate);
         onDataChange();
       } catch (error) {
-        console.error('Ошибка при перемещении задачи:', error);
+        // Ошибка при перемещении задачи
       }
     } else {
-      console.warn(`Moving for ${itemTypeFromDrop} (id: ${eventId}) not implemented yet.`);
+      // Moving for itemTypeFromDrop not implemented yet.
     }
   };
 
@@ -177,7 +174,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
   const dayHeader = (
     <div
       className="flex justify-between items-center mb-2"
-      onClick={handleHeaderClick} // Оставляем возможность клика по заголовку для перехода на страницу дня
+      onClick={handleHeaderClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}
