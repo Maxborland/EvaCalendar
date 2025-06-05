@@ -71,7 +71,7 @@ const LoginPage: React.FC = () => {
         </div>
         <div className="bg-slate-800 rounded-2xl p-6">
           {serverError && (
-            <div className="text-red-500 text-sm mb-4 text-center p-3 bg-red-900/30 rounded-md border border-red-700">
+            <div data-testid="server-error-message" className="text-red-500 text-sm mb-4 text-center p-3 bg-red-900/30 rounded-md border border-red-700">
               {serverError}
             </div>
           )}
@@ -81,6 +81,7 @@ const LoginPage: React.FC = () => {
                 Email или имя пользователя
               </label>
               <input
+                data-testid="login-input"
                 type="text"
                 id="loginInput"
                 value={loginInput}
@@ -89,7 +90,7 @@ const LoginPage: React.FC = () => {
                 autoComplete="username"
                 className={`bg-slate-700 border ${errors.loginInput ? 'border-red-500' : 'border-slate-600'} text-slate-300 rounded-lg py-3 px-4 w-full text-base placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               />
-              {errors.loginInput && <p className="text-red-500 text-xs mt-1">{errors.loginInput}</p>}
+              {errors.loginInput && <p data-testid="login-input-error" className="text-red-500 text-xs mt-1">{errors.loginInput}</p>}
             </div>
 
             <div className="mb-8"> {/* mb-8 для последнего поля перед кнопкой */}
@@ -97,6 +98,7 @@ const LoginPage: React.FC = () => {
                 Пароль
               </label>
               <input
+                data-testid="password-input"
                 type="password"
                 id="password"
                 value={password}
@@ -105,10 +107,11 @@ const LoginPage: React.FC = () => {
                 autoComplete="current-password"
                 className={`bg-slate-700 border ${errors.password ? 'border-red-500' : 'border-slate-600'} text-slate-300 rounded-lg py-3 px-4 w-full text-base placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               />
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+              {errors.password && <p data-testid="password-input-error" className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
 
             <button
+              data-testid="login-button"
               type="submit"
               className="bg-green-500 text-white font-semibold py-3 px-4 rounded-lg w-full text-center text-base transition-colors duration-300 ease-in-out hover:bg-blue-600 disabled:opacity-50"
               disabled={isLoading}

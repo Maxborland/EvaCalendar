@@ -49,12 +49,12 @@ const TopNavigator: React.FC<TopNavigatorProps> = ({ title, showButtons = true }
       {/* Иконки справа */}
       <div className="flex items-center flex-shrink-0 space-x-2"> {/* Добавлен space-x-2 для отступов между кнопками */}
         {showButtons && (
-          <button onClick={handleSettingsClick} className="p-2 rounded-md hover:bg-gray-700 flex items-center">
+          <button data-testid="settings-button" onClick={handleSettingsClick} className="p-2 rounded-md hover:bg-gray-700 flex items-center">
             <span className="material-icons">settings</span>
           </button>
         )}
         {isAuthenticated && showButtons && ( // Кнопка Выход отображается, если пользователь аутентифицирован и showButtons true
-          <button onClick={handleLogout} className="p-2 rounded-md hover:bg-gray-700 flex items-center">
+          <button data-testid="logout-button" onClick={handleLogout} className="p-2 rounded-md hover:bg-gray-700 flex items-center">
             <span className="material-icons">logout</span>
           </button>
         )}

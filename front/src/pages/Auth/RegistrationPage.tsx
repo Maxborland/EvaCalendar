@@ -96,7 +96,7 @@ const RegistrationPage: React.FC = () => {
         </div>
         <div className="bg-slate-800 rounded-2xl p-6">
           {serverError && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-sm" role="alert">
+            <div data-testid="server-error-message" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-sm" role="alert">
               {serverError}
             </div>
           )}
@@ -106,6 +106,7 @@ const RegistrationPage: React.FC = () => {
                 Имя пользователя
               </label>
               <input
+                data-testid="username-input"
                 type="text"
                 id="username"
                 value={username}
@@ -114,7 +115,7 @@ const RegistrationPage: React.FC = () => {
                 autoComplete="username"
                 className={`bg-slate-700 border ${errors.username ? 'border-red-500' : 'border-slate-600'} text-slate-300 rounded-lg py-3 px-4 w-full text-base placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
               />
-              {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
+              {errors.username && <p data-testid="username-input-error" className="text-red-500 text-xs mt-1">{errors.username}</p>}
             </div>
 
             <div className="mb-6">
@@ -122,6 +123,7 @@ const RegistrationPage: React.FC = () => {
                 Email
               </label>
               <input
+                data-testid="email-input"
                 type="email"
                 id="email"
                 value={email}
@@ -130,7 +132,7 @@ const RegistrationPage: React.FC = () => {
                 autoComplete="email"
                 className={`bg-slate-700 border ${errors.email ? 'border-red-500' : 'border-slate-600'} text-slate-300 rounded-lg py-3 px-4 w-full text-base placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+              {errors.email && <p data-testid="email-input-error" className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
 
             <div className="mb-6">
@@ -138,6 +140,7 @@ const RegistrationPage: React.FC = () => {
                 Пароль
               </label>
               <input
+                data-testid="password-input"
                 type="password"
                 id="password"
                 value={password}
@@ -146,7 +149,7 @@ const RegistrationPage: React.FC = () => {
                 autoComplete="new-password"
                 className={`bg-slate-700 border ${errors.password ? 'border-red-500' : 'border-slate-600'} text-slate-300 rounded-lg py-3 px-4 w-full text-base placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
               />
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+              {errors.password && <p data-testid="password-input-error" className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
 
             <div className="mb-8"> {/* mb-8 для последнего поля перед кнопкой */}
@@ -154,6 +157,7 @@ const RegistrationPage: React.FC = () => {
                 Подтвердите пароль
               </label>
               <input
+                data-testid="confirm-password-input"
                 type="password"
                 id="confirmPassword"
                 value={confirmPassword}
@@ -162,10 +166,11 @@ const RegistrationPage: React.FC = () => {
                 autoComplete="new-password"
                 className={`bg-slate-700 border ${errors.confirmPassword ? 'border-red-500' : 'border-slate-600'} text-slate-300 rounded-lg py-3 px-4 w-full text-base placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
               />
-              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
+              {errors.confirmPassword && <p data-testid="confirm-password-input-error" className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
             </div>
 
             <button
+              data-testid="register-button"
               type="submit"
               className="bg-green-500 text-white font-semibold py-3 px-4 rounded-lg w-full text-center text-base transition-colors duration-300 ease-in-out hover:bg-green-600 disabled:opacity-50"
               disabled={isLoading}

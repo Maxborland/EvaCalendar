@@ -69,6 +69,7 @@ const registerUser = async (req, res, next) => {
 // POST /api/auth/login
 const loginUser = async (req, res, next) => {
   try {
+console.log('Login attempt with body:', req.body); // Добавим логирование тела запроса
     const { identifier, password } = req.body; // Изменено email на identifier
 
     // 1. Валидация входных данных

@@ -58,3 +58,11 @@ lerna-debug.log*
 /front/*.local
 
 /coverage/
+/playwright/*
+/playwright-report
+/playwright/.cache
+front/playwright-report/
+/test-results/*
+/tests/*
+front/tests/*
+front/test-results/*
