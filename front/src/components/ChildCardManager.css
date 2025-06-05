@@ -88,22 +88,7 @@
     background-color: var(--color-light-background);
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 5px var(--color-shadow-light);
     margin-bottom: 20px;
-}
-
-.child-form h3 {
-    margin-top: 0;
-    color: var(--color-text-tertiary);
-    margin-bottom: 15px;
-    text-align: center;
-}
-
-.child-form label {
-    display: block;
-    margin-bottom: 10px;
-    font-weight: normal;
-    color: var(--color-text-secondary);
 }
 
 .child-form input[type="text"],

@@ -58,7 +58,7 @@ const RegistrationPage: React.FC = () => {
         if (registerResponse.status === 201) {
           toast.info('Регистрация успешна. Выполняется вход...');
           const loginResponse = await api.post('/api/auth/login', {
-            email: email, // или username, в зависимости от API
+            identifier: email, // или username, в зависимости от API
             password: password,
           });
 

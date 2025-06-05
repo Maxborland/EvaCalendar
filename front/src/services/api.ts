@@ -356,29 +356,29 @@ export const deleteChild = async (uuid: string) => { // Было id: string
 
   // User management API calls
   export const getUsers = async (): Promise<User[]> => {
-    const response = await api.get<User[]>('/api/users');
+    const response = await api.get<User[]>('/users');
     return response.data;
   };
 
   export const updateUserRole = async (userUuid: string, role: 'user' | 'admin'): Promise<User> => {
-    const response = await api.put<User>(`/api/users/${userUuid}/role`, { role });
+    const response = await api.put<User>(`/users/${userUuid}/role`, { role });
     return response.data;
   };
 
   export const updateUserPassword = async (userUuid: string, password: string): Promise<{ message: string }> => {
-    const response = await api.put<{ message: string }>(`/api/users/${userUuid}/password`, { password });
+    const response = await api.put<{ message: string }>(`/users/${userUuid}/password`, { password });
     return response.data;
   };
 
   export const createUser = async (userData: NewUserCredentials): Promise<User> => {
-    const response = await api.post<User>('/api/users', userData);
+    const response = await api.post<User>('/users', userData);
     return response.data;
   };
 
   export const deleteUser = async (userUuid: string): Promise<{ message: string }> => {
     // Бэкенд может возвращать 204 No Content или объект с сообщением.
     // Для единообразия предположим, что он возвращает объект с сообщением.
-    const response = await api.delete<{ message: string }>(`/api/users/${userUuid}`);
+    const response = await api.delete<{ message: string }>(`/users/${userUuid}`);
     return response.data;
   };
 

@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('AuthContext: logout called. Attempting to call API.');
     try {
       // Вызов API для инвалидации сессии на бэкенде
-      await api.post('/api/auth/logout');
+      await api.post('/auth/logout');
       console.log('AuthContext: API call /api/auth/logout successful.');
     } catch (error) {
       console.error('AuthContext: Failed to call /api/auth/logout or error during logout API call:', error);
@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           // Предполагается, что в api.ts будет функция fetchCurrentUser или аналогичная
           // которая использует токен для запроса /api/users/me
-          const response = await api.get<User>('/api/users/me', {
+          const response = await api.get<User>('/users/me', {
             headers: {
               Authorization: `Bearer ${storedToken}`,
             },
@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       localStorage.setItem('token', newToken);
-      const response = await api.get<User>('/api/users/me', {
+      const response = await api.get<User>('/users/me', {
         headers: {
           Authorization: `Bearer ${newToken}`,
         },

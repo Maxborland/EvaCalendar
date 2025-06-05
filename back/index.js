@@ -86,8 +86,8 @@ app.post('/api/auth/testlogin', (req, res) => {
   console.log('Accessed /api/auth/testlogin endpoint');
   res.status(200).send('Test login endpoint reached successfully');
 });
-app.use('/api/auth', authRoutes); // Временно подключаем authRoutes напрямую для диагностики
-app.use('/api/users', userRoutes); // Подключаем роуты пользователя
+app.use('/auth', authRoutes); // Подключаем authRoutes к /auth
+app.use('/users', userRoutes); // Подключаем userRoutes к /users
 
 // Обработчик ошибок (должен быть последним middleware)
 app.use(errorHandler);

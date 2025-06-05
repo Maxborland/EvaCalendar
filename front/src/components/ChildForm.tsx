@@ -124,17 +124,17 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
   return (
       <form onSubmit={handleSubmit} className="child-form" id={formId}>
         {!isEmbeddedInModal && (
-          <h3>{initialChild?.uuid ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
+          <h3 className='mb-4 text-center text-md font-bold text-slate-100'>{initialChild?.uuid ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
         )}
-        <label>
+        <label className="block mb-2 text-slate-300">
           Имя ребенка:
           <input type="text" name="childName" value={formData.childName || ''} onChange={handleChange} required maxLength={50} />
         </label>
-        <label>
+        <label className="block mb-2 text-slate-300">
           Имя родителя:
           <input type="text" name="parentName" value={formData.parentName || ''} onChange={handleChange} required />
         </label>
-        <label>
+        <label className="block mb-2 text-slate-300">
           Телефон родителя:
           <IMaskInput
             mask={'+{7} (000) 000-00-00'}
@@ -149,7 +149,7 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
             name="parentPhone"
           />
         </label>
-        <label>
+        <label className="block mb-2 text-slate-300">
           Адрес:
           <input
             type="text"
@@ -169,11 +169,11 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
             </ul>
           )}
         </label>
-        <label>
+        <label className="block mb-2 text-slate-300">
           Ставка в час:
-          <input type="number" required name="hourlyRate" value={formData.hourlyRate ?? ''} onChange={handleChange} step="0.01" />
+          <input type="number" required name="hourlyRate" value={formData.hourlyRate ?? ''} onChange={handleChange} step="0.01" inputMode="decimal" min="0" />
         </label>
-        <label>
+        <label className="block mb-2 text-slate-300">
           Комментарий:
           <textarea name="comment" value={formData.comment || ''} onChange={handleChange} rows={3}></textarea>
         </label>
