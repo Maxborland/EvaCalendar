@@ -7,6 +7,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import App from './App.tsx';
 import LoadingAnimation from './components/LoadingAnimation.tsx'; // Импортируем компонент анимации
+import { AuthProvider } from './context/AuthContext.tsx'; // Импортируем AuthProvider
 import './index.css';
 
 // Создаем "MultiBackend"
@@ -32,7 +33,9 @@ const backends = [
 createRoot(document.getElementById('root')!).render(
   <>
     <DndProvider backend={MyMultiBackend} options={{ backends: backends }}>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </DndProvider>
     <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} limit={1} theme="dark" pauseOnFocusLoss draggable pauseOnHover />
   </>,

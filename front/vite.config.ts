@@ -24,7 +24,7 @@ export default defineConfig({
     globals: true,
     mockReset: true,
     environment: 'jsdom',
-    setupFiles: './src/setupTests.ts',
+    setupFiles: './src/setupTests.tsx', // Изменено на .tsx
     include: ['**/*.test.{ts,tsx}'],
   },
   server: {
@@ -32,7 +32,6 @@ export default defineConfig({
     '/api': {
       target: 'http://localhost:3001',
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api/, ''),
     },
   }
   }

@@ -17,7 +17,7 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
+    // "erasableSyntaxOnly": true, // Вызывает проблемы с JSX в setupTests.ts
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },

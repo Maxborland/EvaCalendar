@@ -1,6 +1,14 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+// Файл: front/src/services/api.ts
+
+let currentLogoutCallback: (() => void) | null = null;
+
+export const initializeAuthCallbackForApi = (callback: () => void) => {
+  currentLogoutCallback = callback;
+};
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
 
 export interface ExpenseCategory {
@@ -92,6 +100,20 @@ export interface Note {
   updatedAt?: string;
 }
 
+export interface User {
+  uuid: string;
+  username: string;
+  email: string;
+  role: 'user' | 'admin'; // Предполагаем, что роли могут быть только 'user' или 'admin'
+}
+
+export interface NewUserCredentials {
+  username: string;
+  email: string;
+  password: string;
+  role: 'user' | 'admin';
+}
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -99,13 +121,53 @@ const api = axios.create({
   },
 });
 
+// Перехватчик запросов для добавления JWT токена
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    // Исключаем пути аутентификации из добавления токена
+    const authPaths = ['/api/auth/login', '/api/auth/register'];
+    if (token && config.url && !authPaths.some(path => config.url!.includes(path))) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Устанавливаем перехватчик один раз при инициализации модуля
 api.interceptors.response.use(
   response => response,
   error => {
     let errorMessage = 'Произошла неизвестная ошибка!';
     if (error.response) {
       // Сервер ответил со статусом, отличным от 2xx
-      if (error.response.data && error.response.data.message) {
+      if (error.response.status === 401) {
+        // Не обрабатываем 401 для login эндпоинта, т.к. это ожидаемая ошибка
+        if (error.config.url && !error.config.url.includes('/api/auth/login') && !error.config.url.includes('/api/auth/logout')) {
+          if (currentLogoutCallback) {
+            currentLogoutCallback(); // Используем currentLogoutCallback
+            window.location.href = '/login'; // Добавлен редирект
+            return new Promise(() => {});
+          } else {
+            // currentLogoutCallback еще не установлен.
+            // Это, вероятно, самый первый запрос до полной инициализации AuthContext.
+            // Просто перенаправляем на логин. Состояние очистится при следующей загрузке.
+            window.location.href = '/login'; // Добавлен редирект
+            // Возвращаем промис, который никогда не разрешится, чтобы остановить ошибку.
+            return new Promise(() => {});
+          }
+        } else if (error.config.url && error.config.url.includes('/api/auth/login')) {
+           // Для /api/auth/login, 401 означает неверные учетные данные, позволяем стандартной обработке ошибок показать это
+           if (error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else {
+            errorMessage = 'Неверные учетные данные.';
+          }
+        }
+      } else if (error.response.data && error.response.data.message) {
         errorMessage = error.response.data.message;
       } else {
         errorMessage = `Ошибка: ${error.response.status} - ${error.response.statusText}`;
@@ -117,10 +179,16 @@ api.interceptors.response.use(
       // Что-то пошло не так при настройке запроса
       errorMessage = error.message;
     }
-    toast.error(errorMessage);
+
+    // Показываем toast только если это не специально обработанный 401 с выходом
+    // или если это 401 на логин (где сообщение уже установлено)
+    if (!(error.response && error.response.status === 401 && error.config.url && !error.config.url.includes('/api/auth/login'))) {
+        toast.error(errorMessage);
+    }
     return Promise.reject(error);
   }
 );
+// Больше нет setupApiInterceptors, перехватчик установлен выше
 
 export const getNoteByDate = async (dateString: string): Promise<Note[]> => {
   try {
@@ -264,6 +332,34 @@ export const updateChild = async (uuid: string, child: Child) => { // Было i
 export const deleteChild = async (uuid: string) => { // Было id: string
     const response = await api.delete(`/children/${uuid}`); // Было /children/${id}
     return response.data;
-};
+  };
 
-export default api;
+  // User management API calls
+  export const getUsers = async (): Promise<User[]> => {
+    const response = await api.get<User[]>('/api/users');
+    return response.data;
+  };
+
+  export const updateUserRole = async (userUuid: string, role: 'user' | 'admin'): Promise<User> => {
+    const response = await api.put<User>(`/api/users/${userUuid}/role`, { role });
+    return response.data;
+  };
+
+  export const updateUserPassword = async (userUuid: string, password: string): Promise<{ message: string }> => {
+    const response = await api.put<{ message: string }>(`/api/users/${userUuid}/password`, { password });
+    return response.data;
+  };
+
+  export const createUser = async (userData: NewUserCredentials): Promise<User> => {
+    const response = await api.post<User>('/api/users', userData);
+    return response.data;
+  };
+
+  export const deleteUser = async (userUuid: string): Promise<{ message: string }> => {
+    // Бэкенд может возвращать 204 No Content или объект с сообщением.
+    // Для единообразия предположим, что он возвращает объект с сообщением.
+    const response = await api.delete<{ message: string }>(`/api/users/${userUuid}`);
+    return response.data;
+  };
+
+  export default api;
