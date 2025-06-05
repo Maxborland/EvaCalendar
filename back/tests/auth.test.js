@@ -109,33 +109,66 @@ describe('Auth API', () => {
         });
     });
 
-    it('should login a registered user successfully and return a token', async () => {
+    it('should login a registered user successfully with email and return a token', async () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'login@example.com',
+          identifier: 'login@example.com', // Используем identifier
           password: 'password123',
         });
       expect(res.statusCode).toEqual(200);
       expect(res.body).toHaveProperty('token');
     });
 
-    it('should not login with an incorrect email', async () => {
+    it('should login a registered user successfully with username and return a token', async () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'wrong@example.com',
+          identifier: 'loginuser', // Используем identifier
+          password: 'password123',
+        });
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toHaveProperty('token');
+    });
+
+    it('should not login with an incorrect identifier (email)', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          identifier: 'wrong@example.com', // Используем identifier
           password: 'password123',
         });
       expect(res.statusCode).toEqual(401); // Или 400, в зависимости от вашей логики
       // expect(res.body).toHaveProperty('error');
     });
 
-    it('should not login with an incorrect password', async () => {
+    it('should not login with an incorrect identifier (username)', async () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'login@example.com',
+          identifier: 'wronguser', // Используем identifier
+          password: 'password123',
+        });
+      expect(res.statusCode).toEqual(401); // Или 400, в зависимости от вашей логики
+      // expect(res.body).toHaveProperty('error');
+    });
+
+    it('should not login with an incorrect password (using email as identifier)', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          identifier: 'login@example.com', // Используем identifier
+          password: 'wrongpassword',
+        });
+      expect(res.statusCode).toEqual(401);
+      // expect(res.body).toHaveProperty('error');
+    });
+
+    it('should not login with an incorrect password (using username as identifier)', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          identifier: 'loginuser', // Используем identifier
           password: 'wrongpassword',
         });
       expect(res.statusCode).toEqual(401);
@@ -162,7 +195,7 @@ describe('Auth API', () => {
       const loginRes = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'me@example.com',
+          identifier: 'me@example.com', // Используем identifier
           password: 'password123',
         });
       token = loginRes.body.token;
@@ -212,7 +245,7 @@ describe('Auth API', () => {
       const loginRes = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'changepass@example.com',
+          identifier: 'changepass@example.com', // Используем identifier
           password: oldPassword,
         });
       token = loginRes.body.token;
@@ -233,7 +266,7 @@ describe('Auth API', () => {
       const loginWithNewPassRes = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'changepass@example.com',
+          identifier: 'changepass@example.com', // Используем identifier
           password: newPassword,
         });
       expect(loginWithNewPassRes.statusCode).toEqual(200);
@@ -287,7 +320,7 @@ describe('Auth API', () => {
       const loginRes = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'logout@example.com',
+          identifier: 'logout@example.com', // Используем identifier
           password: 'password123',
         });
       // Добавим проверку, что вход прошел успешно и токен получен

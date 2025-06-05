@@ -1,12 +1,12 @@
 import React, { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-import api, { setAuthErrorHandler } from '../services/api'; // Предполагается, что api.ts экспортирует сконфигурированный экземпляр axios
+import api, { initializeAuthCallbackForApi } from '../services/api'; // Используем initializeAuthCallbackForApi
 
 // Типы
 interface User {
-  id: string;
+  uuid: string; // Изменено с id на uuid
   username: string;
   email: string;
-  role: string; // Добавляем поле для роли
+  role: 'user' | 'admin'; // Уточнен тип роли
   // Добавьте другие поля пользователя по необходимости
 }
 
@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Устанавливаем обработчик ошибок аутентификации при монтировании компонента
     // или при изменении функции logout
-    setAuthErrorHandler(logout); // Передаем саму функцию logout
+    initializeAuthCallbackForApi(logout); // Передаем функцию logout в сервис API
 
     const verifyToken = async () => {
       const storedToken = localStorage.getItem('token');

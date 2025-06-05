@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
 const SALT_ROUNDS = 10; // Должно совпадать с тем, что в authController
 
 /**
@@ -18,12 +19,11 @@ exports.seed = async function(knex) {
   // Inserts seed entries
   await knex('users').insert([
     {
+      uuid: uuidv4(),
       username: 'admin',
       email: 'admin@example.com',
       hashed_password: hashedPassword,
-      role: 'admin', // Устанавливаем роль администратора
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      role: 'admin' // Устанавливаем роль администратора
     }
   ]);
 };

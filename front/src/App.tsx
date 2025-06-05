@@ -26,15 +26,11 @@ const PageLoader: React.FC = () => {
   const animationNominalDurationSeconds = animationNominalFrames / animationFps; // Примерно 6.54 сек
 
   useEffect(() => {
-    console.log('[PageLoader] navigation.state:', navigation.state);
     if (navigation.state === 'loading') {
       startTime.current = Date.now();
-      console.log('[PageLoader] startTime:', startTime.current);
     } else if (navigation.state === 'idle' && startTime.current !== null) {
       const endTime = Date.now();
-      console.log('[PageLoader] endTime:', endTime);
       const loadDuration = endTime - startTime.current;
-      console.log('[PageLoader] loadDuration:', loadDuration);
       startTime.current = null; // Сбрасываем для следующей загрузки
 
       const loadDurationSeconds = loadDuration / 1000;
@@ -45,10 +41,8 @@ const PageLoader: React.FC = () => {
       } else {
         calculatedSpeed = 3.0; // Используем максимальную скорость, если загрузка очень быстрая
       }
-      console.log('[PageLoader] calculatedSpeed:', calculatedSpeed);
 
       const newFinalSpeed = Math.max(0.5, Math.min(calculatedSpeed, 3.0));
-      console.log('[PageLoader] finalSpeed:', newFinalSpeed);
       setFinalSpeed(newFinalSpeed);
     }
   }, [navigation.state, animationNominalDurationSeconds]);
@@ -96,8 +90,12 @@ const RootLayout: React.FC = () => {
 
 // Loader для WeekView
 const weekViewLoader = async () => {
-  const tasks = await getAllTasks();
-  return { tasks };
+  try {
+    const tasks = await getAllTasks();
+    return { tasks };
+  } catch (error) {
+    throw error; // Перебрасываем ошибку, чтобы ее поймал ErrorBoundary роутера
+  }
 };
 
 // Loader для DayDetailsPage

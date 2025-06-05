@@ -1,14 +1,25 @@
+const { v4: uuidv4 } = require('uuid');
+
 /**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-const { v4: uuidv4 } = require('uuid');
 exports.seed = async function(knex) {
+  // Удаляем существующие записи
   await knex('children').del();
 
+  // Получаем uuid администратора
+  const adminUser = await knex('users').where({ email: 'admin@example.com' }).first();
+  if (!adminUser) {
+    throw new Error('Admin user with email admin@example.com not found. Please run the user seeds first.');
+  }
+  const adminUserUuid = adminUser.uuid;
+
+  // Вставляем новые записи
   await knex('children').insert([
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
       childName: 'Алексей Иванов',
       parentName: 'Мария Иванова',
       parentPhone: '+79001112233',
@@ -18,6 +29,7 @@ exports.seed = async function(knex) {
     },
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
       childName: 'Ольга Петрова',
       parentName: 'Сергей Петров',
       parentPhone: '+79104445566',
@@ -27,6 +39,7 @@ exports.seed = async function(knex) {
     },
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
       childName: 'Дмитрий Сидоров',
       parentName: 'Елена Сидорова',
       parentPhone: '+79207778899',
@@ -36,6 +49,7 @@ exports.seed = async function(knex) {
     },
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
       childName: 'Екатерина Морозова',
       parentName: 'Андрей Морозов',
       parentPhone: '+79309990011',
@@ -45,6 +59,7 @@ exports.seed = async function(knex) {
     },
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
       childName: 'Ирина Козлова',
       parentName: 'Иван Козлов',
       parentPhone: '+79402223344',

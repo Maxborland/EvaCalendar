@@ -15,13 +15,16 @@ const protect = async (req, res, next) => {
       // Верифицируем токен
       const decoded = jwt.verify(token, JWT_SECRET);
 
-      // Ищем пользователя в БД по ID из токена и прикрепляем его к req
+      // Ищем пользователя в БД по UUID из токена (decoded.userId теперь содержит uuid)
       // Исключаем поле hashed_password из выборки
-      // Добавляем 'role' в выборку
-      const user = await knex('users').where({ id: decoded.userId }).select('id', 'username', 'email', 'role', 'created_at', 'updated_at').first();
+      // Добавляем 'role' и 'uuid' в выборку
+      const user = await knex('users')
+        .where({ uuid: decoded.userId }) // decoded.userId теперь это uuid
+        .select('uuid', 'username', 'email', 'role', 'created_at', 'updated_at')
+        .first();
 
-      if (!user) {
-        return res.status(401).json({ message: 'Пользователь не найден, авторизация отклонена' });
+      if (!user || !user.uuid) { // Дополнительная проверка на наличие uuid
+        return res.status(401).json({ message: 'Пользователь не найден или неполные данные пользователя, авторизация отклонена' });
       }
 
       req.user = user;
@@ -53,6 +56,7 @@ const authorize = (roles = []) => {
       return res.status(403).json({ message: 'Ошибка: роль пользователя не определена в токене или данных пользователя.' });
     }
 
+    console.log(`[AuthMiddleware] Authorize check: User role: "${req.user.role}", Required roles: ${JSON.stringify(roles)}`); // ДОБАВИТЬ ЭТОТ ЛОГ
     if (roles.length && !roles.includes(req.user.role)) {
       // user's role is not authorized
       return res.status(403).json({ message: 'Доступ запрещен: недостаточные права.' });

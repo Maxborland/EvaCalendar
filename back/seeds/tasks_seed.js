@@ -1,68 +1,116 @@
+const { v4: uuidv4 } = require('uuid');
+
 /**
  * @param { import("knex").Knex } knex
  * @return { Promise<void> }
  */
 exports.seed = async function(knex) {
-  const { v4: uuidv4 } = require('uuid');
+  // Удаляем существующие задачи
   await knex('tasks').del();
 
-  const children = await knex('children').select('uuid').limit(3);
-  const expenseCategories = await knex('expense_categories').select('uuid').limit(2);
+  // Получаем UUID администратора
+  const adminUser = await knex('users').where({ email: 'admin@example.com' }).first();
+  if (!adminUser) {
+    console.warn('Admin user not found. Seed data for tasks might be incomplete.');
+    return; // Прерываем выполнение, если админ не найден
+  }
+  const adminUserUuid = adminUser.uuid;
 
+  // Получаем UUID первого ребенка, принадлежащего adminUserUuid
+  const firstChild = await knex('children').where({ user_uuid: adminUserUuid }).first();
+  if (!firstChild) {
+    console.warn('No child found for admin user, tasks may not be fully seeded or may need default child_uuid.');
+  }
+  const childUuid = firstChild ? firstChild.uuid : null;
+
+  // Получаем UUID первой категории расходов, принадлежащей adminUserUuid
+  const firstCategory = await knex('expense_categories').where({ user_uuid: adminUserUuid }).first();
+  if (!firstCategory) {
+    console.warn('No expense category found, tasks may not be fully seeded or may need default expense_category_uuid.');
+  }
+  const categoryUuid = firstCategory ? firstCategory.uuid : null;
+
+  // Вставляем данные задач
   await knex('tasks').insert([
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
+      child_uuid: childUuid, // Используем полученный childUuid
+      expense_category_uuid: null, // Для задач типа 'income' категория расходов может быть null
       type: 'income',
       title: 'Помощь по дому',
-      dueDate: new Date().toISOString().split('T')[0],
       time: '10:00',
-      childId: children[0] ? children[0].uuid : null,
+      // duration_minutes: 120, // 2 часа - Этого поля нет в миграции
+      // Поля, специфичные для income
       hoursWorked: 2,
       amountEarned: 10.50,
+      // Поля, специфичные для expense, должны быть null
       amountSpent: null,
-      expenseTypeId: null
     },
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
+      child_uuid: childUuid, // Используем тот же childUuid для примера
+      expense_category_uuid: null,
       type: 'income',
       title: 'Урок математики',
-      dueDate: new Date().toISOString().split('T')[0],
       time: '14:30',
-      childId: children[1] ? children[1].uuid : null,
+      // duration_minutes: 60, // 1 час - Этого поля нет в миграции
+      // status: 'pending', // Этого поля нет в миграции
+      // is_recurring: true, // Этого поля нет в миграции
+      // recurring_pattern: 'weekly', // Этого поля нет в миграции
       hoursWorked: 1,
-      amountEarned: null,
+      amountEarned: 25.00, // Пример значения
       amountSpent: null,
-      expenseTypeId: null
     },
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
+      child_uuid: null, // Эта задача не привязана к ребенку
+      expense_category_uuid: categoryUuid, // Используем полученный categoryUuid
       type: 'expense',
       title: 'Поход в магазин',
-      dueDate: new Date().toISOString().split('T')[0],
-      amountSpent: 5.75,
-      comments: 'Покупки в магазине',
-      expenseTypeId: expenseCategories[0] ? expenseCategories[0].uuid : null
+      time: '17:00', // Пример времени
+      // duration_minutes: 45, // Пример длительности - Этого поля нет в миграции
+      // status: 'completed', // Этого поля нет в миграции
+      // is_recurring: false, // Этого поля нет в миграции
+      // Поля, специфичные для income, должны быть null
+      hoursWorked: null,
+      amountEarned: null,
+      // Поля, специфичные для expense
+      amountSpent: 55.75, // Пример значения
     },
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
+      child_uuid: childUuid,
+      expense_category_uuid: null,
       type: 'income',
       title: 'Работа над проектом',
-      dueDate: new Date().toISOString().split('T')[0],
       time: '11:00',
-      childId: children[2] ? children[2].uuid : null,
+      // duration_minutes: 180, // 3 часа - Этого поля нет в миграции
+      // status: 'in_progress', // Этого поля нет в миграции
+      // is_recurring: false, // Этого поля нет в миграции
       hoursWorked: 3,
-      amountEarned: 15.00,
+      amountEarned: 150.00, // Пример значения
       amountSpent: null,
-      expenseTypeId: null
     },
     {
       uuid: uuidv4(),
+      user_uuid: adminUserUuid,
+      child_uuid: null,
+      expense_category_uuid: categoryUuid, // Используем тот же categoryUuid для примера
       type: 'expense',
-      title: 'Рисование',
-      dueDate: new Date().toISOString().split('T')[0],
-      amountSpent: 2.00,
-      comments: 'Покупки в магазине',
-      expenseTypeId: expenseCategories[1] ? expenseCategories[1].uuid : null
+      title: 'Оплата счетов',
+      time: '09:00', // Пример времени
+      // duration_minutes: 30, // Пример длительности - Этого поля нет в миграции
+      // status: 'pending', // Этого поля нет в миграции
+      // is_recurring: true, // Этого поля нет в миграции
+      // recurring_pattern: 'monthly', // Этого поля нет в миграции
+      hoursWorked: null,
+      amountEarned: null,
+      amountSpent: 75.00, // Пример значения
     }
   ]);
+  console.log('Tasks seeded successfully.');
 };

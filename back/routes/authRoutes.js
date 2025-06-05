@@ -11,7 +11,7 @@ router.post('/register', asyncHandler(authController.registerUser));
 router.post('/login', asyncHandler(authController.loginUser));
 
 // POST /api/auth/logout
-router.post('/logout', protect, authController.logoutUser); // Защищаем роут и используем logoutUser
+router.post('/logout', authController.logoutUser); // Защищаем роут и используем logoutUser
 
 // Другие роуты аутентификации (refresh-token) могут быть добавлены здесь позже
 

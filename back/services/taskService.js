@@ -25,28 +25,28 @@ const taskService = {
             time: taskData.time || null,
             comments: taskData.comments || null,
             // Обнуляем поля по умолчанию, чтобы избежать сохранения старых данных при смене типа
-            childId: null,
+            child_uuid: null,
             hoursWorked: null,
             amountEarned: null,
             amountSpent: null,
-            expenseTypeId: null
+            expense_category_uuid: null
         };
 
         if (taskData.taskType === 'income') {
-            dataForDb.childId = taskData.childId || null;
+            dataForDb.child_uuid = taskData.childId || null;
             dataForDb.hoursWorked = taskData.hoursWorked || null;
             dataForDb.amountEarned = taskData.amount || null;
 
-            if (dataForDb.childId && !(await validateExistence('children', dataForDb.childId))) {
-                console.error('[taskService.createTask] Validation failed for childId:', dataForDb.childId);
+            if (dataForDb.child_uuid && !(await validateExistence('children', dataForDb.child_uuid))) {
+                console.error('[taskService.createTask] Validation failed for childId:', dataForDb.child_uuid);
                 throw ApiError.badRequest('Child not found');
             }
         } else if (taskData.taskType === 'expense') {
             dataForDb.amountSpent = taskData.amount || null;
-            dataForDb.expenseTypeId = taskData.expenseTypeId || null;
+            dataForDb.expense_category_uuid = taskData.expenseTypeId || null;
 
-            if (dataForDb.expenseTypeId && !(await validateExistence('expense_categories', dataForDb.expenseTypeId))) {
-                console.error('[taskService.createTask] Validation failed for expenseTypeId (categoryId):', dataForDb.expenseTypeId);
+            if (dataForDb.expense_category_uuid && !(await validateExistence('expense_categories', dataForDb.expense_category_uuid))) {
+                console.error('[taskService.createTask] Validation failed for expense_category_uuid (categoryId):', dataForDb.expense_category_uuid);
                 throw ApiError.badRequest('Expense category not found by categoryId');
             }
         } else {
@@ -81,8 +81,8 @@ const taskService = {
                 'children.hourlyRate as childHourlyRate',
                 'expense_categories.categoryName as expenseCategoryName'
             )
-            .leftJoin('children', 'tasks.childId', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid');
+            .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
+            .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid');
     },
 
     async getTaskById(uuid) {
@@ -97,8 +97,8 @@ const taskService = {
                 'children.hourlyRate as childHourlyRate',
                 'expense_categories.categoryName as expenseCategoryName'
             )
-            .leftJoin('children', 'tasks.childId', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid')
+            .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
+            .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid')
             .first();
         if (task) {
         } else {
@@ -134,38 +134,38 @@ const taskService = {
 
         // Сбрасываем поля перед установкой новых, если тип задачи меняется или это первое обновление полей типа
         if (taskData.hasOwnProperty('taskType')) {
-            dataToUpdate.childId = null;
+            dataToUpdate.child_uuid = null;
             dataToUpdate.hoursWorked = null;
             dataToUpdate.amountEarned = null;
             dataToUpdate.amountSpent = null;
-            dataToUpdate.expenseTypeId = null;
+            dataToUpdate.expense_category_uuid = null;
         }
 
 
         if (currentTaskType === 'income') {
-            if (taskData.hasOwnProperty('childId')) dataToUpdate.childId = taskData.childId;
+            if (taskData.hasOwnProperty('childId')) dataToUpdate.child_uuid = taskData.childId;
             if (taskData.hasOwnProperty('hoursWorked')) dataToUpdate.hoursWorked = taskData.hoursWorked;
             if (taskData.hasOwnProperty('amount')) dataToUpdate.amountEarned = taskData.amount;
 
-            if (dataToUpdate.childId && !(await validateExistence('children', dataToUpdate.childId))) {
-                console.error('[taskService.updateTask] Validation failed for childId:', dataToUpdate.childId);
+            if (dataToUpdate.child_uuid && !(await validateExistence('children', dataToUpdate.child_uuid))) {
+                console.error('[taskService.updateTask] Validation failed for childId:', dataToUpdate.child_uuid);
                 throw ApiError.badRequest('Child not found');
             }
             // Если тип 'income', убедимся, что поля расходов обнулены, если они не были явно переданы для обнуления
              if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = null;
-             if (!taskData.hasOwnProperty('categoryId')) dataToUpdate.expenseTypeId = null;
+             if (!taskData.hasOwnProperty('categoryId')) dataToUpdate.expense_category_uuid = null;
 
 
         } else if (currentTaskType === 'expense') {
             if (taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = taskData.amount;
-            if (taskData.hasOwnProperty('categoryId')) dataToUpdate.expenseTypeId = taskData.categoryId;
+            if (taskData.hasOwnProperty('categoryId')) dataToUpdate.expense_category_uuid = taskData.categoryId;
 
-            if (dataToUpdate.expenseTypeId && !(await validateExistence('expense_categories', dataToUpdate.expenseTypeId))) {
-                console.error('[taskService.updateTask] Validation failed for expenseTypeId (categoryId):', dataToUpdate.expenseTypeId);
+            if (dataToUpdate.expense_category_uuid && !(await validateExistence('expense_categories', dataToUpdate.expense_category_uuid))) {
+                console.error('[taskService.updateTask] Validation failed for expense_category_uuid (categoryId):', dataToUpdate.expense_category_uuid);
                 throw ApiError.badRequest('Expense category not found by categoryId');
             }
              // Если тип 'expense', убедимся, что поля доходов обнулены
-             if (!taskData.hasOwnProperty('childId')) dataToUpdate.childId = null;
+             if (!taskData.hasOwnProperty('childId')) dataToUpdate.child_uuid = null;
              if (!taskData.hasOwnProperty('hoursWorked')) dataToUpdate.hoursWorked = null;
              if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountEarned = null;
 
@@ -203,13 +203,13 @@ async getTasksByCategoryUuid(categoryUuid) {
         }
 
         return knex('tasks')
-            .where({ expenseTypeId: category.uuid })
+            .where({ expense_category_uuid: category.uuid })
             .select(
                 'tasks.*',
                 'children.childName as childName',
                 knex.raw('? as expenseCategoryName', [category.categoryName])
             )
-            .leftJoin('children', 'tasks.childId', 'children.uuid');
+            .leftJoin('children', 'tasks.child_uuid', 'children.uuid');
     },
     async deleteTask(uuid) {
         const deleted = await knex('tasks').where({ uuid }).del();
@@ -232,8 +232,8 @@ async getTasksByCategoryUuid(categoryUuid) {
                 'children.hourlyRate as childHourlyRate',
                 'expense_categories.categoryName as expenseCategoryName'
             )
-            .leftJoin('children', 'tasks.childId', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expenseTypeId', 'expense_categories.uuid');
+            .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
+            .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid');
         return tasks;
     }
 };

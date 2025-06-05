@@ -1,10 +1,12 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// Функция для установки обработчика выхода из системы, будет вызвана из AuthContext
-let logoutHandler: (() => void) | null = null;
-export const setAuthErrorHandler = (handler: () => void) => {
-  logoutHandler = handler;
+// Файл: front/src/services/api.ts
+
+let currentLogoutCallback: (() => void) | null = null;
+
+export const initializeAuthCallbackForApi = (callback: () => void) => {
+  currentLogoutCallback = callback;
 };
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
@@ -98,6 +100,20 @@ export interface Note {
   updatedAt?: string;
 }
 
+export interface User {
+  uuid: string;
+  username: string;
+  email: string;
+  role: 'user' | 'admin'; // Предполагаем, что роли могут быть только 'user' или 'admin'
+}
+
+export interface NewUserCredentials {
+  username: string;
+  email: string;
+  password: string;
+  role: 'user' | 'admin';
+}
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -121,6 +137,7 @@ api.interceptors.request.use(
   }
 );
 
+// Устанавливаем перехватчик один раз при инициализации модуля
 api.interceptors.response.use(
   response => response,
   error => {
@@ -129,18 +146,19 @@ api.interceptors.response.use(
       // Сервер ответил со статусом, отличным от 2xx
       if (error.response.status === 401) {
         // Не обрабатываем 401 для login эндпоинта, т.к. это ожидаемая ошибка
-        if (error.config.url && !error.config.url.includes('/api/auth/login')) {
-          if (logoutHandler) {
-            logoutHandler(); // Вызываем logout из AuthContext
-            toast.info('Ваша сессия истекла. Пожалуйста, войдите снова.');
+        if (error.config.url && !error.config.url.includes('/api/auth/login') && !error.config.url.includes('/api/auth/logout')) {
+          if (currentLogoutCallback) {
+            currentLogoutCallback(); // Используем currentLogoutCallback
+            window.location.href = '/login'; // Добавлен редирект
+            return new Promise(() => {});
           } else {
-            // Это не должно произойти, если AuthContext правильно инициализирует обработчик
-            console.error('logoutHandler не установлен в api.ts. Не удалось выполнить автоматический выход.');
-            errorMessage = 'Сессия истекла, но не удалось выполнить автоматический выход. Обновите страницу.';
-            toast.error(errorMessage);
+            // currentLogoutCallback еще не установлен.
+            // Это, вероятно, самый первый запрос до полной инициализации AuthContext.
+            // Просто перенаправляем на логин. Состояние очистится при следующей загрузке.
+            window.location.href = '/login'; // Добавлен редирект
+            // Возвращаем промис, который никогда не разрешится, чтобы остановить ошибку.
+            return new Promise(() => {});
           }
-          // Важно прервать цепочку промисов, чтобы компонент не пытался обработать ошибку дальше
-          return Promise.reject(new Error('Сессия истекла и был выполнен выход.'));
         } else if (error.config.url && error.config.url.includes('/api/auth/login')) {
            // Для /api/auth/login, 401 означает неверные учетные данные, позволяем стандартной обработке ошибок показать это
            if (error.response.data && error.response.data.message) {
@@ -170,6 +188,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+// Больше нет setupApiInterceptors, перехватчик установлен выше
 
 export const getNoteByDate = async (dateString: string): Promise<Note[]> => {
   try {
@@ -313,6 +332,34 @@ export const updateChild = async (uuid: string, child: Child) => { // Было i
 export const deleteChild = async (uuid: string) => { // Было id: string
     const response = await api.delete(`/children/${uuid}`); // Было /children/${id}
     return response.data;
-};
+  };
 
-export default api;
+  // User management API calls
+  export const getUsers = async (): Promise<User[]> => {
+    const response = await api.get<User[]>('/api/users');
+    return response.data;
+  };
+
+  export const updateUserRole = async (userUuid: string, role: 'user' | 'admin'): Promise<User> => {
+    const response = await api.put<User>(`/api/users/${userUuid}/role`, { role });
+    return response.data;
+  };
+
+  export const updateUserPassword = async (userUuid: string, password: string): Promise<{ message: string }> => {
+    const response = await api.put<{ message: string }>(`/api/users/${userUuid}/password`, { password });
+    return response.data;
+  };
+
+  export const createUser = async (userData: NewUserCredentials): Promise<User> => {
+    const response = await api.post<User>('/api/users', userData);
+    return response.data;
+  };
+
+  export const deleteUser = async (userUuid: string): Promise<{ message: string }> => {
+    // Бэкенд может возвращать 204 No Content или объект с сообщением.
+    // Для единообразия предположим, что он возвращает объект с сообщением.
+    const response = await api.delete<{ message: string }>(`/api/users/${userUuid}`);
+    return response.data;
+  };
+
+  export default api;

@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken'); // Добавляем jsonwebtoken
+const { v4: uuidv4 } = require('uuid'); // Для генерации UUID
 const knex = require('../db.cjs'); // Предполагая, что db.cjs экспортирует экземпляр knex
 
 const SALT_ROUNDS = 10; // Рекомендуемое количество раундов для bcrypt
@@ -45,8 +46,9 @@ const registerUser = async (req, res, next) => {
         username,
         email,
         hashed_password: hashedPassword,
+        uuid: uuidv4(), // Генерируем и добавляем UUID
       })
-      .returning(['id', 'username', 'email', 'created_at', 'updated_at']); // Возвращаем данные нового пользователя
+      .returning(['uuid', 'username', 'email', 'created_at', 'updated_at', 'role']); // Возвращаем uuid и другие данные
 
     // 5. Ответ клиенту
     res.status(201).json({
@@ -67,15 +69,19 @@ const registerUser = async (req, res, next) => {
 // POST /api/auth/login
 const loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body; // Изменено email на identifier
 
     // 1. Валидация входных данных
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Поля email и password обязательны для заполнения.' });
+    if (!identifier || !password) {
+      return res.status(400).json({ message: 'Поля identifier (email или username) и password обязательны для заполнения.' });
     }
 
-    // 2. Поиск пользователя по email
-    const user = await knex('users').where({ email }).first();
+    // 2. Поиск пользователя по email или username
+    let user = await knex('users').where({ email: identifier }).first();
+    if (!user) {
+      user = await knex('users').where({ username: identifier }).first();
+    }
+
     if (!user) {
       return res.status(401).json({ message: 'Неверные учетные данные.' }); // Общее сообщение
     }
@@ -88,17 +94,27 @@ const loginUser = async (req, res, next) => {
 
     // 4. Генерация JWT
     const token = jwt.sign(
-      { userId: user.id, username: user.username, email: user.email, role: user.role },
+      { userId: user.uuid, username: user.username, email: user.email, role: user.role }, // Используем user.uuid
       JWT_SECRET,
       { expiresIn: '1h' } // Токен действителен 1 час
     );
 
     // 5. Ответ клиенту
+    // Убедимся, что user.uuid существует, если нет, возможно, пользователь старый и его нужно обновить
+    // или обработать эту ситуацию. В данном случае, после миграции, uuid должен быть.
+    if (!user.uuid) {
+        // Этого не должно произойти после миграции, но на всякий случай
+        console.error(`User with id ${user.id} is missing uuid after login attempt.`);
+        return res.status(500).json({ message: 'Ошибка конфигурации пользователя: отсутствует UUID.' });
+    }
+
     res.status(200).json({
       message: 'Вход выполнен успешно.',
       token,
-      userId: user.id,
+      userId: user.uuid, // Возвращаем uuid
       username: user.username,
+      email: user.email, // Добавим email в ответ
+      role: user.role, // Добавим роль в ответ
     });
   } catch (error) {
     console.error('Ошибка при входе пользователя:', error);
