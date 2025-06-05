@@ -90,7 +90,7 @@ const RegistrationPage: React.FC = () => {
   return (
     <div className="flex items-center justify-center min-h-screen px-4 font-['Inter'] bg-slate-900">
       <div className="flex flex-col items-center justify-center">
-        <img className="max-w-24 mb-4" src="../../../public/icons/web/icon-512.png" alt="Login Icon" />
+        <img className="max-w-24 mb-4" src="../../../icons/web/icon-512.png" alt="Login Icon" />
         <div className="flex items-center mb-8">
           <h1 className="text-2xl font-bold text-slate-100">Регистрация</h1>
         </div>

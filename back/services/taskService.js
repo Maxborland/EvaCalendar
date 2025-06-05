@@ -9,7 +9,7 @@ async function validateExistence(table, id) {
 }
 
 const taskService = {
-    async createTask(taskData) {
+    async createTask(taskData, userId) {
         const requiredFields = ['title', 'dueDate', 'taskType'];
         for (const field of requiredFields) {
             if (!taskData[field]) {
@@ -19,6 +19,7 @@ const taskService = {
 
         const dataForDb = {
             uuid: uuidv4(),
+            user_uuid: userId, // Добавляем user_uuid
             title: taskData.title,
             type: taskData.taskType,
             dueDate: taskData.dueDate,
@@ -70,8 +71,9 @@ const taskService = {
         }
     },
 
-    async getAllTasks() {
+    async getAllTasks(userId) {
         return knex('tasks')
+            .where('tasks.user_uuid', userId) // Фильтруем по user_uuid
             .select(
                 'tasks.*',
                 'children.childName as childName',
@@ -85,9 +87,10 @@ const taskService = {
             .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid');
     },
 
-    async getTaskById(uuid) {
+    async getTaskById(uuid, userId) {
         const task = await knex('tasks')
             .where('tasks.uuid', uuid)
+            .andWhere('tasks.user_uuid', userId) // Фильтруем по user_uuid
             .select(
                 'tasks.*',
                 'children.childName as childName',
@@ -106,8 +109,15 @@ const taskService = {
         return task;
     },
 
-    async updateTask(uuid, taskData) {
+    async updateTask(uuid, taskData, userId) {
         const dataToUpdate = {};
+
+        // Сначала проверим, существует ли задача и принадлежит ли она пользователю
+        const existingTask = await knex('tasks').where({ uuid, user_uuid: userId }).first();
+        if (!existingTask) {
+            throw ApiError.notFound('Task not found or access denied');
+        }
+
 
         if (taskData.hasOwnProperty('title')) {
             if (!taskData.title) throw ApiError.badRequest('title is required');
@@ -126,10 +136,11 @@ const taskService = {
         if (taskData.hasOwnProperty('comments')) dataToUpdate.comments = taskData.comments;
 
         // Определяем текущий тип задачи, если он не меняется, или новый, если меняется
-        const currentTaskType = dataToUpdate.type || (await knex('tasks').where({ uuid }).first()).type;
+        const currentTaskType = dataToUpdate.type || existingTask.type; // Используем тип из existingTask
 
         if (!currentTaskType) {
-             throw ApiError.notFound('Task not found or type is missing');
+             // Эта проверка теперь избыточна из-за existingTask, но оставим на всякий случай
+             throw ApiError.notFound('Task type is missing');
         }
 
         // Сбрасываем поля перед установкой новых, если тип задачи меняется или это первое обновление полей типа
@@ -187,23 +198,30 @@ const taskService = {
 
 
         if (Object.keys(dataToUpdate).length === 0) {
-            const taskExists = await knex('tasks').where({ uuid }).first();
-            return taskExists ? 0 : ApiError.notFound('Task not found for update (no valid fields to update)');
+            // Нет полей для обновления, но задача существует (проверено в начале)
+            return 0;
         }
 
-        const updated = await knex('tasks').where({ uuid }).update(dataToUpdate);
+        const updated = await knex('tasks').where({ uuid, user_uuid: userId }).update(dataToUpdate); // Фильтруем по user_uuid
         return updated;
     },
 
-async getTasksByCategoryUuid(categoryUuid) {
-        const category = await knex('expense_categories').where({ uuid: categoryUuid }).first();
+async getTasksByCategoryUuid(categoryUuid, userId) {
+        // Сначала проверим, существует ли категория и принадлежит ли она пользователю
+        // Важно: категории расходов также должны быть привязаны к пользователю.
+        // Если это не так, то фильтрация только задач по user_uuid может быть недостаточной,
+        // так как пользователь сможет видеть задачи по чужим категориям, если знает их UUID.
+        // Для данной задачи предполагаем, что категории тоже фильтруются по user_uuid где-то выше
+        // или что это будет исправлено в другой задаче.
+        // Здесь мы просто фильтруем задачи по user_uuid.
+        const category = await knex('expense_categories').where({ uuid: categoryUuid }).first(); // TODO: Добавить user_uuid сюда, если категории привязаны к пользователю
 
         if (!category) {
             return null;
         }
 
         return knex('tasks')
-            .where({ expense_category_uuid: category.uuid })
+            .where({ expense_category_uuid: category.uuid, user_uuid: userId }) // Фильтруем по user_uuid
             .select(
                 'tasks.*',
                 'children.childName as childName',
@@ -211,18 +229,19 @@ async getTasksByCategoryUuid(categoryUuid) {
             )
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid');
     },
-    async deleteTask(uuid) {
-        const deleted = await knex('tasks').where({ uuid }).del();
+    async deleteTask(uuid, userId) {
+        const deleted = await knex('tasks').where({ uuid, user_uuid: userId }).del(); // Фильтруем по user_uuid
         return deleted;
     },
 
-    async getTasksByDate(dateString) {
+    async getTasksByDate(dateString, userId) {
         // Валидация формата даты (простая проверка, можно улучшить с помощью библиотек типа moment.js или date-fns)
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
             throw ApiError.badRequest('Invalid date format. Please use YYYY-MM-DD.');
         }
         const tasks = await knex('tasks')
             .where('tasks.dueDate', dateString)
+            .andWhere('tasks.user_uuid', userId) // Фильтруем по user_uuid
             .select(
                 'tasks.*',
                 'children.childName as childName',

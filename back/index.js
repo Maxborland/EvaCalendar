@@ -7,7 +7,6 @@ dotenv.config();
 
 const app = express();
 app.use((req, res, next) => {
-  console.log(`[GLOBAL LOGGER] Received request: ${req.method} ${req.url}`);
   next();
 });
 const port = process.env.PORT || 3001;
@@ -42,7 +41,7 @@ app.use('/children', protect, childrenController);
 app.use('/expense-categories', protect, expenseCategoryController);
 app.use('/notes', protect, noteController);
 app.use('/tasks', protect, taskController);
-app.use('/summary', summaryController);
+app.use('/summary', protect, summaryController);
 
 // Настройка rate limiters
 const loginLimiter = rateLimit({

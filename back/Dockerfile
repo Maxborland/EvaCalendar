@@ -21,6 +21,7 @@ COPY migrations ./migrations
 COPY seeds ./seeds
 COPY services ./services
 COPY utils ./utils
+COPY routes ./routes
 # Копируем только необходимые для работы приложения файлы и директории
 # COPY db.cjs knexfile.cjs index.js pm2.config.js babel.config.js ./
 # COPY controllers ./controllers
@@ -50,6 +51,7 @@ COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/seeds ./seeds
 COPY --from=builder /app/services ./services
 COPY --from=builder /app/utils ./utils
+COPY --from=builder /app/routes ./routes
 
 # При использовании SQLite, база данных будет создана в VOLUME, если она не существует.
 # Это позволит сохранять данные даже при пересоздании контейнера.

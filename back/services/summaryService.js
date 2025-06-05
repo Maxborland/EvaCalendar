@@ -1,7 +1,7 @@
 const knex = require('../db.cjs');
 
 class SummaryService {
-  async getSummaryForMonthByWeekStart(weekStartDate) {
+  async getSummaryForMonthByWeekStart(weekStartDate, user_uuid) {
     const date = new Date(weekStartDate);
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth() + 1; // Преобразуем 0-11 в 1-12
@@ -19,6 +19,7 @@ class SummaryService {
       )
       .whereRaw('DATE(dueDate) >= ?', [startDateString])
       .andWhereRaw('DATE(dueDate) <= ?', [endDateString])
+      .andWhere({ user_uuid }) // Фильтрация по user_uuid
       .first();
 
     const totalEarned = parseFloat(result.totalEarned) || 0;
@@ -33,13 +34,14 @@ class SummaryService {
     };
   }
 
-  async getDailySummary(date) {
+  async getDailySummary(date, user_uuid) {
     const result = await knex('tasks')
       .select(
         knex.raw("COALESCE(SUM(CASE WHEN type = 'income' THEN \"amountEarned\" ELSE 0 END), 0) as totalEarned"),
         knex.raw("COALESCE(SUM(CASE WHEN type = 'expense' THEN \"amountSpent\" ELSE 0 END), 0) as totalSpent")
       )
       .whereRaw('DATE(dueDate) = ?', [date])
+      .andWhere({ user_uuid }) // Фильтрация по user_uuid
       .first();
 
     const totalEarned = parseFloat(result.totalEarned) || 0;
@@ -52,7 +54,7 @@ class SummaryService {
       balance,
     };
   }
-  async getMonthlySummary(year, month) {
+  async getMonthlySummary(year, month, user_uuid) {
     const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
@@ -67,6 +69,7 @@ class SummaryService {
       )
       .whereRaw('DATE(dueDate) >= ?', [startDateString])
       .andWhereRaw('DATE(dueDate) <= ?', [endDateString])
+      .andWhere({ user_uuid }) // Фильтрация по user_uuid
       .first();
 
 

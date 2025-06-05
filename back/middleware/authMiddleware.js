@@ -56,7 +56,6 @@ const authorize = (roles = []) => {
       return res.status(403).json({ message: 'Ошибка: роль пользователя не определена в токене или данных пользователя.' });
     }
 
-    console.log(`[AuthMiddleware] Authorize check: User role: "${req.user.role}", Required roles: ${JSON.stringify(roles)}`); // ДОБАВИТЬ ЭТОТ ЛОГ
     if (roles.length && !roles.includes(req.user.role)) {
       // user's role is not authorized
       return res.status(403).json({ message: 'Доступ запрещен: недостаточные права.' });

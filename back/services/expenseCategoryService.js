@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const ApiError = require('../utils/ApiError');
 
 class ExpenseCategoryService {
-    async createExpenseCategory(categoryData) {
+    async createExpenseCategory(categoryData, userId) {
         try {
             const requiredFields = ['categoryName'];
             for (const field of requiredFields) {
@@ -12,8 +12,9 @@ class ExpenseCategoryService {
                 }
             }
             const newUuid = uuidv4();
+            // Добавляем user_uuid при создании
             const [createdCategory] = await knex('expense_categories')
-                .insert({ uuid: newUuid, ...categoryData })
+                .insert({ uuid: newUuid, user_uuid: userId, ...categoryData })
                 .returning('*');
             return createdCategory;
         } catch (error) {
@@ -22,34 +23,44 @@ class ExpenseCategoryService {
         }
     }
 
-    async getAllExpenseCategories() {
+    async getAllExpenseCategories(userId) {
         try {
-            return await knex('expense_categories').select('*');
+            // Фильтруем по user_uuid
+            return await knex('expense_categories').where({ user_uuid: userId }).select('*');
         } catch (error) {
             console.error('Error getting all expense categories:', error);
             throw error;
         }
     }
 
-    async getExpenseCategoryById(uuid) {
+    async getExpenseCategoryById(uuid, userId) {
         try {
-            return await knex('expense_categories').where({ uuid }).first();
+            // Фильтруем по uuid и user_uuid
+            return await knex('expense_categories').where({ uuid, user_uuid: userId }).first();
         } catch (error) {
             console.error('Error getting expense category by UUID:', error);
             throw error;
         }
     }
 
-    async updateExpenseCategory(uuid, categoryData) {
+    async updateExpenseCategory(uuid, categoryData, userId) {
         try {
+            // Сначала проверяем, существует ли категория и принадлежит ли она пользователю
+            const existingCategory = await knex('expense_categories').where({ uuid, user_uuid: userId }).first();
+            if (!existingCategory) {
+                return null; // Контроллер вернет 404
+            }
+
             const requiredFields = ['categoryName'];
             for (const field of requiredFields) {
-                if (!categoryData[field]) {
+                // Проверяем только если поле есть в categoryData и оно пустое
+                if (categoryData.hasOwnProperty(field) && !categoryData[field]) {
                     throw ApiError.badRequest(`${field} is required`);
                 }
             }
+            // Обновляем только для данного пользователя
             const [updatedCategory] = await knex('expense_categories')
-                .where({ uuid })
+                .where({ uuid, user_uuid: userId })
                 .update(categoryData)
                 .returning('*');
             return updatedCategory;
@@ -59,9 +70,10 @@ class ExpenseCategoryService {
         }
     }
 
-    async deleteExpenseCategory(uuid) {
+    async deleteExpenseCategory(uuid, userId) {
         try {
-            const deletedCount = await knex('expense_categories').where({ uuid }).del();
+            // Удаляем только для данного пользователя
+            const deletedCount = await knex('expense_categories').where({ uuid, user_uuid: userId }).del();
             return deletedCount > 0;
         } catch (error) {
             console.error('Error deleting expense category:', error);
