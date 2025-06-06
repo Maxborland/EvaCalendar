@@ -19,6 +19,23 @@
   color: var(--theme-primary-text)
 }
 
+/* Адаптивность для заголовка на мобильных устройствах */
+@media (max-width: 390px) {
+  .day-details-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .day-details-header h1 {
+    margin: 10px 0 0 0; /* Убираем левый отступ и добавляем верхний */
+    font-size: 1.5em; /* Немного уменьшаем шрифт для компактности */
+  }
+
+  .day-details-header .btn-secondary { /* Конкретизируем селектор для кнопки "Назад" */
+    margin-bottom: 10px; /* Добавляем отступ снизу для кнопки */
+  }
+}
+
 .back-button {
   background-color: var(--theme-gray-dark);
   border: 1px solid #ddd;

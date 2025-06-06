@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'; // useMemo уже был, но убедимся, что все импорты React на месте
 import { useLoaderData, useNavigate } from 'react-router-dom'; // useLoaderData должен быть здесь
 import DetailedTaskCard from '../components/DetailedTaskCard';
+import { useAuth } from '../context/AuthContext'; // Добавляем useAuth
 // Предполагаем, что TaskForm.tsx будет переименован в UnifiedTaskFormModal.tsx
 import UnifiedTaskFormModal from '../components/UnifiedTaskFormModal';
 // getTasksForDay и getDailySummary удаляются из импортов, так как данные приходят через loader
@@ -8,9 +9,6 @@ import { type Task, createTask, deleteTask, updateTask } from '../services/api';
 import { formatDateForDisplay, parseDateString } from '../utils/dateUtils';
 import './DayDetailsPage.css';
 
-// interface DayDetailsParams extends Record<string, string | undefined> {
-//   dateString: string;
-// }
 
 interface DayDetailsLoaderData {
   tasks: Task[];
@@ -21,6 +19,7 @@ interface DayDetailsLoaderData {
 const DayDetailsPage: React.FC = () => {
   const { tasks: initialTasks, summary: initialSummary, dateString } = useLoaderData() as DayDetailsLoaderData;
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth(); // Получаем состояние аутентификации
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [sortedTasks, setSortedTasks] = useState<Task[]>([]);
@@ -30,6 +29,12 @@ const DayDetailsPage: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentTaskType, setCurrentTaskType] = useState<'income' | 'expense' | undefined>('income');
+
+  useEffect(() => {
+    if (!isAuthenticated && !isAuthLoading) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isAuthLoading, navigate]);
 
   useEffect(() => {
     if (dateString) {
@@ -113,6 +118,13 @@ const DayDetailsPage: React.FC = () => {
   };
 
   const handleTaskSave = async (taskData: Task | Omit<Task, 'uuid'>) => {
+    if (!isAuthenticated && !isAuthLoading) {
+      navigate('/login');
+      setError("Пользователь не аутентифицирован. Невозможно сохранить задачу.");
+      return;
+    }
+    if (isAuthLoading) return;
+
     try {
       if ('uuid' in taskData && taskData.uuid) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -122,8 +134,8 @@ const DayDetailsPage: React.FC = () => {
         await createTask(taskData as Omit<Task, 'uuid'>);
       }
       handleCloseTaskForm();
-      // TODO: Использовать revalidator.revalidate() или navigate('.', { replace: true }) для перезагрузки данных из loader'а
-      navigate('.', { replace: true });
+      // TODO: #TICKET-123 Использовать revalidator.revalidate() или navigate('.', { replace: true }) для перезагрузки данных из loader'а
+      navigate('.', { replace: true }); // Это перезагрузит данные через loader, который должен быть защищен
     } catch (err) {
       // Error saving task
       setError("Ошибка при сохранении задачи.");
@@ -131,11 +143,18 @@ const DayDetailsPage: React.FC = () => {
   };
 
   const handleTaskDelete = async (taskId: string) => {
+    if (!isAuthenticated && !isAuthLoading) {
+      navigate('/login');
+      setError("Пользователь не аутентифицирован. Невозможно удалить задачу.");
+      return;
+    }
+    if (isAuthLoading) return;
+
     if (window.confirm('Вы уверены, что хотите удалить эту задачу?')) {
       try {
         await deleteTask(taskId);
-        // TODO: Использовать revalidator.revalidate() или navigate('.', { replace: true })
-        navigate('.', { replace: true });
+        // TODO: #TICKET-124 Использовать revalidator.revalidate() или navigate('.', { replace: true })
+        navigate('.', { replace: true }); // Это перезагрузит данные через loader
       } catch (err) {
         // Error deleting task
         setError("Ошибка при удалении задачи.");
@@ -195,7 +214,6 @@ const DayDetailsPage: React.FC = () => {
             initialTaskData={editingTask}
             initialTaskType={currentTaskType} // Исправлено taskType на initialTaskType
             onDelete={editingTask?.uuid ? () => handleTaskDelete(editingTask!.uuid!) : undefined}
-            // onDuplicate={editingTask?.uuid ? () => handleTaskDuplicate(editingTask!.uuid!) : undefined}
           />
         )
       }

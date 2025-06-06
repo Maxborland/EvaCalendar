@@ -3,11 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'; // Добавлен Link �
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-// import './AuthPage.css'; // Удален импорт AuthPage.css
 
 const RegistrationPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { isLoading } = useAuth();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,45 +44,47 @@ const RegistrationPage: React.FC = () => {
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
+    console.log('[RegPage] handleSubmit: Form submitted.');
     event.preventDefault();
     setServerError(null);
     if (validateForm()) {
+      console.log('[RegPage] handleSubmit: Form is valid. Proceeding with registration.');
       try {
-        const registerResponse = await api.post('/api/auth/register', {
+        console.log('[RegPage] handleSubmit: Calling api.post("/auth/register") with data:', { username, email }); // Пароль не логируем
+        const registerResponse = await api.post('/auth/register', { // Исправлен URL
           username,
           email,
           password,
         });
+        console.log('[RegPage] handleSubmit: Received response from /auth/register:', {
+          status: registerResponse.status,
+          data: registerResponse.data,
+        });
 
         if (registerResponse.status === 201) {
-          toast.info('Регистрация успешна. Выполняется вход...');
-          const loginResponse = await api.post('/api/auth/login', {
-            identifier: email, // или username, в зависимости от API
-            password: password,
-          });
-
-          if (loginResponse.status === 200 && loginResponse.data.token) {
-            await login(loginResponse.data.token);
-            toast.success('Вход выполнен успешно!');
-            navigate('/');
-          } else {
-            setServerError(loginResponse.data.message || 'Не удалось автоматически войти после регистрации.');
-            toast.warn('Регистрация прошла, но не удалось автоматически войти. Пожалуйста, войдите вручную.');
-            navigate('/login');
-          }
+          console.log('[RegPage] handleSubmit: Registration successful (status 201). Navigating to /login.');
+          toast.success('Регистрация прошла успешно! Пожалуйста, войдите.');
+          navigate('/login', { state: { message: 'Регистрация прошла успешно. Пожалуйста, войдите.' } });
         } else {
-          setServerError(registerResponse.data.message || 'Произошла неизвестная ошибка при регистрации.');
+          console.warn('[RegPage] handleSubmit: Registration API returned non-201 status:', registerResponse.status, 'Data:', registerResponse.data);
+          setServerError(registerResponse.data?.message || `Ошибка регистрации: статус ${registerResponse.status}`);
+          toast.error(registerResponse.data?.message || `Ошибка регистрации: статус ${registerResponse.status}`);
         }
       } catch (error: any) {
+        console.error('[RegPage] handleSubmit: Error during registration API call.', error);
         if (error.response && error.response.data && error.response.data.message) {
+          console.error('[RegPage] handleSubmit: Server error message:', error.response.data.message);
           setServerError(error.response.data.message);
         } else if (error.message) {
+          console.error('[RegPage] handleSubmit: Error message:', error.message);
           setServerError(error.message);
         } else {
+          console.error('[RegPage] handleSubmit: Unknown error or connection failure.');
           setServerError('Не удалось подключиться к серверу или произошла неизвестная ошибка.');
         }
-        // Ошибка регистрации или входа
       }
+    } else {
+      console.log('[RegPage] handleSubmit: Form is invalid. Errors:', errors);
     }
   };
 
@@ -100,7 +101,7 @@ const RegistrationPage: React.FC = () => {
               {serverError}
             </div>
           )}
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit} noValidate data-testid="registration-form">
             <div className="mb-6">
               <label htmlFor="username" className="block text-slate-200 text-sm mb-2">
                 Имя пользователя
@@ -181,7 +182,7 @@ const RegistrationPage: React.FC = () => {
 
           <p className="text-center text-sm text-slate-400 mt-8">
             Уже есть аккаунт?{' '}
-            <Link to="/login" className="font-medium text-blue-400 no-underline hover:underline">
+            <Link to="/login" className="font-medium text-green-400 no-underline hover:underline">
               Войти
             </Link>
           </p>

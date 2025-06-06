@@ -62,10 +62,10 @@ if (splashScreen) {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
+      .then(_registration => {
         // ServiceWorker registration successful
       })
-      .catch(error => {
+      .catch(_error => {
         // ServiceWorker registration failed
       });
   });

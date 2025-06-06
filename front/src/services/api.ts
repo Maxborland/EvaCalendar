@@ -1,13 +1,7 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// Файл: front/src/services/api.ts
 
-let currentLogoutCallback: (() => void) | null = null;
-
-export const initializeAuthCallbackForApi = (callback: () => void) => {
-  currentLogoutCallback = callback;
-};
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
 
@@ -116,6 +110,7 @@ export interface NewUserCredentials {
 
 const api = axios.create({
   baseURL: API_URL,
+withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -125,10 +120,12 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    // Исключаем пути аутентификации из добавления токена
     const authPaths = ['/api/auth/login', '/api/auth/register'];
-    if (token && config.url && !authPaths.some(path => config.url!.includes(path))) {
+    const isAuthPath = config.url ? authPaths.some(path => config.url!.includes(path)) : false;
+
+    if (token && config.url && !isAuthPath) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
     }
     return config;
   },
@@ -141,70 +138,34 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response,
   error => {
-    let errorMessage = 'Произошла неизвестная ошибка!';
-    if (error.response) {
-      // Сервер ответил со статусом, отличным от 2xx
-      if (error.response.status === 401) {
-        const requestUrl = error.config.url;
-        // Исключаем пути аутентификации и получения данных пользователя из глобального обработчика logout
-        const excludedPathsForGlobalLogoutTrigger = ['/api/auth/login', '/api/auth/logout', '/api/users/me'];
-
-        if (requestUrl && !excludedPathsForGlobalLogoutTrigger.some(path => requestUrl.includes(path))) {
-          // Это 401 для обычного запроса, не связанного с процессом входа/выхода или первоначальной загрузкой пользователя
-          if (currentLogoutCallback) {
-            currentLogoutCallback();
-            window.location.href = '/login';
-            return new Promise(() => {}); // Прерываем цепочку промисов
-          } else {
-            // currentLogoutCallback еще не установлен (маловероятно, но возможно при самой первой ошибке)
-            window.location.href = '/login';
-            return new Promise(() => {});
-          }
-        } else if (requestUrl && requestUrl.includes('/api/auth/login')) {
-          // Для /api/auth/login, 401 означает неверные учетные данные.
-          // Позволяем стандартной обработке ошибок LoginPage показать это.
-          if (error.response.data && error.response.data.message) {
-            errorMessage = error.response.data.message;
-          } else {
-            errorMessage = 'Неверные учетные данные.';
-          }
-          // Toast здесь не нужен, LoginPage обработает
-        }
-        // Если это 401 для /api/users/me (во время login() или verifyToken()) или /api/auth/logout,
-        // позволяем ошибке просто "всплыть" до вызывающего кода (AuthContext),
-        // который должен корректно обработать ее (например, очистить токен, если он невалиден).
-        // Глобальный toast.error для этих случаев также не нужен здесь.
-      } else if (error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message;
-      } else {
-        errorMessage = `Ошибка: ${error.response.status} - ${error.response.statusText}`;
+    // Проверяем, является ли ошибка ответом с кодом 401
+    if (error.response && error.response.status === 401) {
+      // Исключаем эндпоинт входа, чтобы избежать бесконечного цикла редиректов
+      if (!error.config.url.includes('/api/auth/login')) {
+        // Очищаем токен из localStorage, чтобы избежать проблем при следующем входе
+        localStorage.removeItem('token');
+        // Принудительно перенаправляем пользователя на страницу входа
+        window.location.href = '/login';
+        // Прерываем дальнейшую обработку ошибки, чтобы избежать лишних действий
+        return new Promise(() => {});
       }
-    } else if (error.request) {
-      // Запрос был сделан, но ответа не получено
-      errorMessage = 'Нет ответа от сервера. Проверьте ваше сетевое подключение.';
-    } else {
-      // Что-то пошло не так при настройке запроса
+    }
+
+    // Для всех остальных ошибок (включая 401 на странице входа)
+    // позволяем ошибке "всплыть" для локальной обработки в компонентах.
+    // Можно добавить более сложную логику отображения уведомлений здесь, если потребуется.
+    let errorMessage = 'Произошла неизвестная ошибка!';
+    if (error.response && error.response.data && error.response.data.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
       errorMessage = error.message;
     }
 
-    // Показываем toast.error только если ошибка не была специально обработана выше без toast
-    // (например, 401 для /api/auth/login или /api/users/me, или глобальный 401 с редиректом)
-    const isLoginAttemptError = error.response && error.response.status === 401 && error.config.url && error.config.url.includes('/api/auth/login');
-    const isUserMeError = error.response && error.response.status === 401 && error.config.url && error.config.url.includes('/api/users/me');
-    const isGlobalLogoutRedirect = error.response && error.response.status === 401 &&
-                                 error.config.url &&
-                                 !['/api/auth/login', '/api/auth/logout', '/api/users/me'].some(path => error.config.url.includes(path));
-
-    if (!isLoginAttemptError && !isUserMeError && !isGlobalLogoutRedirect) {
-      // Показываем toast только если это не одна из вышеперечисленных ситуаций 401,
-      // или любая другая ошибка, не являющаяся 401.
-      if (!(error.response && error.response.status === 401)) { // Если это не 401 вообще, то показываем
-          toast.error(errorMessage);
-      } else if (error.response && error.response.status === 401 && !isGlobalLogoutRedirect && !isLoginAttemptError && !isUserMeError) {
-          // Если это 401, но не один из специальных случаев, также показываем (хотя этот кейс маловероятен с текущей логикой)
-          toast.error(errorMessage);
-      }
+    // Показываем уведомление для всех ошибок, кроме 401, которые приводят к редиректу.
+    if (!error.response || error.response.status !== 401) {
+        toast.error(errorMessage);
     }
+
     return Promise.reject(error);
   }
 );

@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const knex = require('../db.cjs');
+const ApiError = require('../utils/ApiError');
 
 // @desc    Get current user
 // @route   GET /api/users/me
@@ -56,8 +57,7 @@ const changePassword = asyncHandler(async (req, res) => {
   const isMatch = await bcrypt.compare(currentPassword, user.hashed_password);
 
   if (!isMatch) {
-    res.status(401);
-    throw new Error('Неверный текущий пароль');
+    throw ApiError.unauthorized('Неверный текущий пароль');
   }
 
   const salt = await bcrypt.genSalt(10);

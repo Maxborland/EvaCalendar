@@ -1,7 +1,12 @@
 const jwt = require('jsonwebtoken');
 const knex = require('../db.cjs');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'YOUR_VERY_SECRET_KEY_REPLACE_LATER';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET is not defined in production environment.');
+  process.exit(1); // Останавливаем приложение, если секрет не задан в production
+}
 
 const protect = async (req, res, next) => {
   let token;
@@ -11,6 +16,23 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
 
       const decoded = jwt.verify(token, JWT_SECRET);
+
+      // Проверка, не находится ли токен в черном списке
+      const blacklistedToken = await knex('token_blacklist').where({ token }).first();
+      if (blacklistedToken) {
+        // Убедимся, что токен все еще "действителен" по времени истечения в черном списке,
+        // хотя если он там, он уже не должен быть действителен.
+        // Это также помогает очищать старые токены, если бы мы делали это здесь.
+        if (new Date(blacklistedToken.expires_at) > new Date()) {
+            return res.status(401).json({ message: 'Токен аннулирован (в черном списке).' });
+        } else {
+            // Токен в черном списке, но его срок истек, можно было бы его удалить из ЧС.
+            // Но для простоты, если он там - он недействителен.
+            // Однако, если срок истек, то jwt.verify уже должен был выдать ошибку TokenExpiredError.
+            // Эта ветка маловероятна при правильной логике добавления в ЧС.
+            return res.status(401).json({ message: 'Токен аннулирован и истек (в черном списке).' });
+        }
+      }
 
       const user = await knex('users')
         .where({ uuid: decoded.userId })

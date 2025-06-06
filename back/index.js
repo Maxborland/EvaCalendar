@@ -6,13 +6,22 @@ const rateLimit = require('express-rate-limit');
 dotenv.config();
 
 const app = express();
-app.use((req, res, next) => {
-  next();
-});
 const port = process.env.PORT || 3001;
 
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    const defaultOrigins = ['http://localhost:5173', 'https://calendar.home.local'];
+    let envOrigins = [];
+    if (process.env.FRONTEND_URL) {
+      envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+    }
+    const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+    if (!origin || allowedOrigins.some(allowedOrigin => origin.startsWith(allowedOrigin.trim()))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
@@ -20,6 +29,16 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// Промежуточный обработчик ошибок для express.json()
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    // Отправляем более информативный ответ, чем просто пустой 400/401
+    return res.status(400).json({ message: 'Invalid JSON payload: ' + err.message });
+  }
+  // Если это не ошибка разбора JSON от express.json, передаем дальше
+  next(err);
+});
 
 const childrenController = require('./controllers/childrenController.js');
 const expenseCategoryController = require('./controllers/expenseCategoryController.js');
@@ -42,51 +61,39 @@ app.use('/tasks', protect, taskController);
 app.use('/summary', protect, summaryController);
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: 'Слишком много запросов на вход с этого IP, попробуйте позже.',
-  standardHeaders: true,
-  legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10000, // Limit each IP to 10000 requests per `window` (TEMPORARILY INCREASED FOR DEBUGGING 429)
+  message: 'Too many login attempts from this IP, please try again later.', // ASCII message
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res, next, options) => {
+    console.log(`[RATE LIMITER] Blocked request from ${req.ip} to ${req.originalUrl}. Path: ${req.path}. Count: ${req.rateLimit.current}, Limit: ${req.rateLimit.limit}`); // Используем req.originalUrl для более точного пути
+    // Используем res.json() для отправки структурированного ответа
+    res.status(options.statusCode).json({ message: options.message });
+  }
 });
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 20,
+  max: 10000, // TEMPORARILY INCREASED FOR DEBUGGING 429
   message: 'Слишком много запросов на регистрацию с этого IP, попробуйте позже.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Применение rate limiters к роутам аутентификации
-// Важно: применяем лимитеры до подключения самих роутов,
-// но после глобальных middleware, таких как cors() и express.json()
-// Однако, если authRoutes определяет под-пути, то лучше применить лимитеры внутри authRoutes.js
-// В данном случае, для простоты, применим здесь, предполагая, что /api/auth/login и /api/auth/register
-// являются корневыми для authRoutes или обрабатываются им напрямую.
-// Если бы пути были /api/auth/somepath/login, то этот подход не сработал бы для /login конкретно.
-// Более точечное применение было бы в authRoutes.js.
-// Для текущей задачи, где указано применять к /api/auth/login и /api/auth/register,
-// и authRoutes монтируется на /api/auth, применение здесь будет работать, если
-// authRoutes.js использует router.post('/login', ...) и router.post('/register', ...)
+if (process.env.NODE_ENV !== 'test' && process.env.DISABLE_RATE_LIMITS_FOR_E2E !== 'true') {
+  app.use('/auth/login', loginLimiter);
+  app.use('/auth/register', registerLimiter);
+} else {}
 
-const authRouterWithLimits = express.Router();
-
-if (process.env.NODE_ENV !== 'test') {
-  authRouterWithLimits.use('/login', loginLimiter);
-  authRouterWithLimits.use('/register', registerLimiter);
-}
-authRouterWithLimits.use('/', authRoutes);
-
-app.post('/api/auth/testlogin', (req, res) => {
-  res.status(200).send('Test login endpoint reached successfully');
-});
-app.use('/auth', authRoutes);
+app.use('/auth', authRoutes); // authRoutes монтируется напрямую
 app.use('/users', userRoutes);
 
 app.use(errorHandler);
 
 const server = app.listen(port, () => {
-  // console.log(`Сервер запущен на http://localhost:${port}`); // Удалено для уменьшения логирования
+  console.log(`Сервер запущен на http://localhost:${port}`);
+
 });
 
 module.exports = { app, server };

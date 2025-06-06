@@ -5,33 +5,28 @@ import LoadingAnimation from './LoadingAnimation'; // Предполагаем, 
 
 interface PrivateRouteProps {
   children?: React.ReactNode;
-  allowedRoles?: string[]; // Добавляем опциональный пропс для разрешенных ролей
+  allowedRoles?: string[];
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, allowedRoles }) => {
-  const { user, isAuthenticated, isLoading } = useAuth(); // Получаем также user для проверки роли
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <LoadingAnimation />; // Показываем загрузку, пока проверяется аутентификация
+    return <LoadingAnimation />;
   }
 
   if (!isAuthenticated) {
-    // Если не аутентифицирован, перенаправляем на страницу входа
     return <Navigate to="/login" replace />;
   }
 
+  // Проверка ролей (сохраняем эту логику из исходного файла)
   if (allowedRoles && allowedRoles.length > 0) {
-    // Если указаны разрешенные роли, проверяем роль пользователя
     if (!user?.role || !allowedRoles.includes(user.role)) {
-      // Если роль пользователя не определена или не входит в список разрешенных,
-      // перенаправляем на страницу "Доступ запрещен" или на главную.
-      // Здесь для примера перенаправляем на главную (или можно создать страницу /unauthorized)
-      // TODO: Рассмотреть создание специальной страницы /unauthorized
-      return <Navigate to="/dashboard" replace />; // Или <Navigate to="/unauthorized" replace />;
+      // TODO: #TICKET-125 Рассмотреть создание специальной страницы /unauthorized
+      return <Navigate to="/dashboard" replace />; // Или можно на /unauthorized
     }
   }
 
-  // Если аутентифицирован и (роль не указана для проверки ИЛИ роль пользователя разрешена)
   return children ? <>{children}</> : <Outlet />;
 };
 

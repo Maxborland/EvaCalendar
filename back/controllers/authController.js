@@ -4,7 +4,12 @@ const { v4: uuidv4 } = require('uuid');
 const knex = require('../db.cjs');
 
 const SALT_ROUNDS = 10;
-const JWT_SECRET = process.env.JWT_SECRET || 'YOUR_VERY_SECRET_KEY_REPLACE_LATER';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET is not defined in production environment.');
+  process.exit(1); // Останавливаем приложение, если секрет не задан в production
+}
 
 // POST /api/auth/register
 const registerUser = async (req, res, next) => {
@@ -116,11 +121,47 @@ const loginUser = async (req, res, next) => {
 };
 
 // POST /api/auth/logout
-const logoutUser = (req, res) => {
-  // Поскольку JWT stateless, серверная часть для logout минимальна.
-  // Клиент должен сам удалить токен.
-  // В будущем можно рассмотреть черный список токенов для немедленной инвалидации.
-  res.status(200).json({ message: 'Вы успешно вышли из системы' });
+const logoutUser = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+
+      // Декодируем токен, чтобы получить время истечения (exp)
+      // jwt.decode не проверяет подпись, что нормально для этой цели,
+      // так как токен уже был проверен middleware protect при доступе к этому эндпоинту,
+      // либо это публичный эндпоинт, но мы все равно хотим заблокировать токен, если он предоставлен.
+      // Однако, для logout, который должен быть защищенным, токен уже должен быть валидным.
+      const decodedToken = jwt.decode(token);
+
+      if (decodedToken && decodedToken.exp) {
+        const expiresAt = new Date(decodedToken.exp * 1000); // exp в секундах, Date ожидает миллисекунды
+
+        // Проверяем, не истек ли токен уже, чтобы не добавлять лишние записи
+        if (expiresAt > new Date()) {
+          await knex('token_blacklist').insert({
+            token: token,
+            expires_at: expiresAt,
+          });
+        }
+      } else {
+        // Если токен не может быть декодирован или не содержит exp,
+        // это может быть невалидный токен, но мы все равно можем попытаться его добавить,
+        // если хотим быть сверхагрессивными, или просто проигнорировать.
+        // Для простоты, если нет exp, не добавляем, т.к. не знаем, когда он истечет.
+      }
+    }
+    // Независимо от того, был ли токен предоставлен или обработан,
+    // клиент должен удалить токен на своей стороне.
+    res.status(200).json({ message: 'Вы успешно вышли из системы' });
+  } catch (error) {
+    console.error('Ошибка при выходе пользователя (добавление токена в черный список):', error);
+    if (next) {
+      return next(error);
+    }
+    res.status(500).json({ message: 'Внутренняя ошибка сервера при выходе.' });
+  }
 };
 module.exports = {
   registerUser,

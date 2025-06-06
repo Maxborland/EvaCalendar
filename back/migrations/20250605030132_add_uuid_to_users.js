@@ -1,4 +1,3 @@
-// back/migrations/20250605030132_add_uuid_to_users.js
 const { v4: uuidv4 } = require('uuid');
 
 /**

@@ -48,7 +48,7 @@ const SettingsPage: React.FC = () => {
           <span className="material-icons mr-2 text-lg">arrow_back</span>
           Назад
         </button>
-        <p className="mt-4 text-center text-xs text-slate-500"></p>
+        {/* <p className="mt-4 text-center text-xs text-slate-500"></p> Пустой тег удален */}
       </footer>
     </div>
   );

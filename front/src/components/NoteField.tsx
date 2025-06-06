@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getNoteByDate } from '../services/api';
-// import './NoteField.css';
 
 interface NoteFieldProps {
   weekId: string;

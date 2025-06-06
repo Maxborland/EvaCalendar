@@ -40,6 +40,12 @@ router.put('/:uuid', async (req, res, next) => {
     try {
         const { uuid } = req.params;
         const categoryData = req.body;
+
+        // Валидация: categoryName обязательно для обновления
+        if (!categoryData.categoryName || typeof categoryData.categoryName !== 'string' || categoryData.categoryName.trim() === '') {
+            return next(ApiError.badRequest('categoryName is required and must be a non-empty string'));
+        }
+
         const updatedCategory = await expenseCategoryService.updateExpenseCategory(uuid, categoryData, req.user.uuid);
         if (updatedCategory) {
             res.status(200).json(updatedCategory);

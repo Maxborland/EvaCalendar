@@ -5,7 +5,7 @@ const ApiError = require('../utils/ApiError');
 const TABLE_NAME = 'notes';
 
 class NoteService {
-    async createNote(noteData) {
+    async createNote(noteData, userId) {
         try {
             const requiredFields = ['date', 'content'];
             for (const field of requiredFields) {
@@ -16,7 +16,8 @@ class NoteService {
             const newNote = {
                 uuid: uuidv4(),
                 date: noteData.date,
-                content: noteData.content
+                content: noteData.content,
+                user_uuid: userId, // Добавлено user_uuid
             };
             await knex(TABLE_NAME).insert(newNote);
             return newNote;
@@ -26,46 +27,51 @@ class NoteService {
         }
     }
 
-    async getAllNotes() {
+    async getAllNotes(userId) {
         try {
-            return await knex(TABLE_NAME).select('*');
+            return await knex(TABLE_NAME).where({ user_uuid: userId }).select('*');
         } catch (error) {
             console.error('Ошибка при получении всех заметок:', error);
             throw new Error('Не удалось получить заметки.');
         }
     }
 
-    async getNoteById(uuid) {
+    async getNoteById(uuid, userId) {
         try {
-            return await knex(TABLE_NAME).where({ uuid }).first();
+            return await knex(TABLE_NAME).where({ uuid, user_uuid: userId }).first();
         } catch (error) {
             console.error(`Ошибка при получении заметки с UUID ${uuid}:`, error);
             throw new Error('Не удалось получить заметку по UUID.');
         }
     }
-async getNotesByDate(dateString) {
+
+    async getNotesByDate(dateString, userId) {
         try {
-            return await knex(TABLE_NAME).where({ date: dateString }).select('*');
+            // Сначала ищем одну заметку по дате для пользователя, т.к. логика предполагает одну заметку на дату
+            const note = await knex(TABLE_NAME).where({ date: dateString, user_uuid: userId }).first();
+            return note; // Возвращаем одну заметку или undefined, если не найдена
         } catch (error) {
             console.error(`Ошибка при получении заметок по дате ${dateString}:`, error);
             throw new Error('Не удалось получить заметки по дате.');
         }
     }
 
-    async updateNote(uuid, noteData) {
+    async updateNote(uuid, noteData, userId) {
         try {
-            if (!noteData || typeof noteData.content === 'undefined') {
+            if (!noteData || typeof noteData.content === 'undefined') { // date не обязательно для обновления контента
                 throw ApiError.badRequest('content is required for update');
             }
 
             const dataToUpdate = { content: noteData.content };
+            // Если передана дата, ее тоже можно обновить, но это не основной сценарий для заметок.
+            // Пока обновляем только content. Если нужно обновлять дату, логику нужно расширить.
 
             const [updatedNote] = await knex(TABLE_NAME)
-                .where({ uuid })
+                .where({ uuid, user_uuid: userId }) // Добавлена проверка user_uuid
                 .update(dataToUpdate, ['uuid', 'date', 'content']);
 
             if (!updatedNote) {
-                return null;
+                return null; // Заметка не найдена или не принадлежит пользователю
             }
             return updatedNote;
         } catch (error) {
@@ -74,9 +80,9 @@ async getNotesByDate(dateString) {
         }
     }
 
-    async deleteNote(uuid) {
+    async deleteNote(uuid, userId) {
         try {
-            const deletedRows = await knex(TABLE_NAME).where({ uuid }).del();
+            const deletedRows = await knex(TABLE_NAME).where({ uuid, user_uuid: userId }).del();
             return deletedRows > 0;
         } catch (error) {
             console.error(`Ошибка при удалении заметки с UUID ${uuid}:`, error);

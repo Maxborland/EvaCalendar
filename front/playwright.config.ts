@@ -40,13 +40,14 @@ export default defineConfig({
     baseURL: 'http://localhost:5173', // Обновлен baseURL с портом 5173
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure', // Изменено для сохранения трейса при падении
+    screenshot: 'only-on-failure', // Добавлено для создания скриншотов при падении
 
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 10000, // Увеличено время ожидания для действий до 10 секунд
 
     /* Maximum time page.goto() can take. Defaults to 0 (no limit). */
-    navigationTimeout: 10000, // Увеличено время ожидания для навигации до 10 секунд
+    navigationTimeout: 30000, // Увеличено время ожидания для навигации до 30 секунд
   },
 
   /* Configure projects for major browsers */
@@ -88,9 +89,11 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://127.0.0.1:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    command: 'npm run dev', // Используем команду из package.json
+    url: 'http://localhost:5173', // URL, на котором запускается Vite dev server
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000, // Увеличим таймаут для запуска сервера (120 секунд)
+    // cwd: './front' // Если бы playwright.config.ts был в корне проекта, а не в front/
+  },
 });

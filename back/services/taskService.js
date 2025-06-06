@@ -55,9 +55,7 @@ const taskService = {
         try {
             const result = await knex('tasks').insert(newTask);
             if (Array.isArray(result) && result.length === 0 && newTask) {
-                 // console.warn('[taskService.createTask] Knex insert result is an empty array, task might not have been inserted if returning IDs was expected.'); // Удалено для уменьшения логирования
             } else if (typeof result === 'number' && result === 0) {
-                 // console.warn('[taskService.createTask] Knex insert result is 0, task might not have been inserted.'); // Удалено для уменьшения логирования
             }
             return newTask;
         } catch (error) {

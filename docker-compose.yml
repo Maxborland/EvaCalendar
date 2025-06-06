@@ -7,6 +7,8 @@ services:
       - "3001:3001"
     volumes:
       - ./back/data:/app/data # Привязка папки для сохранения данных SQLite
+    env_file:
+      - ./back/.env
     environment:
       NODE_ENV: production
     command: sh -c "npm run migrate:latest && node index.js"

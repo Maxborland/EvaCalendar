@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLoaderData } from 'react-router-dom'; // Добавляем useLoaderData
+import { useLoaderData, useNavigate } from 'react-router-dom'; // Добавляем useLoaderData и useNavigate
+import { useAuth } from '../context/AuthContext'; // Добавляем useAuth
 import { useNav } from '../context/NavContext';
 import { createTask, deleteTask, duplicateTask, getDailySummary, getMonthlySummary, updateTask, type Task } from '../services/api'; // Удаляем getAllTasks, так как данные будут из loader
 import {
@@ -28,7 +29,10 @@ interface WeekViewLoaderData {
 }
 
 const WeekView: React.FC = () => {
-  const { tasks: initialTasks } = useLoaderData() as WeekViewLoaderData;
+  const loaderData = useLoaderData() as WeekViewLoaderData | undefined;
+  const initialTasks = loaderData?.tasks || [];
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth(); // Получаем состояние аутентификации
+  const navigate = useNavigate(); // Для возможного редиректа
   const [currentDate, setCurrentDate] = useState(getCurrentDate());
   const [tasksForWeek, setTasksForWeek] = useState<Task[]>(initialTasks);
   const [today] = useState(getCurrentDate());
@@ -49,6 +53,16 @@ const WeekView: React.FC = () => {
 
 
   const fetchSummary = useCallback(async () => {
+    if (!isAuthenticated && !isAuthLoading) {
+      // Пользователь не аутентифицирован и загрузка завершена, не выполняем запрос
+      // Можно добавить логику перенаправления или уведомления
+      navigate('/login');
+      return;
+    }
+    if (isAuthLoading) {
+      // Еще идет проверка аутентификации, подождем
+      return;
+    }
     try {
       const dailyDate = createDate(today).toISOString().slice(0, 10);
       await getDailySummary(dailyDate);
@@ -59,7 +73,13 @@ const WeekView: React.FC = () => {
     } catch (error) {
       // [WeekView] Error fetching summary
     }
-  }, [currentDate, today]);
+  }, [isAuthenticated, isAuthLoading, currentDate, today]);
+
+  useEffect(() => {
+    if (!isAuthenticated && !isAuthLoading) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isAuthLoading, navigate]);
 
   useEffect(() => {
     fetchSummary();
@@ -91,9 +111,13 @@ const WeekView: React.FC = () => {
   };
 
   const handleDataChange = useCallback(async () => {
-    // TODO: Использовать revalidator для обновления данных из loader после мутаций.
-    setTasksForWeek(initialTasks);
-    fetchSummary();
+    // TODO: #TICKET-126 Использовать revalidator для обновления данных из loader после мутаций.
+    // Вместо прямого вызова setTasksForWeek, лучше использовать revalidate,
+    // но для текущей задачи оставим так, с учетом того, что fetchSummary уже проверит auth.
+    // Если бы initialTasks приходили не из loader, а через API-запрос в этом компоненте,
+    // то этот запрос тоже нужно было бы обернуть в проверку аутентификации.
+    setTasksForWeek(initialTasks); // Это может быть неактуально, если initialTasks всегда свежие из loader
+    fetchSummary(); // fetchSummary уже содержит проверку аутентификации
   }, [initialTasks, fetchSummary]);
 
   const weekRangeDisplay = useMemo(() => {
@@ -126,6 +150,12 @@ const WeekView: React.FC = () => {
   }, [setIsGlobalModalOpen, setIsNavVisible]);
 
   const handleSubmitTask = async (taskData: Task | Omit<Task, 'uuid'>) => {
+    if (!isAuthenticated && !isAuthLoading) {
+      navigate('/login');
+      return;
+    }
+    if (isAuthLoading) return;
+
     try {
       if ('uuid' in taskData && taskData.uuid) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -134,7 +164,7 @@ const WeekView: React.FC = () => {
       } else {
         await createTask(taskData as Omit<Task, 'uuid'>);
       }
-      handleDataChange();
+      handleDataChange(); // Этот вызов в итоге вызовет fetchSummary, который проверит auth
       handleCloseTaskModal();
     } catch (error) {
       // Ошибка при сохранении задачи
@@ -142,6 +172,12 @@ const WeekView: React.FC = () => {
   };
 
   const handleDeleteTask = async (id: string) => {
+    if (!isAuthenticated && !isAuthLoading) {
+      navigate('/login');
+      return;
+    }
+    if (isAuthLoading) return;
+
     try {
       await deleteTask(id);
       handleDataChange();
@@ -151,7 +187,13 @@ const WeekView: React.FC = () => {
     }
   };
 
-  const handleDuplicateTask = async (id: string) => {
+  const handleDuplicateTask = async (id:string) => {
+    if (!isAuthenticated && !isAuthLoading) {
+      navigate('/login');
+      return;
+    }
+    if (isAuthLoading) return;
+
     try {
       await duplicateTask(id);
       handleDataChange();

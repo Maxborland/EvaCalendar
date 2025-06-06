@@ -1,5 +1,5 @@
 import React, { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-import api, { initializeAuthCallbackForApi } from '../services/api'; // Используем initializeAuthCallbackForApi
+import api from '../services/api';
 
 // Типы
 interface User {
@@ -7,7 +7,6 @@ interface User {
   username: string;
   email: string;
   role: 'user' | 'admin'; // Уточнен тип роли
-  // Добавьте другие поля пользователя по необходимости
 }
 
 interface AuthState {
@@ -38,7 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await api.post('/auth/logout');
     } catch (error) {
-      // Failed to call /api/auth/logout or error during logout API call
+      console.error('[AuthContext] logout: API call failed', error);
     } finally {
       localStorage.removeItem('token');
       setUser(null);
@@ -48,15 +47,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    initializeAuthCallbackForApi(logout);
-
     const verifyToken = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
-        setIsLoading(true);
         try {
-          // Предполагается, что в api.ts будет функция fetchCurrentUser или аналогичная
-          // которая использует токен для запроса /api/users/me
           const response = await api.get<User>('/users/me', {
             headers: {
               Authorization: `Bearer ${storedToken}`,
@@ -66,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setToken(storedToken);
           setIsAuthenticated(true);
         } catch (error) {
-          // Failed to verify token
+          console.error('[AuthContext] verifyToken: Error verifying token.', error);
           localStorage.removeItem('token');
           setUser(null);
           setToken(null);
@@ -95,12 +89,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(newToken);
       setIsAuthenticated(true);
     } catch (error) {
-      // Login failed
+      console.error('[AuthContext] login: Failed.', error);
       localStorage.removeItem('token');
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
-      throw error;
+      throw error; // Перебрасываем ошибку, чтобы компонент формы мог ее обработать
     } finally {
       setIsLoading(false);
     }

@@ -1,7 +1,3 @@
-// Рекомендуемое имя файла: YYYYMMDDHHMMSS_create_users_and_password_reset_tokens.js
-// (где YYYYMMDDHHMMSS - текущая дата и время, генерируется Knex CLI)
-// Поместить в директорию: back/migrations/
-
 /**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }

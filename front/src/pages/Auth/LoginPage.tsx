@@ -1,16 +1,26 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-// import './AuthPage.css'; // Удален импорт
 
 const LoginPage: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { login, isLoading, isAuthenticated } = useAuth(); // Добавлено isAuthenticated
+
   const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [serverError, setServerError] = useState<string | null>(null);
-  const { login, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Очищаем state из location, чтобы сообщение не показывалось снова при обновлении страницы или возврате
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -19,9 +29,6 @@ const LoginPage: React.FC = () => {
     }
     // Проверка на формат email здесь больше не нужна,
     // так как поле принимает и имя пользователя.
-    // else if (!/\S+@\S+\.\S+/.test(loginInput)) {
-    //   newErrors.loginInput = 'Некорректный формат email';
-    // }
 
     if (!password) {
       newErrors.password = 'Пароль обязателен';
@@ -34,6 +41,7 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setServerError(null);
+    setErrors({}); // Сброс ошибок валидации полей при новой попытке отправки
 
     if (validateForm()) {
       try {
@@ -49,28 +57,72 @@ const LoginPage: React.FC = () => {
           setServerError(response.data.message || 'Произошла ошибка при входе.');
         }
       } catch (error: any) {
-        if (error.response && error.response.data && error.response.data.message) {
-          setServerError(error.response.data.message);
-        } else if (error.message) {
-          setServerError(error.message);
-        } else {
-          setServerError('Не удалось подключиться к серверу или произошла неизвестная ошибка.');
+        let specificMessage = '';
+        // Пытаемся извлечь специфичное сообщение от API
+        if (error.response && error.response.data && typeof error.response.data.message === 'string' && error.response.data.message.trim() !== '') {
+          specificMessage = error.response.data.message;
         }
-        // Ошибка входа
+
+        if (specificMessage) {
+          console.log('handleSubmit catch - About to set serverError with specificMessage:', specificMessage);
+          setServerError(specificMessage);
+          console.log('handleSubmit catch - Called setServerError with specificMessage (async update)');
+        } else if (error.response && error.response.status === 401) {
+          // Если от API нет сообщения или оно пустое, но это ошибка 401
+          const msg = 'Неверный логин или пароль.';
+          console.log('handleSubmit catch - About to set serverError for 401:', msg);
+          setServerError(msg);
+          console.log('handleSubmit catch - Called setServerError for 401 (async update)');
+        } else if (typeof error.message === 'string' && error.message.trim() !== '') {
+          // Используем общее сообщение ошибки от axios/fetch (например, сетевая ошибка, или "Request failed with status code XXX")
+          console.log('handleSubmit catch - About to set serverError with error.message:', error.message);
+          setServerError(error.message);
+          console.log('handleSubmit catch - Called setServerError with error.message (async update)');
+        } else {
+          // Самый общий случай, если никакое другое сообщение не удалось извлечь
+          const genericMsg = 'Произошла ошибка при входе. Пожалуйста, попробуйте снова.';
+          console.log('handleSubmit catch - About to set serverError with generic message:', genericMsg);
+          setServerError(genericMsg);
+          console.log('handleSubmit catch - Called setServerError with generic message (async update)');
+        }
       }
     }
   };
 
+  // Если isLoading true, показываем заглушку, чтобы избежать моргания LoginPage,
+  // пока AuthContext определяет состояние аутентификации.
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-4 font-['Inter'] bg-slate-900 text-slate-100">
+        Загрузка аутентификации...
+      </div>
+    );
+  }
+
+  // Если пользователь аутентифицирован (и isLoading уже false), перенаправляем на главную
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+
   return (
     <div className="flex items-center justify-center min-h-screen px-4 font-['Inter'] bg-slate-900">
+      <div data-testid="debug-loginpage-info" style={{ display: 'none' }}>
+        {JSON.stringify({ isLoading, isAuthenticated, serverError })}
+      </div>
       <div className="flex flex-col items-center justify-center">
         <img className="max-w-24 mb-4" src="../../../icons/web/icon-512.png" alt="Login Icon" />
         <div className="flex items-center mb-8">
           <h1 className="text-2xl font-bold text-slate-100">Вход</h1>
         </div>
-        <div className="bg-slate-800 rounded-2xl p-6">
+        <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md"> {/* Добавил w-full max-w-md для ограничения ширины */}
+          {successMessage && (
+            <div data-testid="success-message" className="success-message bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 text-sm" role="alert">
+              {successMessage}
+            </div>
+          )}
           {serverError && (
-            <div data-testid="server-error-message" className="text-red-500 text-sm mb-4 text-center p-3 bg-red-900/30 rounded-md border border-red-700">
+            <div data-testid="server-error-message" className="text-red-700 text-sm mb-4 text-center p-3 bg-red-100 rounded-md border border-red-400">
               {serverError}
             </div>
           )}
@@ -112,8 +164,8 @@ const LoginPage: React.FC = () => {
             <button
               data-testid="login-button"
               type="submit"
-              className="bg-green-500 text-white font-semibold py-3 px-4 rounded-lg w-full text-center text-base transition-colors duration-300 ease-in-out hover:bg-blue-600 disabled:opacity-50"
-              disabled={isLoading}
+              className="bg-green-500 text-white font-semibold py-3 px-4 rounded-lg w-full text-center text-base transition-colors duration-300 ease-in-out hover:bg-green-600 disabled:opacity-50"
+              disabled={isLoading} // Здесь isLoading из useAuth() все еще актуален для кнопки, даже если выше есть проверка
             >
               {isLoading ? 'Вход...' : 'Войти'}
             </button>

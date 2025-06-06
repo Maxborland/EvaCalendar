@@ -6,7 +6,6 @@ const db = knex(knexfile[environment]);
 
 db.raw('SELECT 1')
   .then(() => {
-    // console.log('Подключение к базе данных SQLite3 успешно установлено.'); // Удалено для уменьшения логирования
   })
   .catch((err) => {
     console.error('Ошибка подключения к базе данных:', err);

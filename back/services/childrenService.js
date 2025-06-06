@@ -31,8 +31,8 @@ class ChildrenService {
 
     const requiredFields = ['childName', 'parentName', 'parentPhone', 'address', 'hourlyRate'];
     for (const field of requiredFields) {
-      if (childData.hasOwnProperty(field) && !childData[field]) {
-        throw ApiError.badRequest(`${field} is required`);
+      if (childData.hasOwnProperty(field) && (childData[field] === undefined || childData[field] === '')) {
+        throw ApiError.badRequest(`${field} is required and cannot be empty`);
       }
     }
     const [updatedChild] = await knex('children').where({ uuid, user_uuid: userId }).update(childData).returning('*');

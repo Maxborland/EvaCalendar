@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'; // useCallback удален
 import { useLoaderData, useNavigate } from 'react-router-dom'; // useParams удален, useLoaderData добавлен
 // getNoteByDate удален из импортов
 import { createNote, type Note, updateNote } from '../services/api';
-// import './NoteDetailsPage.css'; // Стили будут через Tailwind или позже
 
 interface NoteDetailsLoaderData {
   note: Note | null;

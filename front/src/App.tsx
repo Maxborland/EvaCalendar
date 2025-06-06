@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createBrowserRouter, Outlet, type RouteObject, RouterProvider, useNavigation } from 'react-router-dom';
 import LoadingAnimation from './components/LoadingAnimation';
 import PrivateRoute from './components/PrivateRoute';
+import PublicOnlyRoute from './components/PublicOnlyRoute'; // Импорт PublicOnlyRoute
 import WeekView from './components/WeekView';
 import { NavProvider } from './context/NavContext';
 import LoginPage from './pages/Auth/LoginPage';
@@ -12,6 +13,8 @@ import DashboardPage from './pages/DashboardPage';
 import DayDetailsPage from './pages/DayDetailsPage';
 import ExpenseCategoriesSettingsPage from './pages/ExpenseCategoriesSettingsPage';
 import NoteDetailsPage from './pages/NoteDetailsPage';
+import NotFoundPage from './pages/NotFoundPage'; // Импорт страницы 404
+import ProfilePage from './pages/ProfilePage'; // Импортируем созданную страницу профиля
 import SettingsPage from './pages/SettingsPage';
 import { getAllTasks, getDailySummary, getNoteByDate, getTasksForDay } from './services/api';
 
@@ -119,12 +122,17 @@ const noteDetailsLoader = async ({ params }: any) => {
 
 const routes: RouteObject[] = [
   {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/register",
-    element: <RegistrationPage />,
+    element: <PublicOnlyRoute />,
+    children: [
+      {
+        path: "/login",
+        element: <LoginPage />,
+      },
+      {
+        path: "/register",
+        element: <RegistrationPage />,
+      },
+    ]
   },
   {
     path: "/",
@@ -191,8 +199,29 @@ const routes: RouteObject[] = [
           </PrivateRoute>
         ),
       },
+      {
+        path: "profile", // Новый роут для страницы профиля
+        element: (
+          <PrivateRoute>
+            <ProfilePage />
+          </PrivateRoute>
+        ),
+      },
     ],
   },
+  // Маршрут для страницы 404
+  // Он должен быть одним из последних в массиве верхнего уровня,
+  // чтобы не перехватывать существующие маршруты.
+  {
+    path: "*",
+    element: <RootLayout />, // Используем RootLayout для консистентности
+    children: [
+      {
+        path: "*", // Вложенный path: "*" для корректной работы с Outlet в RootLayout
+        element: <NotFoundPage />
+      }
+    ]
+  }
 ];
 
 const router = createBrowserRouter(routes);

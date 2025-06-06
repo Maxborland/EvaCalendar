@@ -3,7 +3,6 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext'; // Добавлен импорт useAuth
 import type { NewUserCredentials, User } from '../services/api';
 import { createUser, deleteUser, getUsers, updateUserPassword, updateUserRole } from '../services/api'; // Добавлены createUser, deleteUser
-// import './UserManagement.css'; // Стили будут применены с помощью Tailwind CSS
 
 interface UserManagementProps {}
 
@@ -131,6 +130,7 @@ const UserManagement: React.FC<UserManagementProps> = () => {
       fetchUsers();
       handleCloseAddUserModal();
     } catch (err) {
+      toast.error(`Не удалось создать пользователя ${newUserData.username}. Пожалуйста, попробуйте еще раз.`);
     }
   };
 
@@ -141,6 +141,7 @@ const UserManagement: React.FC<UserManagementProps> = () => {
         toast.success(`Пользователь ${username} успешно удален!`);
         fetchUsers();
       } catch (err) {
+        toast.error(`Не удалось удалить пользователя ${username}. Пожалуйста, попробуйте еще раз.`);
       }
     }
   };
