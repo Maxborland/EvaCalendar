@@ -84,6 +84,7 @@ export interface Task {
   taskType?: 'income' | 'expense'; // Добавлено для явного указания типа задачи фронтендом
   createdAt?: string;
   updatedAt?: string;
+  reminder_at?: string;
 }
 
 export interface Note {

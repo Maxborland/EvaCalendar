@@ -4,8 +4,7 @@ exports.up = function(knex) {
     table.uuid('uuid').primary();
     table.uuid('user_uuid').notNullable().references('uuid').inTable('users').onDelete('CASCADE');
     table.text('endpoint').notNullable().unique();
-    table.string('p256dh', 255).notNullable();
-    table.string('auth', 255).notNullable();
+    table.json('keys').notNullable();
     table.timestamps(true, true);
   });
 };

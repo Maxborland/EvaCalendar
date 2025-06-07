@@ -1,15 +1,15 @@
-const dotenv = require('dotenv');
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-
-dotenv.config();
 
 const { scheduleTaskReminders } = require('./scheduler');
 
 const app = express();
 app.set('trust proxy', 1); // Доверяем одному прокси-серверу (Nginx)
 const port = process.env.PORT || 3001;
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -51,7 +51,6 @@ const summaryController = require('./controllers/summaryController.js');
 const authRoutes = require('./routes/authRoutes.js');
 const userRoutes = require('./routes/userRoutes.js');
 const subscriptionRoutes = require('./routes/subscriptionRoutes.js');
-const notificationRoutes = require('./routes/notificationRoutes.js');
 const errorHandler = require('./middleware/errorHandler.js');
 const { protect } = require('./middleware/authMiddleware.js');
 
@@ -67,7 +66,7 @@ app.use('/summary', protect, summaryController);
 
 // Маршруты для API должны быть выше обработчиков статики и catch-all
 app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/notifications', notificationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

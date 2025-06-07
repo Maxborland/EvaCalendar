@@ -43,7 +43,7 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ message: 'Пользователь не найден или неполные данные пользователя, авторизация отклонена' });
       }
 
-      req.user = user;
+      req.user = { ...user, id: user.uuid };
       next();
     } catch (error) {
       console.error('Ошибка аутентификации:', error);

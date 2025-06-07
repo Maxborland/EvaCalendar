@@ -13,14 +13,14 @@ const createSubscription = async (userId, subscription) => {
     return knex(TABLE_NAME)
       .where({ id: existingSubscription.id })
       .update({
-        user_id: userId, // Обновляем user_id на случай, если подписка была, но без пользователя
+        user_uuid: userId, // Обновляем user_uuid на случай, если подписка была, но без пользователя
         keys: JSON.stringify(keys),
         updated_at: knex.fn.now(),
       });
   } else {
     // Создаем новую подписку
     return knex(TABLE_NAME).insert({
-      user_id: userId,
+      user_uuid: userId,
       endpoint: endpoint,
       keys: JSON.stringify(keys),
     });
@@ -29,7 +29,7 @@ const createSubscription = async (userId, subscription) => {
 
 const deleteSubscription = async (userId, endpoint) => {
   return knex(TABLE_NAME)
-    .where({ user_id: userId, endpoint: endpoint })
+    .where({ user_uuid: userId, endpoint: endpoint })
     .del();
 };
 const getVapidPublicKey = () => {

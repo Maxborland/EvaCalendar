@@ -42,7 +42,7 @@ export async function subscribeUser(): Promise<void> {
         throw new Error('Permission not granted for Notification');
     }
 
-    const { data: { publicKey } } = await api.get('/api/subscriptions/vapid-public-key');
+    const { data: publicKey } = await api.get('/api/subscriptions/vapid-public-key');
     const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
     const subscription = await registration.pushManager.subscribe({
