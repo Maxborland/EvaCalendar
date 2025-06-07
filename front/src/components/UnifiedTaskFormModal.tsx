@@ -20,6 +20,27 @@ interface UnifiedTaskFormModalProps {
 }
 
 
+function formatDateTimeForInput(isoDateTime: string | null | undefined): string {
+ if (!isoDateTime) return '';
+ try {
+   const date = new Date(isoDateTime);
+   // Проверяем, валидна ли дата
+   if (isNaN(date.getTime())) {
+     return '';
+   }
+   // Форматируем в 'YYYY-MM-DDTHH:MM'
+   const year = date.getFullYear();
+   const month = (date.getMonth() + 1).toString().padStart(2, '0');
+   const day = date.getDate().toString().padStart(2, '0');
+   const hours = date.getHours().toString().padStart(2, '0');
+   const minutes = date.getMinutes().toString().padStart(2, '0');
+   return `${year}-${month}-${day}T${hours}:${minutes}`;
+ } catch (error) {
+   console.error("Error formatting date-time:", error);
+   return '';
+ }
+}
+
 const UnifiedTaskFormModal = ({
   isOpen,
   onClose: originalOnClose,
@@ -66,7 +87,7 @@ const UnifiedTaskFormModal = ({
       expenseTypeId: initialTaskData?.expenseTypeId,
       childName: initialTaskData?.childName,
       originalTaskType: initialTaskData?.type,
-      reminder_at: initialTaskData?.reminder_at || '',
+      reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
     };
     return baseData;
   });
@@ -111,7 +132,7 @@ const UnifiedTaskFormModal = ({
         expenseTypeId: initialTaskData.expenseTypeId,
         childName: initialTaskData.childName,
         originalTaskType: initialTaskData.type,
-        reminder_at: initialTaskData.reminder_at || '',
+        reminder_at: formatDateTimeForInput(initialTaskData.reminder_at),
       };
       setFormData(newFormData);
 
@@ -350,6 +371,10 @@ const UnifiedTaskFormModal = ({
       }
     }
 
+    const reminderAtUTC = formData.reminder_at
+    ? new Date(formData.reminder_at).toISOString()
+    : null;
+
     const dataToSave: Omit<Task, 'uuid'> & { uuid?: string } = {
       uuid: mode === 'edit' ? initialTaskData?.uuid : undefined,
       title: formData.title,
@@ -367,7 +392,7 @@ const UnifiedTaskFormModal = ({
       hoursWorked: taskTypeInternal === 'income' && taskTypeForApi === 'hourly' ? formData.hoursWorked : undefined,
       comments: formData.comments || undefined,
       taskType: taskTypeInternal,
-      reminder_at: formData.reminder_at || null,
+      reminder_at: reminderAtUTC,
     };
 
     if (taskTypeForApi === 'hourly' && dataToSave.hourlyRate && dataToSave.hoursWorked && dataToSave.amount === undefined) {

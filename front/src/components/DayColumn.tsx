@@ -3,7 +3,7 @@ import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNavigate, useRevalidator } from 'react-router-dom';
 import { useNav } from '../context/NavContext';
 import { createTask, deleteTask, duplicateTask, moveTask, updateTask, type Note, type Task } from '../services/api';
-import { createDate, formatDateForDayColumnHeader } from '../utils/dateUtils';
+import { createDate, formatDateForDayColumnHeader, formatDateToYYYYMMDD } from '../utils/dateUtils';
 import './DayColumn.css';
 import MiniEventCard, { type EventItem } from './MiniEventCard';
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
@@ -167,7 +167,7 @@ const DayColumn = (props: DayColumnProps) => {
   drop(dropRef);
 
   const handleHeaderClick = () => {
-    const dateString = createDate(fullDate).toISOString().slice(0, 10);
+    const dateString = formatDateToYYYYMMDD(fullDate);
     navigate(`/day/${dateString}`);
   };
 

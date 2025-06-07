@@ -76,14 +76,12 @@ const PageLoader: React.FC = () => {
 
 const RootLayout: React.FC = () => {
   return (
-    <TaskProvider>
-      <NavProvider>
-        <PageLoader />
-        <div className="pt-20">
-          <Outlet />
-        </div>
-      </NavProvider>
-    </TaskProvider>
+    <>
+      <PageLoader />
+      <div className="pt-20">
+        <Outlet />
+      </div>
+    </>
   );
 };
 
@@ -119,7 +117,13 @@ const routes: RouteObject[] = [
   },
   {
     path: "/",
-    element: <RootLayout />,
+    element: (
+      <TaskProvider>
+        <NavProvider>
+          <RootLayout />
+        </NavProvider>
+      </TaskProvider>
+    ),
     errorElement: <ErrorBoundary />,
     children: [
       {
@@ -196,7 +200,13 @@ const routes: RouteObject[] = [
   // чтобы не перехватывать существующие маршруты.
   {
     path: "*",
-    element: <RootLayout />, // Используем RootLayout для консистентности
+    element: ( // Используем RootLayout для консистентности
+      <TaskProvider>
+        <NavProvider>
+          <RootLayout />
+        </NavProvider>
+      </TaskProvider>
+    ),
     children: [
       {
         path: "*", // Вложенный path: "*" для корректной работы с Outlet в RootLayout

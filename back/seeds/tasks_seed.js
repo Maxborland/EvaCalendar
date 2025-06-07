@@ -88,5 +88,6 @@ exports.seed = async function(knex) {
       amountSpent: 75.00,
     }
   ]);
-  console.log('Tasks seeded successfully.');
+  const { log } = require('../utils/logger.js');
+  log('Tasks seeded successfully.');
 };

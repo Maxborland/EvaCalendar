@@ -9,7 +9,6 @@ import {
   addWeeks,
   createDate,
   formatDateRange,
-  getCurrentDate,
   getMonth,
   getYear,
   isSameDay,
@@ -29,8 +28,12 @@ const WeekView = () => {
   const { tasks, refetchTasks } = useTasks();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth(); // Получаем состояние аутентификации
   const navigate = useNavigate(); // Для возможного редиректа
-  const [currentDate, setCurrentDate] = useState(getCurrentDate());
-  const [today] = useState(getCurrentDate());
+  const getTodayUTC = () => {
+    const today = new Date();
+    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  };
+  const [currentDate, setCurrentDate] = useState(getTodayUTC());
+  const [today] = useState(getTodayUTC());
   const weekDays = useMemo<Date[]>(() => {
     const startOfWeek = startOfISOWeek(currentDate);
     const days: Date[] = [];

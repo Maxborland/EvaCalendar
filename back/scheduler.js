@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const db = require('./db.cjs');
 const { sendNotification } = require('./services/notificationService');
+const { log, error: logError } = require('./utils/logger.js');
 
 // Вспомогательная функция для поиска задач, у которых скоро дедлайн.
 // **Важно**: Эта функция предполагает, что в вашей таблице `tasks` есть колонка `reminder_sent` (boolean).
@@ -10,8 +11,8 @@ const findTasksNearingDeadline = async () => {
   const fiveMinutesLater = new Date(now.getTime() + 5 * 60 * 1000);
 
   return db('tasks')
-    .where('reminder_at', '>', now.toISOString())
-    .andWhere('reminder_at', '<=', fiveMinutesLater.toISOString())
+    .where('reminder_at', '>', now)
+    .andWhere('reminder_at', '<=', fiveMinutesLater)
     .andWhere(function() {
       this.where('reminder_sent', false).orWhereNull('reminder_sent');
     });
@@ -24,13 +25,13 @@ const findSubscriptionsByUserId = async (userUUID) => {
 
 // Логика проверки и отправки уведомлений
 const checkAndSendReminders = async () => {
-  console.log('Scheduler: Запуск проверки задач для отправки уведомлений...');
+  log('Scheduler: Запуск проверки дел для отправки уведомлений...');
 
   try {
     const tasks = await findTasksNearingDeadline();
 
     if (tasks.length === 0) {
-      console.log('Scheduler: Нет задач для уведомления.');
+      log('Scheduler: Нет дел для уведомления.');
       return;
     }
 
@@ -41,12 +42,12 @@ const checkAndSendReminders = async () => {
       }
 
       const payload = {
-        title: 'Напоминание о задаче',
-        body: `Скоро начнется ваша задача: "${task.title}"`,
+        title: 'Напоминание о деле',
+        body: `Зяка, не забудь о деле: "${task.title}"`,
         icon: '/icons/web/icon-192.png'
       };
 
-      console.log(`Scheduler: Найдена задача "${task.title}" для пользователя ${task.user_uuid}. Отправка уведомлений...`);
+      log(`Scheduler: Найдено дело "${task.title}" для пользователя ${task.user_uuid}. Отправка уведомлений...`);
 
       for (const subscription of subscriptions) {
         await sendNotification(subscription, payload);
@@ -56,7 +57,7 @@ const checkAndSendReminders = async () => {
       await db('tasks').where('uuid', task.uuid).update({ reminder_sent: true });
     }
   } catch (error) {
-    console.error('Scheduler: Ошибка в планировщике уведомлений:', error);
+    logError('Scheduler: Ошибка в планировщике уведомлений:', error);
   }
 };
 

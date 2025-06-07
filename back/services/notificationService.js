@@ -1,11 +1,38 @@
 const webpush = require('web-push');
 const knex = require('../db.cjs');
+const { log, error: logError } = require('../utils/logger.js');
 
 webpush.setVapidDetails(
   'mailto:your-email@example.com',
   process.env.VAPID_PUBLIC_KEY,
   process.env.VAPID_PRIVATE_KEY
 );
+
+const sendNotification = async (subscription, payload) => {
+  const sub = {
+    endpoint: subscription.endpoint,
+    keys: typeof subscription.keys === 'string' ? JSON.parse(subscription.keys) : subscription.keys,
+  };
+
+  // Патч для старых эндпоинтов Google FCM
+  if (sub.endpoint.startsWith('https://fcm.googleapis.com/fcm/send')) {
+    sub.endpoint = sub.endpoint.replace('/fcm/send', '/wp');
+  }
+
+  try {
+    await webpush.sendNotification(sub, JSON.stringify(payload));
+  } catch (error) {
+    logError(`Failed to send notification to ${sub.endpoint.substring(0, 50)}...:`, error.statusCode);
+    // Если подписка больше не действительна (например, истек срок ее действия или она отозвана), удаляем ее.
+    if (error.statusCode === 404 || error.statusCode === 410) {
+      log(`Deleting invalid subscription: ${sub.endpoint.substring(0, 50)}...`);
+      await knex('notification_subscriptions').where({ endpoint: sub.endpoint }).del();
+    } else {
+      // Перебрасываем другие ошибки, чтобы их можно было обработать выше
+      throw error;
+    }
+  }
+};
 
 const sendTestNotification = async (userId) => {
   const subscriptions = await knex('notification_subscriptions').where({ user_uuid: userId });
@@ -14,40 +41,24 @@ const sendTestNotification = async (userId) => {
     throw new Error('No subscriptions found for this user.');
   }
 
-  const notificationPayload = JSON.stringify({
+  const notificationPayload = {
     title: 'Тестовое уведомление',
     body: 'Это тестовое уведомление от EvaCalendar!',
     icon: '/icons/web/icon-192.png',
-  });
+  };
 
-  const promises = subscriptions.map(sub => {
-    const subscription = {
-      endpoint: sub.endpoint,
-      keys: typeof sub.keys === 'string' ? JSON.parse(sub.keys) : sub.keys,
-    };
-    if (subscription.endpoint.startsWith('https://fcm.googleapis.com/fcm/send')) {
-      subscription.endpoint = subscription.endpoint.replace('/fcm/send', '/wp');
-    }
-    return webpush.sendNotification(subscription, notificationPayload)
-      .catch(error => {
-        console.error(`Failed to send notification to ${subscription.endpoint.substring(0, 50)}...:`, error.statusCode);
-        // Если подписка больше не действительна (например, истек срок ее действия или она отозвана), удаляем ее.
-        if (error.statusCode === 404 || error.statusCode === 410) {
-          console.log(`Deleting invalid subscription: ${subscription.endpoint.substring(0, 50)}...`);
-          return knex('notification_subscriptions').where({ endpoint: sub.endpoint }).del();
-        }
-      });
-  });
+  const promises = subscriptions.map(sub => sendNotification(sub, notificationPayload));
 
   const results = await Promise.allSettled(promises);
 
   results.forEach(result => {
     if (result.status === 'rejected') {
-      console.error('An unexpected error occurred during notification sending:', result.reason);
+      logError('An unexpected error occurred during notification sending:', result.reason);
     }
   });
 };
 
 module.exports = {
+  sendNotification,
   sendTestNotification,
 };

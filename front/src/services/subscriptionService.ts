@@ -21,6 +21,24 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 /**
+ * Saves the subscription status to localStorage.
+ * @param {boolean} isSubscribed - The subscription status.
+ */
+export function saveSubscriptionStatus(isSubscribed: boolean): void {
+    localStorage.setItem('isSubscribed', JSON.stringify(isSubscribed));
+}
+
+/**
+ * Loads the subscription status from localStorage.
+ * @returns {boolean} The subscription status.
+ */
+export function loadSubscriptionStatus(): boolean {
+    const status = localStorage.getItem('isSubscribed');
+    console.log('subscriptionService: loadSubscriptionStatus: status from localStorage', status);
+    return status ? JSON.parse(status) : false;
+}
+
+/**
  * Retrieves the current push subscription.
  * @returns {Promise<PushSubscription | null>} The current subscription or null.
  */
@@ -42,7 +60,7 @@ export async function subscribeUser(): Promise<void> {
         throw new Error('Permission not granted for Notification');
     }
 
-    const { data: publicKey } = await api.get('/api/subscriptions/vapid-public-key');
+    const { data: publicKey } = await api.get('/subscriptions/vapid-public-key');
     const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
     const subscription = await registration.pushManager.subscribe({
@@ -50,7 +68,8 @@ export async function subscribeUser(): Promise<void> {
         applicationServerKey,
     });
 
-    await api.post('/api/subscriptions', subscription);
+    await api.post('/subscriptions', subscription);
+    saveSubscriptionStatus(true);
 }
 
 /**
@@ -63,8 +82,10 @@ export async function unsubscribeUser(): Promise<void> {
 
     if (subscription) {
         await subscription.unsubscribe();
-        const encodedEndpoint = encodeURIComponent(subscription.endpoint);
-        await api.delete(`/api/subscriptions/${encodedEndpoint}`);
+        await api.delete('/subscriptions', {
+            data: { endpoint: subscription.endpoint },
+        });
+        saveSubscriptionStatus(false);
     }
 }
 /**
@@ -72,6 +93,6 @@ export async function unsubscribeUser(): Promise<void> {
  */
 export async function sendTestNotification(): Promise<void> {
     console.log('Attempting to send a test notification...');
-    await api.post('/api/notifications/test');
+    await api.post('/notifications/test');
     console.log('Successfully requested to send a test notification.');
 }

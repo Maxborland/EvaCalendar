@@ -19,15 +19,14 @@ const createSubscription = async (req, res, next) => {
 
 const deleteSubscription = async (req, res, next) => {
   try {
-    const { endpoint } = req.params;
+    const { endpoint } = req.body;
     const userId = req.user.id;
 
     if (!endpoint) {
       throw new ApiError(400, 'Endpoint is required.');
     }
 
-    const decodedEndpoint = decodeURIComponent(endpoint);
-    await subscriptionService.deleteSubscription(userId, decodedEndpoint);
+    await subscriptionService.deleteSubscription(userId, endpoint);
     res.status(200).json({ message: 'Subscription deleted successfully.' });
   } catch (error) {
     next(error);
@@ -43,8 +42,22 @@ const getVapidPublicKey = (req, res, next) => {
   }
 };
 
+const getSubscriptionStatus = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    if (!userId) {
+      throw new ApiError(400, 'User ID is required.');
+    }
+    const isSubscribed = await subscriptionService.getSubscriptionStatus(userId);
+    res.status(200).json({ isSubscribed });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createSubscription,
   deleteSubscription,
   getVapidPublicKey,
+  getSubscriptionStatus,
 };

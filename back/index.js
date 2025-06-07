@@ -58,11 +58,11 @@ app.get('/', (req, res) => {
   res.send('API работает!');
 });
 
-app.use('/children', protect, childrenController);
-app.use('/expense-categories', protect, expenseCategoryController);
-app.use('/notes', protect, noteController);
-app.use('/tasks', protect, taskController);
-app.use('/summary', protect, summaryController);
+app.use('/api/children', protect, childrenController);
+app.use('/api/expense-categories', protect, expenseCategoryController);
+app.use('/api/notes', protect, noteController);
+app.use('/api/tasks', protect, taskController);
+app.use('/api/summary', protect, summaryController);
 
 // Маршруты для API должны быть выше обработчиков статики и catch-all
 app.use('/api/subscriptions', subscriptionRoutes);
@@ -90,12 +90,12 @@ const registerLimiter = rateLimit({
 });
 
 if (process.env.NODE_ENV !== 'test' && process.env.DISABLE_RATE_LIMITS_FOR_E2E !== 'true') {
-  app.use('/auth/login', loginLimiter);
-  app.use('/auth/register', registerLimiter);
+  app.use('/api/auth/login', loginLimiter);
+  app.use('/api/auth/register', registerLimiter);
 } else {}
 
-app.use('/auth', authRoutes); // authRoutes монтируется напрямую
-app.use('/users', userRoutes);
+app.use('/api/auth', authRoutes); // authRoutes монтируется напрямую
+app.use('/api/users', userRoutes);
 
 app.use(errorHandler);
 

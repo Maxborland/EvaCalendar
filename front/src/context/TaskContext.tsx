@@ -17,7 +17,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-
   const fetchTasks = async () => {
     setIsLoading(true);
     setError(null);
@@ -26,7 +25,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       setTasks(response.data);
     } catch (err) {
       setError(err as Error);
-      console.error("Failed to fetch tasks", err);
     } finally {
       setIsLoading(false);
     }

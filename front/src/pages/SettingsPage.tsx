@@ -1,27 +1,49 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import TopNavigator from '../components/TopNavigator';
+import { useAuth } from '../context/AuthContext';
 import {
   getSubscription,
   sendTestNotification,
-  subscribeUser
+  subscribeUser,
+  unsubscribeUser
 } from '../services/subscriptionService';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const { isSubscribed, updateSubscriptionStatus } = useAuth();
   const [isPushSupported, setIsPushSupported] = useState(false);
 
   useEffect(() => {
+    // При монтировании компонента проверяем, поддерживаются ли Push-уведомления.
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       setIsPushSupported(true);
-      const checkSubscription = async () => {
-        const subscription = await getSubscription();
-        setIsSubscribed(!!subscription);
-      };
-      checkSubscription();
     }
   }, []);
+
+  // Этот useEffect отвечает за синхронизацию статуса подписки.
+  // Он выполняется при монтировании и каждый раз, когда isPushSupported меняется.
+  useEffect(() => {
+    // Если Push-уведомления поддерживаются, проверяем активную подписку.
+    if (isPushSupported) {
+      const checkSubscription = async () => {
+        try {
+          // Получаем подписку через сервис, который, вероятно, использует localStorage.
+          const subscription = await getSubscription();
+          // Обновляем глобальное состояние в AuthContext.
+          updateSubscriptionStatus(!!subscription);
+        } catch (error) {
+          console.error('Ошибка при получении статуса подписки:', error);
+          updateSubscriptionStatus(false);
+        }
+      };
+
+      checkSubscription();
+    }
+    // Зависимость от isPushSupported и updateSubscriptionStatus гарантирует,
+    // что проверка будет выполнена, как только станет известно о поддержке push
+    // и будет доступна функция обновления состояния.
+  }, [isPushSupported, updateSubscriptionStatus]);
 
   const handleGoBack = () => {
     navigate('/', { replace: true });
@@ -34,15 +56,24 @@ const SettingsPage = () => {
     }
     try {
       await subscribeUser();
-      setIsSubscribed(true);
+      updateSubscriptionStatus(true);
       console.log('Пользователь успешно подписан.');
     } catch (error) {
       console.error('Не удалось подписаться:', error);
     }
   };
 
+  const handleUnsubscribe = async () => {
+    try {
+      await unsubscribeUser();
+      updateSubscriptionStatus(false);
+      console.log('Пользователь успешно отписан.');
+    } catch (error) {
+      console.error('Не удалось отписаться:', error);
+    }
+  };
+
   const handleSendTestNotification = async () => {
-    console.log('Button clicked!');
     try {
       await sendTestNotification();
       console.log('Тестовое уведомление отправлено.');
@@ -81,15 +112,22 @@ const SettingsPage = () => {
         <div className="mt-8 bg-slate-800 p-6 rounded-lg shadow">
           <h2 className="text-xl font-bold mb-4">Управление уведомлениями</h2>
           <div className="space-y-4">
-            <button
-              onClick={handleSubscribe}
-              disabled={isSubscribed || !isPushSupported}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
-            >
-              {isSubscribed
-                ? 'Вы подписаны'
-                : 'Подписаться на уведомления'}
-            </button>
+            {isSubscribed ? (
+              <button
+                onClick={handleUnsubscribe}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
+              >
+                Отписаться от уведомлений
+              </button>
+            ) : (
+              <button
+                onClick={handleSubscribe}
+                disabled={!isPushSupported}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
+              >
+                Подписаться на уведомления
+              </button>
+            )}
             <button
               onClick={handleSendTestNotification}
               disabled={!isSubscribed || !isPushSupported}

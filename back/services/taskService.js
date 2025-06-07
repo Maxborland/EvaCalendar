@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const knex = require('../db.cjs');
 const ApiError = require('../utils/ApiError.js');
+const moment = require('moment');
 
 async function validateExistence(table, id) {
     if (!id) return true;
@@ -27,7 +28,7 @@ const taskService = {
             dueDate: taskData.dueDate,
             time: taskData.time || null,
             comments: taskData.comments || null,
-            reminder_at: taskData.reminder_at || null,
+            reminder_at: taskData.reminder_at ? moment.utc(taskData.reminder_at).toDate() : null,
             child_uuid: null,
             hoursWorked: null,
             amountEarned: null,
@@ -140,7 +141,9 @@ const taskService = {
 
         if (taskData.hasOwnProperty('time')) dataToUpdate.time = taskData.time;
         if (taskData.hasOwnProperty('comments')) dataToUpdate.comments = taskData.comments;
-        if (taskData.hasOwnProperty('reminder_at')) dataToUpdate.reminder_at = taskData.reminder_at;
+        if (taskData.hasOwnProperty('reminder_at')) {
+            dataToUpdate.reminder_at = taskData.reminder_at ? moment.utc(taskData.reminder_at).toDate() : null;
+        }
 
         const currentTaskType = dataToUpdate.type || existingTask.type;
 

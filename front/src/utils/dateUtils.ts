@@ -1,8 +1,13 @@
 const normalizeDateInput = (date: Date | string | number): Date => {
   if (date instanceof Date) {
-    return date;
+    return new Date(date.getTime()); // Возвращаем клон, чтобы избежать мутаций
   }
-  return new Date(date);
+  // Если это строка YYYY-MM-DD, обрабатываем ее как UTC
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return parseDateString(date);
+  }
+  const resultDate = new Date(date);
+  return resultDate;
 };
 
 /**
@@ -112,10 +117,12 @@ export const cloneDate = (date: Date | string | number): Date => {
  * @returns Начало недели (понедельник).
  */
 export const startOfISOWeek = (date: Date | string | number): Date => {
-  const d = cloneDate(date);
-  const day = d.getDay(); // 0 (Sun) - 6 (Sat)
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-  return new Date(d.setDate(diff));
+  const d = normalizeDateInput(date);
+  const day = d.getUTCDay(); // 0 (Sun) - 6 (Sat)
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  d.setUTCDate(diff);
+  d.setUTCHours(0, 0, 0, 0); // Сбрасываем время в начало дня UTC
+  return d;
 };
 
 /**
@@ -125,8 +132,8 @@ export const startOfISOWeek = (date: Date | string | number): Date => {
  * @returns Новая дата.
  */
 export const addDays = (date: Date | string | number, days: number): Date => {
-  const d = cloneDate(date);
-  d.setDate(d.getDate() + days);
+  const d = normalizeDateInput(date);
+  d.setUTCDate(d.getUTCDate() + days);
   return d;
 };
 
@@ -137,9 +144,7 @@ export const addDays = (date: Date | string | number, days: number): Date => {
  * @returns Новая дата.
  */
 export const addWeeks = (date: Date | string | number, weeks: number): Date => {
-  const d = cloneDate(date);
-  d.setDate(d.getDate() + weeks * 7);
-  return d;
+  return addDays(date, weeks * 7);
 };
 
 /**
@@ -149,9 +154,7 @@ export const addWeeks = (date: Date | string | number, weeks: number): Date => {
  * @returns Новая дата.
  */
 export const subtractWeeks = (date: Date | string | number, weeks: number): Date => {
-  const d = cloneDate(date);
-  d.setDate(d.getDate() - weeks * 7);
-  return d;
+  return addDays(date, -weeks * 7);
 };
 
 /**
@@ -201,7 +204,8 @@ export const parseDateString = (dateString: string): Date => {
     throw new Error('Invalid date components. Year, month, and day must be numbers.');
   }
   // Создаем дату в UTC, чтобы избежать смещения из-за локального часового пояса
-  const date = new Date(Date.UTC(year, month, day));
+  const date = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+
   // Проверяем, что дата не изменилась из-за некорректных значений (например, 32-й день)
   if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day) {
       throw new Error('Invalid date components, date changed after creation.');
@@ -215,8 +219,9 @@ export const parseDateString = (dateString: string): Date => {
  */
 export const formatDateToYYYYMMDD = (date: Date | string | number): string => {
   const d = normalizeDateInput(date);
-  const year = d.getFullYear();
-  const month = (d.getMonth() + 1).toString().padStart(2, '0'); // Месяцы 0-11, поэтому +1 и padStart
-  const day = d.getDate().toString().padStart(2, '0');
+  // Используем UTC методы, чтобы избежать влияния часового пояса
+  const year = d.getUTCFullYear();
+  const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = d.getUTCDate().toString().padStart(2, '0');
   return `${year}-${month}-${day}`;
 };

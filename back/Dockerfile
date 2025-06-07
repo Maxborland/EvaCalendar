@@ -1,5 +1,5 @@
 # Этап сборки (builder)
-FROM node:20-alpine AS builder
+FROM node:lts-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY package*.json ./
 # Установка только производственных зависимостей и очистка кеша npm
 RUN npm ci --only=production && npm cache clean --force
 
-COPY db.cjs knexfile.cjs index.js pm2.config.js babel.config.js ./
+COPY db.cjs knexfile.cjs index.js pm2.config.js babel.config.js scheduler.js ./
 COPY controllers ./controllers
 COPY middleware ./middleware
 COPY migrations ./migrations
@@ -33,7 +33,7 @@ COPY routes ./routes
 
 
 # Этап выполнения (runner)
-FROM node:20-alpine AS runner
+FROM node:lts-alpine AS runner
 
 WORKDIR /app
 
@@ -43,6 +43,7 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/db.cjs ./db.cjs
 COPY --from=builder /app/knexfile.cjs ./knexfile.cjs
 COPY --from=builder /app/index.js ./index.js
+COPY --from=builder /app/scheduler.js ./scheduler.js
 # COPY --from=builder /app/pm2.config.js ./pm2.config.js # Не копируем, т.к. CMD ["node", "index.js"]
 # COPY --from=builder /app/babel.config.js ./babel.config.js # Предполагаем, что babel не нужен в runtime
 COPY --from=builder /app/controllers ./controllers

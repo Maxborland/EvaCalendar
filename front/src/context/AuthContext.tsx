@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import LoadingAnimation from '../components/LoadingAnimation';
 import api from '../services/api';
+import { loadSubscriptionStatus, saveSubscriptionStatus } from '../services/subscriptionService';
 
 // Типы
 interface User {
@@ -13,12 +14,14 @@ interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean; // Этот флаг теперь будет отражать ТОЛЬКО процесс логина/логаута, а не инициализацию
+  isLoading: boolean;
+  isSubscribed: boolean;
 }
 
 interface AuthContextType extends AuthState {
-  login: (user: User, token: string) => void; // Login теперь принимает и пользователя, и токен
+  login: (user: User, token: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateSubscriptionStatus: (isSubscribed: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,17 +33,30 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // Начальное состояние - false
-  const [isInitializing, setIsInitializing] = useState<boolean>(true); // НОВЫЙ флаг для первоначальной проверки
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
 
   // Функция для очистки состояния
   const clearAuthState = useCallback(() => {
     localStorage.removeItem('token');
+    // saveSubscriptionStatus(false); // Больше не сбрасываем статус подписки при выходе
     if (api.defaults.headers.common['Authorization']) {
-        api.defaults.headers.common['Authorization'] = ''; // Очищаем заголовок в инстансе axios
+        api.defaults.headers.common['Authorization'] = '';
     }
     setUser(null);
     setIsAuthenticated(false);
+    setIsSubscribed(false);
+  }, []);
+
+  const checkSubscriptionStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get<{ isSubscribed: boolean }>('/subscriptions/status');
+      updateSubscriptionStatus(data.isSubscribed);
+    } catch (error) {
+      console.error('Failed to check subscription status', error);
+      updateSubscriptionStatus(false); // В случае ошибки считаем, что не подписан
+    }
   }, []);
 
   // Эффект для проверки токена при монтировании компонента
@@ -53,24 +69,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const response = await api.get<User>('/users/me');
           setUser(response.data);
           setIsAuthenticated(true);
+          await checkSubscriptionStatus(); // Проверяем статус подписки на сервере
         } catch (error) {
           console.error('[AuthContext] verifyToken: Invalid token.', error);
-          clearAuthState(); // Используем централизованную функцию очистки
+          clearAuthState();
         }
       }
-      // Важно: isInitializing становится false в любом случае ПОСЛЕ попытки проверки
       setIsInitializing(false);
     };
 
     verifyToken();
-  }, [clearAuthState]);
+  }, [clearAuthState, checkSubscriptionStatus]);
 
   // Улучшенная функция login
-  const login = (loggedInUser: User, token: string) => {
+  const login = async (loggedInUser: User, token: string) => {
     localStorage.setItem('token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(loggedInUser);
     setIsAuthenticated(true);
+    await checkSubscriptionStatus(); // Проверяем статус подписки при логине
   };
 
   // Улучшенная функция logout
@@ -86,12 +103,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [clearAuthState]);
 
+  const updateSubscriptionStatus = useCallback((status: boolean) => {
+    setIsSubscribed(status);
+    saveSubscriptionStatus(status);
+  }, []);
   // Синхронизация между вкладками
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'token' && event.newValue === null) {
-        // Если токен был удален в другой вкладке, выходим из системы и здесь
         clearAuthState();
+      }
+      if (event.key === 'isSubscribed') {
+        setIsSubscribed(loadSubscriptionStatus());
       }
     };
 
@@ -99,7 +122,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [clearAuthState]);
+  }, [clearAuthState, updateSubscriptionStatus]);
 
 
   // Пока идет инициализация, показываем глобальный лоадер
@@ -108,7 +131,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, isSubscribed, login, logout, updateSubscriptionStatus }}>
       {children}
     </AuthContext.Provider>
   );

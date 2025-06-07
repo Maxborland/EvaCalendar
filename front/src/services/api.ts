@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 
 
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export interface ExpenseCategory {
   uuid: string; // Changed from id to uuid to match API response
@@ -84,7 +84,7 @@ export interface Task {
   taskType?: 'income' | 'expense'; // Добавлено для явного указания типа задачи фронтендом
   createdAt?: string;
   updatedAt?: string;
-  reminder_at?: string;
+  reminder_at?: string | null;
 }
 
 export interface Note {
@@ -110,7 +110,7 @@ export interface NewUserCredentials {
 }
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api`,
 withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
