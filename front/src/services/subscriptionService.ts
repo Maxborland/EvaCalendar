@@ -53,11 +53,27 @@ export async function getSubscription(): Promise<PushSubscription | null> {
  * and sends it to the backend.
  */
 export async function subscribeUser(): Promise<void> {
-    const registration = await navigator.serviceWorker.ready;
-
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
         throw new Error('Permission not granted for Notification');
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+
+    // Дожидаемся активации Service Worker
+    if (!registration.active) {
+        await new Promise(resolve => {
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (newWorker) {
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'activated') {
+                            resolve(void 0);
+                        }
+                    });
+                }
+            });
+        });
     }
 
     const { data: publicKey } = await api.get('/subscriptions/vapid-public-key');
@@ -96,3 +112,26 @@ export async function sendTestNotification(): Promise<void> {
     await api.post('/notifications/test');
     console.log('Successfully requested to send a test notification.');
 }
+
+/**
+ * Synchronizes the subscription status with the actual state from the browser's PushManager.
+ * This function is called automatically when the module is loaded to ensure the subscription
+ * status is correctly initialized.
+ */
+async function synchronizeSubscriptionStatus(): Promise<void> {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            const isSubscribed = !!subscription;
+            saveSubscriptionStatus(isSubscribed);
+        } catch (error) {
+            console.error('Error synchronizing subscription status:', error);
+            saveSubscriptionStatus(false);
+        }
+    } else {
+        saveSubscriptionStatus(false);
+    }
+}
+
+synchronizeSubscriptionStatus();
