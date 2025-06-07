@@ -120,8 +120,9 @@ withCredentials: true,
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    const authPaths = ['/api/auth/login', '/api/auth/register'];
-    const isAuthPath = config.url ? authPaths.some(path => config.url!.includes(path)) : false;
+    // URL-адреса, для которых не нужно добавлять токен авторизации
+    const noAuthEndpoints = ['/auth/login', '/auth/register'];
+    const isAuthPath = noAuthEndpoints.some(path => config.url?.endsWith(path));
 
     if (token && config.url && !isAuthPath) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -141,7 +142,8 @@ api.interceptors.response.use(
     // Проверяем, является ли ошибка ответом с кодом 401
     if (error.response && error.response.status === 401) {
       // Исключаем эндпоинт входа, чтобы избежать бесконечного цикла редиректов
-      if (!error.config.url.includes('/api/auth/login')) {
+      // Проверяем, что URL существует и не является эндпоинтом для входа
+      if (error.config.url && !error.config.url.endsWith('/auth/login')) {
         // Очищаем токен из localStorage, чтобы избежать проблем при следующем входе
         localStorage.removeItem('token');
         // Принудительно перенаправляем пользователя на страницу входа

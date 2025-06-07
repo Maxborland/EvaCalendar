@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { addChild, type Child, deleteChild, getAllChildren, updateChild } from '../services/api';
 import ChildFormModal from './ChildFormModal';
 
-const ChildCardManager: React.FC = () => {
+const ChildCardManager = () => {
   const [children, setChildren] = useState<Child[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');

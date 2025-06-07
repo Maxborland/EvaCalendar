@@ -60,6 +60,17 @@ if (splashScreen) {
 }
 
 if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(const registration of registrations) {
+      registration.unregister();
+      console.log('Old service worker unregistered.');
+    }
+  }).catch(function(err) {
+    console.error('Service Worker unregistration failed: ', err);
+  });
+}
+
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(_registration => {

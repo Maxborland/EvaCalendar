@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
 import type { Child } from '../services/api';
@@ -13,7 +13,7 @@ export interface ChildFormProps {
   formId?: string;
 }
 
-const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, formId }) => {
+const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, formId }: ChildFormProps) => {
   const [formData, setFormData] = useState<Partial<Child>>(
     initialChild || {
       childName: '',
@@ -69,7 +69,7 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
   }, [initialChild]);
 
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -98,7 +98,7 @@ const ChildForm: React.FC<ChildFormProps> = ({ initialChild, onSave, onCancel, i
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!formData.childName?.trim()) {
       toast.error('Имя ребенка не может быть пустым.');

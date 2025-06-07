@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { createBrowserRouter, Outlet, type RouteObject, RouterProvider, useNavigation } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import LoadingAnimation from './components/LoadingAnimation';
 import PrivateRoute from './components/PrivateRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute'; // Импорт PublicOnlyRoute
 import WeekView from './components/WeekView';
 import { NavProvider } from './context/NavContext';
+import { TaskProvider } from './context/TaskContext';
 import LoginPage from './pages/Auth/LoginPage';
 import RegistrationPage from './pages/Auth/RegistrationPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
@@ -16,7 +18,7 @@ import NoteDetailsPage from './pages/NoteDetailsPage';
 import NotFoundPage from './pages/NotFoundPage'; // Импорт страницы 404
 import ProfilePage from './pages/ProfilePage'; // Импортируем созданную страницу профиля
 import SettingsPage from './pages/SettingsPage';
-import { getAllTasks, getDailySummary, getNoteByDate, getTasksForDay } from './services/api';
+import { getNoteByDate } from './services/api';
 
 const PageLoader: React.FC = () => {
   const navigation = useNavigation();
@@ -74,37 +76,18 @@ const PageLoader: React.FC = () => {
 
 const RootLayout: React.FC = () => {
   return (
-    <NavProvider>
-      <PageLoader />
-      <div className="pt-20">
-        <Outlet />
-      </div>
-    </NavProvider>
+    <TaskProvider>
+      <NavProvider>
+        <PageLoader />
+        <div className="pt-20">
+          <Outlet />
+        </div>
+      </NavProvider>
+    </TaskProvider>
   );
 };
 
-const weekViewLoader = async () => {
-  try {
-    const tasks = await getAllTasks();
-    return { tasks };
-  } catch (error) {
-    throw error;
-  }
-};
 
-const dayDetailsLoader = async ({ params }: any) => {
-  const dateString = params.dateString;
-  if (!dateString) {
-    throw new Response("Bad Request: dateString is required", { status: 400 });
-  }
-  try {
-    const tasks = await getTasksForDay(dateString);
-    const summary = await getDailySummary(dateString);
-    return { tasks, summary, dateString };
-  } catch (error) {
-    throw new Response("Not Found or Error Loading Data", { status: 404 });
-  }
-};
 
 const noteDetailsLoader = async ({ params }: any) => {
   const date = params.date;
@@ -137,6 +120,7 @@ const routes: RouteObject[] = [
   {
     path: "/",
     element: <RootLayout />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         index: true,
@@ -145,12 +129,11 @@ const routes: RouteObject[] = [
             <WeekView />
           </PrivateRoute>
         ),
-        loader: weekViewLoader,
       },
       {
         path: "dashboard",
         element: (
-          <PrivateRoute>
+          <PrivateRoute allowedRoles={['admin']}>
             <DashboardPage />
           </PrivateRoute>
         ),
@@ -180,7 +163,6 @@ const routes: RouteObject[] = [
             <DayDetailsPage />
           </PrivateRoute>
         ),
-        loader: dayDetailsLoader,
       },
       {
         path: "notes/:date",

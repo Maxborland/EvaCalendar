@@ -9,7 +9,8 @@ const asyncHandler = fn => (req, res, next) =>
 
 // POST /tasks - Создание новой задачи
 router.post('/', asyncHandler(async (req, res) => {
-    const task = await taskService.createTask(req.body, req.user.uuid);
+    const { title, ...taskData } = req.body;
+    const task = await taskService.createTask(taskData, req.user.uuid, title);
     res.status(201).json(task);
 }));
 
@@ -62,7 +63,8 @@ router.get('/:uuid', asyncHandler(async (req, res, next) => {
 
 // PUT /tasks/:uuid - Обновление задачи по UUID
 router.put('/:uuid', asyncHandler(async (req, res, next) => {
-    const updatedCount = await taskService.updateTask(req.params.uuid, req.body, req.user.uuid);
+    const { title, ...updateData } = req.body;
+    const updatedCount = await taskService.updateTask(req.params.uuid, updateData, req.user.uuid, title);
     // taskService.updateTask теперь выбрасывает ApiError.notFound если задача не найдена или доступ запрещен.
     // Поэтому дополнительная проверка taskExists не нужна.
     // Если updatedCount === 0, это означает, что данные были идентичны и обновления не произошло,

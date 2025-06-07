@@ -35,17 +35,15 @@ const API_CACHE_NAME = 'api-cache-v1'; // Переименовано из DYNAMI
 
 // При установке SW, Workbox автоматически обрабатывает skipWaiting через опцию в vite.config.ts (registerType: 'autoUpdate')
 // или это можно сделать явно здесь, если требуется.
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+// При установке SW, принудительно активируем новую версию, пропуская ожидание.
+self.addEventListener('install', () => {
+  self.skipWaiting();
 });
 
-// Workbox будет управлять активацией и clients.claim() при использовании registerType: 'autoUpdate'
-// или это можно сделать явно.
-// self.addEventListener('activate', (event) => {
-//   event.waitUntil(self.clients.claim());
-// });
+// После активации нового SW, он сразу берет под контроль все открытые клиенты (вкладки).
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
 // Очистка старых кэшей Workbox
 cleanupOutdatedCaches();
@@ -65,13 +63,13 @@ registerRoute(
     }
     return url.pathname.startsWith('/api/');
   },
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: API_CACHE_NAME,
-    ignoreVary: true, // Добавлено для обработки Vary: Origin
+    networkTimeoutSeconds: 3,
     plugins: [
       выборыChromeExtensionCachingPlugin,
       new ExpirationPlugin({
-        maxEntries: 50, // Максимальное количество записей в кэше
+        maxEntries: 50,
         maxAgeSeconds: 24 * 60 * 60, // 1 день
       }),
     ],
@@ -92,11 +90,12 @@ registerRoute(
   },
   new NetworkFirst({
     cacheName: 'navigation-cache', // Отдельный кэш для навигационных ответов
+    networkTimeoutSeconds: 3,
     plugins: [
       выборыChromeExtensionCachingPlugin,
       new ExpirationPlugin({
         maxEntries: 10,
-        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 дней
+        maxAgeSeconds: 60 * 60, // 1 час
       }),
     ],
   })

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 interface NavContextType {
   isNavVisible: boolean;
@@ -9,7 +9,7 @@ interface NavContextType {
 
 const NavContext = createContext<NavContextType | undefined>(undefined);
 
-export const NavProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const NavProvider = ({ children }: { children: ReactNode }) => {
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import type { ExpenseCategory } from '../services/api';
 import {
   createExpenseCategory,
@@ -9,7 +9,7 @@ import {
 } from '../services/api';
 import './ExpenseCategoryManager.css';
 
-const ExpenseCategoryManager: React.FC = () => {
+const ExpenseCategoryManager = () => {
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState<ExpenseCategory | null>(null);
@@ -27,7 +27,7 @@ const ExpenseCategoryManager: React.FC = () => {
     }
   };
 
-  const handleCreateCategory = async (e: React.FormEvent) => {
+  const handleCreateCategory = async (e: FormEvent) => {
     e.preventDefault();
     if (!newCategoryName.trim()) return;
 
@@ -51,7 +51,7 @@ const ExpenseCategoryManager: React.FC = () => {
     }
   };
 
-  const handleUpdateCategory = async (e: React.FormEvent) => {
+  const handleUpdateCategory = async (e: FormEvent) => {
     e.preventDefault();
     if (!editingCategory || !editingCategory.categoryName.trim()) return;
 

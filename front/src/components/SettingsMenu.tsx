@@ -1,8 +1,7 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import './SettingsMenu.css';
 
-const SettingsMenu: React.FC = () => {
+const SettingsMenu = () => {
   return (
     <nav>
       <ul>

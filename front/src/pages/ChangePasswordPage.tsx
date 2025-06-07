@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { type FormEvent, useState } from 'react';
 import api from '../services/api';
 
-const ChangePasswordPage: React.FC = () => {
-  const { token } = useAuth();
+const ChangePasswordPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -11,7 +9,7 @@ const ChangePasswordPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
@@ -36,12 +34,7 @@ const ChangePasswordPage: React.FC = () => {
     try {
       await api.post(
         '/api/users/me/change-password',
-        { currentPassword, newPassword },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { currentPassword, newPassword }
       );
       setSuccessMessage('Пароль успешно изменен.');
       setCurrentPassword('');

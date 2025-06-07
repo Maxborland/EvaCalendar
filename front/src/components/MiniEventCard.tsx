@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { memo, useRef } from 'react';
 import { useDrag } from 'react-dnd';
 import type { Note, Task } from '../services/api';
 
@@ -13,10 +13,10 @@ const ItemTypes = {
   EVENT_CARD: 'event_card',
 };
 
-const MiniEventCard: React.FC<MiniEventCardProps> = ({
+const MiniEventCard = ({
   event,
   onEdit,
-}) => {
+}: MiniEventCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
   const [{ isDragging }, drag] = useDrag(() => ({
@@ -50,7 +50,7 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
       displayTime = task.time;
     }
     if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') {
-      eventTitleText = `${task.childName || task.title || 'Доход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}`;
+      eventTitleText = `${task.title || task.childName || 'Доход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}`;
     } else if (task.type === 'expense') {
       eventTitleText = `${task.title || 'Расход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}${task.expenseCategoryName ? ` [${task.expenseCategoryName}]` : ''}`;
     } else {
@@ -95,4 +95,4 @@ const MiniEventCard: React.FC<MiniEventCardProps> = ({
   );
 };
 
-export default React.memo(MiniEventCard);
+export default memo(MiniEventCard);

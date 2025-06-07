@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import type { Child } from '../services/api';
 
 interface UnifiedChildSelectorProps {
@@ -20,7 +20,7 @@ const sortChildrenByName = (children: Child[]): Child[] => {
   );
 };
 
-const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
+const UnifiedChildSelector = ({
   value,
   onChange,
   childrenList,
@@ -30,7 +30,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   placeholder = "Введите имя ребенка...",
   selectedChildDetails,
   className = '',
-}) => {
+}: UnifiedChildSelectorProps) => {
   const [inputValue, setInputValue] = useState('');
   const [filteredChildren, setFilteredChildren] = useState<Child[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -55,7 +55,7 @@ const UnifiedChildSelector: React.FC<UnifiedChildSelectorProps> = ({
   }, [value, childrenList]);
 
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newInputValue = event.target.value;
     setInputValue(newInputValue);
     setSelectedChildNameState(null);

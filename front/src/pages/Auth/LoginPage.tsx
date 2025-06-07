@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
-const LoginPage: React.FC = () => {
+const LoginPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { login, isLoading, isAuthenticated } = useAuth(); // Добавлено isAuthenticated
@@ -38,54 +38,45 @@ const LoginPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setServerError(null);
-    setErrors({}); // Сброс ошибок валидации полей при новой попытке отправки
+    setErrors({});
 
-    if (validateForm()) {
-      try {
-        const response = await api.post('/auth/login', {
-          identifier: loginInput, // API теперь ожидает 'identifier'
-          password: password,
-        });
+    if (!validateForm()) {
+      return;
+    }
 
-        if (response.status === 200 && response.data.token) {
-          await login(response.data.token);
-          navigate('/');
-        } else {
-          setServerError(response.data.message || 'Произошла ошибка при входе.');
-        }
-      } catch (error: any) {
-        let specificMessage = '';
-        // Пытаемся извлечь специфичное сообщение от API
-        if (error.response && error.response.data && typeof error.response.data.message === 'string' && error.response.data.message.trim() !== '') {
-          specificMessage = error.response.data.message;
-        }
+    try {
+      const response = await api.post('/auth/login', {
+        identifier: loginInput,
+        password: password,
+      });
 
-        if (specificMessage) {
-          console.log('handleSubmit catch - About to set serverError with specificMessage:', specificMessage);
-          setServerError(specificMessage);
-          console.log('handleSubmit catch - Called setServerError with specificMessage (async update)');
-        } else if (error.response && error.response.status === 401) {
-          // Если от API нет сообщения или оно пустое, но это ошибка 401
-          const msg = 'Неверный логин или пароль.';
-          console.log('handleSubmit catch - About to set serverError for 401:', msg);
-          setServerError(msg);
-          console.log('handleSubmit catch - Called setServerError for 401 (async update)');
-        } else if (typeof error.message === 'string' && error.message.trim() !== '') {
-          // Используем общее сообщение ошибки от axios/fetch (например, сетевая ошибка, или "Request failed with status code XXX")
-          console.log('handleSubmit catch - About to set serverError with error.message:', error.message);
-          setServerError(error.message);
-          console.log('handleSubmit catch - Called setServerError with error.message (async update)');
-        } else {
-          // Самый общий случай, если никакое другое сообщение не удалось извлечь
-          const genericMsg = 'Произошла ошибка при входе. Пожалуйста, попробуйте снова.';
-          console.log('handleSubmit catch - About to set serverError with generic message:', genericMsg);
-          setServerError(genericMsg);
-          console.log('handleSubmit catch - Called setServerError with generic message (async update)');
-        }
+      // Бэкенд возвращает { token, userId, username, email, role }
+      // Мы можем собрать объект пользователя из ответа
+      const { token, ...user } = response.data;
+
+      // Вызываем обновленный метод login из контекста
+      login(user, token);
+
+      // Навигация больше не нужна здесь, так как
+      // PublicOnlyRoute автоматически обработает изменение
+      // состояния isAuthenticated и выполнит редирект.
+      // navigate('/');
+
+    } catch (error: any) {
+      let specificMessage = '';
+      if (error.response && error.response.data && typeof error.response.data.message === 'string' && error.response.data.message.trim() !== '') {
+        specificMessage = error.response.data.message;
+      } else if (error.response && error.response.status === 401) {
+        specificMessage = 'Неверный логин или пароль.';
+      } else if (typeof error.message === 'string' && error.message.trim() !== '') {
+        specificMessage = error.message;
+      } else {
+        specificMessage = 'Произошла ошибка при входе. Пожалуйста, попробуйте снова.';
       }
+      setServerError(specificMessage);
     }
   };
 

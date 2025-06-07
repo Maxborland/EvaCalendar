@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // Добавлен Link для навигации
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
-const RegistrationPage: React.FC = () => {
+const RegistrationPage = () => {
   const navigate = useNavigate();
   const { isLoading } = useAuth();
   const [username, setUsername] = useState('');
@@ -43,7 +43,7 @@ const RegistrationPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     console.log('[RegPage] handleSubmit: Form submitted.');
     event.preventDefault();
     setServerError(null);

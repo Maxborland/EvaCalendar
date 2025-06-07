@@ -67,8 +67,8 @@ const registerUser = async (req, res, next) => {
 
 // POST /api/auth/login
 const loginUser = async (req, res, next) => {
+  console.log(`[${new Date().toISOString()}] - Starting login for: ${req.body.identifier}, User-Agent: ${req.headers['user-agent']}`);
   try {
-
     const { identifier, password } = req.body;
 
     if (!identifier || !password) {
@@ -122,6 +122,7 @@ const loginUser = async (req, res, next) => {
 
 // POST /api/auth/logout
 const logoutUser = async (req, res, next) => {
+  console.log(`[${new Date().toISOString()}] - Starting logout. User-Agent: ${req.headers['user-agent']}`);
   try {
     const authHeader = req.headers.authorization;
 
@@ -156,7 +157,7 @@ const logoutUser = async (req, res, next) => {
     // клиент должен удалить токен на своей стороне.
     res.status(200).json({ message: 'Вы успешно вышли из системы' });
   } catch (error) {
-    console.error('Ошибка при выходе пользователя (добавление токена в черный список):', error);
+    console.error(`[${new Date().toISOString()}] - Error during logout (adding token to blacklist). User-Agent: ${req.headers['user-agent']}`, error);
     if (next) {
       return next(error);
     }

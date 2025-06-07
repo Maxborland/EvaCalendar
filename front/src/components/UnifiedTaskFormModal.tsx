@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import * as ReactDOM from 'react-dom';
 import { toast } from 'react-toastify';
+import { useTasks } from '../context/TaskContext';
 import { addChild, getAllChildren, getExpenseCategories, updateChild as updateChildAPI, type Child, type ExpenseCategory, type Task } from '../services/api';
 import ChildForm from './ChildForm';
 import UnifiedChildSelector from './UnifiedChildSelector';
@@ -9,47 +10,17 @@ import './UnifiedTaskFormModal.css';
 interface UnifiedTaskFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (taskData: Task | Omit<Task, 'uuid'>) => void;
+  onSubmit: (taskData: Task | Omit<Task, 'uuid'>) => Promise<void>;
   mode: 'create' | 'edit';
   initialTaskData?: Task;
   initialTaskType?: 'income' | 'expense';
   onDelete?: (uuid: string) => void;
   onDuplicate?: (uuid: string) => void;
+  onTaskUpsert?: () => void;
 }
 
-const generateDynamicTaskTitle = (
-  taskType: 'income' | 'expense',
-  childName: string | undefined | null
-): string => {
-  if (taskType === 'income') {
-    if (childName && childName.trim() !== '') {
-      return `${childName}`;
-    }
-    return "";
-  }
-  return "";
-};
 
-const generateFinalTaskTitleOnSubmit = (
-  taskType: 'income' | 'expense',
-  childName: string | undefined | null,
-  categoryName: string | undefined | null
-): string => {
-  if (taskType === 'income') {
-    if (childName && childName.trim() !== '') {
-      return `${childName}`;
-    }
-    return "Доход";
-  } else if (taskType === 'expense') {
-    if (categoryName && categoryName.trim() !== '') {
-      return categoryName;
-    }
-    return "Расход";
-  }
-  return "Задача без названия";
-};
-
-const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
+const UnifiedTaskFormModal = ({
   isOpen,
   onClose: originalOnClose,
   onSubmit,
@@ -57,7 +28,9 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
   initialTaskData,
   initialTaskType,
   onDelete,
-}) => {
+  onTaskUpsert,
+}: UnifiedTaskFormModalProps) => {
+  const { refetchTasks } = useTasks();
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -97,7 +70,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     return baseData;
   });
 
-  const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(false);
 
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(initialTaskData?.childId || null);
@@ -141,8 +113,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       };
       setFormData(newFormData);
 
-      const isInitialTitlePresentAndNotEmpty = !!(initialTaskData.title && initialTaskData.title.trim() !== '');
-      setIsNameManuallyEdited(isInitialTitlePresentAndNotEmpty);
 
       const childIdToSetForSelector = initialTaskData.childId || null;
       setSelectedChildUuid(childIdToSetForSelector);
@@ -167,7 +137,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
       };
         return newFormData;
     });
-      setIsNameManuallyEdited(false); // Сброс при создании новой задачи
       setSelectedChildUuid(null);
     }
   }, [mode, initialTaskData, initialTaskType]); // initialTaskType добавлен, чтобы isNameManuallyEdited правильно сбрасывалось/устанавливалось при его изменении
@@ -226,7 +195,6 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
          }
          return newFormData;
        });
-       setIsNameManuallyEdited(false);
      }, [taskTypeInternal, mode, initialTaskData]);
 
 
@@ -302,69 +270,11 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     }
   }, [formData.hourlyRate, formData.hoursWorked, taskTypeInternal]);
 
-  useEffect(() => {
-    // Дополнительная проверка для режима редактирования при первой загрузке
-    if (mode === 'edit' && initialTaskData?.title && formData.title === initialTaskData.title && initialTaskData.title.trim() !== '') {
-      // Если мы в режиме редактирования, initialTaskData.title существует,
-      // текущее formData.title совпадает с ним (т.е. это первая загрузка/инициализация),
-      // и initialTaskData.title не пустое, то считаем, что это имя не должно автоматически меняться,
-      // даже если isNameManuallyEdited еще не успело обновиться до true.
-      return;
-    }
-
-    if (isNameManuallyEdited) {
-      return;
-    }
-
-    const newPotentialTitle = generateDynamicTaskTitle(taskTypeInternal, selectedChildDetails?.childName);
-    const currentTitle = formData.title || "";
 
 
-    let shouldUpdate = false;
-
-    if (taskTypeInternal === 'income') {
-      if (selectedChildDetails?.childName) { // Если ребенок выбран
-        // Обновляем, если текущее имя пустое, или было "Доход", или было "Доход от ДРУГОГО_ИМЕНИ_РЕБЕНКА"
-        const expectedNewTitleForSelectedChild = `Доход от ${selectedChildDetails.childName}`;
-        if (currentTitle === "" || currentTitle === "Доход" || (currentTitle.startsWith("Доход от ") && currentTitle !== expectedNewTitleForSelectedChild)) {
-          shouldUpdate = true;
-        }
-         // Если текущее имя уже правильное для выбранного ребенка, не обновляем
-        if (currentTitle === expectedNewTitleForSelectedChild) {
-            shouldUpdate = false;
-        }
-      } else { // Ребенок не выбран (или очищен)
-        // Обновляем на пустую строку, если текущее имя было автосгенерировано для какого-либо ребенка или было "Доход"
-        if (currentTitle.startsWith("Доход от ") || currentTitle === "Доход") {
-          shouldUpdate = true;
-        }
-      }
-    } else if (taskTypeInternal === 'expense') {
-      // Если тип задачи - расход, и имя было автосгенерировано от дохода, очищаем его.
-      if (currentTitle.startsWith("Доход от ") || currentTitle === "Доход") {
-         shouldUpdate = true; // newPotentialTitle для расхода будет ""
-      }
-    }
-
-    if (shouldUpdate && currentTitle !== newPotentialTitle) {
-      setFormData(prev => {
-        return { ...prev, title: newPotentialTitle };
-      });
-    } else {
-    }
-
-  }, [selectedChildDetails, taskTypeInternal, isNameManuallyEdited, formData.title, setFormData]); // Вернул formData.title в зависимости, т.к. currentTitle берется из него
-
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type: inputType } = e.target;
 
-    if (name === 'title') {
-      // Если пользователь вводит текст в поле title, устанавливаем isNameManuallyEdited в true.
-      // Если пользователь стирает весь текст из поля title, устанавливаем isNameManuallyEdited в false,
-      // чтобы автоматическая генерация имени снова могла сработать.
-      setIsNameManuallyEdited(value.trim() !== '');
-    }
     setFormData((prevData) => {
       const newValue = inputType === 'number'
         ? (value === '' ? undefined : parseFloat(value))
@@ -418,58 +328,10 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
     setChildFormInitialData(undefined);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    let titleForSubmit = formData.title;
     const childNameForTitle = selectedChildUuid ? children.find(c => c.uuid === selectedChildUuid)?.childName : undefined;
-    const expectedTitle = generateFinalTaskTitleOnSubmit(
-      taskTypeInternal,
-      childNameForTitle,
-      formData.expenseCategoryName
-    );
-
-    const isTitleFieldEmpty = !formData.title || formData.title.trim() === '';
-    let shouldForceUpdateTitle = false;
-
-    if (isTitleFieldEmpty) {
-      shouldForceUpdateTitle = true;
-    } else {
-      let configChangedSinceLoadOrManualEditImpliesOutdated = false;
-      if (mode === 'edit' && initialTaskData) {
-        const loadedChildId = initialTaskData.childId;
-        const currentSelectedChildId = selectedChildDetails?.uuid || null;
-
-        const loadedTaskTypeApi = initialTaskData.type; // 'income', 'expense', 'fixed', 'hourly'
-        const loadedTaskTypeSimplified = (loadedTaskTypeApi === 'expense') ? 'expense' : 'income';
-
-        if (loadedChildId !== currentSelectedChildId || loadedTaskTypeSimplified !== taskTypeInternal) {
-          configChangedSinceLoadOrManualEditImpliesOutdated = true;
-        }
-      } else if (mode === 'create') {
-        // В режиме создания, если название не пустое, но не соответствует ожидаемому,
-        // это означает, что пользователь ввел что-то, а потом изменил ребенка/тип,
-        // или просто ввел не то, что ожидается для текущих селекторов.
-        if (formData.title !== expectedTitle) {
-            configChangedSinceLoadOrManualEditImpliesOutdated = true;
-        }
-      }
-
-      if (configChangedSinceLoadOrManualEditImpliesOutdated) {
-        // Конфигурация изменилась (или в 'create' название не соответствует).
-        // Если текущее название не соответствует новой/ожидаемой конфигурации, обновляем.
-        if (formData.title !== expectedTitle) {
-          shouldForceUpdateTitle = true;
-        }
-        // Если formData.title *соответствует* новой/ожидаемой конфигурации,
-        // пользователь мог сам его поправить, поэтому shouldForceUpdateTitle остается false,
-        // и пользовательский ввод сохранится.
-      }
-    }
-
-    if (shouldForceUpdateTitle) {
-      titleForSubmit = expectedTitle;
-    }
 
     let taskTypeForApi: string;
     if (taskTypeInternal === 'expense') {
@@ -487,7 +349,7 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
 
     const dataToSave: Omit<Task, 'uuid'> & { uuid?: string } = {
       uuid: mode === 'edit' ? initialTaskData?.uuid : undefined,
-      title: titleForSubmit,
+      title: formData.title,
       type: taskTypeForApi,
       time: taskTypeInternal === 'income' ? (formData.time || undefined) : undefined, // Время только для дохода
       dueDate: formData.dueDate, // Дата остается, хоть и невидима
@@ -508,12 +370,23 @@ const UnifiedTaskFormModal: React.FC<UnifiedTaskFormModalProps> = ({
         dataToSave.amount = dataToSave.hourlyRate * dataToSave.hoursWorked;
     }
 
-    onSubmit(dataToSave as Task | Omit<Task, 'uuid'>);
+    try {
+      await onSubmit(dataToSave as Task | Omit<Task, 'uuid'>);
+      if (onTaskUpsert) {
+        refetchTasks();
+        if (onTaskUpsert) {
+          onTaskUpsert();
+        }
+      }
+    } catch (error) {
+      toast.error("Произошла ошибка при сохранении задачи.");
+    }
   };
 
   const handleDeleteClick = () => {
     if (mode === 'edit' && initialTaskData?.uuid && onDelete) {
       onDelete(initialTaskData.uuid);
+      refetchTasks();
     }
   };
 

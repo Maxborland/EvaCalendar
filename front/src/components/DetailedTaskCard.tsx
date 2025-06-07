@@ -1,4 +1,3 @@
-import React from 'react';
 import { type Task } from '../services/api';
 
 interface DetailedTaskCardProps {
@@ -7,7 +6,7 @@ interface DetailedTaskCardProps {
   onDelete: (taskId: string) => void;
 }
 
-const DetailedTaskCard: React.FC<DetailedTaskCardProps> = ({ task, onEdit, onDelete }) => {
+const DetailedTaskCard = ({ task, onEdit, onDelete }: DetailedTaskCardProps) => {
   const {
     uuid,
     title,

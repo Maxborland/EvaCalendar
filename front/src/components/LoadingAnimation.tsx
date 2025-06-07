@@ -1,13 +1,13 @@
 import type { LottieRefCurrentProps } from 'lottie-react';
 import Lottie from 'lottie-react';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import animationData from '../../loading_anim.json';
 
 interface LoadingAnimationProps {
   speed?: number;
 }
 
-const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ speed = 1 }) => {
+const LoadingAnimation = ({ speed = 1 }: LoadingAnimationProps) => {
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);
 
   useEffect(() => {

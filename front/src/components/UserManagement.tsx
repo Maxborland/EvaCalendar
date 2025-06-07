@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext'; // Добавлен импорт useAuth
 import type { NewUserCredentials, User } from '../services/api';
 import { createUser, deleteUser, getUsers, updateUserPassword, updateUserRole } from '../services/api'; // Добавлены createUser, deleteUser
 
-interface UserManagementProps {}
 
-const UserManagement: React.FC<UserManagementProps> = () => {
+const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +89,7 @@ const UserManagement: React.FC<UserManagementProps> = () => {
     setIsAddUserModalOpen(false);
   };
 
-  const handleNewUserInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleNewUserInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewUserData((prev) => ({ ...prev, [name]: value }));
     if (formErrors[name as keyof NewUserCredentials]) {

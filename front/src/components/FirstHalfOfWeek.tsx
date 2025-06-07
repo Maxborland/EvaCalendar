@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import type { Task } from '../services/api';
 import { createDate, isSameDay } from '../utils/dateUtils';
 import DayColumn from './DayColumn';
@@ -12,7 +12,7 @@ interface FirstHalfOfWeekProps {
   onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => void;
 }
 
-const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, today, onDataChange, onOpenTaskModal }) => {
+const FirstHalfOfWeek = ({ days, tasksForWeek, today, onDataChange, onOpenTaskModal }: FirstHalfOfWeekProps) => {
   const daysToShow = days.slice(0, 3);
 
   return (
@@ -40,4 +40,4 @@ const FirstHalfOfWeek: React.FC<FirstHalfOfWeekProps> = ({ days, tasksForWeek, t
   );
 };
 
-export default React.memo(FirstHalfOfWeek);
+export default memo(FirstHalfOfWeek);

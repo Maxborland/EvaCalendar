@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
+import { useCallback, useEffect, useState } from 'react';
+import * as ReactDOM from 'react-dom';
 import type { Child } from '../services/api';
 import ChildForm, { type ChildFormProps } from './ChildForm';
 import './ChildFormModal.css';
@@ -13,14 +13,14 @@ export interface ChildFormModalProps {
   onDelete?: (uuid: string) => void;
 }
 
-const ChildFormModal: React.FC<ChildFormModalProps> = ({
+const ChildFormModal = ({
   isOpen,
   onClose: originalOnClose,
   onSubmit,
   mode,
   initialChildData,
   onDelete,
-}) => {
+}: ChildFormModalProps) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {

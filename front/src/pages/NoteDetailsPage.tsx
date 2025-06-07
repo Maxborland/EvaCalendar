@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'; // useCallback удален
+import { useEffect, useState } from 'react'; // useCallback удален
 import { useLoaderData, useNavigate } from 'react-router-dom'; // useParams удален, useLoaderData добавлен
 // getNoteByDate удален из импортов
 import { createNote, type Note, updateNote } from '../services/api';
@@ -8,7 +8,7 @@ interface NoteDetailsLoaderData {
   date: string;
 }
 
-const NoteDetailsPage: React.FC = () => {
+const NoteDetailsPage = () => {
   const { note: initialNote, date } = useLoaderData() as NoteDetailsLoaderData;
   const navigate = useNavigate();
 

@@ -1,29 +1,24 @@
-import React, { useEffect, useState } from 'react'; // useMemo уже был, но убедимся, что все импорты React на месте
-import { useLoaderData, useNavigate } from 'react-router-dom'; // useLoaderData должен быть здесь
+import type { FC } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import DetailedTaskCard from '../components/DetailedTaskCard';
 import { useAuth } from '../context/AuthContext'; // Добавляем useAuth
 // Предполагаем, что TaskForm.tsx будет переименован в UnifiedTaskFormModal.tsx
 import UnifiedTaskFormModal from '../components/UnifiedTaskFormModal';
 // getTasksForDay и getDailySummary удаляются из импортов, так как данные приходят через loader
-import { type Task, createTask, deleteTask, updateTask } from '../services/api';
-import { formatDateForDisplay, parseDateString } from '../utils/dateUtils';
+import { useTasks } from '../context/TaskContext';
+import { type Task, createTask, deleteTask, getDailySummary, updateTask } from '../services/api';
+import { createDate, formatDateForDisplay, isSameDay, parseDateString } from '../utils/dateUtils';
 import './DayDetailsPage.css';
 
 
-interface DayDetailsLoaderData {
-  tasks: Task[];
-  summary: { totalEarned: number; totalSpent: number } | null;
-  dateString: string;
-}
-
-const DayDetailsPage: React.FC = () => {
-  const { tasks: initialTasks, summary: initialSummary, dateString } = useLoaderData() as DayDetailsLoaderData;
+const DayDetailsPage: FC = () => {
+  const { dateString } = useParams<{ dateString: string }>();
+  const { tasks: allTasks, refetchTasks } = useTasks();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth(); // Получаем состояние аутентификации
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [sortedTasks, setSortedTasks] = useState<Task[]>([]);
-  const [dailySummary, setDailySummary] = useState<{ totalEarned: number; totalSpent: number } | null>(initialSummary);
+  const [dailySummary, setDailySummary] = useState<{ totalEarned: number; totalSpent: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
@@ -52,16 +47,27 @@ const DayDetailsPage: React.FC = () => {
     }
   }, [dateString]);
 
-  useEffect(() => {
-    setTasks(initialTasks);
-  }, [initialTasks]);
+  const tasks = useMemo(() => {
+    if (!dateString) return [];
+    return allTasks.filter(task => isSameDay(createDate(task.dueDate), createDate(dateString)));
+  }, [allTasks, dateString]);
 
   useEffect(() => {
-    setDailySummary(initialSummary);
-  }, [initialSummary]);
+    if (dateString) {
+      const fetchSummary = async () => {
+        try {
+          const summary = await getDailySummary(dateString);
+          setDailySummary(summary);
+        } catch (error) {
+          console.error("Failed to fetch daily summary", error);
+          setDailySummary(null);
+        }
+      };
+      fetchSummary();
+    }
+  }, [dateString]);
 
-
-  useEffect(() => {
+  const sortedTasks = useMemo(() => {
     const timeSpecificTasks: Task[] = [];
     const otherTasks: Task[] = [];
     const expenseTasks: Task[] = [];
@@ -89,7 +95,7 @@ const DayDetailsPage: React.FC = () => {
     otherTasks.sort(sortTasksByTime);
     expenseTasks.sort(sortTasksByTime);
 
-    setSortedTasks([...timeSpecificTasks, ...otherTasks, ...expenseTasks]);
+    return [...timeSpecificTasks, ...otherTasks, ...expenseTasks];
   }, [tasks]);
 
   const handleGoBack = () => {
@@ -117,13 +123,15 @@ const DayDetailsPage: React.FC = () => {
     setShowTaskForm(false);
   };
 
-  const handleTaskSave = async (taskData: Task | Omit<Task, 'uuid'>) => {
+  const handleTaskSave = async (taskData: Task | Omit<Task, 'uuid'>): Promise<void> => {
     if (!isAuthenticated && !isAuthLoading) {
       navigate('/login');
       setError("Пользователь не аутентифицирован. Невозможно сохранить задачу.");
-      return;
+      throw new Error("Пользователь не аутентифицирован.");
     }
-    if (isAuthLoading) return;
+    if (isAuthLoading) {
+      throw new Error("Аутентификация в процессе.");
+    };
 
     try {
       if ('uuid' in taskData && taskData.uuid) {
@@ -133,12 +141,10 @@ const DayDetailsPage: React.FC = () => {
       } else {
         await createTask(taskData as Omit<Task, 'uuid'>);
       }
-      handleCloseTaskForm();
-      // TODO: #TICKET-123 Использовать revalidator.revalidate() или navigate('.', { replace: true }) для перезагрузки данных из loader'а
-      navigate('.', { replace: true }); // Это перезагрузит данные через loader, который должен быть защищен
     } catch (err) {
       // Error saving task
       setError("Ошибка при сохранении задачи.");
+      throw err; // Пробрасываем ошибку дальше, чтобы ее обработал handleSubmit в модалке
     }
   };
 
@@ -153,8 +159,7 @@ const DayDetailsPage: React.FC = () => {
     if (window.confirm('Вы уверены, что хотите удалить эту задачу?')) {
       try {
         await deleteTask(taskId);
-        // TODO: #TICKET-124 Использовать revalidator.revalidate() или navigate('.', { replace: true })
-        navigate('.', { replace: true }); // Это перезагрузит данные через loader
+        refetchTasks();
       } catch (err) {
         // Error deleting task
         setError("Ошибка при удалении задачи.");
@@ -207,8 +212,10 @@ const DayDetailsPage: React.FC = () => {
           <UnifiedTaskFormModal
             isOpen={showTaskForm}
             onClose={handleCloseTaskForm}
-            onSubmit={(taskDataFromForm: Task | Omit<Task, 'uuid'>) => {
-              handleTaskSave(taskDataFromForm);
+            onSubmit={handleTaskSave}
+            onTaskUpsert={() => {
+              handleCloseTaskForm();
+              refetchTasks();
             }}
             mode={modalMode}
             initialTaskData={editingTask}

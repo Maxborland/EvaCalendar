@@ -1,7 +1,6 @@
-import React from 'react';
 import ExpenseCategoryManager from '../components/ExpenseCategoryManager';
 
-const ExpenseCategoriesSettingsPage: React.FC = () => {
+const ExpenseCategoriesSettingsPage = () => {
   return (
     <div>
       <h2>Настройки категорий расходов</h2>

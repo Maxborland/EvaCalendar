@@ -1,6 +1,5 @@
-import React from 'react';
 
-const ProfilePage: React.FC = () => {
+const ProfilePage = () => {
   return (
     <div>
       <h1>Profile Page</h1>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getNoteByDate } from '../services/api';
 
@@ -6,7 +6,7 @@ interface NoteFieldProps {
   weekId: string;
 }
 
-const NoteField: React.FC<NoteFieldProps> = ({ weekId }) => {
+const NoteField = ({ weekId }: NoteFieldProps) => {
   const navigate = useNavigate();
   const [noteContent, setNoteContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);

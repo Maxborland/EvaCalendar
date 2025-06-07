@@ -47,9 +47,9 @@ class NoteService {
 
     async getNotesByDate(dateString, userId) {
         try {
-            // Сначала ищем одну заметку по дате для пользователя, т.к. логика предполагает одну заметку на дату
-            const note = await knex(TABLE_NAME).where({ date: dateString, user_uuid: userId }).first();
-            return note; // Возвращаем одну заметку или undefined, если не найдена
+            // Возвращаем все заметки для указанной даты
+            const notes = await knex(TABLE_NAME).where({ date: dateString, user_uuid: userId }).select('*');
+            return notes; // Возвращаем массив заметок (может быть пустым)
         } catch (error) {
             console.error(`Ошибка при получении заметок по дате ${dateString}:`, error);
             throw new Error('Не удалось получить заметки по дате.');

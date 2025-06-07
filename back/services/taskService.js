@@ -9,18 +9,20 @@ async function validateExistence(table, id) {
 }
 
 const taskService = {
-    async createTask(taskData, userId) {
-        const requiredFields = ['title', 'dueDate', 'taskType'];
+    async createTask(taskData, userId, title) {
+        const requiredFields = ['dueDate', 'taskType'];
         for (const field of requiredFields) {
             if (!taskData[field]) {
                 throw ApiError.badRequest(`${field} is required`);
             }
         }
 
+        let finalTitle = title;
+
         const dataForDb = {
             uuid: uuidv4(),
             user_uuid: userId,
-            title: taskData.title,
+            title: '', // Будет установлено позже
             type: taskData.taskType,
             dueDate: taskData.dueDate,
             time: taskData.time || null,
@@ -40,6 +42,10 @@ const taskService = {
             if (dataForDb.child_uuid && !(await validateExistence('children', dataForDb.child_uuid))) {
                 throw ApiError.badRequest('Child not found');
             }
+            if (!finalTitle) {
+                const child = await knex('children').where({ uuid: dataForDb.child_uuid }).first();
+                finalTitle = `Доход от ${child ? child.childName : 'неизвестного ребенка'}`;
+            }
         } else if (taskData.taskType === 'expense') {
             dataForDb.amountSpent = taskData.amount || null;
             dataForDb.expense_category_uuid = taskData.expenseTypeId || null;
@@ -47,9 +53,19 @@ const taskService = {
             if (dataForDb.expense_category_uuid && !(await validateExistence('expense_categories', dataForDb.expense_category_uuid))) {
                 throw ApiError.badRequest('Expense category not found by categoryId');
             }
+            if (!finalTitle) {
+                const category = await knex('expense_categories').where({ uuid: dataForDb.expense_category_uuid }).first();
+                finalTitle = `Расход по категории "${category ? category.categoryName : 'неизвестно'}"`;
+            }
         } else {
             throw ApiError.badRequest(`Invalid taskType: ${taskData.taskType}`);
         }
+
+        if (!finalTitle) {
+            throw ApiError.badRequest('Task title could not be generated and was not provided.');
+        }
+
+        dataForDb.title = finalTitle;
 
         const newTask = dataForDb;
         try {
@@ -99,7 +115,7 @@ const taskService = {
         return task;
     },
 
-    async updateTask(uuid, taskData, userId) {
+    async updateTask(uuid, taskData, userId, title) {
         const dataToUpdate = {};
 
         const existingTask = await knex('tasks').where({ uuid, user_uuid: userId }).first();
@@ -108,10 +124,10 @@ const taskService = {
         }
 
 
-        if (taskData.hasOwnProperty('title')) {
-            if (!taskData.title) throw ApiError.badRequest('title is required');
-            dataToUpdate.title = taskData.title;
+        if (title) {
+            dataToUpdate.title = title;
         }
+
         if (taskData.hasOwnProperty('dueDate')) {
             if (!taskData.dueDate) throw ApiError.badRequest('dueDate is required');
             dataToUpdate.dueDate = taskData.dueDate;

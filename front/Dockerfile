@@ -1,5 +1,6 @@
 # Этап сборки
-FROM node:20-alpine AS builder
+FROM node:lts-alpine AS builder
+RUN apk update && apk upgrade --no-cache
 
 WORKDIR /app
 
@@ -19,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # Этап production-образа
-FROM nginx:alpine
+FROM nginx:alpine-slim
 
 # Подменяем конфигурацию Nginx для проксирования /api на back
 COPY nginx.conf /etc/nginx/conf.d/default.conf

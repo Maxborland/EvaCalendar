@@ -1,4 +1,3 @@
-import React from 'react';
 import './WeekNavigator.css';
 
 interface WeekNavigatorProps {
@@ -8,11 +7,11 @@ interface WeekNavigatorProps {
   isNavVisible?: boolean; // Делаем опциональным, так как он больше не управляет видимостью напрямую
 }
 
-const WeekNavigator: React.FC<WeekNavigatorProps> = ({
+const WeekNavigator = ({
   goToPreviousWeek,
   goToNextWeek,
   currentWeekDisplay,
-}) => {
+}: WeekNavigatorProps) => {
   return (
     <nav className="flex justify-between items-center my-4 p-4 bg-card rounded-lg">
       <button

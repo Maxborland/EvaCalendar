@@ -1,8 +1,7 @@
-import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import TopNavigator from '../components/TopNavigator'; // Импортируем TopNavigator
 
-const SettingsPage: React.FC = () => {
+const SettingsPage = () => {
   const navigate = useNavigate();
 
   const handleGoBack = () => {

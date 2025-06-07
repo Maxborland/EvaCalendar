@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SummaryData } from '../services/api';
 import { getSummaryByWeek } from '../services/api';
 import { createDate } from '../utils/dateUtils';
@@ -8,9 +8,9 @@ interface SummaryBlockProps {
     weekStartDate: string;
 }
 
-const SummaryBlock: React.FC<SummaryBlockProps> = ({
+const SummaryBlock = ({
     weekStartDate,
-}) => {
+}: SummaryBlockProps) => {
     const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useRevalidator } from 'react-router-dom';
 import { useNav } from '../context/NavContext';
 import { createTask, deleteTask, duplicateTask, moveTask, updateTask, type Note, type Task } from '../services/api';
 import { createDate, formatDateForDayColumnHeader } from '../utils/dateUtils';
@@ -17,14 +17,15 @@ interface DayColumnProps {
   fullDate: Date;
   today: Date;
   tasksForDay: Task[];
-  onDataChange: () => void;
+  onDataChange?: () => void;
   onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => void;
 }
 
-const DayColumn: React.FC<DayColumnProps> = (props) => {
+const DayColumn = (props: DayColumnProps) => {
   const { fullDate, tasksForDay, onDataChange, onOpenTaskModal } = props;
   const navigate = useNavigate();
 
+  const revalidator = useRevalidator();
   const dayColumnClassName = `bg-card p-3 rounded-lg`;
 
   const { setIsNavVisible, setIsModalOpen } = useNav();
@@ -100,7 +101,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
     setIsModalOpen(false);
   };
 
-  const handleSubmitTask = async (taskData: Task | Omit<Task, 'uuid'>) => {
+  const handleSubmitTask = async (taskData: Task | Omit<Task, 'uuid'>): Promise<void> => {
     try {
       if ('uuid' in taskData && taskData.uuid) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -109,17 +110,16 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
       } else {
         await createTask(taskData as Omit<Task, 'uuid'>);
       }
-      onDataChange();
-      handleCloseModal();
     } catch (error) {
       // Ошибка при сохранении задачи в DayColumn
+      throw error;
     }
   };
 
   const handleDeleteTask = async (id: string) => {
     try {
       await deleteTask(id);
-      onDataChange();
+      revalidator.revalidate();
       handleCloseModal();
     } catch (error) {
       // Ошибка при удалении задачи
@@ -129,7 +129,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
   const handleDuplicateTask = async (id: string) => {
     try {
       await duplicateTask(id);
-      onDataChange();
+      revalidator.revalidate();
       handleCloseModal();
     } catch (error) {
       // Ошибка при дублировании задачи
@@ -141,7 +141,7 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
     if (itemTypeFromDrop === 'task' || itemTypeFromDrop === 'income' || itemTypeFromDrop === 'expense') {
       try {
         await moveTask(eventId, newDueDate);
-        onDataChange();
+        revalidator.revalidate();
       } catch (error) {
         // Ошибка при перемещении задачи
       }
@@ -214,6 +214,10 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
           isOpen={isModalOpenState}
           onClose={handleCloseModal}
           onSubmit={handleSubmitTask}
+          onTaskUpsert={() => {
+            revalidator.revalidate();
+            handleCloseModal();
+          }}
           mode={modalMode}
           initialTaskData={currentTask}
           initialTaskType={currentTaskType}
@@ -225,4 +229,4 @@ const DayColumn: React.FC<DayColumnProps> = (props) => {
   );
 };
 
-export default React.memo(DayColumn);
+export default memo(DayColumn);

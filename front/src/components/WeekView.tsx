@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLoaderData, useNavigate } from 'react-router-dom'; // Добавляем useLoaderData и useNavigate
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; // Добавляем useAuth
 import { useNav } from '../context/NavContext';
-import { createTask, deleteTask, duplicateTask, getDailySummary, getMonthlySummary, updateTask, type Task } from '../services/api'; // Удаляем getAllTasks, так как данные будут из loader
+import { useTasks } from '../context/TaskContext';
+import { createTask, deleteTask, duplicateTask, getDailySummary, getMonthlySummary, updateTask, type Task } from '../services/api';
 import {
   addDays,
   addWeeks,
@@ -24,17 +25,11 @@ import WeekNavigator from './WeekNavigator';
 
 import './WeekView.css';
 
-interface WeekViewLoaderData {
-  tasks: Task[];
-}
-
-const WeekView: React.FC = () => {
-  const loaderData = useLoaderData() as WeekViewLoaderData | undefined;
-  const initialTasks = loaderData?.tasks || [];
+const WeekView = () => {
+  const { tasks, refetchTasks } = useTasks();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth(); // Получаем состояние аутентификации
   const navigate = useNavigate(); // Для возможного редиректа
   const [currentDate, setCurrentDate] = useState(getCurrentDate());
-  const [tasksForWeek, setTasksForWeek] = useState<Task[]>(initialTasks);
   const [today] = useState(getCurrentDate());
   const weekDays = useMemo<Date[]>(() => {
     const startOfWeek = startOfISOWeek(currentDate);
@@ -83,7 +78,7 @@ const WeekView: React.FC = () => {
 
   useEffect(() => {
     fetchSummary();
-  }, [fetchSummary, tasksForWeek]);
+  }, [fetchSummary, tasks]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -110,15 +105,6 @@ const WeekView: React.FC = () => {
     setCurrentDate(addWeeks(currentDate, 1));
   };
 
-  const handleDataChange = useCallback(async () => {
-    // TODO: #TICKET-126 Использовать revalidator для обновления данных из loader после мутаций.
-    // Вместо прямого вызова setTasksForWeek, лучше использовать revalidate,
-    // но для текущей задачи оставим так, с учетом того, что fetchSummary уже проверит auth.
-    // Если бы initialTasks приходили не из loader, а через API-запрос в этом компоненте,
-    // то этот запрос тоже нужно было бы обернуть в проверку аутентификации.
-    setTasksForWeek(initialTasks); // Это может быть неактуально, если initialTasks всегда свежие из loader
-    fetchSummary(); // fetchSummary уже содержит проверку аутентификации
-  }, [initialTasks, fetchSummary]);
 
   const weekRangeDisplay = useMemo(() => {
     if (weekDays && weekDays.length === 7) {
@@ -149,12 +135,14 @@ const WeekView: React.FC = () => {
     setIsNavVisible(true);
   }, [setIsGlobalModalOpen, setIsNavVisible]);
 
-  const handleSubmitTask = async (taskData: Task | Omit<Task, 'uuid'>) => {
+  const handleSubmitTask = async (taskData: Task | Omit<Task, 'uuid'>): Promise<void> => {
     if (!isAuthenticated && !isAuthLoading) {
       navigate('/login');
-      return;
+      throw new Error("Пользователь не аутентифицирован.");
     }
-    if (isAuthLoading) return;
+    if (isAuthLoading) {
+      throw new Error("Аутентификация в процессе.");
+    }
 
     try {
       if ('uuid' in taskData && taskData.uuid) {
@@ -164,10 +152,9 @@ const WeekView: React.FC = () => {
       } else {
         await createTask(taskData as Omit<Task, 'uuid'>);
       }
-      handleDataChange(); // Этот вызов в итоге вызовет fetchSummary, который проверит auth
-      handleCloseTaskModal();
     } catch (error) {
       // Ошибка при сохранении задачи
+      throw error;
     }
   };
 
@@ -180,7 +167,7 @@ const WeekView: React.FC = () => {
 
     try {
       await deleteTask(id);
-      handleDataChange();
+      refetchTasks();
       handleCloseTaskModal();
     } catch (error) {
       // Ошибка при удалении задачи
@@ -196,7 +183,7 @@ const WeekView: React.FC = () => {
 
     try {
       await duplicateTask(id);
-      handleDataChange();
+      refetchTasks();
       handleCloseTaskModal();
     } catch (error) {
       // Ошибка при дублировании задачи
@@ -224,48 +211,42 @@ const WeekView: React.FC = () => {
                     key={weekDays[0].toISOString()}
                     fullDate={weekDays[0]}
                     today={today}
-                    tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[0]))}
-                    onDataChange={handleDataChange}
+                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[0]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
                   <DayColumn
                     key={weekDays[3].toISOString()}
                     fullDate={weekDays[3]}
                     today={today}
-                    tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[3]))}
-                    onDataChange={handleDataChange}
+                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[3]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
                   <DayColumn
                     key={weekDays[1].toISOString()}
                     fullDate={weekDays[1]}
                     today={today}
-                    tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[1]))}
-                    onDataChange={handleDataChange}
+                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[1]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
                   <DayColumn
                     key={weekDays[4].toISOString()}
                     fullDate={weekDays[4]}
                     today={today}
-                    tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[4]))}
-                    onDataChange={handleDataChange}
+                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[4]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
                   <DayColumn
                     key={weekDays[2].toISOString()}
                     fullDate={weekDays[2]}
                     today={today}
-                    tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[2]))}
-                    onDataChange={handleDataChange}
+                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[2]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
                   <DayColumn
                     key={weekDays[5].toISOString()}
                     fullDate={weekDays[5]}
                     today={today}
-                    tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[5]))}
-                    onDataChange={handleDataChange}
+                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[5]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
                   <div className="col-span-1">
@@ -277,8 +258,7 @@ const WeekView: React.FC = () => {
                     key={weekDays[6].toISOString()}
                     fullDate={weekDays[6]}
                     today={today}
-                    tasksForDay={tasksForWeek.filter(task => isSameDay(createDate(task.dueDate), weekDays[6]))}
-                    onDataChange={handleDataChange}
+                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[6]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
                 </>
@@ -297,6 +277,10 @@ const WeekView: React.FC = () => {
               isOpen={isTaskModalOpen}
               onClose={handleCloseTaskModal}
               onSubmit={handleSubmitTask}
+              onTaskUpsert={() => {
+                refetchTasks();
+                handleCloseTaskModal();
+              }}
               mode={modalTaskMode}
               initialTaskData={currentTaskForModal}
               initialTaskType={initialModalTaskType}

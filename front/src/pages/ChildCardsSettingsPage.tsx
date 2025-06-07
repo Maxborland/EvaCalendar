@@ -1,7 +1,6 @@
-import React from 'react';
 import ChildCardManager from '../components/ChildCardManager';
 
-const ChildCardsSettingsPage: React.FC = () => {
+const ChildCardsSettingsPage = () => {
   return (
     <div>
       <h2>Настройки карточек детей</h2>

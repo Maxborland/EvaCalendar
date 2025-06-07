@@ -1,7 +1,5 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; // Добавлено
-import api from '../services/api'; // Добавлено
 import './TopNavigator.css';
 
 interface TopNavigatorProps {
@@ -9,29 +7,20 @@ interface TopNavigatorProps {
   showButtons?: boolean;
 }
 
-const TopNavigator: React.FC<TopNavigatorProps> = ({ title, showButtons = true }) => {
+const TopNavigator = ({ title, showButtons = true }: TopNavigatorProps) => {
   const navigate = useNavigate();
-  const { isAuthenticated, logout, token } = useAuth(); // Добавлено
+  const { isAuthenticated, logout } = useAuth();
 
   const handleSettingsClick = () => {
     navigate('/settings');
   };
 
-  const handleLogout = async () => { // Добавлено
-    if (token) {
-      try {
-        await api.post('/api/auth/logout', {}, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        // Successfully logged out from server
-      } catch (error) {
-        // Failed to logout from server
-      }
-    }
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    await logout();
+    // Навигация на /login больше не нужна, так как
+    // PrivateRoute автоматически обработает изменение состояния
+    // и выполнит редирект.
+    // navigate('/login');
   };
 
   return (

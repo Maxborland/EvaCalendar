@@ -1,24 +1,24 @@
-import React, { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import LoadingAnimation from '../components/LoadingAnimation';
 import api from '../services/api';
 
 // Типы
 interface User {
-  uuid: string; // Изменено с id на uuid
+  uuid: string;
   username: string;
   email: string;
-  role: 'user' | 'admin'; // Уточнен тип роли
+  role: 'user' | 'admin';
 }
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
+  isLoading: boolean; // Этот флаг теперь будет отражать ТОЛЬКО процесс логина/логаута, а не инициализацию
 }
 
 interface AuthContextType extends AuthState {
-  login: (token: string) => Promise<void>;
-  logout: () => Promise<void>; // logout теперь async
+  login: (user: User, token: string) => void; // Login теперь принимает и пользователя, и токен
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,81 +27,88 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false); // Начальное состояние - false
+  const [isInitializing, setIsInitializing] = useState<boolean>(true); // НОВЫЙ флаг для первоначальной проверки
 
-  const logout = useCallback(async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      console.error('[AuthContext] logout: API call failed', error);
-    } finally {
-      localStorage.removeItem('token');
-      setUser(null);
-      setToken(null);
-      setIsAuthenticated(false);
+  // Функция для очистки состояния
+  const clearAuthState = useCallback(() => {
+    localStorage.removeItem('token');
+    if (api.defaults.headers.common['Authorization']) {
+        api.defaults.headers.common['Authorization'] = ''; // Очищаем заголовок в инстансе axios
     }
+    setUser(null);
+    setIsAuthenticated(false);
   }, []);
 
+  // Эффект для проверки токена при монтировании компонента
   useEffect(() => {
     const verifyToken = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          const response = await api.get<User>('/users/me', {
-            headers: {
-              Authorization: `Bearer ${storedToken}`,
-            },
-          });
+          api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+          const response = await api.get<User>('/users/me');
           setUser(response.data);
-          setToken(storedToken);
           setIsAuthenticated(true);
         } catch (error) {
-          console.error('[AuthContext] verifyToken: Error verifying token.', error);
-          localStorage.removeItem('token');
-          setUser(null);
-          setToken(null);
-          setIsAuthenticated(false);
-        } finally {
-          setIsLoading(false);
+          console.error('[AuthContext] verifyToken: Invalid token.', error);
+          clearAuthState(); // Используем централизованную функцию очистки
         }
-      } else {
-        setIsLoading(false);
       }
+      // Важно: isInitializing становится false в любом случае ПОСЛЕ попытки проверки
+      setIsInitializing(false);
     };
 
     verifyToken();
-  }, [logout]);
+  }, [clearAuthState]);
 
-  const login = async (newToken: string) => {
-    setIsLoading(true);
-    try {
-      localStorage.setItem('token', newToken);
-      const response = await api.get<User>('/users/me', {
-        headers: {
-          Authorization: `Bearer ${newToken}`,
-        },
-      });
-      setUser(response.data);
-      setToken(newToken);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('[AuthContext] login: Failed.', error);
-      localStorage.removeItem('token');
-      setUser(null);
-      setToken(null);
-      setIsAuthenticated(false);
-      throw error; // Перебрасываем ошибку, чтобы компонент формы мог ее обработать
-    } finally {
-      setIsLoading(false);
-    }
+  // Улучшенная функция login
+  const login = (loggedInUser: User, token: string) => {
+    localStorage.setItem('token', token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(loggedInUser);
+    setIsAuthenticated(true);
   };
 
+  // Улучшенная функция logout
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('[AuthContext] logout: API call failed', error);
+    } finally {
+      clearAuthState();
+      setIsLoading(false);
+    }
+  }, [clearAuthState]);
+
+  // Синхронизация между вкладками
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'token' && event.newValue === null) {
+        // Если токен был удален в другой вкладке, выходим из системы и здесь
+        clearAuthState();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [clearAuthState]);
+
+
+  // Пока идет инициализация, показываем глобальный лоадер
+  if (isInitializing) {
+    return <LoadingAnimation />;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

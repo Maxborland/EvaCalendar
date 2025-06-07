@@ -1,7 +1,6 @@
-import React from 'react';
 import { Link } from 'react-router-dom'; // Предполагается использование react-router
 
-const NotFoundPage: React.FC = () => {
+const NotFoundPage = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-5 bg-theme-light dark:bg-theme-dark">
       <h1 className="text-6xl font-bold text-theme-danger mb-4">

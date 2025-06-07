@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); // Доверяем одному прокси-серверу (Nginx)
 const port = process.env.PORT || 3001;
 
 const corsOptions = {
