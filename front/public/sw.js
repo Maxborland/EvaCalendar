@@ -140,3 +140,41 @@ setCatchHandler(async ({ event }) => {
 });
 
 console.log('[SW] Service Worker configured with Workbox.');
+// Обработчик push-уведомлений
+self.addEventListener('push', (event) => {
+  const data = event.data.json();
+  const promiseChain = self.registration.showNotification(data.title, {
+    body: data.body,
+    icon: '/icons/web/icon-192.png' // Опционально: добавьте иконку
+  });
+  event.waitUntil(promiseChain);
+});
+
+// Обработчик клика по уведомлению
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close(); // Закрываем уведомление
+
+  const promiseChain = clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true
+  }).then((windowClients) => {
+    let matchingClient = null;
+
+    for (let i = 0; i < windowClients.length; i++) {
+      const windowClient = windowClients[i];
+      // Проверяем, видимо ли окно и является ли оно нужным нам приложением
+      if (windowClient.visibilityState === 'visible') {
+        matchingClient = windowClient;
+        break;
+      }
+    }
+
+    if (matchingClient) {
+      return matchingClient.focus();
+    } else {
+      return clients.openWindow('/');
+    }
+  });
+
+  event.waitUntil(promiseChain);
+});

@@ -27,6 +27,7 @@ const taskService = {
             dueDate: taskData.dueDate,
             time: taskData.time || null,
             comments: taskData.comments || null,
+            reminder_at: taskData.reminder_at || null,
             child_uuid: null,
             hoursWorked: null,
             amountEarned: null,
@@ -139,6 +140,7 @@ const taskService = {
 
         if (taskData.hasOwnProperty('time')) dataToUpdate.time = taskData.time;
         if (taskData.hasOwnProperty('comments')) dataToUpdate.comments = taskData.comments;
+        if (taskData.hasOwnProperty('reminder_at')) dataToUpdate.reminder_at = taskData.reminder_at;
 
         const currentTaskType = dataToUpdate.type || existingTask.type;
 

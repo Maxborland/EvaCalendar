@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 
 
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'; // Убедитесь, что это соответствует вашему бэкенду
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export interface ExpenseCategory {
   uuid: string; // Changed from id to uuid to match API response

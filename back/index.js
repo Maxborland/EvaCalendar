@@ -5,13 +5,15 @@ const rateLimit = require('express-rate-limit');
 
 dotenv.config();
 
+const { scheduleTaskReminders } = require('./scheduler');
+
 const app = express();
 app.set('trust proxy', 1); // Доверяем одному прокси-серверу (Nginx)
 const port = process.env.PORT || 3001;
 
 const corsOptions = {
   origin: function (origin, callback) {
-    const defaultOrigins = ['http://localhost:5173', 'https://calendar.home.local'];
+    const defaultOrigins = ['http://localhost:5173', 'https://calendar.home.local', 'https://calendar.maxborland.space'];
     let envOrigins = [];
     if (process.env.FRONTEND_URL) {
       envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
@@ -48,6 +50,8 @@ const taskController = require('./controllers/taskController.js');
 const summaryController = require('./controllers/summaryController.js');
 const authRoutes = require('./routes/authRoutes.js');
 const userRoutes = require('./routes/userRoutes.js');
+const subscriptionRoutes = require('./routes/subscriptionRoutes.js');
+const notificationRoutes = require('./routes/notificationRoutes.js');
 const errorHandler = require('./middleware/errorHandler.js');
 const { protect } = require('./middleware/authMiddleware.js');
 
@@ -61,9 +65,13 @@ app.use('/notes', protect, noteController);
 app.use('/tasks', protect, taskController);
 app.use('/summary', protect, summaryController);
 
+// Маршруты для API должны быть выше обработчиков статики и catch-all
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/notifications', notificationRoutes);
+
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10000, // Limit each IP to 10000 requests per `window` (TEMPORARILY INCREASED FOR DEBUGGING 429)
+  max: 10, // Limit each IP to 10000 requests per `window` (TEMPORARILY INCREASED FOR DEBUGGING 429)
   message: 'Too many login attempts from this IP, please try again later.', // ASCII message
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -76,7 +84,7 @@ const loginLimiter = rateLimit({
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 10000, // TEMPORARILY INCREASED FOR DEBUGGING 429
+  max: 10, // TEMPORARILY INCREASED FOR DEBUGGING 429
   message: 'Слишком много запросов на регистрацию с этого IP, попробуйте позже.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -92,9 +100,10 @@ app.use('/users', userRoutes);
 
 app.use(errorHandler);
 
+scheduleTaskReminders();
+
 const server = app.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
-
 });
 
 module.exports = { app, server };

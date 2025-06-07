@@ -1,11 +1,54 @@
+import { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import TopNavigator from '../components/TopNavigator'; // Импортируем TopNavigator
+import TopNavigator from '../components/TopNavigator';
+import {
+  getSubscription,
+  sendTestNotification,
+  subscribeUser
+} from '../services/subscriptionService';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isPushSupported, setIsPushSupported] = useState(false);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setIsPushSupported(true);
+      const checkSubscription = async () => {
+        const subscription = await getSubscription();
+        setIsSubscribed(!!subscription);
+      };
+      checkSubscription();
+    }
+  }, []);
 
   const handleGoBack = () => {
     navigate('/', { replace: true });
+  };
+
+  const handleSubscribe = async () => {
+    if (!isPushSupported) {
+      console.error('Push-уведомления не поддерживаются этим браузером.');
+      return;
+    }
+    try {
+      await subscribeUser();
+      setIsSubscribed(true);
+      console.log('Пользователь успешно подписан.');
+    } catch (error) {
+      console.error('Не удалось подписаться:', error);
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    console.log('Button clicked!');
+    try {
+      await sendTestNotification();
+      console.log('Тестовое уведомление отправлено.');
+    } catch (error) {
+      console.error('Не удалось отправить тестовое уведомление:', error);
+    }
   };
 
   return (
@@ -33,6 +76,35 @@ const SettingsPage = () => {
             </p>
           </Link>
         </nav>
+
+        {/* Раздел управления уведомлениями */}
+        <div className="mt-8 bg-slate-800 p-6 rounded-lg shadow">
+          <h2 className="text-xl font-bold mb-4">Управление уведомлениями</h2>
+          <div className="space-y-4">
+            <button
+              onClick={handleSubscribe}
+              disabled={isSubscribed || !isPushSupported}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
+            >
+              {isSubscribed
+                ? 'Вы подписаны'
+                : 'Подписаться на уведомления'}
+            </button>
+            <button
+              onClick={handleSendTestNotification}
+              disabled={!isSubscribed || !isPushSupported}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
+            >
+              Отправить тестовое уведомление
+            </button>
+          </div>
+          {!isPushSupported && (
+            <p className="text-red-400 text-sm mt-4">
+              Push-уведомления не поддерживаются в вашем браузере.
+            </p>
+          )}
+        </div>
+
         <div className="mt-8">
           <Outlet />
         </div>

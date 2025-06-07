@@ -65,7 +65,8 @@ const UnifiedTaskFormModal = ({
       dueDate: defaultDueDate,
       expenseTypeId: initialTaskData?.expenseTypeId,
       childName: initialTaskData?.childName,
-      originalTaskType: initialTaskData?.type
+      originalTaskType: initialTaskData?.type,
+      reminder_at: initialTaskData?.reminder_at || '',
     };
     return baseData;
   });
@@ -110,6 +111,7 @@ const UnifiedTaskFormModal = ({
         expenseTypeId: initialTaskData.expenseTypeId,
         childName: initialTaskData.childName,
         originalTaskType: initialTaskData.type,
+        reminder_at: initialTaskData.reminder_at || '',
       };
       setFormData(newFormData);
 
@@ -134,6 +136,7 @@ const UnifiedTaskFormModal = ({
         expenseTypeId: undefined,
         childName: undefined,
         originalTaskType: undefined,
+        reminder_at: '',
       };
         return newFormData;
     });
@@ -364,6 +367,7 @@ const UnifiedTaskFormModal = ({
       hoursWorked: taskTypeInternal === 'income' && taskTypeForApi === 'hourly' ? formData.hoursWorked : undefined,
       comments: formData.comments || undefined,
       taskType: taskTypeInternal,
+      reminder_at: formData.reminder_at || null,
     };
 
     if (taskTypeForApi === 'hourly' && dataToSave.hourlyRate && dataToSave.hoursWorked && dataToSave.amount === undefined) {
@@ -453,6 +457,18 @@ const UnifiedTaskFormModal = ({
                 onChange={handleChange}
                 className="input"
                 required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="reminder_at" className="label">Напомнить в:</label>
+              <input
+                type="datetime-local"
+                id="reminder_at"
+                name="reminder_at"
+                value={formData.reminder_at || ''}
+                onChange={handleChange}
+                className="input"
               />
             </div>
 

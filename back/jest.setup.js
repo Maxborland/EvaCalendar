@@ -11,9 +11,11 @@ if (db && db.client && db.client.config) {
   console.error('[Jest Setup] CRITICAL: db or db.client.config is not defined!');
 }
 
-beforeAll(async () => { // Изменено с beforeEach на beforeAll
+beforeAll(async () => {
     console.log('[Jest Setup - beforeAll] Starting for new test file...');
     try {
+        console.log('[Jest Setup - beforeAll] Rolling back migrations...');
+        await db.migrate.rollback(undefined, true);
         console.log('[Jest Setup - beforeAll] Applying latest migrations...');
         await db.migrate.latest();
         console.log('[Jest Setup - beforeAll] Latest migrations applied.');
@@ -33,13 +35,9 @@ beforeAll(async () => { // Изменено с beforeEach на beforeAll
     console.log('[Jest Setup - beforeAll] Finished for new test file.');
 });
 
-afterEach(async () => {
-    console.log('[Jest Setup - afterEach] Cleaning up database...');
-    const tables = ['tasks', 'children', 'expense_categories', 'notes', 'password_reset_tokens', 'token_blacklist', 'users'];
-    for (const table of tables) {
-        await db(table).del();
-    }
-    console.log('[Jest Setup - afterEach] Database cleaned up.');
+afterAll(async () => { // Изменено на afterAll
+    console.log('[Jest Setup - afterAll] Cleaning up database...');
+    // Теперь очистка не нужна, так как мы делаем rollback в beforeAll
 });
 
 afterAll(async () => { // Этот afterAll будет выполняться после всех тестов в файле
