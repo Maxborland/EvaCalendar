@@ -7,7 +7,6 @@ import {
   getAllChildren,
   getAssignableUsers,
   getExpenseCategories,
-  searchUsers,
   updateChild as updateChildAPI,
   type Child,
   type ExpenseCategory,
@@ -107,10 +106,6 @@ const UnifiedTaskFormModal = ({
   const [showChildFormModal, setShowChildFormModal] = useState(false);
   const [childFormInitialData, setChildFormInitialData] = useState<Partial<Child> | undefined>(undefined);
   const [assignableUsers, setAssignableUsers] = useState<User[]>([]);
-  const [assigneeQuery, setAssigneeQuery] = useState('');
-  const [assigneeSuggestions, setAssigneeSuggestions] = useState<User[]>([]);
-  const [selectedAssignee, setSelectedAssignee] = useState<User | null>(initialTaskData?.assignee || null);
-  const [isSearching, setIsSearching] = useState(false);
 
 
   const fetchChildrenCallback = useCallback(async () => {
@@ -201,23 +196,9 @@ const UnifiedTaskFormModal = ({
             assigned_to_id: null,
         };
         setSelectedChildUuid(null);
-        setSelectedAssignee(null);
-        setAssigneeQuery('');
     } else { // edit mode specific updates
         const childIdToSetForSelector = initialTaskData?.child_uuid || initialTaskData?.childId || null;
         setSelectedChildUuid(childIdToSetForSelector);
-
-        if (initialTaskData?.assignee) {
-            setSelectedAssignee(initialTaskData.assignee);
-            setAssigneeQuery(initialTaskData.assignee.username);
-        } else if (initialTaskData?.assignee_username) {
-            // Fallback if assignee object is not fully populated
-            setSelectedAssignee({ uuid: initialTaskData.user_uuid, username: initialTaskData.assignee_username } as User);
-            setAssigneeQuery(initialTaskData.assignee_username);
-        } else {
-            setSelectedAssignee(null);
-            setAssigneeQuery('');
-        }
     }
 
     setFormData(newFormData);
@@ -312,26 +293,6 @@ const UnifiedTaskFormModal = ({
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type: inputType } = e.target;
 
-    if (name === 'assignee_username') {
-      setAssigneeQuery(value);
-      if (value.length >= 2) {
-        setIsSearching(true);
-        // Basic debounce
-        setTimeout(async () => {
-          try {
-            const users = await searchUsers(value);
-            setAssigneeSuggestions(users);
-          } catch (error) {
-            toast.error('Ошибка поиска пользователей.');
-          } finally {
-            setIsSearching(false);
-          }
-        }, 500);
-      } else {
-        setAssigneeSuggestions([]);
-      }
-    }
-
     setFormData((prevData) => {
       const newValue = inputType === 'number'
         ? (value === '' ? undefined : parseFloat(value))
@@ -383,19 +344,6 @@ const UnifiedTaskFormModal = ({
   const handleChildFormCancel = () => {
     setShowChildFormModal(false);
     setChildFormInitialData(undefined);
-  };
-
-  const handleSelectAssignee = (user: User) => {
-    setSelectedAssignee(user);
-    setAssigneeQuery(user.username);
-    setAssigneeSuggestions([]);
-    setFormData(prev => ({ ...prev, assignee_username: user.username }));
-  };
-
-  const handleRemoveAssignee = () => {
-    setSelectedAssignee(null);
-    setAssigneeQuery('');
-    setFormData(prev => ({ ...prev, assignee_username: '' }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
