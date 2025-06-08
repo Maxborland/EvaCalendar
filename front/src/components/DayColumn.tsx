@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { memo, useEffect, useRef, useState } from 'react';
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNavigate, useRevalidator } from 'react-router-dom';
@@ -16,17 +17,20 @@ const ItemTypes = {
 interface DayColumnProps {
   fullDate: Date;
   today: Date;
+  isToday?: boolean;
   tasksForDay: Task[];
   onDataChange?: () => void;
   onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => void;
 }
 
 const DayColumn = (props: DayColumnProps) => {
-  const { fullDate, tasksForDay, onDataChange, onOpenTaskModal } = props;
+  const { fullDate, tasksForDay, onDataChange, onOpenTaskModal, isToday } = props;
   const navigate = useNavigate();
 
   const revalidator = useRevalidator();
-  const dayColumnClassName = `bg-card p-3 rounded-lg`;
+  const dayColumnClassName = clsx('bg-card', 'p-3', 'rounded-lg', {
+    'today': isToday
+  });
 
   const { setIsNavVisible, setIsModalOpen } = useNav();
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -191,7 +195,7 @@ const DayColumn = (props: DayColumnProps) => {
   );
 
   return (
-    <div ref={dropRef} className={`${dayColumnClassName} ${isOver ? 'highlighted-drop-zone' : ''}`}>
+    <div ref={dropRef} className={clsx(dayColumnClassName, { 'highlighted-drop-zone': isOver })}>
       {dayHeader}
       <div className="space-y-2 max-h-24 overflow-y-auto">
         {events.length > 0 ? (
