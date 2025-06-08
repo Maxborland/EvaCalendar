@@ -18,7 +18,6 @@ COPY db.cjs knexfile.cjs index.js pm2.config.js babel.config.js scheduler.js ./
 COPY controllers ./controllers
 COPY middleware ./middleware
 COPY migrations ./migrations
-COPY seeds ./seeds
 COPY services ./services
 COPY utils ./utils
 COPY routes ./routes
@@ -40,7 +39,6 @@ COPY --from=builder /app/scheduler.js ./scheduler.js
 COPY --from=builder /app/controllers ./controllers
 COPY --from=builder /app/middleware ./middleware
 COPY --from=builder /app/migrations ./migrations
-COPY --from=builder /app/seeds ./seeds
 COPY --from=builder /app/services ./services
 COPY --from=builder /app/utils ./utils
 COPY --from=builder /app/routes ./routes
