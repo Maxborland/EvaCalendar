@@ -364,6 +364,23 @@ const updateEmailNotificationSettings = asyncHandler(async (req, res) => {
   res.status(200).json({ message: `Email-уведомления ${enabled ? 'включены' : 'отключены'}.` });
 });
 
+// @desc    Search users by username
+// @route   GET /api/users/search
+// @access  Private
+const searchUsers = asyncHandler(async (req, res) => {
+   const { q } = req.query;
+
+   if (!q) {
+       return res.json([]);
+   }
+
+   const users = await knex('users')
+       .where('username', 'like', `%${q}%`)
+       .select('uuid', 'username');
+
+   res.status(200).json(users);
+});
+
 module.exports = {
   getCurrentUser,
   changePassword,
@@ -375,4 +392,5 @@ module.exports = {
   changeUserRole,
   adminChangeUserPassword,
   updateEmailNotificationSettings,
+  searchUsers,
 };

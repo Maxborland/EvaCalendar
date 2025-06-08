@@ -10,84 +10,133 @@ async function validateExistence(table, id) {
     return !!exists;
 }
 
-const taskService = {
-    async createTask(taskData, userId, title) {
-        const requiredFields = ['dueDate', 'taskType'];
-        for (const field of requiredFields) {
-            if (!taskData[field]) {
-                throw ApiError.badRequest(`${field} is required`);
-            }
+function _calculateReminderAt(dueDate, time, reminderOffset, reminderAt) {
+    if (reminderOffset) {
+        const [value, unit] = reminderOffset.split(' ');
+        const fullDate = moment.utc(`${dueDate}T${time || '00:00:00'}`);
+        if (!fullDate.isValid()) {
+            throw ApiError.badRequest('Invalid dueDate or time for reminder calculation.');
         }
+        return fullDate.subtract(parseInt(value, 10), unit).toDate();
+    }
+    if (reminderAt) {
+        const reminderDate = moment.utc(reminderAt);
+        if (!reminderDate.isValid()) {
+            throw ApiError.badRequest('Invalid reminder_at date.');
+        }
+        return reminderDate.toDate();
+    }
+    return null;
+}
 
-        let finalTitle = title;
+const taskService = {
+    async createTask(taskData, userId) {
+        const {
+            type,
+            dueDate,
+            time,
+            title,
+            comments,
+            reminder_offset,
+            reminder_at,
+            assigned_to_id,
+            child_uuid,
+            hoursWorked,
+            amount,
+            amountEarned,
+            amountSpent,
+            expense_category_uuid,
+        } = taskData;
+
+        if (!type || !dueDate) {
+            throw ApiError.badRequest('type and dueDate are required');
+        }
 
         const dataForDb = {
             uuid: uuidv4(),
-            user_uuid: userId,
-            title: '', // Будет установлено позже
-            type: taskData.taskType,
-            dueDate: taskData.dueDate,
-            time: taskData.time || null,
-            comments: taskData.comments || null,
-            reminder_at: taskData.reminder_at ? moment.utc(taskData.reminder_at).toDate() : null,
+            creator_uuid: userId,
+            title,
+            type,
+            dueDate,
+            time: time || null,
+            comments: comments || null,
+            reminder_offset: reminder_offset || null,
             child_uuid: null,
             hoursWorked: null,
             amountEarned: null,
             amountSpent: null,
-            expense_category_uuid: null
+            expense_category_uuid: null,
         };
 
-        if (taskData.taskType === 'income') {
-            dataForDb.child_uuid = taskData.childId || null;
-            dataForDb.hoursWorked = taskData.hoursWorked || null;
-            dataForDb.amountEarned = taskData.amount || null;
+        dataForDb.reminder_at = _calculateReminderAt(dueDate, dataForDb.time, reminder_offset, reminder_at);
 
-            if (dataForDb.child_uuid && !(await validateExistence('children', dataForDb.child_uuid))) {
-                throw ApiError.badRequest('Child not found');
+        // Validation and type-specific logic
+        if (type === 'income' || type === 'expense' || type === 'hourly' || type === 'fixed') {
+            if (assigned_to_id && assigned_to_id !== userId) {
+                throw ApiError.badRequest('Income/expense can only be assigned to the creator.');
             }
-            if (!finalTitle) {
-                const child = await knex('children').where({ uuid: dataForDb.child_uuid }).first();
-                finalTitle = `Доход от ${child ? child.childName : 'неизвестного ребенка'}`;
-            }
-        } else if (taskData.taskType === 'expense') {
-            dataForDb.amountSpent = taskData.amount || null;
-            dataForDb.expense_category_uuid = taskData.expenseTypeId || null;
+            dataForDb.user_uuid = userId;
 
-            if (dataForDb.expense_category_uuid && !(await validateExistence('expense_categories', dataForDb.expense_category_uuid))) {
-                throw ApiError.badRequest('Expense category not found by categoryId');
+            if (type === 'income' || type === 'hourly' || type === 'fixed') {
+                dataForDb.amountEarned = amount || amountEarned || null;
+                dataForDb.child_uuid = child_uuid || null;
+                dataForDb.hoursWorked = hoursWorked || null;
+                if (dataForDb.child_uuid && !(await validateExistence('children', dataForDb.child_uuid))) {
+                    throw ApiError.badRequest('Child not found');
+                }
+                if (!dataForDb.title) {
+                    const child = await knex('children').where({ uuid: dataForDb.child_uuid }).first();
+                    dataForDb.title = `Доход от ${child ? child.childName : 'ребенка'}`;
+                }
+                // После обработки, приводим тип к 'income' для хранения в БД
+                dataForDb.type = 'income';
+            } else { // expense
+                dataForDb.amountSpent = amount || amountSpent || null;
+                dataForDb.expense_category_uuid = expense_category_uuid || null;
+                if (dataForDb.expense_category_uuid && !(await validateExistence('expense_categories', dataForDb.expense_category_uuid))) {
+                    throw ApiError.badRequest('Expense category not found');
+                }
+                if (!dataForDb.title) {
+                    const category = await knex('expense_categories').where({ uuid: dataForDb.expense_category_uuid }).first();
+                    dataForDb.title = `Расход: ${category ? category.categoryName : 'категория'}`;
+                }
             }
-            if (!finalTitle) {
-                const category = await knex('expense_categories').where({ uuid: dataForDb.expense_category_uuid }).first();
-                finalTitle = `Расход по категории "${category ? category.categoryName : 'неизвестно'}"`;
+        } else if (type === 'task') {
+            if (amountEarned || amountSpent || amount) {
+                throw ApiError.badRequest('Tasks cannot have amountEarned or amountSpent.');
+            }
+            let final_assigned_to_id = userId;
+            if (assigned_to_id) {
+                const assigneeExists = await validateExistence('users', assigned_to_id);
+                if (!assigneeExists) {
+                    throw ApiError.badRequest(`Assignee with id ${assigned_to_id} not found`);
+                }
+                final_assigned_to_id = assigned_to_id;
+            }
+            dataForDb.user_uuid = final_assigned_to_id;
+            if (!dataForDb.title) {
+                throw ApiError.badRequest('Title is required for task type.');
             }
         } else {
-            throw ApiError.badRequest(`Invalid taskType: ${taskData.taskType}`);
+            throw ApiError.badRequest(`Invalid task type: ${type}`);
         }
 
-        if (!finalTitle) {
-            throw ApiError.badRequest('Task title could not be generated and was not provided.');
-        }
-
-        dataForDb.title = finalTitle;
-
-        const newTask = dataForDb;
         try {
-            const result = await knex('tasks').insert(newTask);
-            if (Array.isArray(result) && result.length === 0 && newTask) {
-            } else if (typeof result === 'number' && result === 0) {
-            }
-            return newTask;
+            await knex('tasks').insert(dataForDb);
+            return dataForDb;
         } catch (error) {
-            console.error('[taskService.createTask] Error during knex insert:', error.message, error.stack, error.detail, error.constraint);
+            logError('[taskService.createTask] Error during knex insert:', error);
             throw ApiError.internal('Failed to create task in database', error);
         }
     },
 
     async getAllTasks(userId) {
         return knex('tasks')
-            .where('tasks.user_uuid', userId)
             .select(
                 'tasks.*',
+                'tasks.reminder_offset',
+                'creator.username as creator_username',
+                'assignee.username as assignee_username',
                 'children.childName as childName',
                 'children.parentName as parentName',
                 'children.parentPhone as parentPhone',
@@ -95,16 +144,22 @@ const taskService = {
                 'children.hourlyRate as childHourlyRate',
                 'expense_categories.categoryName as expenseCategoryName'
             )
+            .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
+            .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid');
+            .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid')
+            .where('tasks.creator_uuid', userId)
+            .orWhere('tasks.user_uuid', userId);
     },
 
     async getTaskById(uuid, userId) {
         const task = await knex('tasks')
             .where('tasks.uuid', uuid)
-            .andWhere('tasks.user_uuid', userId)
             .select(
                 'tasks.*',
+                'tasks.reminder_offset',
+                'creator.username as creator_username',
+                'assignee.username as assignee_username',
                 'children.childName as childName',
                 'children.parentName as parentName',
                 'children.parentPhone as parentPhone',
@@ -112,113 +167,119 @@ const taskService = {
                 'children.hourlyRate as childHourlyRate',
                 'expense_categories.categoryName as expenseCategoryName'
             )
+            .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
+            .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
             .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid')
             .first();
+
+        if (task && task.creator_uuid !== userId && task.user_uuid !== userId) {
+            throw ApiError.forbidden('Access denied');
+        }
+
         return task;
     },
 
-    async updateTask(uuid, taskData, userId, title) {
-        log(`[updateTask] Received raw taskData for task ${uuid}:`, taskData);
-        const dataToUpdate = {};
-
-        const existingTask = await knex('tasks').where({ uuid, user_uuid: userId }).first();
+    async updateTask(uuid, taskData, userId) {
+        const existingTask = await knex('tasks').where({ uuid }).first();
         if (!existingTask) {
-            throw ApiError.notFound('Task not found or access denied');
+            throw ApiError.notFound('Task not found');
         }
 
-
-        if (title) {
-            dataToUpdate.title = title;
+        if (existingTask.creator_uuid !== userId && existingTask.user_uuid !== userId) {
+            throw ApiError.forbidden('Access denied');
         }
 
-        if (taskData.hasOwnProperty('dueDate')) {
-            if (!taskData.dueDate) throw ApiError.badRequest('dueDate is required');
-            dataToUpdate.dueDate = taskData.dueDate;
-        }
-        if (taskData.hasOwnProperty('taskType')) {
-            if (!taskData.taskType) throw ApiError.badRequest('taskType is required');
-            dataToUpdate.type = taskData.taskType;
-        }
+        const allowedFields = [
+            'title', 'type', 'dueDate', 'time', 'comments', 'reminder_offset', 'reminder_at',
+            'assigned_to_id',
+            'child_uuid', 'hoursWorked', 'amount', 'amountEarned', 'amountSpent',
+            'expense_category_uuid', 'completed', 'completed_at'
+        ];
 
-        if (taskData.hasOwnProperty('time')) dataToUpdate.time = taskData.time;
-        if (taskData.hasOwnProperty('comments')) dataToUpdate.comments = taskData.comments;
-        if (taskData.hasOwnProperty('reminder_at')) {
-            dataToUpdate.reminder_at = taskData.reminder_at ? moment.utc(taskData.reminder_at).toDate() : null;
-            // Если время напоминания обновляется, нужно сбросить флаг отправки,
-            // чтобы планировщик мог отправить новое уведомление.
+        const dataToUpdate = {};
+        Object.keys(taskData).forEach(key => {
+            if (allowedFields.includes(key)) {
+                dataToUpdate[key] = taskData[key];
+            }
+        });
+
+
+        // Handle reminder recalculation
+        const needsRecalculation = dataToUpdate.hasOwnProperty('dueDate') || dataToUpdate.hasOwnProperty('time') || dataToUpdate.hasOwnProperty('reminder_offset') || dataToUpdate.hasOwnProperty('reminder_at');
+        if (needsRecalculation) {
+            const newDueDate = dataToUpdate.dueDate || existingTask.dueDate;
+            const newTime = dataToUpdate.hasOwnProperty('time') ? dataToUpdate.time : existingTask.time;
+            const newReminderOffset = dataToUpdate.hasOwnProperty('reminder_offset') ? dataToUpdate.reminder_offset : existingTask.reminder_offset;
+            const newReminderAt = dataToUpdate.hasOwnProperty('reminder_at') ? dataToUpdate.reminder_at : existingTask.reminder_at;
+
+            dataToUpdate.reminder_at = _calculateReminderAt(newDueDate, newTime, newReminderOffset, newReminderAt);
             dataToUpdate.reminder_sent = false;
         }
 
-        const currentTaskType = dataToUpdate.type || existingTask.type;
-
-        if (!currentTaskType) {
-             throw ApiError.notFound('Task type is missing');
-        }
-
-        if (taskData.hasOwnProperty('taskType')) {
-            dataToUpdate.child_uuid = null;
-            dataToUpdate.hoursWorked = null;
+        const newType = dataToUpdate.type || existingTask.type;
+        if (dataToUpdate.type && dataToUpdate.type !== existingTask.type) {
+            // При смене типа обнуляем специфичные поля
             dataToUpdate.amountEarned = null;
             dataToUpdate.amountSpent = null;
+            dataToUpdate.child_uuid = null;
+            dataToUpdate.hoursWorked = null;
             dataToUpdate.expense_category_uuid = null;
         }
 
 
-        if (currentTaskType === 'income') {
-            if (taskData.hasOwnProperty('childId')) dataToUpdate.child_uuid = taskData.childId;
-            if (taskData.hasOwnProperty('hoursWorked')) dataToUpdate.hoursWorked = taskData.hoursWorked;
-            if (taskData.hasOwnProperty('amount')) dataToUpdate.amountEarned = taskData.amount;
-
-            if (dataToUpdate.child_uuid && !(await validateExistence('children', dataToUpdate.child_uuid))) {
-                throw ApiError.badRequest('Child not found');
+        // Validation and type-specific logic
+        if (newType === 'income' || newType === 'expense') {
+            if (dataToUpdate.assigned_to_id && dataToUpdate.assigned_to_id !== existingTask.creator_uuid) {
+                 throw ApiError.badRequest('Income/expense can only be assigned to the creator.');
             }
-             if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = null;
-             if (!taskData.hasOwnProperty('categoryId')) dataToUpdate.expense_category_uuid = null;
+            dataToUpdate.user_uuid = existingTask.creator_uuid;
 
-
-        } else if (currentTaskType === 'expense') {
-            if (taskData.hasOwnProperty('amount')) dataToUpdate.amountSpent = taskData.amount;
-            if (taskData.hasOwnProperty('categoryId')) dataToUpdate.expense_category_uuid = taskData.categoryId;
-
-            if (dataToUpdate.expense_category_uuid && !(await validateExistence('expense_categories', dataToUpdate.expense_category_uuid))) {
-                throw ApiError.badRequest('Expense category not found by categoryId');
+            if (newType === 'income') {
+                if (dataToUpdate.hasOwnProperty('amount') || dataToUpdate.hasOwnProperty('amountEarned')) {
+                    dataToUpdate.amountEarned = dataToUpdate.amount || dataToUpdate.amountEarned;
+                }
+            } else { // expense
+                 if (dataToUpdate.hasOwnProperty('amount') || dataToUpdate.hasOwnProperty('amountSpent')) {
+                    dataToUpdate.amountSpent = dataToUpdate.amount || dataToUpdate.amountSpent;
+                }
             }
-             if (!taskData.hasOwnProperty('childId')) dataToUpdate.child_uuid = null;
-             if (!taskData.hasOwnProperty('hoursWorked')) dataToUpdate.hoursWorked = null;
-             if (!taskData.hasOwnProperty('amount')) dataToUpdate.amountEarned = null;
 
-        } else if (taskData.hasOwnProperty('taskType')) {
-            throw ApiError.badRequest(`Invalid taskType: ${taskData.taskType}`);
+        } else if (newType === 'task') {
+            if ((dataToUpdate.hasOwnProperty('amountEarned') && dataToUpdate.amountEarned > 0) || (dataToUpdate.hasOwnProperty('amountSpent') && dataToUpdate.amountSpent > 0)) {
+                throw ApiError.badRequest('Tasks cannot have amountEarned or amountSpent.');
+            }
+             dataToUpdate.amountEarned = null;
+             dataToUpdate.amountSpent = null;
+
+            if (dataToUpdate.assigned_to_id) {
+                if (existingTask.creator_uuid !== userId) {
+                    throw ApiError.forbidden('Only the creator can reassign the task');
+                }
+                const assigneeExists = await validateExistence('users', dataToUpdate.assigned_to_id);
+                if (!assigneeExists) {
+                    throw ApiError.badRequest(`Assignee with id ${dataToUpdate.assigned_to_id} not found`);
+                }
+                dataToUpdate.user_uuid = dataToUpdate.assigned_to_id;
+            }
         }
 
-        const disallowedFields = ['category', 'child_id', 'child_name', 'expenseCategoryName', 'hourlyRate', 'amount', 'taskType'];
-        for (const field of disallowedFields) {
-            if (dataToUpdate.hasOwnProperty(field)) {
-                delete dataToUpdate[field];
-            }
-             if (taskData.hasOwnProperty(field) && field !== 'taskType') {
-                delete taskData[field];
-            }
-        }
+        // clean up
+        delete dataToUpdate.assigned_to_id;
+        delete dataToUpdate.amount;
+        delete dataToUpdate.taskType; // старое поле
 
 
         if (Object.keys(dataToUpdate).length === 0) {
-            return 0;
+            return existingTask;
         }
 
-        const updated = await knex('tasks').where({ uuid, user_uuid: userId }).update(dataToUpdate);
-        return updated;
+        await knex('tasks').where({ uuid }).update(dataToUpdate);
+        const updatedTask = await this.getTaskById(uuid, userId);
+        return updatedTask;
     },
 
 async getTasksByCategoryUuid(categoryUuid, userId) {
-        // Сначала проверим, существует ли категория и принадлежит ли она пользователю
-        // Важно: категории расходов также должны быть привязаны к пользователю.
-        // Если это не так, то фильтрация только задач по user_uuid может быть недостаточной,
-        // так как пользователь сможет видеть задачи по чужим категориям, если знает их UUID.
-        // Для данной задачи предполагаем, что категории тоже фильтруются по user_uuid где-то выше
-        // или что это будет исправлено в другой задаче.
-        // Здесь мы просто фильтруем задачи по user_uuid.
         const category = await knex('expense_categories').where({ uuid: categoryUuid }).first(); // TODO: Добавить user_uuid сюда, если категории привязаны к пользователю
 
         if (!category) {
@@ -226,16 +287,31 @@ async getTasksByCategoryUuid(categoryUuid, userId) {
         }
 
         return knex('tasks')
-            .where({ expense_category_uuid: category.uuid, user_uuid: userId })
+            .where({ expense_category_uuid: category.uuid })
+            .andWhere(function() {
+                this.where('tasks.creator_uuid', userId).orWhere('tasks.user_uuid', userId)
+            })
             .select(
                 'tasks.*',
+                'tasks.reminder_offset',
+                'creator.username as creator_username',
+                'assignee.username as assignee_username',
                 'children.childName as childName',
                 knex.raw('? as expenseCategoryName', [category.categoryName])
             )
+            .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
+            .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid');
     },
     async deleteTask(uuid, userId) {
-        const deleted = await knex('tasks').where({ uuid, user_uuid: userId }).del();
+        const task = await knex('tasks').where({ uuid }).first();
+        if (!task) {
+            throw ApiError.notFound('Task not found');
+        }
+        if (task.creator_uuid !== userId) {
+            throw ApiError.forbidden('Only the creator can delete the task');
+        }
+        const deleted = await knex('tasks').where({ uuid }).del();
         return deleted;
     },
 
@@ -243,11 +319,16 @@ async getTasksByCategoryUuid(categoryUuid, userId) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
             throw ApiError.badRequest('Invalid date format. Please use YYYY-MM-DD.');
         }
-        const tasks = await knex('tasks')
+        return knex('tasks')
             .where('tasks.dueDate', dateString)
-            .andWhere('tasks.user_uuid', userId)
+            .andWhere(function() {
+                this.where('tasks.creator_uuid', userId).orWhere('tasks.user_uuid', userId)
+            })
             .select(
                 'tasks.*',
+                'tasks.reminder_offset',
+                'creator.username as creator_username',
+                'assignee.username as assignee_username',
                 'children.childName as childName',
                 'children.parentName as parentName',
                 'children.parentPhone as parentPhone',
@@ -255,9 +336,10 @@ async getTasksByCategoryUuid(categoryUuid, userId) {
                 'children.hourlyRate as childHourlyRate',
                 'expense_categories.categoryName as expenseCategoryName'
             )
+            .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
+            .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
             .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid');
-        return tasks;
     }
 };
 

@@ -1,5 +1,6 @@
 import { memo, useRef } from 'react';
 import { useDrag } from 'react-dnd';
+import { useAuth } from '../context/AuthContext';
 import type { Note, Task } from '../services/api';
 
 export type EventItem = (Task | Note) & { itemType: 'task' | 'note' | 'expense', type?: string, childName?: string, amount?: number, time?: string, title?: string, content?: string, expenseCategoryName?: string };
@@ -18,6 +19,7 @@ const MiniEventCard = ({
   onEdit,
 }: MiniEventCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.EVENT_CARD,
@@ -53,7 +55,11 @@ const MiniEventCard = ({
       eventTitleText = `${task.title || task.childName || 'Доход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}`;
     } else if (task.type === 'expense') {
       eventTitleText = `${task.title || 'Расход'}${task.amount ? ` (${task.amount.toFixed(2)})` : ''}${task.expenseCategoryName ? ` [${task.expenseCategoryName}]` : ''}`;
-    } else {
+    } else if (task.type === 'task') {
+      const assigneeName = task.assignee?.username;
+      eventTitleText = `${task.title || 'Задача'}${assigneeName ? ` → ${assigneeName}` : ''}`;
+    }
+     else {
       eventTitleText = task.title || 'Задача';
     }
   } else if (event.itemType === 'expense') {
@@ -64,22 +70,39 @@ const MiniEventCard = ({
     eventTitleText = note.content || 'Заметка';
   }
 
-  let borderColorClass = 'border-gray-300';
-  if (event.itemType === 'task' && 'type' in event) {
-    const task = event as Task;
-    if (task.type === 'income') {
-      borderColorClass = 'border-green-500';
-    } else if (task.type === 'expense') {
-      borderColorClass = 'border-red-500';
+  const getBorderColor = () => {
+    if (event.itemType === 'task' && 'creator' in event && 'assignee' in event && user) {
+      const task = event as Task;
+      if (task.creator?.uuid === user.uuid && task.assignee?.uuid !== user.uuid) {
+        return '#FFC107'; // Delegated by me
+      }
+      if (task.assignee?.uuid === user.uuid) {
+        return '#03A9F4'; // Delegated to me
+      }
     }
-  } else if (event.itemType === 'expense') {
-    borderColorClass = 'border-red-500';
-  }
+    if (event.itemType === 'task' && 'type' in event) {
+        const task = event as Task;
+        if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') {
+            return 'border-green-500';
+        } else if (task.type === 'expense') {
+            return 'border-red-500';
+        } else if (task.type === 'task') {
+            return 'border-blue-500';
+        }
+    } else if (event.itemType === 'expense') {
+        return 'border-red-500';
+    }
+    return 'border-gray-300';
+  };
+
+  const borderColor = getBorderColor();
+  const isHexColor = borderColor.startsWith('#');
 
   return (
     <div
       ref={ref}
-      className={`bg-gray-700 p-2 rounded-md border-l-4 ${borderColorClass} flex items-center text-sm ${isDragging ? 'opacity-50' : ''}`}
+      className={`bg-gray-700 p-2 rounded-md border-l-4 flex items-center text-sm ${isDragging ? 'opacity-50' : ''} ${!isHexColor ? borderColor : ''}`}
+      style={isHexColor ? { borderLeftColor: borderColor } : {}}
       onClick={handleEditClick}
       role="button"
       tabIndex={0}

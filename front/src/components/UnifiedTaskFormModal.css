@@ -59,6 +59,7 @@
 
 .form-group {
   margin-bottom: 18px;
+  position: relative;
 }
 
 .form-group .label {
@@ -244,4 +245,53 @@
 
 .modal-content.closing {
   animation: scaleDown 0.3s ease-out forwards;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--theme-gray-dark);
+  border: 1px solid var(--theme-primary);
+  border-top: none;
+  border-radius: 0 0 var(--btn-secondary-border-radius, 8px) var(--btn-secondary-border-radius, 8px);
+  z-index: 1060;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.suggestions-list li {
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.suggestions-list li:hover {
+  background-color: var(--theme-primary);
+  color: var(--btn-primary-text-color, var(--theme-dark));
+}
+
+.assignee-pill {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--theme-primary);
+  color: var(--btn-primary-text-color, var(--theme-dark));
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+}
+
+.remove-assignee-btn {
+  background: none;
+  border: none;
+  color: var(--btn-primary-text-color, var(--theme-dark));
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
 }

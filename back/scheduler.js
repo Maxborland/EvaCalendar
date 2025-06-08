@@ -55,28 +55,37 @@ const checkAndSendReminders = async () => {
     }
 
     for (const task of tasks) {
-      const subscriptions = await findSubscriptionsByUserId(task.user_uuid);
-      if (subscriptions.length === 0) {
-        continue; // Пропускаем, если у пользователя нет подписок
+      // Определяем получателя уведомления
+      const recipientUuid = (task.type === 'task' && task.user_uuid) ? task.user_uuid : task.creator_uuid;
+
+      if (!recipientUuid) {
+        logError(`Scheduler: Не удалось определить получателя для задачи ${task.uuid}.`);
+        continue;
       }
+
+      const subscriptions = await findSubscriptionsByUserId(recipientUuid);
+      const user = await findUserByUUID(recipientUuid);
 
       const payload = {
         title: 'Напоминание о деле',
-        body: `Зяка, не забудь о деле: "${task.title}"`,
+        body: `Не забудьте о задаче: "${task.title}"`,
         icon: '/icons/web/icon-192.png'
       };
 
-      log(`Scheduler: Найдено дело "${task.title}" для пользователя ${task.user_uuid}. Отправка уведомлений...`);
-
-      for (const subscription of subscriptions) {
-        await sendNotification(subscription, payload);
+      // Отправка Push-уведомлений
+      if (subscriptions.length > 0) {
+        log(`Scheduler: Отправка push-уведомлений для задачи "${task.title}" пользователю ${recipientUuid}.`);
+        for (const subscription of subscriptions) {
+          try {
+            await sendNotification(subscription, payload);
+          } catch (pushError) {
+            logError(`Scheduler: Не удалось отправить push-уведомление для подписки ${subscription.id}:`, pushError);
+          }
+        }
       }
 
-      // Получаем данные пользователя для проверки email-уведомлений
-      const user = await findUserByUUID(task.user_uuid);
-
-      // Проверяем, включены ли email-уведомления
-      if (user.email_notifications_enabled) {
+      // Отправка Email-уведомлений
+      if (user && user.email_notifications_enabled) {
         try {
           log(`Scheduler: Отправка email-уведомления для пользователя ${user.email}...`);
           const emailHtml = `<h1>${payload.title}</h1><p>${payload.body}</p>`;

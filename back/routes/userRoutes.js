@@ -10,9 +10,30 @@ const {
   deleteUser,
   changeUserRole,
   adminChangeUserPassword,
-  updateEmailNotificationSettings
+  updateEmailNotificationSettings,
+  searchUsers
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const taskController = require('../controllers/taskController.js');
+
+
+// @route   GET /api/users/assignable
+// @desc    Get all users that can be assigned to a task
+// @access  Private
+router.get('/assignable', protect, (req, res, next) => {
+    // Находим нужный обработчик в экспортированном роутере
+    const assignableUsersHandler = taskController.stack.find(layer => layer.route && layer.route.path === '/assignable-users' && layer.route.methods.get);
+    if (assignableUsersHandler) {
+        assignableUsersHandler.handle(req, res, next);
+    } else {
+        res.status(404).send('Not Found');
+    }
+});
+
+// @route   GET /api/users/search
+// @desc    Search for users by username
+// @access  Private
+router.get('/search', protect, searchUsers);
 
 // @route   GET /api/users/me
 // @desc    Get current user information

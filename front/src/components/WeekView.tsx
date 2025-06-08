@@ -214,6 +214,7 @@ const WeekView = () => {
                     key={weekDays[0].toISOString()}
                     fullDate={weekDays[0]}
                     today={today}
+                    isToday={isSameDay(weekDays[0], today)}
                     tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[0]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
@@ -221,6 +222,7 @@ const WeekView = () => {
                     key={weekDays[3].toISOString()}
                     fullDate={weekDays[3]}
                     today={today}
+                    isToday={isSameDay(weekDays[3], today)}
                     tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[3]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
@@ -228,6 +230,7 @@ const WeekView = () => {
                     key={weekDays[1].toISOString()}
                     fullDate={weekDays[1]}
                     today={today}
+                    isToday={isSameDay(weekDays[1], today)}
                     tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[1]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
@@ -235,6 +238,7 @@ const WeekView = () => {
                     key={weekDays[4].toISOString()}
                     fullDate={weekDays[4]}
                     today={today}
+                    isToday={isSameDay(weekDays[4], today)}
                     tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[4]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
@@ -242,6 +246,7 @@ const WeekView = () => {
                     key={weekDays[2].toISOString()}
                     fullDate={weekDays[2]}
                     today={today}
+                    isToday={isSameDay(weekDays[2], today)}
                     tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[2]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
@@ -249,6 +254,7 @@ const WeekView = () => {
                     key={weekDays[5].toISOString()}
                     fullDate={weekDays[5]}
                     today={today}
+                    isToday={isSameDay(weekDays[5], today)}
                     tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[5]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />
@@ -261,6 +267,7 @@ const WeekView = () => {
                     key={weekDays[6].toISOString()}
                     fullDate={weekDays[6]}
                     today={today}
+                    isToday={isSameDay(weekDays[6], today)}
                     tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[6]))}
                     onOpenTaskModal={handleOpenTaskModal}
                   />

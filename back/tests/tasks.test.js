@@ -1,338 +1,281 @@
-import request from 'supertest';
-// const db = require('../db.cjs'); // db не используется напрямую в этом файле
+const request = require('supertest');
 const { app } = require('../index.js');
+const knex = require('../db.cjs');
 
-// process.env.NODE_ENV = 'test'; // Устанавливается в jest.setup.js
+describe('Task API Endpoints', () => {
+    let mainUserToken, otherUserToken;
+    let mainUserId, otherUserId;
+    let childUuid, categoryUuid;
 
-describe('Task API', () => {
-  let token;
-  const uniqueUser = {
-    username: `testuser_tasks_${Date.now()}`,
-    email: `test_tasks_${Date.now()}@example.com`,
-    password: 'password123',
-  };
+    beforeAll(async () => {
+        // Создаем двух пользователей для тестов
+        const mainUser = { username: `mainuser_${Date.now()}`, email: `main_${Date.now()}@test.com`, password: 'password123' };
+        const otherUser = { username: `otheruser_${Date.now()}`, email: `other_${Date.now()}@test.com`, password: 'password123' };
 
-  let childUuidForTasks;
-  let categoryUuidForTasks;
-  const childDataForTasks = {
-    childName: 'Тестовый Ребенок для Задач API',
-    parentName: 'Родитель для Задач API',
-    parentPhone: '1234509876',
-    address: 'Адрес для Задач API',
-    hourlyRate: 120.00,
-    comment: 'Ребенок для тестов задач',
-  };
-  const categoryDataForTasks = { categoryName: 'Тестовая Категория для Задач API' };
+        let res = await request(app).post('/api/auth/register').send(mainUser);
+        expect(res.statusCode).toBe(201);
+        res = await request(app).post('/api/auth/login').send({ identifier: mainUser.email, password: 'password123' });
+        mainUserToken = res.body.token;
+        mainUserId = res.body.user.uuid;
 
-  beforeEach(async () => {
-    const registerRes = await request(app)
-      .post('/auth/register')
-      .send(uniqueUser);
-    expect(registerRes.statusCode).toEqual(201);
+        res = await request(app).post('/api/auth/register').send(otherUser);
+        expect(res.statusCode).toBe(201);
+        res = await request(app).post('/api/auth/login').send({ identifier: otherUser.email, password: 'password123' });
+        otherUserToken = res.body.token;
+        otherUserId = res.body.user.uuid;
 
-    const loginRes = await request(app)
-      .post('/auth/login')
-      .send({
-        identifier: uniqueUser.email,
-        password: uniqueUser.password,
-      });
-    expect(loginRes.statusCode).toEqual(200);
-    expect(loginRes.body).toHaveProperty('token');
-    token = loginRes.body.token;
+        // Создаем дочерние сущности
+        res = await request(app).post('/api/children').set('Authorization', `Bearer ${mainUserToken}`).send({
+            childName: 'Test Child',
+            parentName: 'Test Parent',
+            parentPhone: '1234567890',
+            address: 'Test Address',
+            hourlyRate: 100
+        });
+        expect(res.statusCode).toBe(201);
+        childUuid = res.body.uuid;
 
-    const createChildRes = await request(app)
-      .post('/children')
-      .set('Authorization', `Bearer ${token}`)
-      .send(childDataForTasks);
-    expect(createChildRes.statusCode).toEqual(201);
-    childUuidForTasks = createChildRes.body.uuid;
+        res = await request(app).post('/api/expense-categories').set('Authorization', `Bearer ${mainUserToken}`).send({ categoryName: 'Test Category' });
+        expect(res.statusCode).toBe(201);
+        categoryUuid = res.body.uuid;
+    });
 
-    const createCategoryRes = await request(app)
-      .post('/expense-categories')
-      .set('Authorization', `Bearer ${token}`)
-      .send(categoryDataForTasks);
-    expect(createCategoryRes.statusCode).toEqual(201);
-    categoryUuidForTasks = createCategoryRes.body.uuid;
-  });
+    afterAll(async () => {
+        await knex('users').where('email', 'like', '%@test.com').del();
+        // Проверяем, что UUID существуют перед удалением
+        if (childUuid) {
+            await knex('children').where({ uuid: childUuid }).del();
+        }
+        if (categoryUuid) {
+            await knex('expense_categories').where({ uuid: categoryUuid }).del();
+        }
+        await knex.destroy();
+    });
 
+    describe('POST /api/tasks', () => {
+        it('should create a new task of type "task"', async () => {
+            const taskData = {
+                type: 'task',
+                title: 'A simple task',
+                dueDate: '2025-12-31',
+            };
+            const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
+            expect(res.statusCode).toBe(201);
+            expect(res.body).toHaveProperty('uuid');
+            expect(res.body.type).toBe('task');
+            expect(res.body.title).toBe(taskData.title);
+            expect(res.body.creator_uuid).toBe(mainUserId);
+            expect(res.body.user_uuid).toBe(mainUserId); // По умолчанию назначен на создателя
+        });
 
-  it('should create a new task (income)', async () => {
-    const baseIncomeTask = {
-      taskType: 'income',
-      title: 'Тестовая Задача (Доход)',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      hoursWorked: 3,
-      amount: 300, // Изменено с amountEarned на amount
-      comments: 'Комментарии к тестовой задаче (доход)',
-    };
-    const taskData = {
-      ...baseIncomeTask,
-      childId: childUuidForTasks,
-    };
-    const res = await request(app)
-      .post('/tasks')
-      .set('Authorization', `Bearer ${token}`)
-      .send(taskData);
-    expect(res.statusCode).toEqual(201);
-    expect(res.body).toHaveProperty('uuid');
-    expect(res.body.title).toEqual(taskData.title);
-    expect(res.body.child_uuid).toEqual(childUuidForTasks); // Ожидаем child_uuid
-    expect(res.body.amountEarned).toEqual(taskData.amount);
-  });
+        it('should create a new task of type "income"', async () => {
+            const taskData = {
+                type: 'income',
+                dueDate: '2025-12-31',
+                amount: 100,
+                child_uuid: childUuid,
+            };
+            const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
+            expect(res.statusCode).toBe(201);
+            expect(res.body.type).toBe('income');
+            expect(res.body.amountEarned).toBe(100);
+            expect(res.body.child_uuid).toBe(childUuid);
+            expect(res.body.user_uuid).toBe(mainUserId);
+        });
 
-  it('should create a new expense task with existing categoryId', async () => {
-    const baseExpenseTask = {
-      taskType: 'expense',
-      title: 'Тестовая Задача (Расход)',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      amount: 50, // Изменено с amountSpent на amount
-      comments: 'Комментарии к тестовой задаче (расход)',
-    };
-    const taskData = {
-      ...baseExpenseTask,
-      expenseTypeId: categoryUuidForTasks,
-    };
-    const res = await request(app)
-      .post('/tasks')
-      .set('Authorization', `Bearer ${token}`)
-      .send(taskData);
-    expect(res.statusCode).toEqual(201);
-    expect(res.body).toHaveProperty('uuid');
-    expect(res.body.type).toEqual('expense');
-    expect(res.body.expense_category_uuid).toEqual(categoryUuidForTasks); // Ожидаем expense_category_uuid
-    expect(res.body.amountSpent).toEqual(taskData.amount);
-  });
+        it('should create a new task of type "expense"', async () => {
+            const taskData = {
+                type: 'expense',
+                dueDate: '2025-12-31',
+                amount: 50,
+                expense_category_uuid: categoryUuid,
+            };
+            const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
+            expect(res.statusCode).toBe(201);
+            expect(res.body.type).toBe('expense');
+            expect(res.body.amountSpent).toBe(50);
+            expect(res.body.expense_category_uuid).toBe(categoryUuid);
+            expect(res.body.user_uuid).toBe(mainUserId);
+        });
 
-  // Этот тест адаптирован для использования существующего expenseTypeId,
-  // так как сервис не поддерживает создание категории по имени при создании задачи.
-  it('should create a new expense task and link it to an existing category', async () => {
-    const baseExpenseTask = {
-      taskType: 'expense',
-      title: 'Тестовая Задача (Расход с существующей категорией)',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      amount: 50,
-      comments: 'Комментарии к тестовой задаче (расход)',
-    };
-    const taskData = {
-      ...baseExpenseTask,
-      expenseTypeId: categoryUuidForTasks, // Используем UUID созданной в beforeEach категории
-    };
+        it('should correctly calculate reminder_at from reminder_offset', async () => {
+            const taskData = {
+                type: 'task',
+                title: 'Task with reminder offset',
+                dueDate: '2025-12-25',
+                time: '10:00:00',
+                reminder_offset: '1 day',
+            };
+            const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
+            expect(res.statusCode).toBe(201);
+            const expectedReminderAt = '2025-12-24T10:00:00.000Z';
+            expect(new Date(res.body.reminder_at).toISOString()).toBe(expectedReminderAt);
+        });
 
-    const createRes = await request(app)
-      .post('/tasks')
-      .set('Authorization', `Bearer ${token}`)
-      .send(taskData);
+        it('should fail to create income/expense assigned to another user', async () => {
+            const incomeData = { type: 'income', dueDate: '2025-01-01', assigned_to_id: otherUserId };
+            const expenseData = { type: 'expense', dueDate: '2025-01-01', assigned_to_id: otherUserId };
 
-    expect(createRes.statusCode).toEqual(201);
-    expect(createRes.body).toHaveProperty('uuid');
-    expect(createRes.body.title).toEqual(taskData.title);
-    expect(createRes.body.type).toEqual('expense');
-    expect(createRes.body.expense_category_uuid).toEqual(categoryUuidForTasks);
+            const incomeRes = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(incomeData);
+            expect(incomeRes.statusCode).toBe(400);
+            expect(incomeRes.body.message).toBe('Income/expense can only be assigned to the creator.');
 
-    const getRes = await request(app)
-        .get(`/tasks/${createRes.body.uuid}`)
-        .set('Authorization', `Bearer ${token}`);
-    expect(getRes.statusCode).toEqual(200);
-    expect(getRes.body.expense_category_uuid).toEqual(categoryUuidForTasks);
-    expect(getRes.body.expenseCategoryName).toEqual(categoryDataForTasks.categoryName);
-  });
+            const expenseRes = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(expenseData);
+            expect(expenseRes.statusCode).toBe(400);
+            expect(expenseRes.body.message).toBe('Income/expense can only be assigned to the creator.');
+        });
 
-  // Этот тест изменен, так как сервис не должен создавать задачу с несуществующим ID категории.
-  // Вместо этого он должен вернуть ошибку 400 из-за валидации в taskService.
-  it('should return 400 when creating an expense task with a non-existent categoryId', async () => {
-    const baseExpenseTask = {
-      taskType: 'expense',
-      title: 'Тестовая Задача (Расход с несуществующим ID категории)',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      amount: 50,
-      comments: 'Комментарии к тестовой задаче (расход)',
-    };
-    const taskData = {
-      ...baseExpenseTask,
-      expenseTypeId: '00000000-0000-0000-0000-000000000000', // Несуществующий UUID
-    };
-    const res = await request(app)
-      .post('/tasks')
-      .set('Authorization', `Bearer ${token}`)
-      .send(taskData);
-    expect(res.statusCode).toEqual(400); // Ожидаем 400 из-за проверки в taskService
-    expect(res.body).toHaveProperty('message', 'Expense category not found by categoryId');
-  });
+        it('should fail to create a task with monetary fields', async () => {
+            const taskData = { type: 'task', title: 'Invalid Task', dueDate: '2025-01-01', amount: 100 };
+            const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
+            expect(res.statusCode).toBe(400);
+            expect(res.body.message).toBe('Tasks cannot have amountEarned or amountSpent.');
+        });
+    });
 
-  it('should get all tasks for the authenticated user', async () => {
-    const incomeTask = {
-      taskType: 'income',
-      title: 'Задача 1 для GET ALL',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      hoursWorked: 3,
-      amount: 300, // Изменено
-      comments: 'Комментарии к тестовой задаче (доход)',
-    };
-    await request(app).post('/tasks').set('Authorization', `Bearer ${token}`).send({ ...incomeTask, childId: childUuidForTasks });
-    const expenseTask = {
-      taskType: 'expense',
-      title: 'Задача 2 для GET ALL (расход)',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      amount: 50, // Изменено
-      comments: 'Комментарии к тестовой задаче (расход)',
-    };
-    await request(app).post('/tasks').set('Authorization', `Bearer ${token}`).send({ ...expenseTask, expenseTypeId: categoryUuidForTasks });
+    describe('Task Delegation', () => {
+        let taskId;
+        beforeEach(async () => {
+            const taskData = { type: 'task', title: 'Delegatable Task', dueDate: '2025-11-11' };
+            const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
+            taskId = res.body.uuid;
+        });
 
-    const res = await request(app)
-      .get(`/tasks`)
-      .set('Authorization', `Bearer ${token}`);
-    expect(res.statusCode).toEqual(200);
-    expect(Array.isArray(res.body)).toBeTruthy();
-    expect(res.body.length).toBeGreaterThanOrEqual(2);
-    expect(res.body.some(task => task.title === 'Задача 1 для GET ALL')).toBeTruthy();
-    expect(res.body.some(task => task.title === 'Задача 2 для GET ALL (расход)')).toBeTruthy();
-  });
+        it('should assign a task to another user', async () => {
+            const res = await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send({ assigned_to_id: otherUserId });
+            expect(res.statusCode).toBe(200);
+            expect(res.body.user_uuid).toBe(otherUserId);
+            expect(res.body.assignee_username).toBe((await knex('users').where({uuid: otherUserId}).first()).username);
+        });
 
-  it('should get a task by UUID', async () => {
-    const taskToCreate = {
-      taskType: 'income',
-      title: 'Задача для GET по UUID',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      hoursWorked: 3,
-      amount: 300, // Изменено
-      comments: 'Комментарии к тестовой задаче (доход)',
-    };
-    const createRes = await request(app).post('/tasks').set('Authorization', `Bearer ${token}`).send({ ...taskToCreate, childId: childUuidForTasks });
-    expect(createRes.statusCode).toEqual(201);
-    const uuidToRetrieve = createRes.body.uuid;
+        it('assignee should see the delegated task', async () => {
+            await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send({ assigned_to_id: otherUserId });
+            const res = await request(app).get(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${otherUserToken}`);
+            expect(res.statusCode).toBe(200);
+            expect(res.body.uuid).toBe(taskId);
+        });
 
-    const res = await request(app)
-      .get(`/tasks/${uuidToRetrieve}`)
-      .set('Authorization', `Bearer ${token}`);
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toHaveProperty('uuid', uuidToRetrieve);
-    expect(res.body.title).toEqual(taskToCreate.title);
-    expect(res.body.amountEarned).toEqual(taskToCreate.amount);
-  });
+        it('creator should still see the delegated task', async () => {
+            await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send({ assigned_to_id: otherUserId });
+            const res = await request(app).get(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`);
+            expect(res.statusCode).toBe(200);
+            expect(res.body.uuid).toBe(taskId);
+        });
 
-  it('should update a task', async () => {
-    const taskToCreate = {
-      taskType: 'income',
-      title: 'Задача для Обновления',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      hoursWorked: 3,
-      amount: 300, // Изменено
-      comments: 'Комментарии к тестовой задаче (доход)',
-    };
-    const createRes = await request(app).post('/tasks').set('Authorization', `Bearer ${token}`).send({ ...taskToCreate, childId: childUuidForTasks });
-    expect(createRes.statusCode).toEqual(201);
-    const taskId = createRes.body.uuid;
+        it('should allow creator to reassign the task', async () => {
+             await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send({ assigned_to_id: otherUserId });
+             const res = await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send({ assigned_to_id: mainUserId });
+             expect(res.statusCode).toBe(200);
+             expect(res.body.user_uuid).toBe(mainUserId);
+        });
 
-    const updatedTaskData = {
-      title: 'Обновленная Задача API',
-      comments: 'Обновленные комментарии к задаче',
-      dueDate: '2025-06-20',
-      amount: 350, // Изменено
-    };
+        it('should forbid assignee from reassigning the task', async () => {
+            await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send({ assigned_to_id: otherUserId });
+            const res = await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${otherUserToken}`).send({ assigned_to_id: mainUserId });
+            expect(res.statusCode).toBe(403);
+            expect(res.body.message).toBe('Only the creator can reassign the task');
+        });
+    });
 
-    const res = await request(app)
-      .put(`/tasks/${taskId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send(updatedTaskData);
-    expect(res.statusCode).toEqual(200);
-    expect(typeof res.body).toBe('number');
-    expect(res.body).toEqual(1); // Ожидаем, что 1 запись была обновлена
+    describe('GET /api/users/assignable', () => {
+        it('should return a list of users to whom a task can be assigned', async () => {
+            const res = await request(app).get('/api/users/assignable').set('Authorization', `Bearer ${mainUserToken}`);
+            expect(res.statusCode).toBe(200);
+            expect(Array.isArray(res.body)).toBe(true);
+            // Проверяем, что в списке есть другие пользователи, но нет текущего
+            const userIds = res.body.map(u => u.uuid);
+            expect(userIds).toContain(otherUserId);
+            expect(userIds).not.toContain(mainUserId);
+        });
+    });
 
-    const getRes = await request(app).get(`/tasks/${taskId}`).set('Authorization', `Bearer ${token}`);
-    expect(getRes.statusCode).toEqual(200);
-    expect(getRes.body.title).toEqual(updatedTaskData.title);
-    expect(getRes.body.amountEarned).toEqual(updatedTaskData.amount); // Проверяем amountEarned
-    expect(getRes.body.comments).toEqual(updatedTaskData.comments);
-  });
+    describe('DELETE /api/tasks/:id', () => {
+        let taskId;
+        beforeEach(async () => {
+            const taskData = { type: 'task', title: 'Task to Delete', dueDate: '2025-10-10' };
+            const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
+            taskId = res.body.uuid;
+        });
 
-  it('should delete a task', async () => {
-    const taskToCreate = {
-      taskType: 'income',
-      title: 'Задача для Удаления',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      hoursWorked: 3,
-      amount: 300, // Изменено
-      comments: 'Комментарии к тестовой задаче (доход)',
-    };
-    const createRes = await request(app).post('/tasks').set('Authorization', `Bearer ${token}`).send({ ...taskToCreate, childId: childUuidForTasks });
-    expect(createRes.statusCode).toEqual(201);
-    const taskId = createRes.body.uuid;
+        it('should allow creator to delete a task', async () => {
+            const res = await request(app).delete(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`);
+            expect(res.statusCode).toBe(204);
 
-    const res = await request(app)
-      .delete(`/tasks/${taskId}`)
-      .set('Authorization', `Bearer ${token}`);
-    expect(res.statusCode).toEqual(204);
+            const checkRes = await request(app).get(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`);
+            expect(checkRes.statusCode).toBe(404);
+        });
 
-    const checkRes = await request(app)
-      .get(`/tasks/${taskId}`)
-      .set('Authorization', `Bearer ${token}`);
-    expect(checkRes.statusCode).toEqual(404);
-  });
+        it('should forbid assignee from deleting a task', async () => {
+            await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send({ assigned_to_id: otherUserId });
+            const res = await request(app).delete(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${otherUserToken}`);
+            expect(res.statusCode).toBe(403);
+            expect(res.body.message).toBe('Only the creator can delete the task');
+        });
+    });
+describe('PUT /api/tasks/:id', () => {
+        let taskId;
+        let newCategoryUuid;
 
-  it('should return 400 if type is missing when creating a task', async () => {
-    const invalidTask = {
-      // taskType: 'income', // Удалено для проверки ошибки
-      title: 'Тестовая Задача (Доход)',
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      hoursWorked: 3,
-      amount: 300, // Изменено
-      comments: 'Комментарии к тестовой задаче (доход)',
-      // taskType: undefined, // Это было избыточно, если поле просто отсутствует
-    };
-    const res = await request(app)
-      .post('/tasks')
-      .set('Authorization', `Bearer ${token}`)
-      .send(invalidTask);
-    expect(res.statusCode).toEqual(400);
-    expect(res.body).toHaveProperty('message', 'taskType is required');
-  });
+        beforeAll(async () => {
+            // Создаем еще одну категорию для теста
+            const res = await request(app).post('/api/expense-categories').set('Authorization', `Bearer ${mainUserToken}`).send({ categoryName: 'New Test Category' });
+            expect(res.statusCode).toBe(201);
+            newCategoryUuid = res.body.uuid;
+        });
 
-  it('should return 400 if required fields are missing when creating a task (e.g. title)', async () => {
-    const invalidTask = {
-      taskType: 'income',
-      // title: 'Тестовая Задача (Доход)', // Удалено для проверки ошибки
-      dueDate: '2025-06-15',
-      time: new Date().toISOString(),
-      hoursWorked: 3,
-      amount: 300, // Изменено
-      comments: 'Комментарии к тестовой задаче (доход)',
-      // title: undefined, // Это было избыточно
-    };
-    const res = await request(app)
-        .post('/tasks')
-        .set('Authorization', `Bearer ${token}`)
-        .send(invalidTask);
-    expect(res.statusCode).toEqual(400);
-    expect(res.body).toHaveProperty('message', 'title is required');
-  });
+        afterAll(async () => {
+            if (newCategoryUuid) {
+                await knex('expense_categories').where({ uuid: newCategoryUuid }).del();
+            }
+        });
 
-  it('should return 404 if task not found when updating', async () => {
-    const res = await request(app)
-      .put('/tasks/00000000-0000-0000-0000-000000000000')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        taskType: 'income',
-        title: 'Non Existent Task Update', // Достаточно title для обновления
-        amount: 100,
-        // Остальные поля не обязательны для обновления, если они не меняются
-      });
-    expect(res.statusCode).toEqual(404);
-  });
+        beforeEach(async () => {
+            // Создаем задачу типа "расход" для каждого теста
+            const taskData = {
+                type: 'expense',
+                title: 'Expense to update',
+                dueDate: '2025-07-07',
+                amount: 150,
+                expense_category_uuid: categoryUuid,
+            };
+            const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
+            taskId = res.body.uuid;
+        });
 
-  it('should return 404 if task not found when deleting', async () => {
-    const res = await request(app)
-        .delete('/tasks/00000000-0000-0000-0000-000000000000')
-        .set('Authorization', `Bearer ${token}`);
-    expect(res.statusCode).toEqual(404);
-  });
+        it('should update the category of an expense task', async () => {
+            const updateData = {
+                expense_category_uuid: newCategoryUuid,
+            };
+
+            const res = await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send(updateData);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toHaveProperty('uuid', taskId);
+            expect(res.body).toHaveProperty('expense_category_uuid', newCategoryUuid);
+
+            // Дополнительно проверим в базе
+            const taskInDb = await knex('tasks').where({ uuid: taskId }).first();
+            expect(taskInDb.expense_category_uuid).toBe(newCategoryUuid);
+        });
+
+        it('should successfully update a task even with extra fields in payload', async () => {
+            const updateData = {
+                title: 'Updated Title with Extra Stuff',
+                someExtraField: 'this should be ignored',
+                expenseCategoryName: 'also ignored'
+            };
+
+            const res = await request(app).put(`/api/tasks/${taskId}`).set('Authorization', `Bearer ${mainUserToken}`).send(updateData);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toHaveProperty('uuid', taskId);
+            expect(res.body).toHaveProperty('title', 'Updated Title with Extra Stuff');
+            expect(res.body).not.toHaveProperty('someExtraField');
+
+            // Проверим в базе, что лишние поля не попали
+            const taskInDb = await knex('tasks').where({ uuid: taskId }).first();
+            expect(taskInDb.title).toBe('Updated Title with Extra Stuff');
+            expect(taskInDb).not.toHaveProperty('someExtraField');
+        });
+    });
 });

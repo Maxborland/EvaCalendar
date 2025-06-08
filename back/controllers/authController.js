@@ -106,10 +106,12 @@ const loginUser = async (req, res, next) => {
     res.status(200).json({
       message: 'Вход выполнен успешно.',
       token,
-      userId: user.uuid,
-      username: user.username,
-      email: user.email,
-      role: user.role,
+      user: {
+        uuid: user.uuid,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
     console.error('Ошибка при входе пользователя:', error);
