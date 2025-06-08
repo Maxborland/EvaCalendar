@@ -8,20 +8,26 @@ const ApiError = require('../utils/ApiError');
 // @route   GET /api/users/me
 // @access  Private
 const getCurrentUser = asyncHandler(async (req, res) => {
-  const user = req.user;
+  if (!req.user || !req.user.uuid) {
+    res.status(404);
+    throw new Error('Пользователь не найден или информация о пользователе неполная.');
+  }
 
-  if (user && user.uuid) {
+  const user = await knex('users').where({ uuid: req.user.uuid }).first();
+
+  if (user) {
     res.status(200).json({
       uuid: user.uuid,
       username: user.username,
       email: user.email,
       role: user.role,
+      email_notifications_enabled: user.email_notifications_enabled,
       created_at: user.created_at,
       updated_at: user.updated_at,
     });
   } else {
     res.status(404);
-    throw new Error('Пользователь не найден или информация о пользователе неполная.');
+    throw new Error('Пользователь не найден в базе данных.');
   }
 });
 
@@ -336,6 +342,28 @@ const adminChangeUserPassword = asyncHandler(async (req, res) => {
   res.status(200).json({ message: `Пароль пользователя ${userToUpdate.username} (UUID: ${userUuid}) успешно изменен администратором` });
 });
 
+// @desc    Update user's email notification settings
+// @route   PUT /api/users/me/settings/email-notifications
+// @access  Private
+const updateEmailNotificationSettings = asyncHandler(async (req, res) => {
+  const { enabled } = req.body;
+  const userUuid = req.user.uuid;
+
+  if (typeof enabled !== 'boolean') {
+    res.status(400);
+    throw new Error('Пожалуйста, предоставьте значение "enabled" (true или false).');
+  }
+
+  await knex('users')
+    .where({ uuid: userUuid })
+    .update({
+      email_notifications_enabled: enabled,
+      updated_at: knex.fn.now(),
+    });
+
+  res.status(200).json({ message: `Email-уведомления ${enabled ? 'включены' : 'отключены'}.` });
+});
+
 module.exports = {
   getCurrentUser,
   changePassword,
@@ -346,4 +374,5 @@ module.exports = {
   deleteUser,
   changeUserRole,
   adminChangeUserPassword,
+  updateEmailNotificationSettings,
 };

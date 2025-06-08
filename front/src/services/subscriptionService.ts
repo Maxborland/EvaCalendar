@@ -113,6 +113,12 @@ export async function sendTestNotification(): Promise<void> {
     console.log('Successfully requested to send a test notification.');
 }
 
+export async function sendTestEmailNotification(): Promise<void> {
+    console.log('Attempting to send a test email notification...');
+    await api.post('/notifications/test-email');
+    console.log('Successfully requested to send a test email notification.');
+}
+
 /**
  * Synchronizes the subscription status with the actual state from the browser's PushManager.
  * This function is called automatically when the module is loaded to ensure the subscription

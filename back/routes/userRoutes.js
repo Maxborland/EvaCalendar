@@ -9,7 +9,8 @@ const {
   updateUser,
   deleteUser,
   changeUserRole,
-  adminChangeUserPassword
+  adminChangeUserPassword,
+  updateEmailNotificationSettings
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -22,6 +23,11 @@ router.get('/me', protect, getCurrentUser);
 // @desc    Change current user password
 // @access  Private
 router.post('/me/change-password', protect, changePassword);
+
+// @route   PUT /api/users/me/settings/email-notifications
+// @desc    Update user's email notification settings
+// @access  Private
+router.put('/me/settings/email-notifications', protect, updateEmailNotificationSettings);
 
 // @route   GET /api/users
 // @desc    Get all users

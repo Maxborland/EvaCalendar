@@ -1,7 +1,9 @@
 const cron = require('node-cron');
 const db = require('./db.cjs');
 const { sendNotification } = require('./services/notificationService');
+const emailService = require('./services/emailService');
 const { log, error: logError } = require('./utils/logger.js');
+const ApiError = require('./utils/ApiError.js');
 
 const runningJobs = []; // Массив для хранения запущенных cron-задач
 
@@ -29,6 +31,16 @@ const findTasksNearingDeadline = async () => {
 const findSubscriptionsByUserId = async (userUUID) => {
   return db('notification_subscriptions').where('user_uuid', userUUID);
 };
+
+// Вспомогательная функция для поиска пользователя по UUID.
+const findUserByUUID = async (userUUID) => {
+  const user = await db('users').where('uuid', userUUID).first();
+  if (!user) {
+    throw new ApiError(404, `User with UUID ${userUUID} not found.`);
+  }
+  return user;
+};
+
 
 // Логика проверки и отправки уведомлений
 const checkAndSendReminders = async () => {
@@ -58,6 +70,21 @@ const checkAndSendReminders = async () => {
 
       for (const subscription of subscriptions) {
         await sendNotification(subscription, payload);
+      }
+
+      // Получаем данные пользователя для проверки email-уведомлений
+      const user = await findUserByUUID(task.user_uuid);
+
+      // Проверяем, включены ли email-уведомления
+      if (user.email_notifications_enabled) {
+        try {
+          log(`Scheduler: Отправка email-уведомления для пользователя ${user.email}...`);
+          const emailHtml = `<h1>${payload.title}</h1><p>${payload.body}</p>`;
+          await emailService.sendEmail(user.email, payload.title, payload.body, emailHtml);
+        } catch (emailError) {
+          logError('Scheduler: Не удалось отправить email-уведомление:', emailError);
+          // Не прерываем основной процесс из-за ошибки отправки email
+        }
       }
 
       // Отмечаем, что напоминание для этой задачи было отправлено

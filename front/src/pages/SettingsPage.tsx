@@ -4,45 +4,55 @@ import TopNavigator from '../components/TopNavigator';
 import { useAuth } from '../context/AuthContext';
 import {
   getSubscription,
+  sendTestEmailNotification,
   sendTestNotification,
   subscribeUser,
   unsubscribeUser
 } from '../services/subscriptionService';
+import { getUserSettings, updateEmailNotificationSettings } from '../services/userService';
+
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 const SettingsPage = () => {
   const navigate = useNavigate();
   const { isSubscribed, updateSubscriptionStatus } = useAuth();
   const [isPushSupported, setIsPushSupported] = useState(false);
+  const [isEmailSubscribed, setIsEmailSubscribed] = useState(false);
+  const [showIOSNotice, setShowIOSNotice] = useState(false);
 
   useEffect(() => {
-    // При монтировании компонента проверяем, поддерживаются ли Push-уведомления.
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
+    const onIOS = isIOS();
+    setShowIOSNotice(onIOS);
+
+    if (!onIOS && 'serviceWorker' in navigator && 'PushManager' in window) {
       setIsPushSupported(true);
     }
+
+    const fetchUserSettings = async () => {
+      try {
+        const settings = await getUserSettings();
+        setIsEmailSubscribed(settings.email_notifications_enabled);
+      } catch (error) {
+        console.error('Не удалось получить настройки пользователя:', error);
+      }
+    };
+
+    fetchUserSettings();
   }, []);
 
-  // Этот useEffect отвечает за синхронизацию статуса подписки.
-  // Он выполняется при монтировании и каждый раз, когда isPushSupported меняется.
   useEffect(() => {
-    // Если Push-уведомления поддерживаются, проверяем активную подписку.
     if (isPushSupported) {
       const checkSubscription = async () => {
         try {
-          // Получаем подписку через сервис, который, вероятно, использует localStorage.
           const subscription = await getSubscription();
-          // Обновляем глобальное состояние в AuthContext.
           updateSubscriptionStatus(!!subscription);
         } catch (error) {
           console.error('Ошибка при получении статуса подписки:', error);
           updateSubscriptionStatus(false);
         }
       };
-
       checkSubscription();
     }
-    // Зависимость от isPushSupported и updateSubscriptionStatus гарантирует,
-    // что проверка будет выполнена, как только станет известно о поддержке push
-    // и будет доступна функция обновления состояния.
   }, [isPushSupported, updateSubscriptionStatus]);
 
   const handleGoBack = () => {
@@ -50,14 +60,10 @@ const SettingsPage = () => {
   };
 
   const handleSubscribe = async () => {
-    if (!isPushSupported) {
-      console.error('Push-уведомления не поддерживаются этим браузером.');
-      return;
-    }
+    if (!isPushSupported) return;
     try {
       await subscribeUser();
       updateSubscriptionStatus(true);
-      console.log('Пользователь успешно подписан.');
     } catch (error) {
       console.error('Не удалось подписаться:', error);
     }
@@ -67,20 +73,63 @@ const SettingsPage = () => {
     try {
       await unsubscribeUser();
       updateSubscriptionStatus(false);
-      console.log('Пользователь успешно отписан.');
     } catch (error) {
       console.error('Не удалось отписаться:', error);
+    }
+  };
+
+  const handleEmailSubToggle = async () => {
+    try {
+      await updateEmailNotificationSettings(!isEmailSubscribed);
+      setIsEmailSubscribed(!isEmailSubscribed);
+    } catch (error) {
+      console.error('Не удалось обновить настройки email-уведомлений:', error);
     }
   };
 
   const handleSendTestNotification = async () => {
     try {
       await sendTestNotification();
-      console.log('Тестовое уведомление отправлено.');
     } catch (error) {
       console.error('Не удалось отправить тестовое уведомление:', error);
     }
   };
+
+  const renderPushNotificationControls = () => (
+    <>
+      <div className="space-y-4">
+        {isSubscribed ? (
+          <button onClick={handleUnsubscribe} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">
+            Отписаться от Push-уведомлений
+          </button>
+        ) : (
+          <button onClick={handleSubscribe} disabled={!isPushSupported} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg">
+            Подписаться на Push-уведомления
+          </button>
+        )}
+        <button onClick={handleSendTestNotification} disabled={!isSubscribed} className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg">
+          Отправить тестовое Push-уведомление
+        </button>
+      </div>
+      {!isPushSupported && <p className="text-red-400 text-sm mt-4">Push-уведомления не поддерживаются в вашем браузере.</p>}
+    </>
+  );
+
+  const renderEmailNotificationControls = () => (
+    <div className="space-y-4">
+       <p className="text-sm text-slate-400">
+         Ваше устройство не поддерживает push-уведомления. Вместо этого вы можете получать уведомления по почте.
+       </p>
+      <button onClick={handleEmailSubToggle} className={`w-full font-bold py-3 px-4 rounded-lg ${isEmailSubscribed ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+        {isEmailSubscribed ? 'Отписаться от Email-уведомлений' : 'Подписаться на Email-уведомления'}
+      </button>
+      {isEmailSubscribed && (
+          <button onClick={sendTestEmailNotification} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg">
+              Отправить тестовое Email-уведомление
+          </button>
+      )}
+    </div>
+  );
 
   return (
     <div className="text-white flex flex-col min-h-screen">
@@ -88,59 +137,19 @@ const SettingsPage = () => {
 
       <main className="flex-grow p-6 pb-24">
         <nav className="space-y-4">
-          <Link
-            to="/settings/expense-categories"
-            className="block bg-slate-800 hover:bg-slate-700 p-4 rounded-lg shadow transition-colors duration-200"
-          >
+          <Link to="/settings/expense-categories" className="block bg-slate-800 hover:bg-slate-700 p-4 rounded-lg">
             <h2 className="text-lg font-medium">Категории расходов</h2>
-            <p className="text-sm text-slate-400">
-              Управление категориями расходов для отслеживания финансов.
-            </p>
+            <p className="text-sm text-slate-400">Управление категориями расходов.</p>
           </Link>
-          <Link
-            to="/settings/child-cards"
-            className="block bg-slate-800 hover:bg-slate-700 p-4 rounded-lg shadow transition-colors duration-200"
-          >
+          <Link to="/settings/child-cards" className="block bg-slate-800 hover:bg-slate-700 p-4 rounded-lg">
             <h2 className="text-lg font-medium">Детские карточки</h2>
-            <p className="text-sm text-slate-400">
-              Настройка и управление карточками детей.
-            </p>
+            <p className="text-sm text-slate-400">Настройка карточек детей.</p>
           </Link>
         </nav>
 
-        {/* Раздел управления уведомлениями */}
         <div className="mt-8 bg-slate-800 p-6 rounded-lg shadow">
           <h2 className="text-xl font-bold mb-4">Управление уведомлениями</h2>
-          <div className="space-y-4">
-            {isSubscribed ? (
-              <button
-                onClick={handleUnsubscribe}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
-              >
-                Отписаться от уведомлений
-              </button>
-            ) : (
-              <button
-                onClick={handleSubscribe}
-                disabled={!isPushSupported}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
-              >
-                Подписаться на уведомления
-              </button>
-            )}
-            <button
-              onClick={handleSendTestNotification}
-              disabled={!isSubscribed || !isPushSupported}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
-            >
-              Отправить тестовое уведомление
-            </button>
-          </div>
-          {!isPushSupported && (
-            <p className="text-red-400 text-sm mt-4">
-              Push-уведомления не поддерживаются в вашем браузере.
-            </p>
-          )}
+          {showIOSNotice ? renderEmailNotificationControls() : renderPushNotificationControls()}
         </div>
 
         <div className="mt-8">
@@ -149,15 +158,10 @@ const SettingsPage = () => {
       </main>
 
       <footer className="p-4 fixed bottom-0 left-0 right-0 bg-transparent flex justify-start items-center">
-        <button
-          onClick={handleGoBack}
-          className="flex items-center text-sm text-slate-300 hover:text-white transition-colors w-1/2 justify-center py-3 bg-slate-800 hover:bg-slate-700 rounded-lg"
-          aria-label="Go back"
-        >
+        <button onClick={handleGoBack} className="flex items-center text-sm text-slate-300 hover:text-white w-1/2 justify-center py-3 bg-slate-800 hover:bg-slate-700 rounded-lg">
           <span className="material-icons mr-2 text-lg">arrow_back</span>
           Назад
         </button>
-        {/* <p className="mt-4 text-center text-xs text-slate-500"></p> Пустой тег удален */}
       </footer>
     </div>
   );

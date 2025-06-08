@@ -1,6 +1,7 @@
 const webpush = require('web-push');
 const knex = require('../db.cjs');
 const { log, error: logError } = require('../utils/logger.js');
+const { sendEmail } = require('./emailService.js');
 
 webpush.setVapidDetails(
   'mailto:your-email@example.com',
@@ -35,10 +36,9 @@ const sendNotification = async (subscription, payload) => {
 };
 
 const sendTestNotification = async (userId) => {
-  const subscriptions = await knex('notification_subscriptions').where({ user_uuid: userId });
-
-  if (subscriptions.length === 0) {
-    throw new Error('No subscriptions found for this user.');
+  const user = await knex('users').where({ uuid: userId }).first();
+  if (!user) {
+    throw new Error('User not found.');
   }
 
   const notificationPayload = {
@@ -47,15 +47,35 @@ const sendTestNotification = async (userId) => {
     icon: '/icons/web/icon-192.png',
   };
 
-  const promises = subscriptions.map(sub => sendNotification(sub, notificationPayload));
+  // 1. Отправка Push-уведомлений (существующая логика)
+  const subscriptions = await knex('notification_subscriptions').where({ user_uuid: userId });
+  if (subscriptions.length > 0) {
+    const pushPromises = subscriptions.map(sub => sendNotification(sub, notificationPayload));
+    const pushResults = await Promise.allSettled(pushPromises);
+    pushResults.forEach(result => {
+      if (result.status === 'rejected') {
+        logError('An unexpected error occurred during push notification sending:', result.reason);
+      }
+    });
+  }
 
-  const results = await Promise.allSettled(promises);
-
-  results.forEach(result => {
-    if (result.status === 'rejected') {
-      logError('An unexpected error occurred during notification sending:', result.reason);
+  // 2. Отправка Email-уведомления, если включено
+  if (user.email_notifications_enabled) {
+    try {
+      await sendEmail(
+        user.email,
+        notificationPayload.title,
+        notificationPayload.body,
+        `<p>${notificationPayload.body}</p>`
+      );
+    } catch (error) {
+       logError('An unexpected error occurred during email notification sending:', error);
     }
-  });
+  }
+
+  if (subscriptions.length === 0 && !user.email_notifications_enabled) {
+    throw new Error('No notification methods enabled for this user.');
+  }
 };
 
 module.exports = {
