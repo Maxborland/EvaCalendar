@@ -73,15 +73,7 @@ const UnifiedTaskFormModal = ({
     }, 300);
   }, [originalOnClose]);
 
-  const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense' | 'task'>(() => {
-    if (mode === 'edit' && initialTaskData?.type) {
-      if (initialTaskType) return initialTaskType;
-      if (initialTaskData.type === 'expense') return 'expense';
-      if (initialTaskData.type === 'task') return 'task';
-      return 'income';
-    }
-    return initialTaskType || 'income';
-  });
+  const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense' | 'task'>('income');
 
   const [formData, setFormData] = useState(() => {
     const defaultDueDate = initialTaskData?.dueDate || new Date().toISOString().split('T')[0];
@@ -132,115 +124,51 @@ const UnifiedTaskFormModal = ({
   }, []);
 
   useEffect(() => {
+    const defaultDueDate = new Date().toISOString().split('T')[0];
+
+    // Determine task type
+    let newType: 'income' | 'expense' | 'task' = initialTaskType || 'income';
     if (mode === 'edit' && initialTaskData) {
-      const determinedTaskType = initialTaskType || (initialTaskData.type === 'expense' ? 'expense' : (initialTaskData.type === 'task' ? 'task' : 'income'));
-      setTaskTypeInternal(determinedTaskType);
-
-      const taskAmount = initialTaskData.amount ?? (determinedTaskType === 'income' ? initialTaskData.amountEarned : initialTaskData.amountSpent) ?? undefined;
-
-      const assigneeUsername = initialTaskData.assignee_username || initialTaskData.assignee?.username || '';
-
-      const newFormData = {
-        id: initialTaskData.uuid,
-        title: initialTaskData.title ?? '',
-        time: initialTaskData.time || '',
-        address: initialTaskData.address || '',
-        childId: initialTaskData.child_uuid || initialTaskData.childId || null,
-        hourlyRate: initialTaskData.hourlyRate ?? undefined,
-        comments: initialTaskData.comments || '',
-        expenseCategoryName: initialTaskData.expenseCategoryName || '',
-        amount: taskAmount,
-        hoursWorked: initialTaskData.hoursWorked ?? undefined,
-        dueDate: initialTaskData.dueDate ?? new Date().toISOString().split('T')[0],
-        expense_category_uuid: initialTaskData.expense_category_uuid,
-        childName: initialTaskData.childName,
-        originalTaskType: initialTaskData.type,
-        reminder_at: formatDateTimeForInput(initialTaskData.reminder_at),
-        assignee_username: assigneeUsername,
-        reminder_offset: initialTaskData.reminder_offset ?? null,
-        assigned_to_id: initialTaskData.assigned_to_id ?? null,
-      };
-      setFormData(newFormData);
-
-      const childIdToSetForSelector = initialTaskData.child_uuid || initialTaskData.childId || null;
-      setSelectedChildUuid(childIdToSetForSelector);
-
-      if (initialTaskData.user_uuid && initialTaskData.assignee_username) {
-        setSelectedAssignee({ uuid: initialTaskData.user_uuid, username: initialTaskData.assignee_username } as User);
-        setAssigneeQuery(initialTaskData.assignee_username);
-      } else if (initialTaskData.assignee) {
-        setSelectedAssignee(initialTaskData.assignee);
-        setAssigneeQuery(initialTaskData.assignee.username);
-      } else {
-        setSelectedAssignee(null);
-        setAssigneeQuery('');
-      }
-    } else if (mode === 'create') {
-      setTaskTypeInternal(initialTaskType || 'income');
-      setFormData(prev => {
-        const newFormData = {
-          id: undefined,
-          title: '',
-          time: '',
-          address: '',
-          childId: null,
-          hourlyRate: undefined,
-          comments: '',
-          expenseCategoryName: '',
-          amount: undefined,
-          hoursWorked: undefined,
-          dueDate: prev.dueDate,
-          expense_category_uuid: undefined,
-          childName: undefined,
-          originalTaskType: undefined,
-          reminder_at: '',
-          assignee_username: '',
-          reminder_offset: null,
-          assigned_to_id: null,
-        };
-        return newFormData;
-      });
-      setSelectedChildUuid(null);
-      setSelectedAssignee(null);
-      setAssigneeQuery('');
+        if (initialTaskData.type === 'expense') newType = 'expense';
+        else if (initialTaskData.type === 'task') newType = 'task';
+        else if (['income', 'hourly', 'fixed'].includes(initialTaskData.type)) newType = 'income';
     }
-  }, [mode, initialTaskData, initialTaskType]); // initialTaskType добавлен, чтобы isNameManuallyEdited правильно сбрасывалось/устанавливалось при его изменении
+    setTaskTypeInternal(newType);
 
-  useEffect(() => {
-    setFormData(prev => {
-      const newFormData = { ...prev };
+    // Initialize form data
+    let newFormData = {
+        id: initialTaskData?.uuid,
+        title: initialTaskData?.title || '',
+        dueDate: initialTaskData?.dueDate || defaultDueDate,
+        time: initialTaskData?.time || '',
+        address: initialTaskData?.address || '',
+        comments: initialTaskData?.comments || '',
+        reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
+        reminder_offset: initialTaskData?.reminder_offset ?? null,
+        assigned_to_id: initialTaskData?.user_uuid || initialTaskData?.assigned_to_id || null,
+        childId: initialTaskData?.child_uuid || initialTaskData?.childId || null,
+        hourlyRate: initialTaskData?.hourlyRate,
+        hoursWorked: initialTaskData?.hoursWorked,
+        amount: initialTaskData?.amount,
+        expense_category_uuid: initialTaskData?.expense_category_uuid,
+        expenseCategoryName: initialTaskData?.expenseCategoryName || '',
+        childName: initialTaskData?.childName,
+        originalTaskType: initialTaskData?.type,
+    };
 
-      const initialAmount = initialTaskData?.amount;
-      const initialAmountEarned = initialTaskData?.amountEarned;
-      const initialAmountSpent = initialTaskData?.amountSpent;
-
-      const preserveAmountFromInitial =
-        mode === 'edit' &&
-        initialTaskData &&
-        (initialAmount !== undefined || initialAmountEarned !== undefined || initialAmountSpent !== undefined) &&
-        initialTaskData.type &&
-        (
-          (
-            (initialTaskData.type === 'income' || initialTaskData.type === 'hourly' || initialTaskData.type === 'fixed') &&
-            taskTypeInternal === 'income'
-          ) ||
-          (initialTaskData.type === 'expense' && taskTypeInternal === 'expense') ||
-          (initialTaskData.type === 'task' && taskTypeInternal === 'task')
-        );
-
-
-      if (taskTypeInternal === 'expense') {
+    // Clean up fields based on the determined type
+    if (newType === 'expense') {
         newFormData.childId = null;
         newFormData.childName = undefined;
         newFormData.hourlyRate = undefined;
         newFormData.hoursWorked = undefined;
         newFormData.time = '';
-      } else if (taskTypeInternal === 'income') {
+    } else if (newType === 'income') {
         newFormData.expense_category_uuid = undefined;
         newFormData.expenseCategoryName = '';
         newFormData.assigned_to_id = null;
         newFormData.reminder_offset = null;
-      } else if (taskTypeInternal === 'task') {
+    } else if (newType === 'task') {
         newFormData.expense_category_uuid = undefined;
         newFormData.expenseCategoryName = '';
         newFormData.childId = null;
@@ -249,33 +177,52 @@ const UnifiedTaskFormModal = ({
         newFormData.hoursWorked = undefined;
         newFormData.time = '';
         newFormData.amount = undefined;
-      }
+    }
 
-      if (preserveAmountFromInitial) {
-        // Если тип задачи совпадает с исходным и сумма была, пытаемся ее сохранить
-        // Приоритет: initialTaskData.amount, затем amountEarned/amountSpent в зависимости от ТЕКУЩЕГО taskTypeInternal
-        if (initialAmount !== undefined) {
-          newFormData.amount = initialAmount;
-        } else if (taskTypeInternal === 'income' && initialAmountEarned !== undefined) {
-          newFormData.amount = initialAmountEarned;
-        } else if (taskTypeInternal === 'expense' && initialAmountSpent !== undefined) {
-          newFormData.amount = initialAmountSpent;
+    // Reset for create mode
+    if (mode === 'create') {
+        newFormData = {
+            id: undefined,
+            title: '',
+            time: '',
+            address: '',
+            childId: null,
+            hourlyRate: undefined,
+            comments: '',
+            expenseCategoryName: '',
+            amount: undefined,
+            hoursWorked: undefined,
+            dueDate: defaultDueDate,
+            expense_category_uuid: undefined,
+            childName: undefined,
+            originalTaskType: undefined,
+            reminder_at: '',
+            reminder_offset: null,
+            assigned_to_id: null,
+        };
+        setSelectedChildUuid(null);
+        setSelectedAssignee(null);
+        setAssigneeQuery('');
+    } else { // edit mode specific updates
+        const childIdToSetForSelector = initialTaskData?.child_uuid || initialTaskData?.childId || null;
+        setSelectedChildUuid(childIdToSetForSelector);
+
+        if (initialTaskData?.assignee) {
+            setSelectedAssignee(initialTaskData.assignee);
+            setAssigneeQuery(initialTaskData.assignee.username);
+        } else if (initialTaskData?.assignee_username) {
+            // Fallback if assignee object is not fully populated
+            setSelectedAssignee({ uuid: initialTaskData.user_uuid, username: initialTaskData.assignee_username } as User);
+            setAssigneeQuery(initialTaskData.assignee_username);
+        } else {
+            setSelectedAssignee(null);
+            setAssigneeQuery('');
         }
-        // Если initialAmount был, но типы не совпали, amount уже мог быть сброшен первым useEffect,
-        // или будет сброшен ниже, если не авто-расчет.
-      } else {
-        // Если не сохраняем из initial (например, тип задачи сменился или это создание новой)
-        const isAutoCalculated = taskTypeInternal === 'income' &&
-                                 typeof newFormData.hourlyRate === 'number' && newFormData.hourlyRate > 0 &&
-                                 typeof newFormData.hoursWorked === 'number' && newFormData.hoursWorked > 0;
-       if (!isAutoCalculated) {
-            newFormData.amount = undefined;
-       } else {
-           }
-         }
-         return newFormData;
-       });
-     }, [taskTypeInternal, mode, initialTaskData]);
+    }
+
+    setFormData(newFormData);
+
+}, [mode, initialTaskData, initialTaskType]);
 
 
       const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -535,11 +482,16 @@ const UnifiedTaskFormModal = ({
 
             <div className="form-group">
               <label className="label">Тип:</label>
-              <div className="segmented-control">
-                <button type="button" className={taskTypeInternal === 'income' ? 'active' : ''} onClick={() => setTaskTypeInternal('income')}>Доход</button>
-                <button type="button" className={taskTypeInternal === 'expense' ? 'active' : ''} onClick={() => setTaskTypeInternal('expense')}>Расход</button>
-                <button type="button" className={taskTypeInternal === 'task' ? 'active' : ''} onClick={() => setTaskTypeInternal('task')}>Задача</button>
-              </div>
+              <select
+                name="taskType"
+                value={taskTypeInternal}
+                onChange={(e) => setTaskTypeInternal(e.target.value as 'income' | 'expense' | 'task')}
+                className="input"
+              >
+                <option value="income">Доход</option>
+                <option value="expense">Расход</option>
+                <option value="task">Задача</option>
+              </select>
             </div>
 
             <div className="form-group">

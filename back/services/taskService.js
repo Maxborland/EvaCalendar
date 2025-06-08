@@ -71,13 +71,13 @@ const taskService = {
         dataForDb.reminder_at = _calculateReminderAt(dueDate, dataForDb.time, reminder_offset, reminder_at);
 
         // Validation and type-specific logic
-        if (type === 'income' || type === 'expense') {
+        if (type === 'income' || type === 'expense' || type === 'hourly' || type === 'fixed') {
             if (assigned_to_id && assigned_to_id !== userId) {
                 throw ApiError.badRequest('Income/expense can only be assigned to the creator.');
             }
             dataForDb.user_uuid = userId;
 
-            if (type === 'income') {
+            if (type === 'income' || type === 'hourly' || type === 'fixed') {
                 dataForDb.amountEarned = amount || amountEarned || null;
                 dataForDb.child_uuid = child_uuid || null;
                 dataForDb.hoursWorked = hoursWorked || null;
@@ -88,6 +88,8 @@ const taskService = {
                     const child = await knex('children').where({ uuid: dataForDb.child_uuid }).first();
                     dataForDb.title = `Доход от ${child ? child.childName : 'ребенка'}`;
                 }
+                // После обработки, приводим тип к 'income' для хранения в БД
+                dataForDb.type = 'income';
             } else { // expense
                 dataForDb.amountSpent = amount || amountSpent || null;
                 dataForDb.expense_category_uuid = expense_category_uuid || null;
