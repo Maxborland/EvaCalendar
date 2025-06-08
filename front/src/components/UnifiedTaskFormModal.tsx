@@ -2,7 +2,18 @@ import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } fr
 import * as ReactDOM from 'react-dom';
 import { toast } from 'react-toastify';
 import { useTasks } from '../context/TaskContext';
-import { addChild, getAllChildren, getExpenseCategories, updateChild as updateChildAPI, type Child, type ExpenseCategory, type Task } from '../services/api';
+import {
+  addChild,
+  getAllChildren,
+  getAssignableUsers,
+  getExpenseCategories,
+  searchUsers,
+  updateChild as updateChildAPI,
+  type Child,
+  type ExpenseCategory,
+  type Task,
+  type User
+} from '../services/api';
 import ChildForm from './ChildForm';
 import UnifiedChildSelector from './UnifiedChildSelector';
 import './UnifiedTaskFormModal.css';
@@ -13,7 +24,7 @@ interface UnifiedTaskFormModalProps {
   onSubmit: (taskData: Task | Omit<Task, 'uuid'>) => Promise<void>;
   mode: 'create' | 'edit';
   initialTaskData?: Task;
-  initialTaskType?: 'income' | 'expense';
+  initialTaskType?: 'income' | 'expense' | 'task';
   onDelete?: (uuid: string) => void;
   onDuplicate?: (uuid: string) => void;
   onTaskUpsert?: () => void;
@@ -62,10 +73,12 @@ const UnifiedTaskFormModal = ({
     }, 300);
   }, [originalOnClose]);
 
-  const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense'>(() => {
+  const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense' | 'task'>(() => {
     if (mode === 'edit' && initialTaskData?.type) {
       if (initialTaskType) return initialTaskType;
-      return initialTaskData.type === 'expense' ? 'expense' : 'income';
+      if (initialTaskData.type === 'expense') return 'expense';
+      if (initialTaskData.type === 'task') return 'task';
+      return 'income';
     }
     return initialTaskType || 'income';
   });
@@ -84,10 +97,12 @@ const UnifiedTaskFormModal = ({
       amount: initialTaskData?.amount || undefined,
       hoursWorked: initialTaskData?.hoursWorked || undefined,
       dueDate: defaultDueDate,
-      expenseTypeId: initialTaskData?.expenseTypeId,
+      expense_category_uuid: initialTaskData?.expense_category_uuid,
       childName: initialTaskData?.childName,
       originalTaskType: initialTaskData?.type,
       reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
+      reminder_offset: initialTaskData?.reminder_offset ?? null,
+      assigned_to_id: initialTaskData?.assigned_to_id ?? null,
     };
     return baseData;
   });
@@ -99,6 +114,12 @@ const UnifiedTaskFormModal = ({
 
   const [showChildFormModal, setShowChildFormModal] = useState(false);
   const [childFormInitialData, setChildFormInitialData] = useState<Partial<Child> | undefined>(undefined);
+  const [assignableUsers, setAssignableUsers] = useState<User[]>([]);
+  const [assigneeQuery, setAssigneeQuery] = useState('');
+  const [assigneeSuggestions, setAssigneeSuggestions] = useState<User[]>([]);
+  const [selectedAssignee, setSelectedAssignee] = useState<User | null>(initialTaskData?.assignee || null);
+  const [isSearching, setIsSearching] = useState(false);
+
 
   const fetchChildrenCallback = useCallback(async () => {
     try {
@@ -112,56 +133,76 @@ const UnifiedTaskFormModal = ({
 
   useEffect(() => {
     if (mode === 'edit' && initialTaskData) {
-      const determinedTaskType = initialTaskType || (initialTaskData.type === 'expense' ? 'expense' : 'income');
+      const determinedTaskType = initialTaskType || (initialTaskData.type === 'expense' ? 'expense' : (initialTaskData.type === 'task' ? 'task' : 'income'));
       setTaskTypeInternal(determinedTaskType);
 
       const taskAmount = initialTaskData.amount ?? (determinedTaskType === 'income' ? initialTaskData.amountEarned : initialTaskData.amountSpent) ?? undefined;
+
+      const assigneeUsername = initialTaskData.assignee_username || initialTaskData.assignee?.username || '';
 
       const newFormData = {
         id: initialTaskData.uuid,
         title: initialTaskData.title ?? '',
         time: initialTaskData.time || '',
         address: initialTaskData.address || '',
-        childId: initialTaskData.childId || null,
+        childId: initialTaskData.child_uuid || initialTaskData.childId || null,
         hourlyRate: initialTaskData.hourlyRate ?? undefined,
         comments: initialTaskData.comments || '',
         expenseCategoryName: initialTaskData.expenseCategoryName || '',
         amount: taskAmount,
         hoursWorked: initialTaskData.hoursWorked ?? undefined,
         dueDate: initialTaskData.dueDate ?? new Date().toISOString().split('T')[0],
-        expenseTypeId: initialTaskData.expenseTypeId,
+        expense_category_uuid: initialTaskData.expense_category_uuid,
         childName: initialTaskData.childName,
         originalTaskType: initialTaskData.type,
         reminder_at: formatDateTimeForInput(initialTaskData.reminder_at),
+        assignee_username: assigneeUsername,
+        reminder_offset: initialTaskData.reminder_offset ?? null,
+        assigned_to_id: initialTaskData.assigned_to_id ?? null,
       };
       setFormData(newFormData);
 
-
-      const childIdToSetForSelector = initialTaskData.childId || null;
+      const childIdToSetForSelector = initialTaskData.child_uuid || initialTaskData.childId || null;
       setSelectedChildUuid(childIdToSetForSelector);
+
+      if (initialTaskData.user_uuid && initialTaskData.assignee_username) {
+        setSelectedAssignee({ uuid: initialTaskData.user_uuid, username: initialTaskData.assignee_username } as User);
+        setAssigneeQuery(initialTaskData.assignee_username);
+      } else if (initialTaskData.assignee) {
+        setSelectedAssignee(initialTaskData.assignee);
+        setAssigneeQuery(initialTaskData.assignee.username);
+      } else {
+        setSelectedAssignee(null);
+        setAssigneeQuery('');
+      }
     } else if (mode === 'create') {
       setTaskTypeInternal(initialTaskType || 'income');
       setFormData(prev => {
         const newFormData = {
-        id: undefined,
-        title: '',
-        time: '',
-        address: '',
-        childId: null,
-        hourlyRate: undefined,
-        comments: '',
-        expenseCategoryName: '',
-        amount: undefined,
-        hoursWorked: undefined,
-        dueDate: prev.dueDate,
-        expenseTypeId: undefined,
-        childName: undefined,
-        originalTaskType: undefined,
-        reminder_at: '',
-      };
+          id: undefined,
+          title: '',
+          time: '',
+          address: '',
+          childId: null,
+          hourlyRate: undefined,
+          comments: '',
+          expenseCategoryName: '',
+          amount: undefined,
+          hoursWorked: undefined,
+          dueDate: prev.dueDate,
+          expense_category_uuid: undefined,
+          childName: undefined,
+          originalTaskType: undefined,
+          reminder_at: '',
+          assignee_username: '',
+          reminder_offset: null,
+          assigned_to_id: null,
+        };
         return newFormData;
-    });
+      });
       setSelectedChildUuid(null);
+      setSelectedAssignee(null);
+      setAssigneeQuery('');
     }
   }, [mode, initialTaskData, initialTaskType]); // initialTaskType добавлен, чтобы isNameManuallyEdited правильно сбрасывалось/устанавливалось при его изменении
 
@@ -179,8 +220,12 @@ const UnifiedTaskFormModal = ({
         (initialAmount !== undefined || initialAmountEarned !== undefined || initialAmountSpent !== undefined) &&
         initialTaskData.type &&
         (
-          ((initialTaskData.type === 'income' || initialTaskData.type === 'hourly' || initialTaskData.type === 'fixed') && taskTypeInternal === 'income') ||
-          (initialTaskData.type === 'expense' && taskTypeInternal === 'expense')
+          (
+            (initialTaskData.type === 'income' || initialTaskData.type === 'hourly' || initialTaskData.type === 'fixed') &&
+            taskTypeInternal === 'income'
+          ) ||
+          (initialTaskData.type === 'expense' && taskTypeInternal === 'expense') ||
+          (initialTaskData.type === 'task' && taskTypeInternal === 'task')
         );
 
 
@@ -191,8 +236,19 @@ const UnifiedTaskFormModal = ({
         newFormData.hoursWorked = undefined;
         newFormData.time = '';
       } else if (taskTypeInternal === 'income') {
-        newFormData.expenseTypeId = undefined;
+        newFormData.expense_category_uuid = undefined;
         newFormData.expenseCategoryName = '';
+        newFormData.assigned_to_id = null;
+        newFormData.reminder_offset = null;
+      } else if (taskTypeInternal === 'task') {
+        newFormData.expense_category_uuid = undefined;
+        newFormData.expenseCategoryName = '';
+        newFormData.childId = null;
+        newFormData.childName = undefined;
+        newFormData.hourlyRate = undefined;
+        newFormData.hoursWorked = undefined;
+        newFormData.time = '';
+        newFormData.amount = undefined;
       }
 
       if (preserveAmountFromInitial) {
@@ -236,6 +292,16 @@ const UnifiedTaskFormModal = ({
     };
     fetchCategories();
     fetchChildrenCallback();
+
+    const fetchAssignableUsers = async () => {
+      try {
+        const users = await getAssignableUsers();
+        setAssignableUsers(users);
+      } catch (error) {
+        toast.error('Ошибка при загрузке списка пользователей.');
+      }
+    };
+    fetchAssignableUsers();
   }, [fetchChildrenCallback]);
 
   useEffect(() => {
@@ -299,6 +365,26 @@ const UnifiedTaskFormModal = ({
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type: inputType } = e.target;
 
+    if (name === 'assignee_username') {
+      setAssigneeQuery(value);
+      if (value.length >= 2) {
+        setIsSearching(true);
+        // Basic debounce
+        setTimeout(async () => {
+          try {
+            const users = await searchUsers(value);
+            setAssigneeSuggestions(users);
+          } catch (error) {
+            toast.error('Ошибка поиска пользователей.');
+          } finally {
+            setIsSearching(false);
+          }
+        }, 500);
+      } else {
+        setAssigneeSuggestions([]);
+      }
+    }
+
     setFormData((prevData) => {
       const newValue = inputType === 'number'
         ? (value === '' ? undefined : parseFloat(value))
@@ -352,22 +438,34 @@ const UnifiedTaskFormModal = ({
     setChildFormInitialData(undefined);
   };
 
+  const handleSelectAssignee = (user: User) => {
+    setSelectedAssignee(user);
+    setAssigneeQuery(user.username);
+    setAssigneeSuggestions([]);
+    setFormData(prev => ({ ...prev, assignee_username: user.username }));
+  };
+
+  const handleRemoveAssignee = () => {
+    setSelectedAssignee(null);
+    setAssigneeQuery('');
+    setFormData(prev => ({ ...prev, assignee_username: '' }));
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     const childNameForTitle = selectedChildUuid ? children.find(c => c.uuid === selectedChildUuid)?.childName : undefined;
 
-    let taskTypeForApi: string;
+    let taskTypeForApi: 'income' | 'expense' | 'task' | 'hourly' | 'fixed';
     if (taskTypeInternal === 'expense') {
       taskTypeForApi = 'expense';
-    } else {
-      // hourlyRate может быть невидимым, но если оно есть и часы есть, то тип hourly
+    } else if (taskTypeInternal === 'task') {
+      taskTypeForApi = 'task';
+    } else { // income
       if (formData.hoursWorked && formData.hourlyRate) {
         taskTypeForApi = 'hourly';
       } else {
-        taskTypeForApi = (mode === 'edit' && initialTaskData?.type && initialTaskData.type !== 'income' && initialTaskData.type !== 'expense')
-          ? initialTaskData.type
-          : 'fixed';
+        taskTypeForApi = 'fixed';
       }
     }
 
@@ -380,19 +478,20 @@ const UnifiedTaskFormModal = ({
       title: formData.title,
       type: taskTypeForApi,
       time: taskTypeInternal === 'income' ? (formData.time || undefined) : undefined, // Время только для дохода
-      dueDate: formData.dueDate, // Дата остается, хоть и невидима
+      dueDate: formData.dueDate,
       childId: taskTypeInternal === 'income' ? (selectedChildUuid || undefined) : undefined,
       childName: taskTypeInternal === 'income' ? (childNameForTitle || undefined) : undefined,
-      expenseTypeId: taskTypeInternal === 'expense'
+      expense_category_uuid: taskTypeInternal === 'expense'
         ? categories.find(c => c.categoryName === formData.expenseCategoryName)?.uuid
         : undefined,
-      expenseCategoryName: taskTypeInternal === 'expense' ? formData.expenseCategoryName : undefined,
-      amount: formData.amount,
-      hourlyRate: taskTypeInternal === 'income' && taskTypeForApi === 'hourly' ? formData.hourlyRate : undefined,
-      hoursWorked: taskTypeInternal === 'income' && taskTypeForApi === 'hourly' ? formData.hoursWorked : undefined,
+      amount: (taskTypeInternal === 'income' || taskTypeInternal === 'expense') ? formData.amount : undefined,
+      hourlyRate: taskTypeInternal === 'income' && (taskTypeForApi === 'hourly' || taskTypeForApi === 'fixed') ? formData.hourlyRate : undefined,
+      hoursWorked: taskTypeInternal === 'income' && (taskTypeForApi === 'hourly' || taskTypeForApi === 'fixed') ? formData.hoursWorked : undefined,
       comments: formData.comments || undefined,
-      taskType: taskTypeInternal,
       reminder_at: reminderAtUTC,
+      assigned_to_id: taskTypeInternal === 'task' ? formData.assigned_to_id : null,
+      reminder_offset: taskTypeInternal === 'task' ? formData.reminder_offset : null,
+      assignee_username: undefined, // We are sending assigned_to_id now
     };
 
     if (taskTypeForApi === 'hourly' && dataToSave.hourlyRate && dataToSave.hoursWorked && dataToSave.amount === undefined) {
@@ -435,6 +534,15 @@ const UnifiedTaskFormModal = ({
             <h2>{mode === 'edit' ? 'Редактирование дела' : 'Создание дела'}</h2>
 
             <div className="form-group">
+              <label className="label">Тип:</label>
+              <div className="segmented-control">
+                <button type="button" className={taskTypeInternal === 'income' ? 'active' : ''} onClick={() => setTaskTypeInternal('income')}>Доход</button>
+                <button type="button" className={taskTypeInternal === 'expense' ? 'active' : ''} onClick={() => setTaskTypeInternal('expense')}>Расход</button>
+                <button type="button" className={taskTypeInternal === 'task' ? 'active' : ''} onClick={() => setTaskTypeInternal('task')}>Задача</button>
+              </div>
+            </div>
+
+            <div className="form-group">
               <label htmlFor="title" className="label">Название:</label>
               <input
                 type="text"
@@ -443,33 +551,8 @@ const UnifiedTaskFormModal = ({
                 value={formData.title}
                 onChange={handleChange}
                 className="input"
+                required
               />
-            </div>
-
-            <div className="form-group">
-              <label className="label">Тип задачи:</label>
-              <div className="radio-group">
-                <label>
-                  <input
-                    type="radio"
-                    name="taskTypeInternal"
-                    value="income"
-                    checked={taskTypeInternal === 'income'}
-                    onChange={() => setTaskTypeInternal('income')}
-                  />
-                  Доход
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="taskTypeInternal"
-                    value="expense"
-                    checked={taskTypeInternal === 'expense'}
-                    onChange={() => setTaskTypeInternal('expense')}
-                  />
-                  Расход
-                </label>
-              </div>
             </div>
 
             <div className="form-group">
@@ -497,6 +580,63 @@ const UnifiedTaskFormModal = ({
               />
             </div>
 
+            {taskTypeInternal === 'task' && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="assigned_to_id" className="label">Кому:</label>
+                  <select
+                    id="assigned_to_id"
+                    name="assigned_to_id"
+                    value={formData.assigned_to_id || ''}
+                    onChange={handleChange}
+                    className="input"
+                  >
+                    <option value="">Не назначено</option>
+                    {assignableUsers.map(user => (
+                      <option key={user.uuid} value={user.uuid}>{user.username}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="reminder_offset" className="label">Напомнить за:</label>
+                  <select
+                    id="reminder_offset"
+                    name="reminder_offset"
+                    value={formData.reminder_offset || ''}
+                    onChange={handleChange}
+                    className="input"
+                  >
+                    <option value="">Не напоминать</option>
+                    <option value="900">15 минут</option>
+                    <option value="1800">30 минут</option>
+                    <option value="3600">1 час</option>
+                    <option value="86400">1 день</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {(taskTypeInternal === 'income' || taskTypeInternal === 'expense') && (
+              <div className="form-group">
+                <label htmlFor="amount" className="label">Сумма:</label>
+                <input
+                  type="number"
+                  id="amount"
+                  name="amount"
+                  value={formData.amount ?? ''}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="0"
+                  required
+                  disabled={
+                    taskTypeInternal === 'income' &&
+                    typeof formData.hourlyRate === 'number' && formData.hourlyRate > 0 &&
+                    typeof formData.hoursWorked === 'number' && formData.hoursWorked > 0
+                  }
+                />
+              </div>
+            )}
+
             {taskTypeInternal === 'income' && (
               <>
                 <UnifiedChildSelector
@@ -510,9 +650,6 @@ const UnifiedTaskFormModal = ({
                   selectedChildDetails={selectedChildDetails}
                   className="input"
                 />
-                 {selectedChildDetails && selectedChildDetails.hourlyRate && !formData.hourlyRate && (
-                  <div className="info-text">Ставка ребенка: {selectedChildDetails.hourlyRate}</div>
-                )}
                 <div className="form-group">
                   <label htmlFor="time" className="label">Время:</label>
                   <input
@@ -536,60 +673,26 @@ const UnifiedTaskFormModal = ({
                     placeholder="0"
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="amount" className="label">Заработано:</label>
-                  <input
-                    type="number"
-                    id="amount"
-                    name="amount"
-                    value={formData.amount ?? ''}
-                    onChange={handleChange}
-                    className="input"
-                    placeholder="0"
-                    disabled={
-                      taskTypeInternal === 'income' &&
-                      typeof formData.hourlyRate === 'number' && formData.hourlyRate > 0 &&
-                      typeof formData.hoursWorked === 'number' && formData.hoursWorked > 0
-                    }
-                  />
-                </div>
               </>
             )}
 
             {taskTypeInternal === 'expense' && (
-              <>
-                <div className="form-group">
-                  <label htmlFor="expenseCategoryName" className="label">Категория:</label>
-                  <select
-                    id="expenseCategoryName"
-                    name="expenseCategoryName"
-                    value={formData.expenseCategoryName}
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  >
-                    <option value="">Выберите категорию</option>
-                    {categories.map((category) => (
-                      <option key={category.uuid} value={category.categoryName}>{category.categoryName}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="amount" className="label">Потрачено:</label>
-                  <input
-                    type="number"
-                    id="amount"
-                    name="amount"
-                    value={formData.amount ?? ''}
-                    onChange={handleChange}
-                    step="0.01"
-                    min="0"
-                    required
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-              </>
+              <div className="form-group">
+                <label htmlFor="expenseCategoryName" className="label">Категория:</label>
+                <select
+                  id="expenseCategoryName"
+                  name="expenseCategoryName"
+                  value={formData.expenseCategoryName}
+                  onChange={handleChange}
+                  className="input"
+                  required
+                >
+                  <option value="">Выберите категорию</option>
+                  {categories.map((category) => (
+                    <option key={category.uuid} value={category.categoryName}>{category.categoryName}</option>
+                  ))}
+                </select>
+              </div>
             )}
 
             <div className="form-group">

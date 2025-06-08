@@ -1,5 +1,6 @@
 const express = require('express');
 const taskService = require('../services/taskService.js');
+const userService = require('../services/userService.js');
 const ApiError = require('../utils/ApiError.js');
 
 const router = express.Router();
@@ -7,10 +8,16 @@ const router = express.Router();
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
 
+// GET /api/tasks/assignable-users - Получение пользователей, которым можно назначить задачу
+router.get('/assignable-users', asyncHandler(async (req, res) => {
+    const users = await userService.getAssignableUsers(req.user.uuid);
+    res.json(users);
+}));
+
+
 // POST /tasks - Создание новой задачи
 router.post('/', asyncHandler(async (req, res) => {
-    const { title, ...taskData } = req.body;
-    const task = await taskService.createTask(taskData, req.user.uuid, title);
+    const task = await taskService.createTask(req.body, req.user.uuid);
     res.status(201).json(task);
 }));
 
@@ -63,13 +70,8 @@ router.get('/:uuid', asyncHandler(async (req, res, next) => {
 
 // PUT /tasks/:uuid - Обновление задачи по UUID
 router.put('/:uuid', asyncHandler(async (req, res, next) => {
-    const { title, ...updateData } = req.body;
-    const updatedCount = await taskService.updateTask(req.params.uuid, updateData, req.user.uuid, title);
-    // taskService.updateTask теперь выбрасывает ApiError.notFound если задача не найдена или доступ запрещен.
-    // Поэтому дополнительная проверка taskExists не нужна.
-    // Если updatedCount === 0, это означает, что данные были идентичны и обновления не произошло,
-    // но задача существует и принадлежит пользователю.
-    res.json(updatedCount);
+    const updatedTask = await taskService.updateTask(req.params.uuid, req.body, req.user.uuid);
+    res.json(updatedTask);
 }));
 
 // DELETE /tasks/:uuid - Удаление задачи по UUID

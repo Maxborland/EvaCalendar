@@ -99,7 +99,9 @@ app.use('/api/users', userRoutes);
 
 app.use(errorHandler);
 
-scheduleTaskReminders();
+if (process.env.NODE_ENV !== 'test') {
+  scheduleTaskReminders();
+}
 
 const server = app.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);

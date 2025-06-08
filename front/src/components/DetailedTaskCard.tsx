@@ -20,19 +20,17 @@ const DetailedTaskCard = ({ task, onEdit, onDelete }: DetailedTaskCardProps) => 
     parentPhone,
     childAddress,
     childHourlyRate,
+    assignee,
   } = task;
 
   const handleEdit = () => onEdit(task);
   const handleDelete = () => onDelete(uuid);
 
   let incomeDisplayValue: string | undefined;
-  if (type === 'income' || type === 'hourly') {
-    if (amountEarned !== undefined) {
-      incomeDisplayValue = `+${amountEarned} ₽`;
-    }
-  } else if (type === 'fixed') {
-    if (amount !== undefined) {
-      incomeDisplayValue = `+${amount} ₽`;
+  if (type === 'income' || type === 'hourly' || type === 'fixed') {
+    const displayAmount = amount ?? amountEarned;
+    if (displayAmount !== undefined) {
+      incomeDisplayValue = `+${displayAmount} ₽`;
     }
   }
 
@@ -72,6 +70,13 @@ const DetailedTaskCard = ({ task, onEdit, onDelete }: DetailedTaskCardProps) => 
           <div className="flex items-center">
             <span className="material-icons text-gray-500 mr-2">child_care</span>
             <p><span className="font-medium">Ребенок:</span> {childName}</p>
+          </div>
+        )}
+
+        {type === 'task' && assignee && (
+          <div className="flex items-center">
+            <span className="material-icons text-gray-500 mr-2">assignment_ind</span>
+            <p><span className="font-medium">Исполнитель:</span> {assignee.username}</p>
           </div>
         )}
 

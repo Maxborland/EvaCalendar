@@ -61,13 +61,13 @@ export interface Task {
   uuid: string; // Возвращаем uuid, так как API его возвращает
   title: string;
   description?: string; // Добавлено поле description
-  type: string; // 'fixed', 'hourly', 'expense', 'income' (добавим income для унификации)
+  type: 'income' | 'expense' | 'task' | 'hourly' | 'fixed'; // 'fixed', 'hourly', 'expense', 'income' (добавим income для унификации)
   time?: string; // Может быть eventTime или taskTime от бэкенда
   dueDate: string; // Может быть date от бэкенда
   completed?: boolean; // Изменено с isDone
   childId?: string; // Изменено с child_id на camelCase для соответствия данным с бэкенда
   childName?: string;
-  expenseTypeId?: string; // Изменено с category_id
+  expense_category_uuid?: string; // Изменено с category_id и expenseTypeId
   expenseCategoryName?: string;
   amount?: number; // Общее поле для суммы (доход/расход)
   amountEarned?: number; // Добавлено для явного получения с бэкенда
@@ -81,10 +81,17 @@ export interface Task {
   childAddress?: string;
   childHourlyRate?: number; // Добавлено для ставки ребенка
   comments?: string; // Переименовано из description для заметок к задаче
-  taskType?: 'income' | 'expense'; // Добавлено для явного указания типа задачи фронтендом
+  taskType?: 'income' | 'expense' | 'task'; // Добавлено для явного указания типа задачи фронтендом
   createdAt?: string;
   updatedAt?: string;
   reminder_at?: string | null;
+  reminder_offset?: number | null;
+  assigned_to_id?: string | null;
+  creator?: User;
+  assignee?: User;
+  assignee_username?: string;
+  user_uuid?: string;
+  child_uuid?: string;
 }
 
 export interface Note {
@@ -206,11 +213,11 @@ export const getTasksForDay = async (dateString: string): Promise<Task[]> => {
   return response.data as Task[];
 };
 
-export const createTask = (taskData: Omit<Task, 'uuid'>) => { // Убираем uuid при создании
+export const createTask = (taskData: Omit<Task, 'uuid'>) => {
   return api.post<Task>('/tasks', taskData);
 };
 
-export const updateTask = (uuid: string, taskData: Partial<Omit<Task, 'uuid'>>) => { // Используем uuid, убираем uuid из данных
+export const updateTask = (uuid: string, taskData: Partial<Omit<Task, 'uuid'>>) => {
   return api.put<Task>(`/tasks/${uuid}`, taskData);
 };
 
@@ -340,6 +347,16 @@ export const deleteChild = async (uuid: string) => { // Было id: string
     // Бэкенд может возвращать 204 No Content или объект с сообщением.
     // Для единообразия предположим, что он возвращает объект с сообщением.
     const response = await api.delete<{ message: string }>(`/users/${userUuid}`);
+    return response.data;
+  };
+
+  export const searchUsers = async (query: string): Promise<User[]> => {
+    const response = await api.get<User[]>(`/users/search?q=${query}`);
+    return response.data;
+  };
+
+  export const getAssignableUsers = async (): Promise<User[]> => {
+    const response = await api.get<User[]>('/users/assignable');
     return response.data;
   };
 

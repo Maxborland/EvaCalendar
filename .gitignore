@@ -66,3 +66,5 @@ front/playwright-report/
 /tests/*
 front/tests/*
 front/test-results/*
+/archive/
+/back/seeds/
