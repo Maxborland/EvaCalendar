@@ -22,14 +22,6 @@ COPY seeds ./seeds
 COPY services ./services
 COPY utils ./utils
 COPY routes ./routes
-# Копируем только необходимые для работы приложения файлы и директории
-# COPY db.cjs knexfile.cjs index.js pm2.config.js babel.config.js ./
-# COPY controllers ./controllers
-# COPY middleware ./middleware
-# COPY migrations ./migrations
-# COPY seeds ./seeds
-# COPY services ./services
-# COPY utils ./utils
 
 
 # Этап выполнения (runner)
@@ -44,8 +36,7 @@ COPY --from=builder /app/db.cjs ./db.cjs
 COPY --from=builder /app/knexfile.cjs ./knexfile.cjs
 COPY --from=builder /app/index.js ./index.js
 COPY --from=builder /app/scheduler.js ./scheduler.js
-# COPY --from=builder /app/pm2.config.js ./pm2.config.js # Не копируем, т.к. CMD ["node", "index.js"]
-# COPY --from=builder /app/babel.config.js ./babel.config.js # Предполагаем, что babel не нужен в runtime
+
 COPY --from=builder /app/controllers ./controllers
 COPY --from=builder /app/middleware ./middleware
 COPY --from=builder /app/migrations ./migrations
@@ -54,11 +45,8 @@ COPY --from=builder /app/services ./services
 COPY --from=builder /app/utils ./utils
 COPY --from=builder /app/routes ./routes
 
-# При использовании SQLite, база данных будет создана в VOLUME, если она не существует.
-# Это позволит сохранять данные даже при пересоздании контейнера.
 VOLUME /app/data
 
 EXPOSE 3001
 
-# Запуск приложения напрямую через node
 CMD ["node", "index.js"]
