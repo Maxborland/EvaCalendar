@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
-const { scheduleTaskReminders } = require('./scheduler');
+const { scheduleTaskReminders, stopAllCronJobs } = require('./scheduler');
 
 const app = express();
 app.set('trust proxy', 1); // Доверяем одному прокси-серверу (Nginx)
@@ -104,5 +104,31 @@ scheduleTaskReminders();
 const server = app.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
 });
+
+const db = require('./db.cjs');
+const { log, error: logError } = require('./utils/logger.js');
+
+const gracefulShutdown = async (signal) => {
+  log(`Получен сигнал ${signal}. Начинается грациозное завершение работы...`);
+
+  stopAllCronJobs();
+
+  server.close(async () => {
+    log('HTTP-сервер закрыт.');
+
+    try {
+      await db.destroy();
+      log('Соединение с базой данных успешно закрыто.');
+      log('Грациозное завершение работы выполнено.');
+      process.exit(0);
+    } catch (err) {
+      logError('Ошибка при закрытии соединения с базой данных:', err);
+      process.exit(1);
+    }
+  });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = { app, server };

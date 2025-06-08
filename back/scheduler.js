@@ -3,16 +3,23 @@ const db = require('./db.cjs');
 const { sendNotification } = require('./services/notificationService');
 const { log, error: logError } = require('./utils/logger.js');
 
+const runningJobs = []; // Массив для хранения запущенных cron-задач
+
 // Вспомогательная функция для поиска задач, у которых скоро дедлайн.
 // **Важно**: Эта функция предполагает, что в вашей таблице `tasks` есть колонка `reminder_sent` (boolean).
 // Если ее нет, рекомендуется создать новую миграцию для ее добавления, чтобы избежать повторной отправки уведомлений.
 const findTasksNearingDeadline = async () => {
   const now = new Date();
-  const fiveMinutesLater = new Date(now.getTime() + 5 * 60 * 1000);
+  // Устанавливаем секунды и миллисекунды в 0, чтобы получить начало текущей минуты.
+  now.setSeconds(0, 0);
 
+  // Конец текущей минуты (начало следующей).
+  const oneMinuteLater = new Date(now.getTime() + 60 * 1000);
+
+  // Ищем задачи, время напоминания которых находится в интервале текущей минуты.
   return db('tasks')
-    .where('reminder_at', '>', now)
-    .andWhere('reminder_at', '<=', fiveMinutesLater)
+    .where('reminder_at', '>=', now)
+    .andWhere('reminder_at', '<', oneMinuteLater)
     .andWhere(function() {
       this.where('reminder_sent', false).orWhereNull('reminder_sent');
     });
@@ -65,11 +72,20 @@ const checkAndSendReminders = async () => {
 // Основная функция планировщика
 const scheduleTaskReminders = () => {
   // Запускаем задачу каждую минуту.
-  cron.schedule('* * * * *', checkAndSendReminders);
+  const job = cron.schedule('* * * * *', checkAndSendReminders);
+  runningJobs.push(job);
+};
+
+const stopAllCronJobs = () => {
+ runningJobs.forEach(job => {
+   job.stop();
+ });
+ log('Scheduler: Все cron-задачи остановлены.');
 };
 
 module.exports = {
   scheduleTaskReminders,
+  stopAllCronJobs, // Экспортируем функцию для остановки задач
   checkAndSendReminders, // Экспортируем для тестов
   findTasksNearingDeadline,
   findSubscriptionsByUserId

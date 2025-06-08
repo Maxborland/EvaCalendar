@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const knex = require('../db.cjs');
 const ApiError = require('../utils/ApiError.js');
 const moment = require('moment');
+const { log, error: logError } = require('../utils/logger.js');
 
 async function validateExistence(table, id) {
     if (!id) return true;
@@ -118,6 +119,7 @@ const taskService = {
     },
 
     async updateTask(uuid, taskData, userId, title) {
+        log(`[updateTask] Received raw taskData for task ${uuid}:`, taskData);
         const dataToUpdate = {};
 
         const existingTask = await knex('tasks').where({ uuid, user_uuid: userId }).first();
@@ -143,6 +145,9 @@ const taskService = {
         if (taskData.hasOwnProperty('comments')) dataToUpdate.comments = taskData.comments;
         if (taskData.hasOwnProperty('reminder_at')) {
             dataToUpdate.reminder_at = taskData.reminder_at ? moment.utc(taskData.reminder_at).toDate() : null;
+            // Если время напоминания обновляется, нужно сбросить флаг отправки,
+            // чтобы планировщик мог отправить новое уведомление.
+            dataToUpdate.reminder_sent = false;
         }
 
         const currentTaskType = dataToUpdate.type || existingTask.type;
