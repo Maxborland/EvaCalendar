@@ -9,7 +9,7 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY
 );
 
-const sendNotification = async (subscription, payload) => {
+const sendPushNotification = async (subscription, payload) => {
   const sub = {
     endpoint: subscription.endpoint,
     keys: typeof subscription.keys === 'string' ? JSON.parse(subscription.keys) : subscription.keys,
@@ -35,31 +35,13 @@ const sendNotification = async (subscription, payload) => {
   }
 };
 
-const sendTestNotification = async (userId) => {
+const sendNotificationToUser = async (userId, notificationPayload) => {
   const user = await knex('users').where({ uuid: userId }).first();
   if (!user) {
     throw new Error('User not found.');
   }
 
-  const notificationPayload = {
-    title: 'Тестовое уведомление',
-    body: 'Это тестовое уведомление от EvaCalendar!',
-    icon: '/icons/web/icon-192.png',
-  };
-
-  // 1. Отправка Push-уведомлений (существующая логика)
-  const subscriptions = await knex('notification_subscriptions').where({ user_uuid: userId });
-  if (subscriptions.length > 0) {
-    const pushPromises = subscriptions.map(sub => sendNotification(sub, notificationPayload));
-    const pushResults = await Promise.allSettled(pushPromises);
-    pushResults.forEach(result => {
-      if (result.status === 'rejected') {
-        logError('An unexpected error occurred during push notification sending:', result.reason);
-      }
-    });
-  }
-
-  // 2. Отправка Email-уведомления, если включено
+  // 1. Отправка Email-уведомления, если включено
   if (user.email_notifications_enabled) {
     try {
       await sendEmail(
@@ -69,8 +51,30 @@ const sendTestNotification = async (userId) => {
         `<p>${notificationPayload.body}</p>`
       );
     } catch (error) {
-       logError('An unexpected error occurred during email notification sending:', error);
+      logError('An unexpected error occurred during email notification sending:', error);
     }
+  }
+
+  // 2. Отправка Push-уведомлений
+  const subscriptions = await knex('notification_subscriptions').where({ user_id: userId });
+  if (subscriptions.length > 0) {
+    subscriptions.forEach(subscription => {
+      if (subscription.keys && typeof subscription.keys === 'string') {
+        try {
+          subscription.keys = JSON.parse(subscription.keys);
+        } catch (err) {
+          logError(`Failed to parse subscription keys for endpoint ${subscription.endpoint}:`, err);
+        }
+      }
+    });
+
+    const pushPromises = subscriptions.map(sub => sendPushNotification(sub, notificationPayload));
+    const pushResults = await Promise.allSettled(pushPromises);
+    pushResults.forEach(result => {
+      if (result.status === 'rejected') {
+        logError('An unexpected error occurred during push notification sending:', result.reason);
+      }
+    });
   }
 
   if (subscriptions.length === 0 && !user.email_notifications_enabled) {
@@ -78,7 +82,45 @@ const sendTestNotification = async (userId) => {
   }
 };
 
+const sendTestNotification = async (userId) => {
+  const notificationPayload = {
+    title: 'Тестовое уведомление',
+    body: 'Это тестовое уведомление от EvaCalendar!',
+    icon: '/icons/web/icon-192.png',
+  };
+
+  await sendNotificationToUser(userId, notificationPayload);
+};
+
+const createPushSubscription = async (user_id, subscription) => {
+  const { endpoint, keys } = subscription;
+  const [newSubscription] = await knex('notification_subscriptions')
+    .insert({
+      user_id,
+      endpoint,
+      keys: JSON.stringify(keys),
+    })
+    .onConflict('endpoint')
+    .merge()
+    .returning('*');
+  return newSubscription;
+};
+
+const deletePushSubscription = async (user_id, endpoint) => {
+  await knex('notification_subscriptions')
+    .where({ user_id, endpoint })
+    .del();
+};
+
+const getSubscriptionsByUserId = async (user_id) => {
+  return await knex('notification_subscriptions').where({ user_id });
+};
+
 module.exports = {
-  sendNotification,
+  sendPushNotification,
+  sendNotificationToUser,
   sendTestNotification,
+  createPushSubscription,
+  deletePushSubscription,
+  getSubscriptionsByUserId,
 };

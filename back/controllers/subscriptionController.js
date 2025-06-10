@@ -1,32 +1,32 @@
 const subscriptionService = require('../services/subscriptionService.js');
 const ApiError = require('../utils/ApiError.js');
 
-const createSubscription = async (req, res, next) => {
+const subscribe = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.uuid;
     const subscription = req.body;
 
     if (!userId || !subscription || !subscription.endpoint) {
       throw new ApiError(400, 'User ID and subscription data are required.');
     }
 
-    await subscriptionService.createSubscription(userId, subscription);
+    await subscriptionService.subscribe(userId, subscription);
     res.status(201).json({ message: 'Subscription created successfully.' });
   } catch (error) {
     next(error);
   }
 };
 
-const deleteSubscription = async (req, res, next) => {
+const unsubscribe = async (req, res, next) => {
   try {
     const { endpoint } = req.body;
-    const userId = req.user.id;
+    const userId = req.user.uuid;
 
     if (!endpoint) {
       throw new ApiError(400, 'Endpoint is required.');
     }
 
-    await subscriptionService.deleteSubscription(userId, endpoint);
+    await subscriptionService.unsubscribe(endpoint);
     res.status(200).json({ message: 'Subscription deleted successfully.' });
   } catch (error) {
     next(error);
@@ -44,7 +44,7 @@ const getVapidPublicKey = (req, res, next) => {
 
 const getSubscriptionStatus = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.uuid;
     if (!userId) {
       throw new ApiError(400, 'User ID is required.');
     }
@@ -56,8 +56,8 @@ const getSubscriptionStatus = async (req, res, next) => {
 };
 
 module.exports = {
-  createSubscription,
-  deleteSubscription,
+  subscribe,
+  unsubscribe,
   getVapidPublicKey,
   getSubscriptionStatus,
 };

@@ -354,14 +354,20 @@ const updateEmailNotificationSettings = asyncHandler(async (req, res) => {
     throw new Error('Пожалуйста, предоставьте значение "enabled" (true или false).');
   }
 
-  await knex('users')
+  const [updatedSettings] = await knex('users')
     .where({ uuid: userUuid })
     .update({
       email_notifications_enabled: enabled,
       updated_at: knex.fn.now(),
-    });
+    })
+    .returning(['email_notifications_enabled']);
 
-  res.status(200).json({ message: `Email-уведомления ${enabled ? 'включены' : 'отключены'}.` });
+  if (updatedSettings) {
+    res.status(200).json(updatedSettings);
+  } else {
+    res.status(404);
+    throw new Error('Пользователь не найден для обновления');
+  }
 });
 
 // @desc    Search users by username

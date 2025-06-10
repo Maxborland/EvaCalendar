@@ -5,7 +5,7 @@ const { protect } = require('../middleware/authMiddleware.js');
 
 router.get('/vapid-public-key', subscriptionController.getVapidPublicKey);
 router.get('/status', protect, subscriptionController.getSubscriptionStatus);
-router.post('/', protect, subscriptionController.createSubscription);
-router.delete('/', protect, subscriptionController.deleteSubscription);
+router.post('/', protect, subscriptionController.subscribe);
+router.delete('/', protect, subscriptionController.unsubscribe);
 
 module.exports = router;

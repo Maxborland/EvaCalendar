@@ -31,7 +31,57 @@ const sendTestEmailNotification = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Test email notification sent successfully.' });
 });
 
+const subscribe = asyncHandler(async (req, res, next) => {
+  try {
+    const { subscription } = req.body;
+    const user_id = req.user.uuid;
+
+    if (!subscription || !subscription.endpoint) {
+      return res.status(400).json({ message: 'Subscription object is required.' });
+    }
+
+    const createdSubscription = await notificationService.createPushSubscription(user_id, subscription);
+    res.status(201).json(createdSubscription);
+  } catch (error) {
+    next(error);
+  }
+});
+
+const unsubscribe = asyncHandler(async (req, res, next) => {
+  try {
+    const { endpoint } = req.body;
+    const user_id = req.user.uuid;
+
+    if (!endpoint) {
+      return res.status(400).json({ message: 'Endpoint is required.' });
+    }
+
+    await notificationService.deletePushSubscription(user_id, endpoint);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+const getSubscriptions = async (req, res, next) => {
+  try {
+    const user_id = req.user.uuid;
+    const subscriptions = await notificationService.getSubscriptionsByUserId(user_id);
+    res.status(200).json(subscriptions);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getVapidPublicKey = asyncHandler(async (req, res) => {
+  res.status(200).json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
 module.exports = {
   sendTestNotification,
   sendTestEmailNotification,
+  subscribe,
+  unsubscribe,
+  getSubscriptions,
+  getVapidPublicKey,
 };

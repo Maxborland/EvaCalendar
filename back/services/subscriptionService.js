@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const TABLE_NAME = 'notification_subscriptions';
 
-const createSubscription = async (userId, subscription) => {
+const subscribe = async (userId, subscription) => {
   const { endpoint, keys } = subscription;
   const existingSubscription = await knex(TABLE_NAME)
     .where({ endpoint: endpoint })
@@ -14,7 +14,7 @@ const createSubscription = async (userId, subscription) => {
     return knex(TABLE_NAME)
       .where({ uuid: existingSubscription.uuid })
       .update({
-        user_uuid: userId, // Обновляем user_uuid на случай, если подписка была, но без пользователя
+        user_id: userId, // Обновляем user_id на случай, если подписка была, но без пользователя
         keys: JSON.stringify(keys),
         updated_at: knex.fn.now(),
       });
@@ -23,16 +23,16 @@ const createSubscription = async (userId, subscription) => {
     const newUuid = uuidv4();
     return knex(TABLE_NAME).insert({
       uuid: newUuid,
-      user_uuid: userId,
+      user_id: userId,
       endpoint: endpoint,
       keys: JSON.stringify(keys),
     });
   }
 };
 
-const deleteSubscription = async (userId, endpoint) => {
+const unsubscribe = async (endpoint) => {
   return knex(TABLE_NAME)
-    .where({ user_uuid: userId, endpoint: endpoint })
+    .where({ endpoint: endpoint })
     .del();
 };
 const getVapidPublicKey = () => {
@@ -44,14 +44,14 @@ const getVapidPublicKey = () => {
 
 const getSubscriptionStatus = async (userUuid) => {
   const subscription = await knex(TABLE_NAME)
-    .where({ user_uuid: userUuid })
+    .where({ user_id: userUuid })
     .first();
   return !!subscription;
 };
 
 module.exports = {
-  createSubscription,
-  deleteSubscription,
+  subscribe,
+  unsubscribe,
   getVapidPublicKey,
   getSubscriptionStatus,
 };
