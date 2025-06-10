@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { getNotificationSubscriptions, getVapidPublicKey, sendTestNotification, subscribeToNotifications, unsubscribeFromNotifications } from '../services/notificationService';
+import { getVapidPublicKey, sendTestNotification, subscribeToNotifications, unsubscribeFromNotifications } from '../services/notificationService';
 import { getUserSettings, updateEmailNotificationSettings } from '../services/userService';
 import './NotificationSettings.css';
 
@@ -24,7 +24,6 @@ const NotificationSettings = () => {
         emailEnabled: false,
         pushEnabled: false,
     });
-    const [subscriptions, setSubscriptions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isPushSupported, setIsPushSupported] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -42,8 +41,6 @@ const NotificationSettings = () => {
 
                 if (pushSupported) {
                     const registration = await navigator.serviceWorker.ready;
-                    const subs = await getNotificationSubscriptions();
-                    setSubscriptions(subs);
                     const pushSubscription = await registration.pushManager.getSubscription();
                     pushEnabled = !!pushSubscription;
                 }
@@ -110,8 +107,6 @@ const NotificationSettings = () => {
             });
 
             await subscribeToNotifications(newSubscription);
-            const subs = await getNotificationSubscriptions();
-            setSubscriptions(subs);
             setSettings(prev => ({ ...prev, pushEnabled: true }));
             toast.success('Вы успешно подписались на push-уведомления.');
 
@@ -126,8 +121,6 @@ const NotificationSettings = () => {
         try {
             await subscription.unsubscribe();
             await unsubscribeFromNotifications(subscription.endpoint);
-            const subs = await getNotificationSubscriptions();
-            setSubscriptions(subs);
             setSettings(prev => ({ ...prev, pushEnabled: false }));
             toast.success('Вы успешно отписались от push-уведомлений.');
         } catch (err) {
