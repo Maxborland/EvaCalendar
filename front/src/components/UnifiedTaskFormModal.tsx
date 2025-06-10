@@ -187,7 +187,7 @@ const UnifiedTaskFormModal = ({
             expenseCategoryName: '',
             amount: undefined,
             hoursWorked: undefined,
-            dueDate: defaultDueDate,
+            dueDate: initialTaskData?.dueDate || defaultDueDate,
             expense_category_uuid: undefined,
             childName: undefined,
             originalTaskType: undefined,
