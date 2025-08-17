@@ -14,7 +14,7 @@ const subscribe = async (userId, subscription) => {
     return knex(TABLE_NAME)
       .where({ uuid: existingSubscription.uuid })
       .update({
-        user_id: userId, // Обновляем user_id на случай, если подписка была, но без пользователя
+        user_uuid: userId, // Обновляем user_uuid на случай, если подписка была, но без пользователя
         keys: JSON.stringify(keys),
         updated_at: knex.fn.now(),
       });
@@ -23,7 +23,7 @@ const subscribe = async (userId, subscription) => {
     const newUuid = uuidv4();
     return knex(TABLE_NAME).insert({
       uuid: newUuid,
-      user_id: userId,
+      user_uuid: userId,
       endpoint: endpoint,
       keys: JSON.stringify(keys),
     });
@@ -44,7 +44,7 @@ const getVapidPublicKey = () => {
 
 const getSubscriptionStatus = async (userUuid) => {
   const subscription = await knex(TABLE_NAME)
-    .where({ user_id: userUuid })
+    .where({ user_uuid: userUuid })
     .first();
   return !!subscription;
 };

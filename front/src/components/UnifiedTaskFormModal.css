@@ -70,6 +70,13 @@
   font-weight: 400;
 }
 
+/* Red star for required fields */
+.required-star {
+  color: var(--theme-danger, #ef4444);
+  margin-left: 4px;
+  font-weight: 700;
+}
+
 .form-group .input,
 .form-group .textarea,
 .form-group .select {

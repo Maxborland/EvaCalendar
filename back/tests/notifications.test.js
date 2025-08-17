@@ -51,8 +51,10 @@ describe('Scheduler for Task Reminders', () => {
       uuid: uuidv4(),
       user_uuid: userUUID,
       endpoint: 'https://example.com/push/123',
-      p256dh: 'key',
-      auth: 'secret',
+      keys: JSON.stringify({
+        p256dh: 'key',
+        auth: 'secret'
+      }),
     };
     await db('notification_subscriptions').insert(subscription);
 
@@ -76,8 +78,8 @@ describe('Scheduler for Task Reminders', () => {
     const expectedSubscription = {
       endpoint: subscription.endpoint,
       keys: {
-        p256dh: subscription.p256dh,
-        auth: subscription.auth,
+        p256dh: 'key',
+        auth: 'secret',
       },
     };
     expect(passedSubscriptionData).toEqual(expectedSubscription);

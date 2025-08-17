@@ -202,11 +202,7 @@ const WeekView = () => {
             <SummaryBlock
                 weekStartDate={weekDays.length > 0 ? createDate(weekDays[0]).toISOString().slice(0, 10) : ''}
             />
-            <WeekNavigator
-              goToPreviousWeek={goToPreviousWeek}
-              goToNextWeek={goToNextWeek}
-              currentWeekDisplay={weekRangeDisplay}
-            />
+            {/* WeekNavigator moved below days */}
             <div className="grid grid-cols-2 gap-4">
               {weekDays.length === 7 && (
                 <>
@@ -274,6 +270,11 @@ const WeekView = () => {
                 </>
               )}
             </div>
+            <WeekNavigator
+              goToPreviousWeek={goToPreviousWeek}
+              goToNextWeek={goToNextWeek}
+              currentWeekDisplay={weekRangeDisplay}
+            />
           </main>
           <button
             className="fixed bottom-5 right-5 bg-button-green text-white py-3 px-4 rounded-full shadow-lg flex items-center justify-center space-x-2 hover:bg-green-600 transition-colors z-50"

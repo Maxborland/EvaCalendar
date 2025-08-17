@@ -56,7 +56,7 @@ const sendNotificationToUser = async (userId, notificationPayload) => {
   }
 
   // 2. Отправка Push-уведомлений
-  const subscriptions = await knex('notification_subscriptions').where({ user_id: userId });
+  const subscriptions = await knex('notification_subscriptions').where({ user_uuid: userId });
   if (subscriptions.length > 0) {
     subscriptions.forEach(subscription => {
       if (subscription.keys && typeof subscription.keys === 'string') {
@@ -92,11 +92,11 @@ const sendTestNotification = async (userId) => {
   await sendNotificationToUser(userId, notificationPayload);
 };
 
-const createPushSubscription = async (user_id, subscription) => {
+const createPushSubscription = async (user_uuid, subscription) => {
   const { endpoint, keys } = subscription;
   const [newSubscription] = await knex('notification_subscriptions')
     .insert({
-      user_id,
+      user_uuid,
       endpoint,
       keys: JSON.stringify(keys),
     })
@@ -106,18 +106,19 @@ const createPushSubscription = async (user_id, subscription) => {
   return newSubscription;
 };
 
-const deletePushSubscription = async (user_id, endpoint) => {
+const deletePushSubscription = async (user_uuid, endpoint) => {
   await knex('notification_subscriptions')
-    .where({ user_id, endpoint })
+    .where({ user_uuid, endpoint })
     .del();
 };
 
-const getSubscriptionsByUserId = async (user_id) => {
-  return await knex('notification_subscriptions').where({ user_id });
+const getSubscriptionsByUserId = async (user_uuid) => {
+  return await knex('notification_subscriptions').where({ user_uuid });
 };
 
 module.exports = {
   sendPushNotification,
+  sendNotification: sendPushNotification, // Алиас для совместимости с планировщиком
   sendNotificationToUser,
   sendTestNotification,
   createPushSubscription,

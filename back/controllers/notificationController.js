@@ -34,13 +34,13 @@ const sendTestEmailNotification = asyncHandler(async (req, res) => {
 const subscribe = asyncHandler(async (req, res, next) => {
   try {
     const { subscription } = req.body;
-    const user_id = req.user.uuid;
+    const user_uuid = req.user.uuid;
 
     if (!subscription || !subscription.endpoint) {
       return res.status(400).json({ message: 'Subscription object is required.' });
     }
 
-    const createdSubscription = await notificationService.createPushSubscription(user_id, subscription);
+    const createdSubscription = await notificationService.createPushSubscription(user_uuid, subscription);
     res.status(201).json(createdSubscription);
   } catch (error) {
     next(error);
@@ -50,13 +50,13 @@ const subscribe = asyncHandler(async (req, res, next) => {
 const unsubscribe = asyncHandler(async (req, res, next) => {
   try {
     const { endpoint } = req.body;
-    const user_id = req.user.uuid;
+    const user_uuid = req.user.uuid;
 
     if (!endpoint) {
       return res.status(400).json({ message: 'Endpoint is required.' });
     }
 
-    await notificationService.deletePushSubscription(user_id, endpoint);
+    await notificationService.deletePushSubscription(user_uuid, endpoint);
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -65,8 +65,8 @@ const unsubscribe = asyncHandler(async (req, res, next) => {
 
 const getSubscriptions = async (req, res, next) => {
   try {
-    const user_id = req.user.uuid;
-    const subscriptions = await notificationService.getSubscriptionsByUserId(user_id);
+    const user_uuid = req.user.uuid;
+    const subscriptions = await notificationService.getSubscriptionsByUserId(user_uuid);
     res.status(200).json(subscriptions);
   } catch (error) {
     next(error);

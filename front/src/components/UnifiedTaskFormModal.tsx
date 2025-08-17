@@ -170,7 +170,6 @@ const UnifiedTaskFormModal = ({
         newFormData.childName = undefined;
         newFormData.hourlyRate = undefined;
         newFormData.hoursWorked = undefined;
-        newFormData.time = '';
         newFormData.amount = undefined;
     }
 
@@ -372,7 +371,7 @@ const UnifiedTaskFormModal = ({
       uuid: mode === 'edit' ? initialTaskData?.uuid : undefined,
       title: formData.title,
       type: taskTypeForApi,
-      time: taskTypeInternal === 'income' ? (formData.time || undefined) : undefined, // Время только для дохода
+      time: (taskTypeInternal === 'income' || taskTypeInternal === 'task') ? (formData.time || undefined) : undefined, // Время для дохода и задач
       dueDate: formData.dueDate,
       childId: taskTypeInternal === 'income' ? (selectedChildUuid || undefined) : undefined,
       childName: taskTypeInternal === 'income' ? (childNameForTitle || undefined) : undefined,
@@ -417,6 +416,13 @@ const UnifiedTaskFormModal = ({
     return null;
   }
 
+  const isAmountDisabled =
+    taskTypeInternal === 'income' &&
+    typeof formData.hourlyRate === 'number' && formData.hourlyRate > 0 &&
+    typeof formData.hoursWorked === 'number' && formData.hoursWorked > 0;
+
+  const isAmountRequired = (taskTypeInternal === 'income' || taskTypeInternal === 'expense') && !isAmountDisabled;
+
   const modalOverlayClass = `modal-overlay ${isClosing ? 'closing' : ''}`;
   const modalContentClass = `modal-content ${isClosing ? 'closing' : ''}`;
 
@@ -443,7 +449,7 @@ const UnifiedTaskFormModal = ({
             </div>
 
             <div className="form-group">
-              <label htmlFor="title" className="label">Название:</label>
+              <label htmlFor="title" className="label">Название<span className="required-star" aria-hidden="true">*</span>:</label>
               <input
                 type="text"
                 id="title"
@@ -456,16 +462,33 @@ const UnifiedTaskFormModal = ({
             </div>
 
             <div className="form-group">
-              <label htmlFor="dueDate" className="label">Дата:</label>
-              <input
-                type="date"
-                id="dueDate"
-                name="dueDate"
-                value={formData.dueDate}
-                onChange={handleChange}
-                className="input"
-                required
-              />
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="dueDate" className="label">Дата<span className="required-star" aria-hidden="true">*</span>:</label>
+                  <input
+                    type="date"
+                    id="dueDate"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleChange}
+                    className="input"
+                    required
+                  />
+                </div>
+                {(taskTypeInternal === 'income' || taskTypeInternal === 'task') && (
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor="time" className="label">Время:</label>
+                    <input
+                      type="time"
+                      id="time"
+                      name="time"
+                      value={formData.time}
+                      onChange={handleChange}
+                      className="input"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="form-group">
@@ -518,7 +541,7 @@ const UnifiedTaskFormModal = ({
 
             {(taskTypeInternal === 'income' || taskTypeInternal === 'expense') && (
               <div className="form-group">
-                <label htmlFor="amount" className="label">Сумма:</label>
+                <label htmlFor="amount" className="label">Сумма{isAmountRequired && <span className="required-star" aria-hidden="true">*</span>}:</label>
                 <input
                   type="number"
                   id="amount"
@@ -527,12 +550,8 @@ const UnifiedTaskFormModal = ({
                   onChange={handleChange}
                   className="input"
                   placeholder="0"
-                  required
-                  disabled={
-                    taskTypeInternal === 'income' &&
-                    typeof formData.hourlyRate === 'number' && formData.hourlyRate > 0 &&
-                    typeof formData.hoursWorked === 'number' && formData.hoursWorked > 0
-                  }
+                  required={!isAmountDisabled}
+                  disabled={isAmountDisabled}
                 />
               </div>
             )}
@@ -551,17 +570,6 @@ const UnifiedTaskFormModal = ({
                   className="input"
                 />
                 <div className="form-group">
-                  <label htmlFor="time" className="label">Время:</label>
-                  <input
-                    type="time"
-                    id="time"
-                    name="time"
-                    value={formData.time}
-                    onChange={handleChange}
-                    className="input"
-                  />
-                </div>
-                <div className="form-group">
                   <label htmlFor="hoursWorked" className="label">Часов отработано:</label>
                   <input
                     type="number"
@@ -578,7 +586,7 @@ const UnifiedTaskFormModal = ({
 
             {taskTypeInternal === 'expense' && (
               <div className="form-group">
-                <label htmlFor="expenseCategoryName" className="label">Категория:</label>
+                <label htmlFor="expenseCategoryName" className="label">Категория<span className="required-star" aria-hidden="true">*</span>:</label>
                 <select
                   id="expenseCategoryName"
                   name="expenseCategoryName"

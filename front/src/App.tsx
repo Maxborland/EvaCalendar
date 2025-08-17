@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createBrowserRouter, Outlet, type RouteObject, RouterProvider, useNavigation } from 'react-router-dom';
+import { createBrowserRouter, Outlet, type RouteObject, RouterProvider, useNavigation, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingAnimation from './components/LoadingAnimation';
 import PrivateRoute from './components/PrivateRoute';
@@ -18,6 +18,7 @@ import NoteDetailsPage from './pages/NoteDetailsPage';
 import NotFoundPage from './pages/NotFoundPage'; // Импорт страницы 404
 import ProfilePage from './pages/ProfilePage'; // Импортируем созданную страницу профиля
 import SettingsPage from './pages/SettingsPage';
+import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import { getNoteByDate } from './services/api';
 
 const PageLoader: React.FC = () => {
@@ -150,14 +151,10 @@ const routes: RouteObject[] = [
           </PrivateRoute>
         ),
         children: [
-          {
-            path: "expense-categories",
-            element: <ExpenseCategoriesSettingsPage />,
-          },
-          {
-            path: "child-cards",
-            element: <ChildCardsSettingsPage />,
-          },
+          { index: true, element: <Navigate to="notifications" replace /> },
+          { path: "notifications", element: <NotificationSettingsPage /> },
+          { path: "expense-categories", element: <ExpenseCategoriesSettingsPage /> },
+          { path: "child-cards", element: <ChildCardsSettingsPage /> },
         ],
       },
       {
