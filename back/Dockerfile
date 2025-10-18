@@ -15,6 +15,7 @@ COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 COPY db.cjs knexfile.cjs index.js pm2.config.js babel.config.js scheduler.js ./
+COPY config ./config
 COPY controllers ./controllers
 COPY middleware ./middleware
 COPY migrations ./migrations
@@ -36,6 +37,7 @@ COPY --from=builder /app/knexfile.cjs ./knexfile.cjs
 COPY --from=builder /app/index.js ./index.js
 COPY --from=builder /app/scheduler.js ./scheduler.js
 
+COPY --from=builder /app/config ./config
 COPY --from=builder /app/controllers ./controllers
 COPY --from=builder /app/middleware ./middleware
 COPY --from=builder /app/migrations ./migrations
