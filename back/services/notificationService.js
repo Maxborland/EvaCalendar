@@ -2,11 +2,14 @@ const webpush = require('web-push');
 const knex = require('../db.cjs');
 const { log, error: logError } = require('../utils/logger.js');
 const { sendEmail } = require('./emailService.js');
+const { getEnvConfig } = require('../config/env');
+
+const envConfig = getEnvConfig();
 
 webpush.setVapidDetails(
-  'mailto:your-email@example.com',
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
+  envConfig.vapid.email,
+  envConfig.vapid.publicKey,
+  envConfig.vapid.privateKey
 );
 
 const sendPushNotification = async (subscription, payload) => {

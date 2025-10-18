@@ -3,25 +3,40 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 const { scheduleTaskReminders, stopAllCronJobs } = require('./scheduler');
+const { validateEnv, getEnvConfig } = require('./config/env');
 
+// Валидируем все необходимые переменные окружения при старте
+try {
+  validateEnv();
+} catch (error) {
+  console.error('❌ Environment validation failed:');
+  console.error(error.message);
+  process.exit(1);
+}
+
+const envConfig = getEnvConfig();
 const app = express();
-app.set('trust proxy', 1); // Доверяем одному прокси-серверу (Nginx)
-const port = process.env.PORT || 3001;
+
+app.set('trust proxy', 1);
 const notificationRoutes = require('./routes/notificationRoutes');
 
+// CORS: Точное сравнение вместо startsWith
 const corsOptions = {
   origin: function (origin, callback) {
-    const defaultOrigins = ['http://localhost:5173', 'https://calendar.home.local', 'https://calendar.maxborland.space'];
-    let envOrigins = [];
-    if (process.env.FRONTEND_URL) {
-      envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
-    }
-    const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
-    if (!origin || allowedOrigins.some(allowedOrigin => origin.startsWith(allowedOrigin.trim()))) {
+    const allowedOrigins = [
+      ...envConfig.cors.defaultOrigins,
+      ...envConfig.cors.origins
+    ];
+
+    const allowedSet = new Set(allowedOrigins);
+
+    if (!origin || allowedSet.has(origin)) {
       callback(null, true);
     } else {
+      console.warn(`⚠️ CORS blocked request from origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -30,6 +45,7 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
+app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json());
 
@@ -69,30 +85,29 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10000 requests per `window` (TEMPORARILY INCREASED FOR DEBUGGING 429)
-  message: 'Too many login attempts from this IP, please try again later.', // ASCII message
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  windowMs: envConfig.rateLimit.login.windowMs,
+  max: envConfig.rateLimit.login.max,
+  message: 'Too many login attempts from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
   handler: (req, res, next, options) => {
-    console.log(`[RATE LIMITER] Blocked request from ${req.ip} to ${req.originalUrl}. Path: ${req.path}. Count: ${req.rateLimit.current}, Limit: ${req.rateLimit.limit}`); // Используем req.originalUrl для более точного пути
-    // Используем res.json() для отправки структурированного ответа
+    console.log(`[RATE LIMITER] Blocked request from ${req.ip} to ${req.originalUrl}`);
     res.status(options.statusCode).json({ message: options.message });
   }
 });
 
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10, // TEMPORARILY INCREASED FOR DEBUGGING 429
+  windowMs: envConfig.rateLimit.register.windowMs,
+  max: envConfig.rateLimit.register.max,
   message: 'Слишком много запросов на регистрацию с этого IP, попробуйте позже.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-if (process.env.NODE_ENV !== 'test' && process.env.DISABLE_RATE_LIMITS_FOR_E2E !== 'true') {
+if (envConfig.rateLimit.enabled) {
   app.use('/api/auth/login', loginLimiter);
   app.use('/api/auth/register', registerLimiter);
-} else {}
+}
 
 app.use('/api/auth', authRoutes); // authRoutes монтируется напрямую
 app.use('/api/users', userRoutes);
@@ -103,8 +118,8 @@ if (process.env.NODE_ENV !== 'test') {
   scheduleTaskReminders();
 }
 
-const server = app.listen(port, () => {
-  console.log(`Сервер запущен на http://localhost:${port}`);
+const server = app.listen(envConfig.port, () => {
+  console.log(`✅ Сервер запущен на http://localhost:${envConfig.port}`);
 });
 
 const db = require('./db.cjs');

@@ -2,14 +2,12 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const knex = require('../db.cjs');
+const { getEnvConfig } = require('../config/env');
 
 const SALT_ROUNDS = 10;
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
-  console.error('FATAL ERROR: JWT_SECRET is not defined in production environment.');
-  process.exit(1); // Останавливаем приложение, если секрет не задан в production
-}
+const envConfig = getEnvConfig();
+const JWT_SECRET = envConfig.jwt.secret;
+const JWT_EXPIRES_IN = envConfig.jwt.expiresIn;
 
 // POST /api/auth/register
 const registerUser = async (req, res, next) => {
@@ -92,7 +90,7 @@ const loginUser = async (req, res, next) => {
     const token = jwt.sign(
       { userId: user.uuid, username: user.username, email: user.email, role: user.role },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: JWT_EXPIRES_IN }
     );
 
     // Убедимся, что user.uuid существует, если нет, возможно, пользователь старый и его нужно обновить
