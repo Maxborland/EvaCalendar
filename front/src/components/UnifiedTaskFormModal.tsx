@@ -72,7 +72,7 @@ const UnifiedTaskFormModal = ({
     }, 300);
   }, [originalOnClose]);
 
-  const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense' | 'task'>('income');
+  const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense' | 'task' | 'lesson'>('income');
 
   const [formData, setFormData] = useState(() => {
     const defaultDueDate = initialTaskData?.dueDate || new Date().toISOString().split('T')[0];
@@ -122,10 +122,11 @@ const UnifiedTaskFormModal = ({
     const defaultDueDate = new Date().toISOString().split('T')[0];
 
     // Determine task type
-    let newType: 'income' | 'expense' | 'task' = initialTaskType || 'income';
+    let newType: 'income' | 'expense' | 'task' | 'lesson' = initialTaskType || 'income';
     if (mode === 'edit' && initialTaskData) {
         if (initialTaskData.type === 'expense') newType = 'expense';
         else if (initialTaskData.type === 'task') newType = 'task';
+        else if (initialTaskData.type === 'lesson') newType = 'lesson';
         else if (['income', 'hourly', 'fixed'].includes(initialTaskData.type)) newType = 'income';
     }
     setTaskTypeInternal(newType);
@@ -171,6 +172,16 @@ const UnifiedTaskFormModal = ({
         newFormData.hourlyRate = undefined;
         newFormData.hoursWorked = undefined;
         newFormData.amount = undefined;
+    } else if (newType === 'lesson') {
+        newFormData.expense_category_uuid = undefined;
+        newFormData.expenseCategoryName = '';
+        newFormData.childId = null;
+        newFormData.childName = undefined;
+        newFormData.hourlyRate = undefined;
+        newFormData.hoursWorked = undefined;
+        newFormData.amount = undefined;
+        newFormData.assigned_to_id = null;
+        newFormData.reminder_offset = null;
     }
 
     // Reset for create mode
@@ -350,11 +361,13 @@ const UnifiedTaskFormModal = ({
 
     const childNameForTitle = selectedChildUuid ? children.find(c => c.uuid === selectedChildUuid)?.childName : undefined;
 
-    let taskTypeForApi: 'income' | 'expense' | 'task' | 'hourly' | 'fixed';
+    let taskTypeForApi: 'income' | 'expense' | 'task' | 'hourly' | 'fixed' | 'lesson';
     if (taskTypeInternal === 'expense') {
       taskTypeForApi = 'expense';
     } else if (taskTypeInternal === 'task') {
       taskTypeForApi = 'task';
+    } else if (taskTypeInternal === 'lesson') {
+      taskTypeForApi = 'lesson';
     } else { // income
       if (formData.hoursWorked && formData.hourlyRate) {
         taskTypeForApi = 'hourly';
@@ -371,8 +384,9 @@ const UnifiedTaskFormModal = ({
       uuid: mode === 'edit' ? initialTaskData?.uuid : undefined,
       title: formData.title,
       type: taskTypeForApi,
-      time: (taskTypeInternal === 'income' || taskTypeInternal === 'task') ? (formData.time || undefined) : undefined, // Время для дохода и задач
+      time: (taskTypeInternal === 'income' || taskTypeInternal === 'task' || taskTypeInternal === 'lesson') ? (formData.time || undefined) : undefined,
       dueDate: formData.dueDate,
+      address: taskTypeInternal === 'lesson' ? (formData.address || undefined) : undefined,
       childId: taskTypeInternal === 'income' ? (selectedChildUuid || undefined) : undefined,
       childName: taskTypeInternal === 'income' ? (childNameForTitle || undefined) : undefined,
       expense_category_uuid: taskTypeInternal === 'expense'
@@ -430,7 +444,7 @@ const UnifiedTaskFormModal = ({
     <>
       <div className={modalOverlayClass} onClick={handleClose} data-testid="modal-overlay">
         <div className={modalContentClass} onClick={(e) => e.stopPropagation()}>
-          <button className="btn btn-icon close-button" onClick={handleClose}>&times;</button>
+          <button type="button" className="close-button" onClick={handleClose} aria-label="Закрыть">&times;</button>
           <form className="form" onSubmit={handleSubmit}>
             <h2>{mode === 'edit' ? 'Редактирование дела' : 'Создание дела'}</h2>
 
@@ -439,12 +453,13 @@ const UnifiedTaskFormModal = ({
               <select
                 name="taskType"
                 value={taskTypeInternal}
-                onChange={(e) => setTaskTypeInternal(e.target.value as 'income' | 'expense' | 'task')}
+                onChange={(e) => setTaskTypeInternal(e.target.value as 'income' | 'expense' | 'task' | 'lesson')}
                 className="input"
               >
                 <option value="income">Доход</option>
                 <option value="expense">Расход</option>
                 <option value="task">Задача</option>
+                <option value="lesson">Занятие</option>
               </select>
             </div>
 
@@ -475,9 +490,11 @@ const UnifiedTaskFormModal = ({
                     required
                   />
                 </div>
-                {(taskTypeInternal === 'income' || taskTypeInternal === 'task') && (
+                {(taskTypeInternal === 'income' || taskTypeInternal === 'task' || taskTypeInternal === 'lesson') && (
                   <div style={{ flex: 1 }}>
-                    <label htmlFor="time" className="label">Время:</label>
+                    <label htmlFor="time" className="label">
+                      Время{taskTypeInternal === 'lesson' ? <span className="required-star" aria-hidden="true">*</span> : ''}:
+                    </label>
                     <input
                       type="time"
                       id="time"
@@ -485,11 +502,27 @@ const UnifiedTaskFormModal = ({
                       value={formData.time}
                       onChange={handleChange}
                       className="input"
+                      required={taskTypeInternal === 'lesson'}
                     />
                   </div>
                 )}
               </div>
             </div>
+
+            {taskTypeInternal === 'lesson' && (
+              <div className="form-group">
+                <label htmlFor="address" className="label">Адрес / Аудитория:</label>
+                <input
+                  type="text"
+                  id="address"
+                  name="address"
+                  value={formData.address || ''}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="Например: Корпус Д, ауд. 301"
+                />
+              </div>
+            )}
 
             <div className="form-group">
               <label htmlFor="reminder_at" className="label">Напомнить в:</label>

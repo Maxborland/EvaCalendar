@@ -28,9 +28,6 @@ const DayColumn = (props: DayColumnProps) => {
   const navigate = useNavigate();
 
   const revalidator = useRevalidator();
-  const dayColumnClassName = clsx('bg-card', 'p-3', 'rounded-lg', {
-    'today': isToday
-  });
 
   const { setIsNavVisible, setIsModalOpen } = useNav();
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -52,10 +49,11 @@ const DayColumn = (props: DayColumnProps) => {
 
     taskEvents.forEach(event => {
       const task = event as Task;
-      const isTimedIncome = task.type !== 'expense' && typeof task.time === 'string' && /^\d{2}:\d{2}$/.test(task.time);
+      const isTimedLesson = task.type === 'lesson' && typeof task.time === 'string' && /^\d{2}:\d{2}$/.test(task.time);
+      const isTimedIncome = task.type !== 'expense' && task.type !== 'lesson' && typeof task.time === 'string' && /^\d{2}:\d{2}$/.test(task.time);
       const isExpense = task.type === 'expense';
 
-      if (isTimedIncome) {
+      if (isTimedIncome || isTimedLesson) {
         incomeEvents.push(event);
       } else if (isExpense) {
         expenseEvents.push(event);
@@ -170,6 +168,11 @@ const DayColumn = (props: DayColumnProps) => {
 
   drop(dropRef);
 
+  const dayColumnClassName = clsx('day-column', {
+    'day-column--today': isToday,
+    'day-column--active-drop': isOver,
+  });
+
   const handleHeaderClick = () => {
     const dateString = formatDateToYYYYMMDD(fullDate);
     navigate(`/day/${dateString}`);
@@ -177,41 +180,49 @@ const DayColumn = (props: DayColumnProps) => {
 
   const dayHeader = (
     <div
-      className="flex justify-between items-center mb-2"
+      className="day-column__header"
       onClick={handleHeaderClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}
     >
-      <span className="text-sm text-gray-400">{formatDateForDayColumnHeader(fullDate)}</span>
+      <div className="day-column__header-text">
+        <span className="day-column__label">{formatDateForDayColumnHeader(fullDate)}</span>
+      </div>
       <button
-        className="bg-button-green p-1 rounded"
-        onClick={(e) => { e.stopPropagation(); onOpenTaskModal(undefined, 'income', fullDate); }}
+        type="button"
+        className="day-column__add"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenTaskModal(undefined, 'income', fullDate);
+        }}
         aria-label="Добавить событие"
       >
-        <span className="material-icons text-sm">add</span>
+        <span className="material-icons">add</span>
       </button>
     </div>
   );
 
   return (
-    <div ref={dropRef} className={clsx(dayColumnClassName, { 'highlighted-drop-zone': isOver })}>
+    <div ref={dropRef} className={dayColumnClassName}>
       {dayHeader}
-      <div className="space-y-2 max-h-24 overflow-y-auto">
-        {events.length > 0 ? (
-          events.map((event) => {
-            const key = (event as Task).uuid || (event as Note).uuid;
-            return (
-              <MiniEventCard
-                key={key}
-                event={event}
-                onEdit={(editedEvent) => handleOpenModal(editedEvent)}
-              />
-            );
-          })
-        ) : (
-          <p className="text-sm text-gray-500">Нет событий</p>
-        )}
+      <div className="day-column__scroll">
+        <div className="day-column__events" role="list">
+          {events.length > 0 ? (
+            events.map((event) => {
+              const key = (event as Task).uuid || (event as Note).uuid;
+              return (
+                <MiniEventCard
+                  key={key}
+                  event={event}
+                  onEdit={(editedEvent) => handleOpenModal(editedEvent)}
+                />
+              );
+            })
+          ) : (
+            <p className="day-column__empty">Нет событий</p>
+          )}
+        </div>
       </div>
       {isModalOpenState && (
         <UnifiedTaskFormModal

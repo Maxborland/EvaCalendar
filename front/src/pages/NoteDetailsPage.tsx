@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'; // useCallback удален
-import { useLoaderData, useNavigate } from 'react-router-dom'; // useParams удален, useLoaderData добавлен
-// getNoteByDate удален из импортов
-import { createNote, type Note, updateNote } from '../services/api';
+import { useEffect, useRef, useState } from 'react';
+import { useLoaderData, useNavigate } from 'react-router-dom';
+import TopNavigator from '../components/TopNavigator';
+import { useCreateNote, useUpdateNote } from '../hooks/useNotes';
+import type { Note } from '../services/api';
+import './NoteDetailsPage.css';
 
 interface NoteDetailsLoaderData {
   note: Note | null;
@@ -12,84 +14,93 @@ const NoteDetailsPage = () => {
   const { note: initialNote, date } = useLoaderData() as NoteDetailsLoaderData;
   const navigate = useNavigate();
 
+  const createNoteMutation = useCreateNote();
+  const updateNoteMutation = useUpdateNote();
+
   const [noteContent, setNoteContent] = useState<string>(initialNote?.content || '');
   const [noteUuid, setNoteUuid] = useState<string | null>(initialNote?.uuid || null);
-  // isLoading удален
-  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const isSaving = createNoteMutation.isPending || updateNoteMutation.isPending;
 
   useEffect(() => {
     setNoteContent(initialNote?.content || '');
     setNoteUuid(initialNote?.uuid || null);
     if (!initialNote) {
-        setNoteContent('');
-        setNoteUuid(null);
+      setNoteContent('');
+      setNoteUuid(null);
     }
   }, [initialNote]);
 
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [noteContent]);
+
   const handleSaveNote = async () => {
-    if (!date) { // date теперь из useLoaderData
+    if (!date) {
       setError('Невозможно сохранить заметку без даты.');
       return;
     }
-    setIsSaving(true);
     setError(null);
     try {
-      let savedNote: Note | undefined;
       if (noteUuid) {
-        // Обновляем существующую заметку
-        savedNote = await updateNote(noteUuid, noteContent);
+        await updateNoteMutation.mutateAsync({ uuid: noteUuid, content: noteContent, date });
       } else {
-        // Создаем новую заметку
-        savedNote = await createNote(date, noteContent);
+        const savedNote = await createNoteMutation.mutateAsync({ date, content: noteContent });
         if (savedNote) {
-          setNoteUuid(savedNote.uuid); // Сохраняем uuid новой заметки
+          setNoteUuid(savedNote.uuid);
         }
       }
-      navigate('.', { replace: true });
+      navigate(-1);
     } catch (err: any) {
-      // Error saving note
-      setError(err.message || 'Не удалось сохранить заметку.');
-    } finally {
-      setIsSaving(false);
+      setError(err?.message || 'Не удалось сохранить заметку.');
     }
   };
 
   return (
-    <div className="p-4 flex flex-col h-screen bg-background text-text-primary">
-      <header className="mb-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-accent hover:text-accent-hover transition-colors bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded-md"
-          aria-label="Назад"
-        >
-          &larr; Назад
-        </button>
-        <h2 className="text-xl font-bold mt-2">Заметка на {date}</h2>
-      </header>
+    <div className="note-details">
+      <TopNavigator
+        title={`Заметка на ${date}`}
+        showBackButton={true}
+        showButtons={false}
+      />
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <strong className="font-bold">Ошибка: </strong>
-          <span className="block sm:inline">{error}</span>
+        <div className="note-details__error" role="alert">
+          <span className="material-icons note-details__error-icon">error_outline</span>
+          <div>
+            <strong>Ошибка:</strong> {error}
+          </div>
         </div>
       )}
 
-      <textarea
-        className="flex-grow w-full p-3 border border-gray-600 rounded-md bg-input-bg text-text-input text-sm focus:ring-accent focus:border-accent resize-none"
-        placeholder="Введите ваши заметки здесь..."
-        value={noteContent}
-        onChange={(e) => setNoteContent(e.target.value)}
-        rows={15}
-        disabled={isSaving}
-      />
-      <button
-        onClick={handleSaveNote}
-        disabled={isSaving} // isLoading удален из условия disabled
-        className="mt-4 w-full bg-accent hover:bg-accent-hover text-white font-bold py-3 px-4 rounded-md bg-green-500 disabled:opacity-50"
-      >
-        {isSaving ? 'Сохранение...' : 'Сохранить заметку'}
-      </button>
+      <div className="note-details__body">
+        <textarea
+          ref={textareaRef}
+          className="note-details__textarea"
+          placeholder="Введите ваши заметки здесь..."
+          value={noteContent}
+          onChange={(event) => setNoteContent(event.target.value)}
+          disabled={isSaving}
+          rows={6}
+        />
+      </div>
+
+      <footer className="note-details__footer">
+        <button
+          type="button"
+          className="note-details__save"
+          onClick={handleSaveNote}
+          disabled={isSaving}
+        >
+          {isSaving ? 'Сохранение…' : 'Сохранить заметку'}
+        </button>
+      </footer>
     </div>
   );
 };

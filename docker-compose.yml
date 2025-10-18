@@ -20,6 +20,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api
+        VITE_DISABLE_SW: "true"  # Установите "false" для production
     ports:
       - "80:80"
     depends_on:

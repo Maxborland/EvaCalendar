@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Добавляем useAuth
+import { useAuth } from '../context/AuthContext';
 import { useNav } from '../context/NavContext';
-import { useTasks } from '../context/TaskContext';
-import { createTask, deleteTask, duplicateTask, getDailySummary, getMonthlySummary, updateTask, type Task } from '../services/api';
+import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useDuplicateTask } from '../hooks/useTasks';
+import { getDailySummary, getMonthlySummary, type Task } from '../services/api';
 import {
   addDays,
   addWeeks,
@@ -17,7 +17,7 @@ import {
 } from '../utils/dateUtils';
 import DayColumn from './DayColumn';
 import NoteField from './NoteField';
-import SummaryBlock from './SummaryBlock';
+import SummaryModal from './SummaryModal';
 import TopNavigator from './TopNavigator';
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
 import WeekNavigator from './WeekNavigator';
@@ -25,9 +25,15 @@ import WeekNavigator from './WeekNavigator';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { tasks, refetchTasks } = useTasks();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth(); // Получаем состояние аутентификации
-  const navigate = useNavigate(); // Для возможного редиректа
+  const { data: tasks = [] } = useTasks();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // React Query мутации
+  const createTaskMutation = useCreateTask();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
+  const duplicateTaskMutation = useDuplicateTask();
   const getTodayUTC = () => {
     const today = new Date();
     return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
@@ -45,6 +51,7 @@ const WeekView = () => {
   const { setIsNavVisible, isModalOpen: isGlobalModalOpen, setIsModalOpen: setIsGlobalModalOpen } = useNav();
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [modalTaskMode, setModalTaskMode] = useState<'create' | 'edit'>('create');
   const [currentTaskForModal, setCurrentTaskForModal] = useState<Task | undefined>(undefined);
   const [initialModalTaskType, setInitialModalTaskType] = useState<'income' | 'expense'>('income');
@@ -85,7 +92,7 @@ const WeekView = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (isGlobalModalOpen || isTaskModalOpen) return;
+      if (isGlobalModalOpen || isTaskModalOpen || isSummaryModalOpen) return;
 
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
       if (scrollTop + clientHeight >= scrollHeight - 20) {
@@ -97,7 +104,7 @@ const WeekView = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [setIsNavVisible, isGlobalModalOpen, isTaskModalOpen]);
+  }, [setIsNavVisible, isGlobalModalOpen, isTaskModalOpen, isSummaryModalOpen]);
 
 
   const goToPreviousWeek = () => {
@@ -115,6 +122,26 @@ const WeekView = () => {
     }
     return '';
   }, [weekDays]);
+
+  const orderedWeekCells = useMemo(() => {
+    if (weekDays.length !== 7) return [];
+    return [
+      { id: weekDays[0].toISOString(), type: 'day' as const, date: weekDays[0] },
+      { id: weekDays[3].toISOString(), type: 'day' as const, date: weekDays[3] },
+      { id: weekDays[1].toISOString(), type: 'day' as const, date: weekDays[1] },
+      { id: weekDays[4].toISOString(), type: 'day' as const, date: weekDays[4] },
+      { id: weekDays[2].toISOString(), type: 'day' as const, date: weekDays[2] },
+      { id: weekDays[5].toISOString(), type: 'day' as const, date: weekDays[5] },
+      { id: 'week-notes', type: 'note' as const, date: weekDays[0] },
+      { id: weekDays[6].toISOString(), type: 'day' as const, date: weekDays[6] },
+    ];
+  }, [weekDays]);
+
+  const getTasksForDate = useCallback(
+    (targetDate: Date) =>
+      tasks.filter(task => isSameDay(createDate(task.dueDate), targetDate)),
+    [tasks]
+  );
 
   const handleOpenTaskModal = useCallback((taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => {
     if (taskToEdit) {
@@ -149,14 +176,12 @@ const WeekView = () => {
 
     try {
       if ('uuid' in taskData && taskData.uuid) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { uuid, ...updateData } = taskData;
-        await updateTask(taskData.uuid, updateData as Partial<Omit<Task, 'uuid'>>);
+        await updateTaskMutation.mutateAsync({ uuid: taskData.uuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
       } else {
-        await createTask(taskData as Omit<Task, 'uuid'>);
+        await createTaskMutation.mutateAsync(taskData as Omit<Task, 'uuid'>);
       }
     } catch (error) {
-      // Ошибка при сохранении задачи
       throw error;
     }
   };
@@ -169,15 +194,14 @@ const WeekView = () => {
     if (isAuthLoading) return;
 
     try {
-      await deleteTask(id);
-      refetchTasks();
+      await deleteTaskMutation.mutateAsync(id);
       handleCloseTaskModal();
     } catch (error) {
-      // Ошибка при удалении задачи
+      // Ошибка обрабатывается в мутации
     }
   };
 
-  const handleDuplicateTask = async (id:string) => {
+  const handleDuplicateTask = async (id: string) => {
     if (!isAuthenticated && !isAuthLoading) {
       navigate('/login');
       return;
@@ -185,121 +209,96 @@ const WeekView = () => {
     if (isAuthLoading) return;
 
     try {
-      await duplicateTask(id);
-      refetchTasks();
+      await duplicateTaskMutation.mutateAsync(id);
       handleCloseTaskModal();
     } catch (error) {
-      // Ошибка при дублировании задачи
+      // Ошибка обрабатывается в мутации
     }
   };
 
 
   return (
-    <div className="min-h-screen flex flex-col">
-        <>
-          <TopNavigator title="Zyaka's Calendar" />
-          <main className="flex-grow p-4 space-y-6 pb-20">
-            <SummaryBlock
-                weekStartDate={weekDays.length > 0 ? createDate(weekDays[0]).toISOString().slice(0, 10) : ''}
-            />
-            {/* WeekNavigator moved below days */}
-            <div className="grid grid-cols-2 gap-4">
-              {weekDays.length === 7 && (
-                <>
-                  <DayColumn
-                    key={weekDays[0].toISOString()}
-                    fullDate={weekDays[0]}
-                    today={today}
-                    isToday={isSameDay(weekDays[0], today)}
-                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[0]))}
-                    onOpenTaskModal={handleOpenTaskModal}
-                  />
-                  <DayColumn
-                    key={weekDays[3].toISOString()}
-                    fullDate={weekDays[3]}
-                    today={today}
-                    isToday={isSameDay(weekDays[3], today)}
-                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[3]))}
-                    onOpenTaskModal={handleOpenTaskModal}
-                  />
-                  <DayColumn
-                    key={weekDays[1].toISOString()}
-                    fullDate={weekDays[1]}
-                    today={today}
-                    isToday={isSameDay(weekDays[1], today)}
-                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[1]))}
-                    onOpenTaskModal={handleOpenTaskModal}
-                  />
-                  <DayColumn
-                    key={weekDays[4].toISOString()}
-                    fullDate={weekDays[4]}
-                    today={today}
-                    isToday={isSameDay(weekDays[4], today)}
-                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[4]))}
-                    onOpenTaskModal={handleOpenTaskModal}
-                  />
-                  <DayColumn
-                    key={weekDays[2].toISOString()}
-                    fullDate={weekDays[2]}
-                    today={today}
-                    isToday={isSameDay(weekDays[2], today)}
-                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[2]))}
-                    onOpenTaskModal={handleOpenTaskModal}
-                  />
-                  <DayColumn
-                    key={weekDays[5].toISOString()}
-                    fullDate={weekDays[5]}
-                    today={today}
-                    isToday={isSameDay(weekDays[5], today)}
-                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[5]))}
-                    onOpenTaskModal={handleOpenTaskModal}
-                  />
-                  <div className="col-span-1">
-                    <NoteField
-                      weekId={createDate(weekDays[0]).toISOString().slice(0, 10)}
-                    />
-                  </div>
-                  <DayColumn
-                    key={weekDays[6].toISOString()}
-                    fullDate={weekDays[6]}
-                    today={today}
-                    isToday={isSameDay(weekDays[6], today)}
-                    tasksForDay={tasks.filter(task => isSameDay(createDate(task.dueDate), weekDays[6]))}
-                    onOpenTaskModal={handleOpenTaskModal}
-                  />
-                </>
-              )}
-            </div>
-            <WeekNavigator
-              goToPreviousWeek={goToPreviousWeek}
-              goToNextWeek={goToNextWeek}
-              currentWeekDisplay={weekRangeDisplay}
-            />
-          </main>
-          <button
-            className="fixed bottom-5 right-5 bg-button-green text-white py-3 px-4 rounded-full shadow-lg flex items-center justify-center space-x-2 hover:bg-green-600 transition-colors z-50"
-            onClick={() => handleOpenTaskModal(undefined, 'income', today)}
-          >
-            <span className="material-icons">add_circle_outline</span>
-            <span>Создать дело</span>
-          </button>
-          {isTaskModalOpen && (
-            <UnifiedTaskFormModal
-              isOpen={isTaskModalOpen}
-              onClose={handleCloseTaskModal}
-              onSubmit={handleSubmitTask}
-              onTaskUpsert={() => {
-                refetchTasks();
-                handleCloseTaskModal();
-              }}
-              mode={modalTaskMode}
-              initialTaskData={currentTaskForModal}
-              initialTaskType={initialModalTaskType}
-              onDelete={currentTaskForModal?.uuid ? handleDeleteTask : undefined}
-              onDuplicate={currentTaskForModal?.uuid ? handleDuplicateTask : undefined}
-            />
-          )}
-        </>
+    <div className="week-view">
+      <TopNavigator title="Zyaka's Calendar" />
+      <main className="week-view__content">
+        <section className="week-view__grid" aria-label="План недели">
+          {orderedWeekCells.map((cell) => {
+            if (cell.type === 'note') {
+              const noteWeekId = createDate(cell.date).toISOString().slice(0, 10);
+              return (
+                <article key={cell.id} className="week-view__cell week-view__cell--note">
+                  <NoteField weekId={noteWeekId} />
+                </article>
+              );
+            }
+
+            return (
+              <article key={cell.id} className="week-view__cell">
+                <DayColumn
+                  fullDate={cell.date}
+                  today={today}
+                  isToday={isSameDay(cell.date, today)}
+                  tasksForDay={getTasksForDate(cell.date)}
+                  onOpenTaskModal={handleOpenTaskModal}
+                />
+              </article>
+            );
+          })}
+        </section>
+
+        <footer className="week-view__footer">
+          <WeekNavigator
+            goToPreviousWeek={goToPreviousWeek}
+            goToNextWeek={goToNextWeek}
+            currentWeekDisplay={weekRangeDisplay}
+          />
+        </footer>
+      </main>
+
+      <button
+        type="button"
+        className="week-view__fab week-view__fab--summary"
+        onClick={() => {
+          setIsSummaryModalOpen(true);
+          setIsGlobalModalOpen(true);
+        }}
+        aria-label="Сводка"
+      >
+        <span className="material-icons week-view__fab-icon">analytics</span>
+        <span className="week-view__fab-label">Сводка</span>
+      </button>
+
+      <button
+        type="button"
+        className="week-view__fab week-view__fab--create"
+        onClick={() => handleOpenTaskModal(undefined, 'income', today)}
+      >
+        <span className="material-icons week-view__fab-icon">add_circle_outline</span>
+        <span className="week-view__fab-label">Создать дело</span>
+      </button>
+      {isTaskModalOpen && (
+        <UnifiedTaskFormModal
+          isOpen={isTaskModalOpen}
+          onClose={handleCloseTaskModal}
+          onSubmit={handleSubmitTask}
+          onTaskUpsert={handleCloseTaskModal}
+          mode={modalTaskMode}
+          initialTaskData={currentTaskForModal}
+          initialTaskType={initialModalTaskType}
+          onDelete={currentTaskForModal?.uuid ? handleDeleteTask : undefined}
+          onDuplicate={currentTaskForModal?.uuid ? handleDuplicateTask : undefined}
+        />
+      )}
+      {isSummaryModalOpen && (
+        <SummaryModal
+          isOpen={isSummaryModalOpen}
+          onClose={() => {
+            setIsSummaryModalOpen(false);
+            setIsGlobalModalOpen(false);
+          }}
+          weekStartDate={weekDays.length > 0 ? createDate(weekDays[0]).toISOString().slice(0, 10) : ''}
+        />
+      )}
     </div>
   );
 };

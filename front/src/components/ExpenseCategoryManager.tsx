@@ -1,31 +1,22 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import type { ExpenseCategory } from '../services/api';
+import { useState, type FormEvent } from 'react';
 import {
-  createExpenseCategory,
-  deleteExpenseCategory,
-  getExpenseCategories,
-  getTasksByCategory,
-  updateExpenseCategory
-} from '../services/api';
+  useExpenseCategories,
+  useCreateExpenseCategory,
+  useUpdateExpenseCategory,
+  useDeleteExpenseCategory
+} from '../hooks/useExpenseCategories';
+import type { ExpenseCategory } from '../services/api';
+import { getTasksByCategory } from '../services/api';
 import './ExpenseCategoryManager.css';
 
 const ExpenseCategoryManager = () => {
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const { data: categories = [], isLoading } = useExpenseCategories();
+  const createCategoryMutation = useCreateExpenseCategory();
+  const updateCategoryMutation = useUpdateExpenseCategory();
+  const deleteCategoryMutation = useDeleteExpenseCategory();
+
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState<ExpenseCategory | null>(null);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const data = await getExpenseCategories();
-      setCategories(data);
-    } catch (error) {
-      // Ошибка при загрузке категорий расходов
-    }
-  };
 
   const handleCreateCategory = async (e: FormEvent) => {
     e.preventDefault();
@@ -40,11 +31,9 @@ const ExpenseCategoryManager = () => {
     }
 
     try {
-      await createExpenseCategory(newCategoryName);
+      await createCategoryMutation.mutateAsync(newCategoryName);
       setNewCategoryName('');
-      fetchCategories();
     } catch (error) {
-      // Ошибка при создании категории
       if ((error as any)?.response?.data?.message === 'Category with this name already exists') {
         alert('Категория с таким названием уже существует (проверка на сервере).');
       }
@@ -66,9 +55,11 @@ const ExpenseCategoryManager = () => {
     }
 
     try {
-      await updateExpenseCategory(editingCategory.uuid, editingCategory.categoryName);
+      await updateCategoryMutation.mutateAsync({
+        uuid: editingCategory.uuid,
+        categoryName: editingCategory.categoryName
+      });
       setEditingCategory(null);
-      fetchCategories();
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.message) {
         const errorMessage = error.response.data.message;
@@ -77,8 +68,6 @@ const ExpenseCategoryManager = () => {
         } else {
           alert(`Ошибка: ${errorMessage}`);
         }
-      } else {
-        // Ошибка при обновлении категории
       }
     }
   };
@@ -87,7 +76,6 @@ const ExpenseCategoryManager = () => {
     try {
       const categoryToDelete = categories.find(cat => cat.uuid === uuid);
       if (!categoryToDelete) {
-        // Категория для удаления не найдена
         return;
       }
       const tasksResponse = await getTasksByCategory(categoryToDelete.uuid);
@@ -96,7 +84,6 @@ const ExpenseCategoryManager = () => {
         return;
       }
     } catch (error) {
-      // Ошибка при проверке связанных задач
       alert('Произошла ошибка при проверке связанных задач. Попробуйте еще раз.');
       return;
     }
@@ -104,10 +91,8 @@ const ExpenseCategoryManager = () => {
     if (!window.confirm('Вы уверены, что хотите удалить эту категорию? Это действие необратимо.')) return;
 
     try {
-      await deleteExpenseCategory(uuid);
-      fetchCategories();
+      await deleteCategoryMutation.mutateAsync(uuid);
     } catch (error) {
-      // Ошибка при удалении категории
       alert('Ошибка при удалении категории. Пожалуйста, попробуйте еще раз.');
     }
   };
@@ -117,7 +102,7 @@ const ExpenseCategoryManager = () => {
       <h2>Категории расходов</h2>
 
       <form onSubmit={handleCreateCategory} className="category-form">
-        <input
+        <input className='text-white'
           type="text"
           placeholder="Новая категория"
           value={newCategoryName}
@@ -127,24 +112,23 @@ const ExpenseCategoryManager = () => {
       </form>
 
       <ul className="category-list">
-        {categories.map((category, index) => {
+        {isLoading && <p>Загрузка...</p>}
+        {!isLoading && categories.map((category, index) => {
           return (
           <li key={category.uuid || `category-${index}`} className="category-item">
             {editingCategory?.uuid === category.uuid ? (
               <form onSubmit={handleUpdateCategory} className="edit-form">
                 <input
                   type="text"
-                  style={{ color: "black" }}
                   value={editingCategory?.categoryName || ''}
                   onChange={(e) => {
                     if (editingCategory) {
                       setEditingCategory({ ...editingCategory, categoryName: e.target.value });
-                    } else {
                     }
                   }}
                 />
-                <button type="submit" className="btn btn-icon"><span className="material-icons">save</span></button>
-                <button type="button" className="btn btn-icon" onClick={() => {
+                <button type="submit" className="icon-button"><span className="material-icons">save</span></button>
+                <button type="button" className="icon-button" onClick={() => {
                   setEditingCategory(null);
                 }}>
                   <span className="material-icons">close</span>
@@ -154,10 +138,10 @@ const ExpenseCategoryManager = () => {
               <>
                 <span>{category.categoryName}</span>
                 <div className="actions">
-                  <button onClick={() => setEditingCategory(category)} className="btn btn-icon icon-button edit-button" title="Редактировать">
+                  <button onClick={() => setEditingCategory(category)} className="icon-button edit-button" title="Редактировать">
                     <span className="material-icons">edit</span>
                   </button>
-                  <button onClick={() => handleDeleteCategory(category.uuid)} className="btn btn-icon icon-button delete-button" title="Удалить">
+                  <button onClick={() => handleDeleteCategory(category.uuid)} className="icon-button delete-button" title="Удалить">
                     <span className="material-icons">delete</span>
                   </button>
                 </div>

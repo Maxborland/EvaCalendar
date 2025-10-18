@@ -182,8 +182,7 @@ const NotificationSettings = () => {
                 <button
                     onClick={handleSendTestNotification}
                     disabled={(!settings.emailEnabled && !settings.pushEnabled) || isSending}
-                    className="test-notification-btn"
-                >
+                    className="test-notification-btn">
                     Отправить тестовое уведомление
                 </button>
             </div>

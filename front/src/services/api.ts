@@ -61,7 +61,7 @@ export interface Task {
   uuid: string; // Возвращаем uuid, так как API его возвращает
   title: string;
   description?: string; // Добавлено поле description
-  type: 'income' | 'expense' | 'task' | 'hourly' | 'fixed'; // 'fixed', 'hourly', 'expense', 'income' (добавим income для унификации)
+  type: 'income' | 'expense' | 'task' | 'hourly' | 'fixed' | 'lesson'; // 'fixed', 'hourly', 'expense', 'income', 'lesson'
   time?: string; // Может быть eventTime или taskTime от бэкенда
   dueDate: string; // Может быть date от бэкенда
   completed?: boolean; // Изменено с isDone

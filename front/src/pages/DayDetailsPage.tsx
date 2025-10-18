@@ -2,10 +2,9 @@ import type { FC } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DetailedTaskCard from '../components/DetailedTaskCard';
-import { useAuth } from '../context/AuthContext'; // Добавляем useAuth
-// Предполагаем, что TaskForm.tsx будет переименован в UnifiedTaskFormModal.tsx
+import TopNavigator from '../components/TopNavigator';
 import UnifiedTaskFormModal from '../components/UnifiedTaskFormModal';
-// getTasksForDay и getDailySummary удаляются из импортов, так как данные приходят через loader
+import { useAuth } from '../context/AuthContext';
 import { useTasks } from '../context/TaskContext';
 import { type Task, createTask, deleteTask, getDailySummary, updateTask } from '../services/api';
 import { createDate, formatDateForDisplay, isSameDay, parseDateString } from '../utils/dateUtils';
@@ -98,10 +97,6 @@ const DayDetailsPage: FC = () => {
     return [...timeSpecificTasks, ...otherTasks, ...expenseTasks];
   }, [tasks]);
 
-  const handleGoBack = () => {
-    navigate(-1);
-  };
-
   const handleOpenTaskForm = (task?: Task) => {
     if (task) {
       setEditingTask(task);
@@ -176,23 +171,35 @@ const DayDetailsPage: FC = () => {
 
   return (
     <div className="day-details-page">
-      <div className="day-details-header">
-        <button onClick={handleGoBack} className="btn btn-secondary">
-          &larr; Назад
-        </button>
-        <h1>{formatDateForDisplay(selectedDate)}</h1>
-      </div>
+      <TopNavigator
+        title={formatDateForDisplay(selectedDate)}
+        showBackButton={true}
+        showButtons={false}
+      />
 
-      {dailySummary && (
-        <div className="day-details-summary">
-          Доход: {dailySummary.totalEarned} | Расход: {dailySummary.totalSpent}
+      <main className="day-details-content">
+        {dailySummary && (
+          <div className="day-details-summary">
+            <div className="day-details-summary__item day-details-summary__item--income">
+              <span className="day-details-summary__label">Доход:</span>
+              <span className="day-details-summary__value">{dailySummary.totalEarned} ₽</span>
+            </div>
+            <div className="day-details-summary__item day-details-summary__item--expense">
+              <span className="day-details-summary__label">Расход:</span>
+              <span className="day-details-summary__value">{dailySummary.totalSpent} ₽</span>
+            </div>
+          </div>
+        )}
+
+        <div className="day-details-header">
+          <h2 className="day-details-title">Дела</h2>
+          <button className="btn btn-primary day-details-add-btn" onClick={() => handleOpenTaskForm()}>
+            <span className="material-icons">add</span>
+            Создать дело
+          </button>
         </div>
-      )}
 
-      <div className="day-details-tasks-section">
-        <h2>Дела</h2>
-        <button className="btn btn-primary" onClick={() => handleOpenTaskForm()}>Создать дело</button>
-        <div className="tasks-list">
+        <div className="day-details-tasks">
           {tasks.length > 0 ? (
             sortedTasks.map((task, index) => (
               <DetailedTaskCard
@@ -203,10 +210,10 @@ const DayDetailsPage: FC = () => {
               />
             ))
           ) : (
-            <p>На этот день задач нет.</p>
+            <p className="day-details-empty">На этот день задач нет.</p>
           )}
         </div>
-      </div>
+      </main>
 
       {showTaskForm && selectedDate && dateString && (
           <UnifiedTaskFormModal

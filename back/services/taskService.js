@@ -36,6 +36,7 @@ const taskService = {
             dueDate,
             time,
             title,
+            address,
             comments,
             reminder_offset,
             reminder_at,
@@ -59,6 +60,7 @@ const taskService = {
             type,
             dueDate,
             time: time || null,
+            address: null,
             comments: comments || null,
             reminder_offset: reminder_offset || null,
             child_uuid: null,
@@ -117,6 +119,32 @@ const taskService = {
             if (!dataForDb.title) {
                 throw ApiError.badRequest('Title is required for task type.');
             }
+        } else if (type === 'lesson') {
+            // Lesson type: учебные занятия/пары
+            if (!dataForDb.time) {
+                throw ApiError.badRequest('Time is required for lesson type.');
+            }
+            if (!dataForDb.title) {
+                throw ApiError.badRequest('Title (subject name) is required for lesson type.');
+            }
+            if (amountEarned || amountSpent || amount) {
+                throw ApiError.badRequest('Lessons cannot have financial amounts.');
+            }
+            if (assigned_to_id) {
+                throw ApiError.badRequest('Lessons cannot be assigned to other users.');
+            }
+            if (child_uuid) {
+                throw ApiError.badRequest('Lessons cannot be associated with children.');
+            }
+            if (expense_category_uuid) {
+                throw ApiError.badRequest('Lessons cannot have expense categories.');
+            }
+            // Устанавливаем адрес для занятия
+            dataForDb.address = address || null;
+            // Занятие всегда принадлежит создателю
+            dataForDb.user_uuid = userId;
+            // Для занятий не устанавливаем reminder_offset, только reminder_at
+            dataForDb.reminder_offset = null;
         } else {
             throw ApiError.badRequest(`Invalid task type: ${type}`);
         }
@@ -191,7 +219,7 @@ const taskService = {
         }
 
         const allowedFields = [
-            'title', 'type', 'dueDate', 'time', 'comments', 'reminder_offset', 'reminder_at',
+            'title', 'type', 'dueDate', 'time', 'address', 'comments', 'reminder_offset', 'reminder_at',
             'assigned_to_id',
             'child_uuid', 'hoursWorked', 'amount', 'amountEarned', 'amountSpent',
             'expense_category_uuid', 'completed', 'completed_at'
@@ -225,6 +253,7 @@ const taskService = {
             dataToUpdate.child_uuid = null;
             dataToUpdate.hoursWorked = null;
             dataToUpdate.expense_category_uuid = null;
+            dataToUpdate.address = null;
         }
 
 
@@ -262,6 +291,28 @@ const taskService = {
                 }
                 dataToUpdate.user_uuid = dataToUpdate.assigned_to_id;
             }
+        } else if (newType === 'lesson') {
+            // Lesson type validation
+            if ((dataToUpdate.hasOwnProperty('amountEarned') && dataToUpdate.amountEarned !== null) ||
+                (dataToUpdate.hasOwnProperty('amountSpent') && dataToUpdate.amountSpent !== null)) {
+                throw ApiError.badRequest('Lessons cannot have financial amounts.');
+            }
+            dataToUpdate.amountEarned = null;
+            dataToUpdate.amountSpent = null;
+            dataToUpdate.child_uuid = null;
+            dataToUpdate.hoursWorked = null;
+            dataToUpdate.expense_category_uuid = null;
+            // НЕ обнуляем address для lesson - он нужен
+
+            if (dataToUpdate.assigned_to_id) {
+                throw ApiError.badRequest('Lessons cannot be assigned to other users.');
+            }
+
+            // Занятие всегда принадлежит создателю
+            dataToUpdate.user_uuid = existingTask.creator_uuid;
+
+            // Для занятий не устанавливаем reminder_offset
+            dataToUpdate.reminder_offset = null;
         }
 
         // clean up

@@ -1,75 +1,69 @@
-.week-navigator-container {
+.week-navigator {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  gap: 15px;
-  width: 100%;
-  box-sizing: border-box;
-  position: fixed;
-  bottom: 0;
-  background-color: var(--color-primary-background);
-  box-shadow: 0 -1px 5px var(--color-shadow-light);
-  transition: transform 0.3s ease-out;
-  z-index: 900;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm);
 }
 
-.week-navigator-container--hidden {
-  transform: translateY(100%);
-}
-
-.week-nav-button {
-  padding: 12px 20px;
-  margin: 0 10px;
-  font-size: 1.5rem;
-  border-radius: 5px;
-  border: none;
-  background-color: var(--color-secondary-background);
-  color: var(--color-accent);
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+.week-navigator__btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  box-sizing: border-box;
-}
-
-.week-nav-button:hover {
-  background-color: var(--color-accent);
-  color: var(--color-primary-background);
-}
-
-.week-nav-button:disabled {
-  opacity: 0.5;
-  cursor: default;
-  background-color: var(--color-secondary-background);
-  color: var(--color-accent);
-}
-
-.current-week-display {
-  font-size: 1.1em;
-  font-weight: 500;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-subtle);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--color-text-primary);
-  padding: 0 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
 }
 
-@media (prefers-color-scheme: light) {
-  .week-navigator-container {
-    background-color: var(--color-primary-background);
-    box-shadow: 0 -1px 5px var(--color-shadow-light);
+.week-navigator__btn .material-icons {
+  font-size: 24px;
+}
+
+.week-navigator__btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
+}
+
+.week-navigator__btn:active {
+  transform: translateY(0);
+}
+
+.week-navigator__btn:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.week-navigator__display {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  text-align: center;
+  flex: 1;
+  line-height: var(--line-height-normal);
+}
+
+@media (max-width: 360px) {
+  .week-navigator {
+    gap: var(--spacing-sm);
+    padding: 4px;
   }
 
-  .week-nav-button {
-    background-color: var(--color-secondary-background);
-    color: var(--color-accent);
+  .week-navigator__btn {
+    width: 40px;
+    height: 40px;
   }
 
-  .week-nav-button:hover {
-    background-color: var(--color-accent);
-    color: var(--color-primary-background);
+  .week-navigator__btn .material-icons {
+    font-size: 22px;
   }
 
-  .current-week-display {
-    color: var(--color-text-primary);
+  .week-navigator__display {
+    font-size: var(--font-size-sm);
   }
 }

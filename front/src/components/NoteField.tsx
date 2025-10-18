@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNoteByDate } from '../services/api';
+import { useNoteByDate } from '../hooks/useNotes';
+import './NoteField.css';
 
 interface NoteFieldProps {
   weekId: string;
@@ -8,85 +8,85 @@ interface NoteFieldProps {
 
 const NoteField = ({ weekId }: NoteFieldProps) => {
   const navigate = useNavigate();
-  const [noteContent, setNoteContent] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: notes, isLoading, error } = useNoteByDate(weekId);
 
-  useEffect(() => {
-    const fetchNote = async () => {
-      if (!weekId) return;
+  const noteContent = notes && notes.length > 0 ? notes[0].content : '';
 
-      setIsLoading(true);
-      setError(null);
-      try {
-        const notes = await getNoteByDate(weekId);
-        if (notes && notes.length > 0) {
-          setNoteContent(notes[0].content);
-        } else {
-          setNoteContent('');
-        }
-      } catch (err: any) {
-        // Error fetching note
-        setError(err.message || 'Не удалось загрузить заметку.');
-        setNoteContent('');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNote();
-  }, [weekId]);
-
-  const handleNavigateToNoteDetails = () => {
-      navigate(`/notes/${weekId}`);
-    };
-
-  const getPreviewText = (text: string, maxLength: number = 60): string => {
-    if (!text) return "Добавить заметку...";
-    if (text.length <= maxLength) return text;
-    const trimmedText = text.substring(0, maxLength);
-    const lastSpaceIndex = trimmedText.lastIndexOf(' ');
-    if (lastSpaceIndex > 0 && text.length > maxLength) {
-        return trimmedText.substring(0, lastSpaceIndex) + "...";
-    }
-    return trimmedText + "...";
+  const handleNavigate = () => {
+    navigate(`/notes/${weekId}`);
   };
 
+  const getPreviewText = (text: string, maxLength: number = 72): string => {
+    if (!text) return 'Добавить заметку';
+    if (text.length <= maxLength) return text;
+    const trimmed = text.substring(0, maxLength);
+    const lastSpace = trimmed.lastIndexOf(' ');
+    if (lastSpace > 0 && text.length > maxLength) {
+      return `${trimmed.substring(0, lastSpace)}…`;
+    }
+    return `${trimmed}…`;
+  };
 
   if (isLoading && !error) {
     return (
-      <section className="bg-card rounded-lg p-4 col-span-1">
-        <h2 className="text-md font-semibold mb-2">Заметки</h2>
-        <div className="w-full bg-gray-700 p-3 rounded-md text-xs text-gray-300 min-h-[60px] flex items-center justify-center">
-          <p className="text-sm text-gray-500">Загрузка заметок...</p>
+      <section className="note-preview note-preview--loading">
+        <header className="note-preview__header">
+          <span className="note-preview__title">Заметки</span>
+        </header>
+        <div className="note-preview__skeleton" aria-hidden="true">
+          <span className="note-preview__skeleton-line" />
+          <span className="note-preview__skeleton-line" />
         </div>
       </section>
     );
   }
 
+  if (error && !isLoading) {
+    return (
+      <section className="note-preview note-preview--error" role="alert">
+        <header className="note-preview__header">
+          <span className="note-preview__title">Заметки</span>
+        </header>
+        <div className="note-preview__error">
+          {(error as Error).message || 'Не удалось загрузить заметку'}
+        </div>
+        <button
+          type="button"
+          className="note-preview__cta-secondary"
+          onClick={handleNavigate}
+        >
+          Открыть заметку
+        </button>
+      </section>
+    );
+  }
 
   return (
-    <section className="bg-card rounded-lg p-4 col-span-1">
-      <h3 className="text-md font-semibold mb-2">Заметки</h3>
-      {error && !isLoading && (
-        <div className="w-full bg-red-800 p-3 rounded-md text-xs text-white min-h-[60px] flex items-center justify-center">
-          <p>{error}</p>
-        </div>
-      )}
-      {!error && !isLoading && (
-        <div
-          className="w-full bg-gray-700 p-3 rounded-md text-xs text-gray-300 cursor-pointer hover:bg-gray-600 min-h-[60px] flex items-center"
-          onClick={handleNavigateToNoteDetails}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateToNoteDetails(); }}
-          aria-label={noteContent ? `Просмотреть или изменить заметку: ${getPreviewText(noteContent)}` : "Добавить заметку"}
+    <section className="note-preview">
+      <header className="note-preview__header">
+        <span className="note-preview__title">Заметки недели</span>
+        <button
+          type="button"
+          className="note-preview__cta"
+          onClick={handleNavigate}
         >
-          <p className="truncate whitespace-pre-wrap">
-            {getPreviewText(noteContent)}
-          </p>
-        </div>
-      )}
+          <span className="material-icons bg-white">edit_note</span>
+        </button>
+      </header>
+      <button
+        type="button"
+        className="note-preview__body"
+        onClick={handleNavigate}
+        aria-label={
+          noteContent
+            ? `Просмотреть заметку: ${getPreviewText(noteContent)}`
+            : 'Добавить заметку'
+        }
+      >
+        <p className="note-preview__text">
+          {getPreviewText(noteContent)}
+        </p>
+      </button>
     </section>
   );
 };

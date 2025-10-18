@@ -79,7 +79,7 @@ const ChildFormModal = ({
   const modalContent = (
     <div className={modalOverlayClass} onClick={handleClose} data-testid="modal-overlay">
       <div className={modalContentClass} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="btn btn-icon close-button" onClick={handleClose} aria-label="Закрыть">
+        <button type="button" className="close-button" onClick={handleClose} aria-label="Закрыть">
           &times;
         </button>
         <h2>{title}</h2>
@@ -89,13 +89,14 @@ const ChildFormModal = ({
         <div className="child-form-modal-actions">
           {mode === 'edit' && onDelete && initialChildData?.uuid && (
             <button type="button" className="btn btn-danger" onClick={handleDeleteClick}>
-              Удалить
+              <span className="material-icons">delete</span>
+              <span>Удалить</span>
             </button>
           )}
-          {!(mode === 'edit' && onDelete && initialChildData?.uuid) && <div style={{ flexGrow: 1 }}></div>}
 
           <button type="button" className="btn btn-secondary" onClick={handleClose}>
-            Отмена
+            <span className="material-icons">close</span>
+            <span>Отмена</span>
           </button>
           <button
             type="button"
@@ -107,7 +108,10 @@ const ChildFormModal = ({
               }
             }}
           >
-            {mode === 'edit' ? 'Сохранить' : 'Добавить'}
+            <span className="material-icons">
+              {mode === 'edit' ? 'save' : 'person_add'}
+            </span>
+            <span>{mode === 'edit' ? 'Сохранить' : 'Добавить'}</span>
           </button>
         </div>
       </div>

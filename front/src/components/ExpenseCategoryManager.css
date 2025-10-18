@@ -1,171 +1,232 @@
 .expense-category-manager {
-  margin-top: 20px;
-  padding: 20px;
-  border: 1px solid var(--color-border-medium);
-  border-radius: 8px;
-  background-color: var(--color-light-background);
-  box-shadow: 0 2px 4px var(--color-shadow-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-lg);
+  background-color: transparent;
 }
 
 .expense-category-manager h2 {
-  color: var(--color-text-tertiary);
-  margin-bottom: 20px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xl);
   text-align: center;
-  font-size: 1.5rem;
-  border-bottom: 1px solid var(--color-border-light);
-  padding-bottom: 15px;
-}
-
-
-.expense-category-manager input[type="text"] {
-  width: 100%;
-  padding: 10px 15px;
-  border: 1px solid var(--color-border-light);
-  border-radius: 5px;
-  font-size: 1rem;
-  box-sizing: border-box;
-  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  background-color: var(--color-light-background);
-  color: var(--color-text-tertiary);
-  box-shadow: 0 1px 4px var(--color-shadow-light);
-}
-
-.expense-category-manager input[type="text"]:focus {
-  border-color: var(--color-blue-accent);
-  box-shadow: 0 0 5px var(--color-blue-accent-shadow-light);
-  outline: none;
-}
-
-
-.expense-category-manager button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-}
-
-.expense-category-manager button:hover {
-  transform: translateY(-1px);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
 }
 
 .category-form {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: var(--spacing-md);
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: var(--spacing-xl);
+}
+
+.category-form input {
+  flex: 1;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  background: var(--surface-elevated);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  transition: all 0.18s ease;
+}
+
+.category-form input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.category-form input:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.16);
+  background: var(--surface-elevated);
 }
 
 .category-form button {
-  background-color: var(--color-purple-hover);
-  color: var(--color-accent);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--btn-primary-bg) 0%, var(--theme-primary) 100%);
+  color: var(--btn-primary-text-color);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  box-shadow: var(--shadow-glass);
+  transition: all 0.18s ease;
 }
 
 .category-form button:hover {
-  background-color: var(--color-purple-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-2);
+}
+
+.category-form button:active {
+  transform: translateY(0);
+}
+
+.category-form button:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
 }
 
 .category-list {
+  width: 100%;
+  max-width: 560px;
   list-style: none;
-  padding: 1px;
-  max-height: 300px;
-  overflow-y: auto;
-  margin-top: 20px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.category-list p {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-xl);
+  font-size: var(--font-size-base);
 }
 
 .category-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
-  margin: 15px 0;
-  border-radius: 5px;
-  transition: background-color 0.2s ease-in-out;
-  box-shadow: 0 1px 4px var(--color-shadow-light);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-glass);
+  transition: all 0.18s ease;
 }
 
-.category-item:last-child {
-  border-bottom: none;
+.category-item:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--elevation-1);
+  transform: translateY(-1px);
 }
 
 .category-item span {
-  flex-grow: 1;
-  margin-right: 15px;
-  font-size: 1rem;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
 }
 
 .category-item .actions {
   display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.icon-button {
-  background-color: transparent;
-  border: 1px solid var(--color-border-dark);
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, border-color 0.2s ease-in-out;
-  width: 34px;
-  height: 34px;
-  box-shadow: 0 1px 2px var(--color-shadow-light);
-}
-
-.icon-button:hover {
-  background-color: var(--color-highlight);
-  transform: translateY(-1px);
-}
-
-.icon-button svg {
-  width: 18px;
-  height: 18px;
-  color: var(--color-text-primary);
-}
-
-.edit-button svg {
-   color: var(--color-blue-accent);
-}
-
-.edit-button:hover svg {
-   color: var(--color-blue-accent-hover);
-}
-
-.delete-button svg {
-   color: var(--theme-danger);
-}
-
-.delete-button:hover svg {
-   color: var(--color-danger-hover);
+  gap: var(--spacing-sm);
 }
 
 .edit-form {
   display: flex;
-  gap: 10px;
-  flex-grow: 1;
+  gap: var(--spacing-sm);
+  width: 100%;
+  align-items: center;
 }
 
-.edit-form input[type="text"] {
-  flex-grow: 1;
+.edit-form input {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  background: var(--surface-elevated);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
 }
 
-.edit-form button {
-  background-color: var(--theme-success);
-  color: var(--color-accent);
+.edit-form input::placeholder {
+  color: var(--color-placeholder);
 }
 
-.edit-form button:hover {
-  background-color: var(--color-success-hover);
+.edit-form input:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.16);
 }
 
-.edit-form button[type="button"] {
-  background-color: var(--color-secondary-button);
+.icon-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  flex-shrink: 0;
 }
 
-.edit-form button[type="button"]:hover {
-  background-color: var(--color-secondary-button-hover);
+.icon-button .material-icons {
+  font-size: 20px;
+}
+
+.icon-button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-border-strong);
+}
+
+.icon-button:active {
+  transform: translateY(0);
+}
+
+.icon-button:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.edit-button:hover {
+  background: var(--color-income-bg);
+  border-color: var(--color-income-border);
+  color: var(--color-income-primary);
+}
+
+.delete-button:hover {
+  background: var(--color-expense-bg);
+  border-color: var(--color-expense-border);
+  color: var(--color-expense-primary);
+}
+
+@media (max-width: 480px) {
+  .expense-category-manager {
+    padding: var(--spacing-md);
+  }
+
+  .expense-category-manager h2 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .category-form {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .category-form button {
+    width: 100%;
+  }
+
+  .category-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .category-item span {
+    font-size: var(--font-size-sm);
+  }
+
+  .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .icon-button .material-icons {
+    font-size: 18px;
+  }
 }

@@ -1,26 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
-import { addChild, type Child, deleteChild, getAllChildren, updateChild } from '../services/api';
+import { useState } from 'react';
+import { useChildren, useAddChild, useUpdateChild, useDeleteChild } from '../hooks/useChildren';
+import type { Child } from '../services/api';
 import ChildFormModal from './ChildFormModal';
 
 const ChildCardManager = () => {
-  const [children, setChildren] = useState<Child[]>([]);
+  const { data: children = [], isLoading } = useChildren();
+  const addChildMutation = useAddChild();
+  const updateChildMutation = useUpdateChild();
+  const deleteChildMutation = useDeleteChild();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentEditingChild, setCurrentEditingChild] = useState<Child | undefined>(undefined);
-
-  const fetchChildren = useCallback(async () => {
-    try {
-      const data = await getAllChildren();
-      setChildren(data);
-    } catch (error) {
-      toast.error('Ошибка при загрузке карточек детей.');
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchChildren();
-  }, [fetchChildren]);
 
   const handleOpenCreateModal = () => {
     setModalMode('create');
@@ -42,28 +33,26 @@ const ChildCardManager = () => {
   const handleModalSubmit = async (childData: Child | Omit<Child, 'uuid'>) => {
     try {
       if (modalMode === 'edit' && currentEditingChild?.uuid) {
-        await updateChild(currentEditingChild.uuid, childData as Child);
-        toast.success('Карточка ребенка успешно обновлена!');
+        await updateChildMutation.mutateAsync({
+          uuid: currentEditingChild.uuid,
+          data: childData as Child
+        });
       } else {
-        await addChild(childData as Omit<Child, 'uuid'>);
-        toast.success('Новая карточка ребенка успешно добавлена!');
+        await addChildMutation.mutateAsync(childData as Omit<Child, 'uuid'>);
       }
       handleModalClose();
-      fetchChildren();
     } catch (error) {
-      toast.error('Ошибка при сохранении карточки ребенка.');
+      // Ошибка обрабатывается в мутации
     }
   };
 
   const handleModalDelete = async (uuid: string) => {
     if (window.confirm('Вы уверены, что хотите удалить эту карточку ребенка?')) {
       try {
-        await deleteChild(uuid);
-        toast.success('Карточка ребенка успешно удалена!');
+        await deleteChildMutation.mutateAsync(uuid);
         handleModalClose();
-        fetchChildren();
       } catch (error) {
-        toast.error('Ошибка при удалении карточки ребенка.');
+        // Ошибка обрабатывается в мутации
       }
     }
   };
@@ -86,8 +75,9 @@ const ChildCardManager = () => {
       />
 
       <div className="child-list">
-        {children.length === 0 && <p>Пока нет добавленных карточек детей.</p>}
-        {children.map(child => (
+        {isLoading && <p>Загрузка...</p>}
+        {!isLoading && children.length === 0 && <p>Пока нет добавленных карточек детей.</p>}
+        {!isLoading && children.map(child => (
           <div key={child.uuid} className="card">
             <h3 className="card-heading">{child.childName}</h3>
             <div className="card-text-detail">

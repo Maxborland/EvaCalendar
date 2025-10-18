@@ -1,18 +1,16 @@
 :root {
-  --theme-primary: #48bb78; /* Акцентный цвет из макета */
-  --theme-secondary: #44b340; /* Оставляем старое значение, т.к. не указано в макете */
-  --theme-success: #44b340; /* Оставляем старое значение, т.к. не указано в макете */
-  --theme-danger: #c03947; /* Оставляем старое значение, т.к. не указано в макете */
-  --theme-info: #2196F3; /* Оставляем старое значение, т.к. не указано в макете */
+  /* Базовые токены mobile-first dark темы */
+  --theme-primary: #48bb78;
+  --theme-secondary: #44b340;
+  --theme-success: #44b340;
+  --theme-danger: #c03947;
+  --theme-info: #2196f3;
 
-  --theme-light: #e9f5f9; /* Фон для карточек задач/основного контента */
-  --theme-dark: #1a202c; /* Основной фон приложения */
-
-  --theme-gray-light: #e2e8f0; /* Цвет текста на основном фоне (используем как светлый серый) */
-  --theme-gray-medium: #2d3748; /* Фон для второстепенных элементов (используем как средний серый) */
-  --theme-gray-dark: #4a5568; /* Цвет иконок (детали задачи) (используем как темный серый) */
-
-
+  --theme-light: #e9f5f9;
+  --theme-dark: #0f141d;
+  --theme-gray-light: #e2e8f0;
+  --theme-gray-medium: #2d3748;
+  --theme-gray-dark: #4a5568;
 
   --theme-primary-text: var(--theme-light);
   --theme-secondary-text: var(--theme-light);
@@ -20,46 +18,119 @@
   --theme-danger-text: var(--theme-light);
   --theme-info-text: var(--theme-light);
 
+  --theme-primary-rgb: 72, 187, 120;
+  --theme-secondary-rgb: 68, 179, 64;
+  --theme-success-rgb: 68, 179, 64;
+  --theme-danger-rgb: 192, 57, 71;
+  --theme-info-rgb: 33, 150, 243;
+  --theme-light-rgb: 233, 245, 249;
+  --theme-dark-rgb: 15, 20, 29;
+  --theme-gray-light-rgb: 226, 232, 240;
+  --theme-gray-medium-rgb: 45, 55, 72;
+  --theme-gray-dark-rgb: 74, 85, 104;
 
-  --theme-primary-rgb: 72, 187, 120; /* #48bb78 */
-  --theme-secondary-rgb: 0, 86, 179; /* Оставляем старое значение */
-  --theme-success-rgb: 40, 167, 69; /* Оставляем старое значение */
-  --theme-danger-rgb: 220, 53, 69; /* Оставляем старое значение */
-  --theme-info-rgb: 33, 150, 243; /* Оставляем старое значение */
-  --theme-light-rgb: 233, 245, 249; /* #e9f5f9 */
-  --theme-dark-rgb: 26, 32, 44; /* #1a202c */
-  --theme-gray-light-rgb: 226, 232, 240; /* #e2e8f0 */
-  --theme-gray-medium-rgb: 45, 55, 72; /* #2d3748 */
-  --theme-gray-dark-rgb: 74, 85, 104; /* #4a5568 */
+  /* Поверхности */
+  --surface-app: #111622;
+  --surface-muted: #161b28;
+  --surface-raised: #1f2534;
+  --surface-elevated: #252d3f;
+  --surface-glass: rgba(31, 37, 52, 0.7);
+  --surface-overlay: rgba(8, 11, 19, 0.88);
 
-/* Переменные для SummaryBlock */
---color-light-grey-hover: #f0f0f0; /* Для ховера на шапке SummaryBlock */
---color-light-grey-active: #e0e0e0; /* Для активного состояния шапки SummaryBlock */
---color-icon-primary: #555555; /* Основной цвет иконок */
---color-info-background-subtle: #e0f7fa; /* Очень светлый фон для info-блоков */
---color-info-text-strong: #007c91; /* Насыщенный текст для info-блоков */
---color-info-border-subtle: #b2ebf2; /* Светлая граница для info-блоков */
---color-text-secondary: #555555; /* Вторичный цвет текста, если стандартные не подходят */
-/* Конец переменных для SummaryBlock */
+  /* Текст и состояния - улучшенный контраст для WCAG AA */
+  --color-text-primary: #f4f7ff;
+  --color-text-secondary: rgba(229, 234, 247, 0.82);
+  --color-text-tertiary: rgba(229, 234, 247, 0.58);
+  --color-text-disabled: rgba(229, 234, 247, 0.38);
+  --color-text-invert: #0f141d;
+  --color-placeholder: rgba(229, 234, 247, 0.6);
 
-  /* Переменные для кнопок */
-  --btn-primary-bg: #48bb78;
-  --btn-primary-text-color: var(--theme-dark);
+  /* Границы */
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-accent: rgba(72, 187, 120, 0.6);
+  --color-border-focus: rgba(72, 187, 120, 0.8);
+
+  /* Elevation & Shadows */
+  --elevation-1: 0 10px 24px rgba(0, 0, 0, 0.32);
+  --elevation-2: 0 18px 36px rgba(0, 0, 0, 0.42);
+  --elevation-3: 0 28px 56px rgba(0, 0, 0, 0.48);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.24);
+
+  /* Типографика */
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;     /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;     /* 18px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.5rem;      /* 24px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Spacing (mobile-first) */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 0.75rem;   /* 12px */
+  --spacing-lg: 1rem;      /* 16px */
+  --spacing-xl: 1.5rem;    /* 24px */
+  --spacing-2xl: 2rem;     /* 32px */
+
+  /* SummaryBlock и инфо панели */
+  --color-light-grey-hover: rgba(255, 255, 255, 0.06);
+  --color-light-grey-active: rgba(255, 255, 255, 0.1);
+  --color-icon-primary: var(--color-text-secondary);
+  --color-info-background-subtle: rgba(var(--theme-info-rgb), 0.16);
+  --color-info-text-strong: #7cd1ff;
+  --color-info-border-subtle: rgba(var(--theme-info-rgb), 0.3);
+
+  /* Акценты для разных типов событий */
+  --color-income-primary: #48bb78;
+  --color-income-bg: rgba(72, 187, 120, 0.12);
+  --color-income-border: rgba(72, 187, 120, 0.32);
+
+  --color-expense-primary: #e85d75;
+  --color-expense-bg: rgba(232, 93, 117, 0.12);
+  --color-expense-border: rgba(232, 93, 117, 0.32);
+
+  --color-lesson-primary: #60a5fa;
+  --color-lesson-bg: rgba(96, 165, 250, 0.12);
+  --color-lesson-border: rgba(96, 165, 250, 0.32);
+
+  --color-task-primary: #a78bfa;
+  --color-task-bg: rgba(167, 139, 250, 0.12);
+  --color-task-border: rgba(167, 139, 250, 0.32);
+
+  /* Кнопки */
+  --btn-primary-bg: #2f8f52;
+  --btn-primary-bg-hover: #39a15f;
+  --btn-primary-text-color: #f4fff4;
   --btn-primary-padding: 12px;
-  --btn-primary-border-radius: 8px;
+  --btn-primary-border-radius: 12px;
   --btn-primary-font-size: 16px;
 
-  --btn-secondary-bg: #2d3748;
-  --btn-secondary-text-color: var(--theme-light);
-  --btn-secondary-padding: 8px 12px;
-  --btn-secondary-border-radius: 8px;
+  --btn-secondary-bg: #2a3040;
+  --btn-secondary-bg-hover: #333949;
+  --btn-secondary-text-color: var(--color-text-secondary);
+  --btn-secondary-padding: 10px 14px;
+  --btn-secondary-border-radius: 12px;
   --btn-secondary-font-size: 14px;
 
-  --btn-icon-bg: #cbd5e0;
-  --btn-icon-color: #718096;
-  --btn-icon-size: 32px; /* Может быть переопределено для конкретных иконок */
-  --btn-icon-padding: 4px; /* Отступ вокруг иконки */
-  /* Конец переменных для кнопок */
+  --btn-icon-bg: rgba(255, 255, 255, 0.04);
+  --btn-icon-bg-hover: rgba(255, 255, 255, 0.08);
+  --btn-icon-color: var(--color-text-primary);
+  --btn-icon-size: 44px;
+  --btn-icon-padding: 8px;
+
+  /* Модальные окна */
+  --bg-modal-overlay: rgba(5, 7, 12, 0.75);
+  --bg-modal-content: var(--surface-raised);
 }
 
 input[readonly] {
@@ -112,7 +183,7 @@ input[readonly] {
 }
 
 .btn-primary:hover {
-  background-color: color-mix(in srgb, var(--btn-primary-bg) 90%, black);
+  background-color: var(--btn-primary-bg-hover);
 }
 
 /* Вторичная кнопка */
@@ -125,7 +196,7 @@ input[readonly] {
 }
 
 .btn-secondary:hover {
-  background-color: color-mix(in srgb, var(--btn-secondary-bg) 90%, white);
+  background-color: var(--btn-secondary-bg-hover);
 }
 
 /* Кнопка-иконка */
@@ -144,12 +215,35 @@ input[readonly] {
 }
 
 .btn-icon:hover {
-  background-color: color-mix(in srgb, var(--btn-icon-bg) 90%, black);
+  background-color: var(--btn-icon-bg-hover);
 }
+
+/* Глобальные focus-visible стили для доступности */
+*:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 0;
+  border-color: var(--color-border-focus);
+}
+
 /* Card Styles */
 .card {
-  background-color: var(--theme-light);
-  color: var(--theme-dark);
+  background-color: var(--surface-raised);
+  color: var(--color-text-primary);
   padding: 20px;
   margin: 20px 0 0 0; /* Отступ снизу для разделения карточек */
   border-radius: 12px;
@@ -164,7 +258,8 @@ input[readonly] {
 
 .card-text-detail {
   font-size: 14px;
-  line-height: 1.5; /* Улучшим читаемость текста */
+  line-height: 1.5;
+  color: var(--color-text-secondary);
 }
 
 /* Стили для контейнера с действиями в карточке, если он понадобится */
@@ -193,57 +288,69 @@ input[readonly] {
                 opacity 0.35s ease-in-out,
                 visibility 0s linear 0s; /* No delay for showing */
 }
+
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #1E1E1E;
+    background-color: var(--surface-app);
     min-height: max(884px, 100dvh);
+    color: var(--color-text-primary);
 }
 .text-accent {
-    color: #4CAF50;
+    color: var(--theme-primary);
 }
 .bg-card {
-    background-color: #2C2C2C;
+    background-color: var(--surface-raised);
+    color: var(--color-text-primary);
 }
 .bg-header {
-    background-color: #1A1A1A;
+    background-color: var(--surface-muted);
 }
 .bg-button-green {
-    background-color: #4CAF50;
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text-color);
 }
 .border-green-custom {
-    border-color: #4CAF50;
+    border-color: var(--color-border-accent);
 }
 .bg-modal-overlay {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--bg-modal-overlay);
 }
 .bg-modal-content {
-    background-color: #2C2C2C;
+    background-color: var(--bg-modal-content);
 }
+
 .bg-button-gray {
-    background-color: #3E3E3E;
+    background-color: #3e3e3e;
 }
 /* Settings Menu Styles */
 .settings-menu-link {
   display: block;
-  padding: 10px 15px;
-  margin: 1em 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin: var(--spacing-md) 0;
   text-decoration: none;
-  color: var(--theme-gray-light);
-  background-color: var(--theme-gray-dark);
-  border-radius: 6px;
-  transition: background-color 0.2s ease-in-out;
+  color: var(--color-text-secondary);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
 }
 
 .settings-menu-link:hover {
-  background-color: var(--theme-gray-medium);
+  background-color: var(--surface-elevated);
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
 }
 
 .settings-menu-link-active {
   background-color: var(--theme-primary);
-  color: var(--theme-dark);
-  font-weight: bold;
+  color: var(--color-text-invert);
+  font-weight: var(--font-weight-semibold);
+  border-color: var(--theme-primary);
 }
 
 .settings-menu-link-active:hover {
-  background-color: color-mix(in srgb, var(--theme-primary) 90%, black);
+  background-color: var(--btn-primary-bg-hover);
+  border-color: var(--btn-primary-bg-hover);
 }

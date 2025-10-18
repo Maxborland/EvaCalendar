@@ -13,17 +13,17 @@ const WeekNavigator = ({
   currentWeekDisplay,
 }: WeekNavigatorProps) => {
   return (
-    <nav className="flex justify-between items-center my-4 p-4 bg-card rounded-lg">
+    <nav className="week-navigator">
       <button
-        className="p-2 rounded-md hover:bg-gray-600"
+        className="week-navigator__btn"
         onClick={goToPreviousWeek}
         aria-label="Предыдущая неделя"
       >
         <span className="material-icons">chevron_left</span>
       </button>
-      <span className="text-base font-medium">{currentWeekDisplay}</span>
+      <span className="week-navigator__display">{currentWeekDisplay}</span>
       <button
-        className="p-2 rounded-md hover:bg-gray-600"
+        className="week-navigator__btn"
         onClick={goToNextWeek}
         aria-label="Следующая неделя"
       >

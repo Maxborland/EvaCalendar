@@ -1,145 +1,200 @@
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--bg-modal-overlay, rgba(0, 0, 0, 0.5));
+  inset: 0;
+  padding: clamp(12px, 4vh, 28px) clamp(12px, 4vw, 24px);
+  background: var(--bg-modal-overlay);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1050;
-  font-family: var(--font-family-sans, 'Inter', sans-serif);
-  animation: fadeIn 0.3s ease-out forwards;
+  font-family: 'Inter', sans-serif;
+  animation: fadeIn 0.28s ease-out forwards;
 }
 
 .modal-content {
-  background-color: var(--bg-modal-content, var(--theme-gray-medium));
-  color: var(--theme-gray-light);
-  padding: 20px 25px;
-  border-radius: 8px;
+  width: min(420px, 100%);
+  max-height: calc(100dvh - clamp(24px, 8vh, 56px));
+  background: var(--bg-modal-content);
+  border-radius: 22px 22px 16px 16px;
+  box-shadow: var(--elevation-3);
   position: relative;
-  z-index: 1051;
-  width: 90%;
-  max-width: 400px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-sizing: border-box;
-  animation: scaleUp 0.3s ease-out forwards;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 22px clamp(20px, 4vh, 28px);
+  overflow: hidden;
+  animation: scaleUp 0.26s ease-out forwards;
 }
 
-.modal-content h2 {
-  text-align: left;
-  color: var(--theme-light);
-  margin-top: 0;
-  margin-bottom: 25px;
-  font-size: 1.25rem;
-  font-weight: 500;
+.modal-content.closing {
+  animation: scaleDown 0.22s ease forwards;
+}
+
+.modal-overlay.closing {
+  animation: fadeOut 0.22s ease forwards;
 }
 
 .modal-content .close-button {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  font-weight: 300;
-  color: var(--theme-gray-light);
-  cursor: pointer;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-secondary);
+  font-size: 20px;
   line-height: 1;
-  padding: 0;
-  transition: color 0.2s ease;
-}
-
-.modal-content .close-button:hover {
-  color: var(--theme-primary);
-}
-
-.child-form-modal-form-group {
-  margin-bottom: 18px;
-}
-
-.child-form-modal-form-group .label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--theme-gray-light);
-  font-size: 0.9rem;
-  font-weight: 400;
-}
-
-.child-form-modal-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 25px;
-}
-
-.child-form-modal-actions .btn {
-  flex-grow: 1;
-  border: none;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease-in-out;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  text-decoration: none;
-  padding: var(--btn-primary-padding);
-  border-radius: var(--btn-primary-border-radius);
-  font-size: var(--btn-primary-font-size);
+  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
 }
 
-.child-form-modal-actions .btn:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+.modal-content .close-button:hover {
+  transform: rotate(-90deg);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.modal-content h2 {
+  margin: 0;
+  padding-right: 48px;
+  font-size: 1.12rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.child-form {
+  margin: 16px 0 0;
+  padding: 0;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.child-form::-webkit-scrollbar {
+  width: 4px;
+}
+
+.child-form::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+
+.child-form input[type="text"],
+.child-form input[type="number"],
+.child-form input[type="tel"],
+.child-form textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(17, 21, 32, 0.92);
+  color: var(--color-text-primary);
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.child-form input:focus-visible,
+.child-form textarea:focus-visible {
+  outline: none;
+  border-color: rgba(72, 187, 120, 0.6);
+  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.16);
+}
+
+.child-form label {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.child-form textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.child-form h3.embedded-form-title-hidden {
+  display: none;
+}
+
+.child-form .form-actions.embedded-form-actions-hidden {
+  display: none;
+}
+
+.child-form-modal-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, transparent 0%, rgba(17, 21, 32, 0.6) 100%);
+}
+
+@media (min-width: 520px) {
+  .child-form-modal-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+.child-form-modal-actions .btn {
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 
 .child-form-modal-actions .btn-primary {
-  background-color: var(--btn-primary-bg);
+  background: linear-gradient(135deg, rgba(47, 143, 82, 1), rgba(73, 187, 120, 0.92));
   color: var(--btn-primary-text-color);
+  box-shadow: var(--elevation-2);
 }
 
 .child-form-modal-actions .btn-primary:hover {
-  background-color: color-mix(in srgb, var(--btn-primary-bg) 90%, black);
+  transform: translateY(-1px);
+  box-shadow: var(--elevation-3);
 }
 
 .child-form-modal-actions .btn-secondary {
-  background-color: var(--btn-secondary-bg, var(--theme-gray-dark));
-  color: var(--btn-secondary-text-color, var(--theme-gray-light));
-  border: 1px solid var(--btn-secondary-border-color, var(--theme-gray-medium));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .child-form-modal-actions .btn-secondary:hover {
-  background-color: color-mix(in srgb, var(--btn-secondary-bg, var(--theme-gray-dark)) 90%, black);
-  border-color: color-mix(in srgb, var(--btn-secondary-border-color, var(--theme-gray-medium)) 80%, black);
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .child-form-modal-actions .btn-danger {
-  background-color: var(--theme-danger);
-  color: var(--theme-danger-text, var(--theme-light));
+  background: rgba(224, 86, 86, 0.18);
+  color: #ffb3b8;
+  border: 1px solid rgba(224, 86, 86, 0.28);
 }
 
 .child-form-modal-actions .btn-danger:hover {
-  background-color: color-mix(in srgb, var(--theme-danger) 90%, black);
+  transform: translateY(-1px);
+  background: rgba(224, 86, 86, 0.22);
+  border-color: rgba(224, 86, 86, 0.36);
 }
-
 
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
   to {
-    opacity: 1;
-  }
-}
-
-@keyframes scaleUp {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
     opacity: 1;
   }
 }
@@ -153,35 +208,35 @@
   }
 }
 
+@keyframes scaleUp {
+  from {
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
 @keyframes scaleDown {
   from {
-    transform: scale(1);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
   to {
-    transform: scale(0.95);
+    transform: translateY(12px) scale(0.96);
     opacity: 0;
   }
 }
 
-.modal-overlay.closing {
-  animation: fadeOut 0.3s ease-out forwards;
-}
+@media (min-width: 768px) {
+  .modal-overlay {
+    align-items: center;
+  }
 
-.modal-content.closing {
-  animation: scaleDown 0.3s ease-out forwards;
-}
-
-.modal-content .child-form {
-  margin: 0;
-  padding: 0;
-  background-color: transparent;
-}
-
-.modal-content .child-form h3.embedded-form-title-hidden {
-  display: none;
-}
-
-.modal-content .child-form .form-actions.embedded-form-actions-hidden {
-  display: none;
+  .modal-content {
+    border-radius: 24px;
+    max-height: min(90vh, 600px);
+  }
 }

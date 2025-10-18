@@ -4,8 +4,6 @@ npm-debug.log
 .git
 .gitignore
 Dockerfile
-.env
-.env.*
 !.env.production
 # Оставляем .env.production, так как он генерируется в Dockerfile и нужен для сборки
 

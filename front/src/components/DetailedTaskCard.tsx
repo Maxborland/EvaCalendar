@@ -1,4 +1,5 @@
 import { type Task } from '../services/api';
+import './DetailedTaskCard.css';
 
 interface DetailedTaskCardProps {
   task: Task;
@@ -37,20 +38,20 @@ const DetailedTaskCard = ({ task, onEdit, onDelete }: DetailedTaskCardProps) => 
   const showChildInfo = parentName || parentPhone || childAddress || childHourlyRate !== undefined;
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl my-4 p-6 w-full max-w-md">
-      <div className="flex justify-between items-start mb-4">
-        <h2 className="text-2xl font-semibold !text-gray-800">{title || 'Название задачи'}</h2>
-        <div className="flex space-x-2">
+    <div className="detailed-task-card">
+      <div className="detailed-task-card__header">
+        <h2 className="detailed-task-card__title">{title || 'Название задачи'}</h2>
+        <div className="detailed-task-card__actions">
           <button
             onClick={handleEdit}
-            className="p-2 rounded-lg btn btn-primary text-white transition duration-150"
+            className="detailed-task-card__btn detailed-task-card__btn--edit"
             aria-label="Редактировать"
           >
             <span className="material-icons">edit</span>
           </button>
           <button
             onClick={handleDelete}
-            className="p-2 rounded-lg bg-red-700 hover:bg-red-500 text-white transition duration-150"
+            className="detailed-task-card__btn detailed-task-card__btn--delete"
             aria-label="Удалить"
           >
             <span className="material-icons">delete</span>
@@ -58,75 +59,97 @@ const DetailedTaskCard = ({ task, onEdit, onDelete }: DetailedTaskCardProps) => 
         </div>
       </div>
 
-      <div className="space-y-3 text-gray-700">
+      <div className="detailed-task-card__body">
         {time && (
-          <div className="flex items-center">
-            <span className="material-icons text-gray-500 mr-2">schedule</span>
-            <p><span className="font-medium">Время:</span> {time}</p>
+          <div className="detailed-task-card__info-row">
+            <span className="material-icons detailed-task-card__icon">schedule</span>
+            <p><span className="detailed-task-card__label">Время:</span> {time}</p>
           </div>
         )}
 
         {childName && (
-          <div className="flex items-center">
-            <span className="material-icons text-gray-500 mr-2">child_care</span>
-            <p><span className="font-medium">Ребенок:</span> {childName}</p>
+          <div className="detailed-task-card__info-row">
+            <span className="material-icons detailed-task-card__icon">child_care</span>
+            <p><span className="detailed-task-card__label">Ребенок:</span> {childName}</p>
+          </div>
+        )}
+
+        {type === 'lesson' && task.address && (
+          <div className="detailed-task-card__info-row">
+            <span className="material-icons detailed-task-card__icon detailed-task-card__icon--lesson">location_on</span>
+            <p><span className="detailed-task-card__label">Адрес:</span> {task.address}</p>
+          </div>
+        )}
+
+        {type === 'lesson' && (
+          <div className="detailed-task-card__info-row">
+            <span className="material-icons detailed-task-card__icon detailed-task-card__icon--lesson">school</span>
+            <p><span className="detailed-task-card__label">Тип:</span> Занятие</p>
           </div>
         )}
 
         {type === 'task' && assignee && (
-          <div className="flex items-center">
-            <span className="material-icons text-gray-500 mr-2">assignment_ind</span>
-            <p><span className="font-medium">Исполнитель:</span> {assignee.username}</p>
+          <div className="detailed-task-card__info-row">
+            <span className="material-icons detailed-task-card__icon">assignment_ind</span>
+            <p><span className="detailed-task-card__label">Исполнитель:</span> {assignee.username}</p>
           </div>
         )}
 
         {(type === 'income' || type === 'hourly' || type === 'fixed') && incomeDisplayValue && (
-          <div className="flex items-center">
-            <span className="material-icons text-green-500 mr-2">trending_up</span>
-            <p><span className="font-medium">Доход:</span> <span className="text-green-600 font-semibold">{incomeDisplayValue}</span></p>
+          <div className="detailed-task-card__info-row">
+            <span className="material-icons detailed-task-card__icon detailed-task-card__icon--income">trending_up</span>
+            <p><span className="detailed-task-card__label">Доход:</span> <span className="detailed-task-card__amount detailed-task-card__amount--income">{incomeDisplayValue}</span></p>
           </div>
         )}
 
         {type === 'expense' && amountSpent !== undefined && (
-            <div className="flex items-center">
-                <span className="material-icons text-red-500 mr-2">trending_down</span>
-                <p><span className="font-medium">Расход:</span> <span className="text-red-600 font-semibold">-{amountSpent} ₽</span></p>
+            <div className="detailed-task-card__info-row">
+                <span className="material-icons detailed-task-card__icon detailed-task-card__icon--expense">trending_down</span>
+                <p><span className="detailed-task-card__label">Расход:</span> <span className="detailed-task-card__amount detailed-task-card__amount--expense">-{amountSpent} ₽</span></p>
             </div>
         )}
 
-        {showChildInfo && (
-          <>
-            <hr className="my-4 border-gray-200" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Информация о ребенке:</h3>
+        {type === 'lesson' && task.comments && (
+          <div className="detailed-task-card__section">
+            <h3 className="detailed-task-card__section-title">Заметки:</h3>
+            <div className="detailed-task-card__comments">
+              <p>{task.comments}</p>
+            </div>
+          </div>
+        )}
+
+        {showChildInfo && type !== 'lesson' && (
+          <div className="detailed-task-card__section">
+            <h3 className="detailed-task-card__section-title">Информация о ребенке:</h3>
 
             {parentName && (
-              <div className="flex items-center">
-                <span className="material-icons text-gray-500 mr-2">person</span>
-                <p><span className="font-medium">Имя родителя:</span> {parentName}</p>
+              <div className="detailed-task-card__info-row">
+                <span className="material-icons detailed-task-card__icon">person</span>
+                <p><span className="detailed-task-card__label">Имя родителя:</span> {parentName}</p>
               </div>
             )}
 
             {parentPhone && (
-              <div className="flex items-center">
-                <span className="material-icons text-gray-500 mr-2">phone</span>
-                <p><span className="font-medium">Телефон:</span> {parentPhone}</p>
+              <div className="detailed-task-card__info-row">
+                <span className="material-icons detailed-task-card__icon">phone</span>
+                <p><span className="detailed-task-card__label">Телефон:</span> {parentPhone}</p>
               </div>
             )}
 
             {childAddress && (
-              <div className="flex items-start">
-                <span className="material-icons text-gray-500 mr-2 mt-1">location_on</span>
-                <p><span className="font-medium">Адрес:</span> {childAddress}</p>
+              <div className="detailed-task-card__info-row">
+                <span className="material-icons detailed-task-card__icon">location_on</span>
+                <p><span className="detailed-task-card__label">Адрес:</span> {childAddress}</p>
               </div>
             )}
 
             {childHourlyRate !== undefined && (
-              <div className="flex items-center">
-                <span className="material-icons text-gray-500 mr-2">payments</span>
-                <p><span className="font-medium">Ставка:</span> {childHourlyRate} ₽/час</p>
+              <div className="detailed-task-card__info-row">
+                <span className="material-icons detailed-task-card__icon">payments</span>
+                <p><span className="detailed-task-card__label">Ставка:</span> {childHourlyRate} ₽/час</p>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

@@ -79,9 +79,7 @@ const RootLayout: React.FC = () => {
   return (
     <>
       <PageLoader />
-      <div className="pt-20">
         <Outlet />
-      </div>
     </>
   );
 };

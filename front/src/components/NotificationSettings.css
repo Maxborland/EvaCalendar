@@ -1,24 +1,45 @@
 .notification-settings {
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    padding: var(--spacing-lg);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 16px;
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-glass);
     max-width: 600px;
-    margin: 20px auto;
+    margin: var(--spacing-lg) auto;
 }
 
 .setting-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border-radius: 12px;
+    background: var(--surface-glass);
+    border: 1px solid var(--color-border-subtle);
+    transition: all 0.2s ease;
+}
+
+.setting-item:hover {
+    background: var(--surface-elevated);
+    border-color: var(--color-border-strong);
+}
+
+.setting-item > span {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
 }
 
 .push-settings {
-    margin-top: 20px;
+    margin-top: var(--spacing-xl);
 }
 
 .push-settings h3 {
-    margin-bottom: 10px;
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
 }
 
 .push-settings ul {
@@ -30,22 +51,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
-    border: 1px solid #eee;
-    margin-bottom: 5px;
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 12px;
+    background: var(--surface-glass);
+    margin-bottom: var(--spacing-sm);
 }
 
 .error-message {
-    color: red;
-    padding: 10px;
-    border: 1px solid red;
-    border-radius: 4px;
-    margin-bottom: 20px;
+    color: var(--color-expense-primary);
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-expense-border);
+    background: var(--color-expense-bg);
+    border-radius: 12px;
+    margin-bottom: var(--spacing-lg);
+    font-size: var(--font-size-sm);
 }
+
+/* Переключатель */
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 50px;
+    width: 52px;
     height: 28px;
 }
 
@@ -62,10 +89,10 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
-    -webkit-transition: .4s;
-    transition: .4s;
+    background-color: rgba(255, 255, 255, 0.12);
+    transition: all 0.3s ease;
     border-radius: 28px;
+    border: 1px solid var(--color-border-subtle);
 }
 
 .slider:before {
@@ -74,42 +101,79 @@
     height: 22px;
     width: 22px;
     left: 3px;
-    bottom: 3px;
-    background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
+    bottom: 2px;
+    background-color: var(--color-text-primary);
+    transition: all 0.3s ease;
     border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 input:checked + .slider {
-    background-color: #4CAF50;
+    background-color: var(--btn-primary-bg);
+    border-color: var(--btn-primary-bg);
 }
 
-input:focus + .slider {
-    box-shadow: 0 0 1px #4CAF50;
+input:focus-visible + .slider {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
 }
 
 input:checked + .slider:before {
-    -webkit-transform: translateX(22px);
-    -ms-transform: translateX(22px);
-    transform: translateX(22px);
+    transform: translateX(24px);
 }
+
+input:disabled + .slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Кнопка тестового уведомления */
 .test-notification-btn {
-    background-color: #4CAF50; /* Green background */
-    color: white;
-    padding: 10px 15px;
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text-color);
+    padding: var(--spacing-md) var(--spacing-lg);
     border: none;
-    border-radius: 4px;
+    border-radius: 12px;
     cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.3s;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-glass);
 }
 
 .test-notification-btn:hover {
-    background-color: #45a049;
+    background-color: var(--btn-primary-bg-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--elevation-2);
+}
+
+.test-notification-btn:active {
+    transform: translateY(0);
 }
 
 .test-notification-btn:disabled {
-    background-color: #cccccc;
+    background-color: var(--surface-muted);
+    color: var(--color-text-disabled);
     cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.test-notification-btn:focus-visible {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+    .notification-settings {
+        padding: var(--spacing-md);
+        margin: var(--spacing-md);
+    }
+
+    .setting-item {
+        padding: var(--spacing-sm);
+    }
+
+    .setting-item > span {
+        font-size: var(--font-size-sm);
+    }
 }

@@ -108,13 +108,18 @@
   margin: 0 auto;
 }
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+body {
   display: block;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--color-primary-background); /* #1a202c */
-  color: var(--color-text-primary); /* #e2e8f0 */
+  background-color: var(--color-primary-background);
+  color: var(--color-text-primary);
 }
 
 h1 {

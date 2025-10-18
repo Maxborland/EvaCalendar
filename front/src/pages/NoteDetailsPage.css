@@ -1,47 +1,135 @@
-.note-details-page {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-  font-family: sans-serif;
-  color: var(--theme-primary-text); /* Добавил цвет текста для консистентности */
+.note-details {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-app);
+  color: var(--color-text-primary);
 }
 
-.note-details-page h1 {
-  margin: 0 0 15px 0; /* Убрал отступ слева, так как нет кнопки "назад" */
-  font-size: 1.8em;
-  color: var(--theme-primary-text);
-  border-bottom: 1px solid #eee; /* Добавил разделитель как в DayDetailsPage */
-  padding-bottom: 15px; /* Добавил отступ снизу для разделителя */
+.note-details__error {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  margin: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-md);
+  border-radius: 12px;
+  border: 1px solid var(--color-expense-border);
+  background: var(--color-expense-bg);
+  color: var(--color-expense-primary);
+  font-size: var(--font-size-sm);
 }
 
-.note-textarea {
+.note-details__error-icon {
+  font-size: 20px;
+}
+
+.note-details__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-lg);
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  gap: var(--spacing-md);
+}
+
+@media (min-width: 480px) {
+  .note-details__body {
+    padding: var(--spacing-xl);
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 360px) {
+  .note-details__body {
+    padding: var(--spacing-md);
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+.note-details__textarea {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-family: sans-serif;
-  font-size: 1em;
-  box-sizing: border-box; /* Чтобы padding не увеличивал общую ширину */
-  resize: vertical; /* Позволить изменять размер только по вертикали */
-  background-color: var(--theme-input-background); /* Цвет фона для поля ввода */
-  color: var(--theme-input-text); /* Цвет текста для поля ввода */
+  min-height: 300px;
+  flex: 1;
+  border-radius: 16px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--surface-raised);
+  color: var(--color-text-primary);
+  padding: var(--spacing-lg);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  resize: vertical;
+  transition: all 0.18s ease;
 }
 
-/* Можно добавить стили для кнопки сохранения, если она появится в будущем */
-/*
-.save-note-button {
-  background-color: #5cb85c;
-  color: white;
+.note-details__textarea::placeholder {
+  color: var(--color-placeholder);
+}
+
+.note-details__textarea:focus-visible {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.16);
+  outline: none;
+  background: var(--surface-elevated);
+}
+
+.note-details__footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, var(--surface-app) 30%, var(--surface-app) 100%);
+  backdrop-filter: blur(14px);
+}
+
+@media (min-width: 480px) {
+  .note-details__footer {
+    padding: var(--spacing-xl);
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 360px) {
+  .note-details__footer {
+    padding: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+  }
+}
+
+.note-details__save {
+  width: min(100%, 420px);
+  padding: var(--spacing-lg);
+  border-radius: 12px;
   border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1em;
-  margin-top: 15px;
-  transition: background-color 0.2s;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--btn-primary-text-color);
+  background: linear-gradient(135deg, var(--btn-primary-bg) 0%, var(--theme-primary) 100%);
+  box-shadow: var(--shadow-glass);
+  transition: all 0.16s ease;
 }
 
-.save-note-button:hover {
-  background-color: #4cae4c;
+.note-details__save:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-2);
 }
-*/
+
+.note-details__save:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-glass);
+}
+
+.note-details__save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.note-details__save:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
