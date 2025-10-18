@@ -477,8 +477,8 @@ const UnifiedTaskFormModal = ({
             </div>
 
             <div className="form-group">
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: '12px', minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <label htmlFor="dueDate" className="label">Дата<span className="required-star" aria-hidden="true">*</span>:</label>
                   <input
                     type="date"
@@ -491,7 +491,7 @@ const UnifiedTaskFormModal = ({
                   />
                 </div>
                 {(taskTypeInternal === 'income' || taskTypeInternal === 'task' || taskTypeInternal === 'lesson') && (
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <label htmlFor="time" className="label">
                       Время{taskTypeInternal === 'lesson' ? <span className="required-star" aria-hidden="true">*</span> : ''}:
                     </label>

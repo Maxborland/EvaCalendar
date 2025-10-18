@@ -8,7 +8,6 @@ import {
   addDays,
   addWeeks,
   createDate,
-  formatDateRange,
   getMonth,
   getYear,
   isSameDay,
@@ -20,7 +19,7 @@ import NoteField from './NoteField';
 import SummaryModal from './SummaryModal';
 import TopNavigator from './TopNavigator';
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
-import WeekNavigator from './WeekNavigator';
+import NavigationBar from './NavigationBar';
 
 import './WeekView.css';
 
@@ -115,13 +114,6 @@ const WeekView = () => {
     setCurrentDate(addWeeks(currentDate, 1));
   };
 
-
-  const weekRangeDisplay = useMemo(() => {
-    if (weekDays && weekDays.length === 7) {
-      return formatDateRange(weekDays[0], weekDays[6]);
-    }
-    return '';
-  }, [weekDays]);
 
   const orderedWeekCells = useMemo(() => {
     if (weekDays.length !== 7) return [];
@@ -245,15 +237,12 @@ const WeekView = () => {
             );
           })}
         </section>
-
-        <footer className="week-view__footer">
-          <WeekNavigator
-            goToPreviousWeek={goToPreviousWeek}
-            goToNextWeek={goToNextWeek}
-            currentWeekDisplay={weekRangeDisplay}
-          />
-        </footer>
       </main>
+
+      <NavigationBar
+        goToPreviousWeek={goToPreviousWeek}
+        goToNextWeek={goToNextWeek}
+      />
 
       <button
         type="button"
@@ -265,16 +254,15 @@ const WeekView = () => {
         aria-label="Сводка"
       >
         <span className="material-icons week-view__fab-icon">analytics</span>
-        <span className="week-view__fab-label">Сводка</span>
       </button>
 
       <button
         type="button"
         className="week-view__fab week-view__fab--create"
         onClick={() => handleOpenTaskModal(undefined, 'income', today)}
+        aria-label="Создать дело"
       >
         <span className="material-icons week-view__fab-icon">add_circle_outline</span>
-        <span className="week-view__fab-label">Создать дело</span>
       </button>
       {isTaskModalOpen && (
         <UnifiedTaskFormModal

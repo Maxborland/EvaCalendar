@@ -13,7 +13,6 @@ services:
       NODE_ENV: production
     command: sh -c "npm run migrate:latest && node index.js"
     restart: always
-    # Security: Не пробрасываем дополнительные портов
     security_opt:
       - no-new-privileges:true
 
@@ -23,9 +22,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api
-        VITE_DISABLE_SW: "true"  # Установите "false" для production
+        VITE_DISABLE_SW: "false"
     ports:
-      - "80:80"
+      - "5005:80"
     depends_on:
       - back
     restart: always

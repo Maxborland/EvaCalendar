@@ -108,6 +108,8 @@
 .textarea,
 .select {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   border-radius: 12px;
   border: 1px solid var(--color-border-subtle);
   background: var(--surface-elevated);
@@ -115,6 +117,7 @@
   padding: 10px 12px;
   font-size: var(--font-size-sm);
   transition: all 0.16s ease;
+  box-sizing: border-box;
 }
 
 .input:focus-visible,
