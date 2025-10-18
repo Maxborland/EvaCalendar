@@ -13,7 +13,12 @@ RUN npm ci && rm -rf /root/.npm
 
 COPY . .
 
-RUN npm run build
+# Аргумент для передачи API URL из docker-compose или build команды
+# По умолчанию используется /api для production
+ARG VITE_API_URL=/api
+
+# Передаем переменную окружения при сборке
+RUN VITE_API_URL=${VITE_API_URL} npm run build
 
 # Этап production-образа
 FROM nginx:alpine-slim
