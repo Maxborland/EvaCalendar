@@ -1,9 +1,10 @@
 import clsx from 'clsx';
 import { memo, useEffect, useRef, useState } from 'react';
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
-import { useNavigate, useRevalidator } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useNav } from '../context/NavContext';
-import { createTask, deleteTask, duplicateTask, moveTask, updateTask, type Note, type Task } from '../services/api';
+import { useCreateTask, useDeleteTask, useDuplicateTask, useUpdateTask } from '../hooks/useTasks';
+import { type Note, type Task } from '../services/api';
 import { createDate, formatDateForDayColumnHeader, formatDateToYYYYMMDD } from '../utils/dateUtils';
 import MiniEventCard, { type EventItem } from './MiniEventCard';
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
@@ -26,8 +27,6 @@ const DayColumn = (props: DayColumnProps) => {
   const { fullDate, tasksForDay, onDataChange, onOpenTaskModal, isToday } = props;
   const navigate = useNavigate();
 
-  const revalidator = useRevalidator();
-
   const { setIsNavVisible, setIsModalOpen } = useNav();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [isModalOpenState, setIsModalOpenState] = useState(false);
@@ -35,6 +34,10 @@ const DayColumn = (props: DayColumnProps) => {
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   const [currentTaskType, setCurrentTaskType] = useState<'income' | 'expense'>('income');
 
+  const createTaskMutation = useCreateTask();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
+  const duplicateTaskMutation = useDuplicateTask();
 
   useEffect(() => {
     const taskEvents: EventItem[] = tasksForDay.map(task => ({
@@ -103,51 +106,28 @@ const DayColumn = (props: DayColumnProps) => {
   };
 
   const handleSubmitTask = async (taskData: Task | Omit<Task, 'uuid'>): Promise<void> => {
-    try {
-      if ('uuid' in taskData && taskData.uuid) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { uuid, ...updateData } = taskData;
-        await updateTask(taskData.uuid, updateData as Partial<Omit<Task, 'uuid'>>);
-      } else {
-        await createTask(taskData as Omit<Task, 'uuid'>);
-      }
-    } catch (error) {
-      // Ошибка при сохранении задачи в DayColumn
-      throw error;
+    if ('uuid' in taskData && taskData.uuid) {
+      const { uuid, ...updateData } = taskData;
+      await updateTaskMutation.mutateAsync({ uuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
+    } else {
+      await createTaskMutation.mutateAsync(taskData as Omit<Task, 'uuid'>);
     }
   };
 
   const handleDeleteTask = async (id: string) => {
-    try {
-      await deleteTask(id);
-      revalidator.revalidate();
-      handleCloseModal();
-    } catch (error) {
-      // Ошибка при удалении задачи
-    }
+    await deleteTaskMutation.mutateAsync(id);
+    handleCloseModal();
   };
 
   const handleDuplicateTask = async (id: string) => {
-    try {
-      await duplicateTask(id);
-      revalidator.revalidate();
-      handleCloseModal();
-    } catch (error) {
-      // Ошибка при дублировании задачи
-    }
+    await duplicateTaskMutation.mutateAsync(id);
+    handleCloseModal();
   };
 
 
   const handleMoveEvent = async (eventId: string, itemTypeFromDrop: string, newDueDate: string) => {
     if (itemTypeFromDrop === 'task' || itemTypeFromDrop === 'income' || itemTypeFromDrop === 'expense') {
-      try {
-        await moveTask(eventId, newDueDate);
-        revalidator.revalidate();
-      } catch (error) {
-        // Ошибка при перемещении задачи
-      }
-    } else {
-      // Moving for itemTypeFromDrop not implemented yet.
+      await updateTaskMutation.mutateAsync({ uuid: eventId, data: { dueDate: newDueDate } });
     }
   };
 
@@ -244,7 +224,6 @@ const DayColumn = (props: DayColumnProps) => {
           onClose={handleCloseModal}
           onSubmit={handleSubmitTask}
           onTaskUpsert={() => {
-            revalidator.revalidate();
             handleCloseModal();
           }}
           mode={modalMode}

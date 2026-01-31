@@ -29,6 +29,54 @@ function _calculateReminderAt(dueDate, time, reminderOffset, reminderAt) {
     return null;
 }
 
+function _baseTaskQuery() {
+    return knex('tasks')
+        .select(
+            'tasks.*',
+            'tasks.reminder_offset',
+            'creator.username as creator_username',
+            'assignee.username as assignee_username',
+            'children.childName as childName',
+            'children.parentName as parentName',
+            'children.parentPhone as parentPhone',
+            'children.address as childAddress',
+            'children.hourlyRate as childHourlyRate',
+            'expense_categories.categoryName as expenseCategoryName'
+        )
+        .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
+        .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
+        .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
+        .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid');
+}
+
+async function _getFamilyUuid(userId) {
+    const familyService = require('./familyService.js');
+    const membership = await familyService.getUserFamilyMembership(userId);
+    return membership ? membership.family_uuid : null;
+}
+
+function _addAccessFilter(query, userId, familyUuid) {
+    return query.where(function() {
+        this.where('tasks.creator_uuid', userId).orWhere('tasks.user_uuid', userId);
+        if (familyUuid) {
+            this.orWhere('tasks.family_uuid', familyUuid);
+        }
+    });
+}
+
+async function _assertTaskAccess(task, userId) {
+    if (task.creator_uuid !== userId && task.user_uuid !== userId) {
+        if (task.family_uuid) {
+            const familyUuid = await _getFamilyUuid(userId);
+            if (!familyUuid || familyUuid !== task.family_uuid) {
+                throw ApiError.forbidden('Access denied');
+            }
+        } else {
+            throw ApiError.forbidden('Access denied');
+        }
+    }
+}
+
 const taskService = {
     async createTask(taskData, userId) {
         const {
@@ -116,10 +164,9 @@ const taskService = {
                 final_assigned_to_id = assigned_to_id;
 
                 if (assigned_to_id !== userId) {
-                    const familyService = require('./familyService.js');
-                    const membership = await familyService.getUserFamilyMembership(userId);
-                    if (membership) {
-                        dataForDb.family_uuid = membership.family_uuid;
+                    const familyUuid = await _getFamilyUuid(userId);
+                    if (familyUuid) {
+                        dataForDb.family_uuid = familyUuid;
                     }
                 }
             }
@@ -167,66 +214,17 @@ const taskService = {
     },
 
     async getAllTasks(userId) {
-        const familyService = require('./familyService.js');
-        const membership = await familyService.getUserFamilyMembership(userId);
-        const familyUuid = membership ? membership.family_uuid : null;
-
-        return knex('tasks')
-            .select(
-                'tasks.*',
-                'tasks.reminder_offset',
-                'creator.username as creator_username',
-                'assignee.username as assignee_username',
-                'children.childName as childName',
-                'children.parentName as parentName',
-                'children.parentPhone as parentPhone',
-                'children.address as childAddress',
-                'children.hourlyRate as childHourlyRate',
-                'expense_categories.categoryName as expenseCategoryName'
-            )
-            .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
-            .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
-            .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid')
-            .where(function() {
-                this.where('tasks.creator_uuid', userId).orWhere('tasks.user_uuid', userId);
-                if (familyUuid) {
-                    this.orWhere('tasks.family_uuid', familyUuid);
-                }
-            });
+        const familyUuid = await _getFamilyUuid(userId);
+        return _addAccessFilter(_baseTaskQuery(), userId, familyUuid);
     },
 
     async getTaskById(uuid, userId) {
-        const task = await knex('tasks')
+        const task = await _baseTaskQuery()
             .where('tasks.uuid', uuid)
-            .select(
-                'tasks.*',
-                'tasks.reminder_offset',
-                'creator.username as creator_username',
-                'assignee.username as assignee_username',
-                'children.childName as childName',
-                'children.parentName as parentName',
-                'children.parentPhone as parentPhone',
-                'children.address as childAddress',
-                'children.hourlyRate as childHourlyRate',
-                'expense_categories.categoryName as expenseCategoryName'
-            )
-            .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
-            .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
-            .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid')
             .first();
 
-        if (task && task.creator_uuid !== userId && task.user_uuid !== userId) {
-            if (task.family_uuid) {
-                const familyService = require('./familyService.js');
-                const membership = await familyService.getUserFamilyMembership(userId);
-                if (!membership || membership.family_uuid !== task.family_uuid) {
-                    throw ApiError.forbidden('Access denied');
-                }
-            } else {
-                throw ApiError.forbidden('Access denied');
-            }
+        if (task) {
+            await _assertTaskAccess(task, userId);
         }
 
         return task;
@@ -238,17 +236,7 @@ const taskService = {
             throw ApiError.notFound('Task not found');
         }
 
-        if (existingTask.creator_uuid !== userId && existingTask.user_uuid !== userId) {
-            if (existingTask.family_uuid) {
-                const familyService = require('./familyService.js');
-                const membership = await familyService.getUserFamilyMembership(userId);
-                if (!membership || membership.family_uuid !== existingTask.family_uuid) {
-                    throw ApiError.forbidden('Access denied');
-                }
-            } else {
-                throw ApiError.forbidden('Access denied');
-            }
-        }
+        await _assertTaskAccess(existingTask, userId);
 
         const allowedFields = [
             'title', 'type', 'dueDate', 'time', 'address', 'comments', 'reminder_offset', 'reminder_at',
@@ -362,25 +350,17 @@ const taskService = {
         return updatedTask;
     },
 
-async getTasksByCategoryUuid(categoryUuid, userId) {
+    async getTasksByCategoryUuid(categoryUuid, userId) {
         const category = await knex('expense_categories').where({ uuid: categoryUuid }).first();
 
         if (!category) {
             return null;
         }
 
-        const familyService = require('./familyService.js');
-        const membership = await familyService.getUserFamilyMembership(userId);
-        const familyUuid = membership ? membership.family_uuid : null;
+        const familyUuid = await _getFamilyUuid(userId);
 
-        return knex('tasks')
+        const query = knex('tasks')
             .where({ expense_category_uuid: category.uuid })
-            .andWhere(function() {
-                this.where('tasks.creator_uuid', userId).orWhere('tasks.user_uuid', userId);
-                if (familyUuid) {
-                    this.orWhere('tasks.family_uuid', familyUuid);
-                }
-            })
             .select(
                 'tasks.*',
                 'tasks.reminder_offset',
@@ -392,7 +372,10 @@ async getTasksByCategoryUuid(categoryUuid, userId) {
             .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
             .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid');
+
+        return _addAccessFilter(query, userId, familyUuid);
     },
+
     async deleteTask(uuid, userId) {
         const task = await knex('tasks').where({ uuid }).first();
         if (!task) {
@@ -409,34 +392,13 @@ async getTasksByCategoryUuid(categoryUuid, userId) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
             throw ApiError.badRequest('Invalid date format. Please use YYYY-MM-DD.');
         }
-        const familyService = require('./familyService.js');
-        const membership = await familyService.getUserFamilyMembership(userId);
-        const familyUuid = membership ? membership.family_uuid : null;
+        const familyUuid = await _getFamilyUuid(userId);
 
-        return knex('tasks')
-            .where('tasks.dueDate', dateString)
-            .andWhere(function() {
-                this.where('tasks.creator_uuid', userId).orWhere('tasks.user_uuid', userId);
-                if (familyUuid) {
-                    this.orWhere('tasks.family_uuid', familyUuid);
-                }
-            })
-            .select(
-                'tasks.*',
-                'tasks.reminder_offset',
-                'creator.username as creator_username',
-                'assignee.username as assignee_username',
-                'children.childName as childName',
-                'children.parentName as parentName',
-                'children.parentPhone as parentPhone',
-                'children.address as childAddress',
-                'children.hourlyRate as childHourlyRate',
-                'expense_categories.categoryName as expenseCategoryName'
-            )
-            .leftJoin('users as creator', 'tasks.creator_uuid', 'creator.uuid')
-            .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
-            .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
-            .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid');
+        return _addAccessFilter(
+            _baseTaskQuery().where('tasks.dueDate', dateString),
+            userId,
+            familyUuid
+        );
     }
 };
 

@@ -20,8 +20,8 @@ const findTasksNearingDeadline = async () => {
 
   // Ищем задачи, время напоминания которых находится в интервале текущей минуты.
   return db('tasks')
-    .where('reminder_at', '>=', now)
-    .andWhere('reminder_at', '<', oneMinuteLater)
+    .where('reminder_at', '>=', now.toISOString())
+    .andWhere('reminder_at', '<', oneMinuteLater.toISOString())
     .andWhere(function() {
       this.where('reminder_sent', false).orWhereNull('reminder_sent');
     });

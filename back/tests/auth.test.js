@@ -12,7 +12,7 @@ describe('Auth API', () => {
         password: 'password123',
       };
       const res = await request(app)
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send(uniqueUser);
       expect(res.statusCode).toEqual(201);
       expect(res.body).toHaveProperty('message', 'Пользователь успешно зарегистрирован.');
@@ -20,14 +20,14 @@ describe('Auth API', () => {
 
     it('should not register with an existing username', async () => {
       await request(app)
-        .post('/auth/register') // Убран /api
+        .post('/api/auth/register') // Убран /api
         .send({
           username: 'testuser',
           email: 'test1@example.com',
           password: 'password123',
         });
       const res = await request(app)
-        .post('/auth/register') // Убран /api
+        .post('/api/auth/register') // Убран /api
         .send({
           username: 'testuser',
           email: 'test2@example.com',
@@ -38,14 +38,14 @@ describe('Auth API', () => {
 
     it('should not register with an existing email', async () => {
       await request(app)
-        .post('/auth/register') // Убран /api
+        .post('/api/auth/register') // Убран /api
         .send({
           username: 'testuser1',
           email: 'test@example.com',
           password: 'password123',
         });
       const res = await request(app)
-        .post('/auth/register') // Убран /api
+        .post('/api/auth/register') // Убран /api
         .send({
           username: 'testuser2',
           email: 'test@example.com',
@@ -56,7 +56,7 @@ describe('Auth API', () => {
 
     it('should not register with invalid data (short password)', async () => {
       const res = await request(app)
-        .post('/auth/register') // Убран /api
+        .post('/api/auth/register') // Убран /api
         .send({
           username: 'testuser',
           email: 'test@example.com',
@@ -67,7 +67,7 @@ describe('Auth API', () => {
 
     it('should not register with invalid data (invalid email)', async () => {
       const res = await request(app)
-        .post('/auth/register') // Убран /api
+        .post('/api/auth/register') // Убран /api
         .send({
           username: 'testuser',
           email: 'invalid-email',
@@ -78,7 +78,7 @@ describe('Auth API', () => {
 
     it('should not register with missing fields (e.g., password)', async () => {
       const res = await request(app)
-        .post('/auth/register') // Убран /api
+        .post('/api/auth/register') // Убран /api
         .send({
           username: 'testuser',
           email: 'test@example.com',
@@ -97,13 +97,13 @@ describe('Auth API', () => {
         password: 'password123',
       };
       await request(app)
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send(loginUserData);
     });
 
     it('should login a registered user successfully with email and return a token', async () => {
       const res = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           identifier: loginUserData.email, // Используем уникальные данные
           password: 'password123',
@@ -114,7 +114,7 @@ describe('Auth API', () => {
 
     it('should login a registered user successfully with username and return a token', async () => {
       const res = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           identifier: loginUserData.username, // Используем уникальные данные
           password: 'password123',
@@ -125,7 +125,7 @@ describe('Auth API', () => {
 
     it('should not login with an incorrect identifier (email)', async () => {
       const res = await request(app)
-        .post('/auth/login') // Убран /api
+        .post('/api/auth/login') // Убран /api
         .send({
           identifier: 'wrong@example.com',
           password: 'password123',
@@ -135,7 +135,7 @@ describe('Auth API', () => {
 
     it('should not login with an incorrect identifier (username)', async () => {
       const res = await request(app)
-        .post('/auth/login') // Убран /api
+        .post('/api/auth/login') // Убран /api
         .send({
           identifier: 'wronguser',
           password: 'password123',
@@ -145,7 +145,7 @@ describe('Auth API', () => {
 
     it('should not login with an incorrect password (using email as identifier)', async () => {
       const res = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           identifier: loginUserData.email, // Используем уникальные данные
           password: 'wrongpassword',
@@ -155,7 +155,7 @@ describe('Auth API', () => {
 
     it('should not login with an incorrect password (using username as identifier)', async () => {
       const res = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           identifier: loginUserData.username, // Используем уникальные данные
           password: 'wrongpassword',
@@ -177,13 +177,13 @@ describe('Auth API', () => {
         password: 'password123',
       };
       const registerRes = await request(app)
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send(meUserCredentials);
       // Убрал expect(registerRes.statusCode).toEqual(201); на случай если сиды создают 'me_user'
       // Логин должен работать в любом случае, если пользователь существует
 
       const loginRes = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           identifier: meUserCredentials.email,
           password: 'password123',
@@ -196,7 +196,7 @@ describe('Auth API', () => {
 
     it('should get user data for an authenticated user', async () => {
       const res = await request(app)
-        .get('/users/me')
+        .get('/api/users/me')
         .set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toEqual(200);
       expect(res.body).toHaveProperty('uuid');
@@ -207,13 +207,13 @@ describe('Auth API', () => {
 
     it('should not get user data without a token', async () => {
       const res = await request(app)
-        .get('/users/me'); // Исправлен путь
+        .get('/api/users/me'); // Исправлен путь
       expect(res.statusCode).toEqual(401);
     });
 
     it('should not get user data with an invalid token', async () => {
       const res = await request(app)
-        .get('/users/me') // Исправлен путь
+        .get('/api/users/me') // Исправлен путь
         .set('Authorization', 'Bearer invalidtoken123');
       expect(res.statusCode).toEqual(401);
     });
@@ -233,12 +233,12 @@ describe('Auth API', () => {
         password: oldPassword,
       };
       const registerRes = await request(app)
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send(changePassUserCredentials);
       expect(registerRes.statusCode).toEqual(201); // Уникальный пользователь должен регистрироваться
 
       const loginRes = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           identifier: changePassUserCredentials.email,
           password: oldPassword,
@@ -249,7 +249,7 @@ describe('Auth API', () => {
 
     it('should change password successfully', async () => {
       const res = await request(app)
-        .post('/users/me/change-password')
+        .post('/api/users/me/change-password')
         .set('Authorization', `Bearer ${token}`)
         .send({
           currentPassword: oldPassword,
@@ -259,7 +259,7 @@ describe('Auth API', () => {
       expect(res.body).toHaveProperty('message', 'Пароль успешно изменен');
 
       const loginWithNewPassRes = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           identifier: changePassUserCredentials.email, // Теперь переменная определена
           password: newPassword,
@@ -270,7 +270,7 @@ describe('Auth API', () => {
 
     it('should not change password with incorrect current password', async () => {
       const res = await request(app)
-        .post('/users/me/change-password')
+        .post('/api/users/me/change-password')
         .set('Authorization', `Bearer ${token}`)
         .send({
           currentPassword: 'wrongOldPassword',
@@ -282,7 +282,7 @@ describe('Auth API', () => {
 
     it('should not change password without a token', async () => {
       const res = await request(app)
-        .post('/users/me/change-password') // Исправлен путь
+        .post('/api/users/me/change-password') // Исправлен путь
         .send({
           currentPassword: oldPassword,
           newPassword: newPassword,
@@ -303,14 +303,14 @@ describe('Auth API', () => {
         password: 'password123',
       };
       const registerRes = await request(app)
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send(logoutUserCredentials);
       // Убрал expect(registerRes.statusCode).toEqual(201); т.к. может быть 409, если сиды создали похожего,
       // но для логина это не должно быть проблемой, если email уникален.
       // Главное, чтобы следующий логин прошел.
 
       const loginRes = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           identifier: logoutUserCredentials.email,
           password: 'password123',
@@ -322,7 +322,7 @@ describe('Auth API', () => {
 
     it('should logout successfully', async () => {
       const res = await request(app)
-        .post('/auth/logout') // Убран /api
+        .post('/api/auth/logout') // Убран /api
         .set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toEqual(200);
       expect(res.body).toHaveProperty('message', 'Вы успешно вышли из системы');
@@ -330,14 +330,14 @@ describe('Auth API', () => {
       // Проверяем, что токен больше не действителен (например, /api/users/me вернет 401)
       // Запрос к /api/users/me также должен быть изменен на /users/me
       const meRes = await request(app)
-        .get('/users/me') // Изменен путь
+        .get('/api/users/me') // Изменен путь
         .set('Authorization', `Bearer ${token}`);
       expect(meRes.statusCode).toEqual(401); // Ожидаем 401, так как токен должен быть в черном списке
     });
 
     it('should not logout without a token', async () => {
       const res = await request(app)
-        .post('/auth/logout');
+        .post('/api/auth/logout');
       // Если эндпоинт /auth/logout не защищен и всегда возвращает 200,
       // то этот тест должен ожидать 200.
       // Если он должен быть защищен, то это баг в API.
@@ -355,7 +355,7 @@ describe('Auth API', () => {
   describe('Rate Limiting on POST /auth/login', () => {
     beforeEach(async () => {
       await request(app)
-        .post('/auth/register') // Убран /api
+        .post('/api/auth/register') // Убран /api
         .send({
           username: 'ratelimituser',
           email: 'ratelimit@example.com',
@@ -368,7 +368,7 @@ describe('Auth API', () => {
       const promises = [];
       const limit = 15; // Убедитесь, что это значение соответствует настройкам rate limiter или чуть больше
       for (let i = 0; i <= limit; i++) { // <= limit, чтобы точно превысить
-        promises.push(request(app).post('/auth/login').send(loginPayload)); // Убран /api
+        promises.push(request(app).post('/api/auth/login').send(loginPayload)); // Убран /api
       }
 
       const responses = await Promise.all(promises);

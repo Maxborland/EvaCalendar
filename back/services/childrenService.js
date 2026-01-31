@@ -10,8 +10,16 @@ class ChildrenService {
         throw ApiError.badRequest(`${field} is required`);
       }
     }
+    const allowedFields = ['childName', 'parentName', 'parentPhone', 'address', 'hourlyRate', 'comment'];
+    const sanitized = {};
+    for (const field of allowedFields) {
+      if (childData.hasOwnProperty(field)) {
+        sanitized[field] = childData[field];
+      }
+    }
+
     const newUuid = uuidv4();
-    const [createdChild] = await knex('children').insert({ uuid: newUuid, user_uuid: userId, ...childData }).returning('*');
+    const [createdChild] = await knex('children').insert({ uuid: newUuid, user_uuid: userId, ...sanitized }).returning('*');
     return createdChild;
   }
 
@@ -35,7 +43,15 @@ class ChildrenService {
         throw ApiError.badRequest(`${field} is required and cannot be empty`);
       }
     }
-    const [updatedChild] = await knex('children').where({ uuid, user_uuid: userId }).update(childData).returning('*');
+    const allowedFields = ['childName', 'parentName', 'parentPhone', 'address', 'hourlyRate', 'comment'];
+    const sanitized = {};
+    for (const field of allowedFields) {
+      if (childData.hasOwnProperty(field)) {
+        sanitized[field] = childData[field];
+      }
+    }
+
+    const [updatedChild] = await knex('children').where({ uuid, user_uuid: userId }).update(sanitized).returning('*');
     return updatedChild;
   }
 

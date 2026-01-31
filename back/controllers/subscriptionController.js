@@ -26,7 +26,7 @@ const unsubscribe = async (req, res, next) => {
       throw new ApiError(400, 'Endpoint is required.');
     }
 
-    await subscriptionService.unsubscribe(endpoint);
+    await subscriptionService.unsubscribe(endpoint, userId);
     res.status(200).json({ message: 'Subscription deleted successfully.' });
   } catch (error) {
     next(error);

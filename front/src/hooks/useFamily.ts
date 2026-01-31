@@ -11,7 +11,6 @@ import {
   acceptFamilyInvitation as acceptInvitationAPI,
   getPendingInvitations,
   cancelFamilyInvitation as cancelInvitationAPI,
-  type Family,
   type FamilyInvitation,
 } from '../services/api';
 
@@ -37,6 +36,9 @@ export function useCreateFamily() {
       queryClient.invalidateQueries({ queryKey: familyKeys.all });
       toast.success('Семья создана');
     },
+    onError: () => {
+      toast.error('Не удалось создать семью');
+    },
   });
 }
 
@@ -48,6 +50,9 @@ export function useUpdateFamily() {
       queryClient.invalidateQueries({ queryKey: familyKeys.all });
       toast.success('Название обновлено');
     },
+    onError: () => {
+      toast.error('Не удалось обновить название');
+    },
   });
 }
 
@@ -58,6 +63,9 @@ export function useDeleteFamily() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: familyKeys.all });
       toast.success('Семья удалена');
+    },
+    onError: () => {
+      toast.error('Не удалось удалить семью');
     },
   });
 }
@@ -71,6 +79,9 @@ export function useRemoveFamilyMember() {
       queryClient.invalidateQueries({ queryKey: familyKeys.all });
       toast.success('Участник удалён');
     },
+    onError: () => {
+      toast.error('Не удалось удалить участника');
+    },
   });
 }
 
@@ -81,6 +92,9 @@ export function useLeaveFamily() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: familyKeys.all });
       toast.success('Вы покинули семью');
+    },
+    onError: () => {
+      toast.error('Не удалось покинуть семью');
     },
   });
 }
@@ -94,6 +108,9 @@ export function useSendFamilyInvitation() {
       queryClient.invalidateQueries({ queryKey: familyKeys.invitations(familyUuid) });
       toast.success('Приглашение отправлено');
     },
+    onError: () => {
+      toast.error('Не удалось отправить приглашение');
+    },
   });
 }
 
@@ -104,6 +121,9 @@ export function useAcceptFamilyInvitation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: familyKeys.all });
       toast.success('Приглашение принято');
+    },
+    onError: () => {
+      toast.error('Не удалось принять приглашение');
     },
   });
 }
@@ -124,6 +144,9 @@ export function useCancelInvitation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: familyKeys.all });
       toast.success('Приглашение отменено');
+    },
+    onError: () => {
+      toast.error('Не удалось отменить приглашение');
     },
   });
 }

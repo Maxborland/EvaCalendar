@@ -33,15 +33,16 @@ describe('Scheduler for Task Reminders', () => {
     await db('users').insert(user);
 
     const reminderTime = new Date();
-    reminderTime.setMinutes(reminderTime.getMinutes() + 3); // Через 3 минуты
+    reminderTime.setSeconds(30, 0); // В пределах текущей минуты
     const reminderAtISO = reminderTime.toISOString();
 
     const taskUUID = uuidv4();
     const task = {
       uuid: taskUUID,
       user_uuid: userUUID,
+      creator_uuid: userUUID,
       title: 'Test Task',
-      type: 'reminder', // Добавим тип задачи
+      type: 'task',
       reminder_at: reminderAtISO,
       reminder_sent: false,
     };
@@ -67,8 +68,8 @@ describe('Scheduler for Task Reminders', () => {
 
     // Проверяем, что sendNotification был вызван с правильными данными
     const expectedPayload = {
-      title: 'Напоминание о задаче',
-      body: `Скоро начнется ваша задача: "${task.title}"`,
+      title: 'Напоминание о деле',
+      body: `Не забудьте о задаче: "${task.title}"`,
       icon: '/icons/web/icon-192.png',
     };
 
@@ -109,8 +110,9 @@ describe('Scheduler for Task Reminders', () => {
     const task = {
       uuid: taskUUID,
       user_uuid: userUUID,
+      creator_uuid: userUUID,
       title: 'Future Task',
-      type: 'reminder',
+      type: 'task',
       reminder_at: reminderAtISO,
       reminder_sent: false,
     };

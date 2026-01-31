@@ -16,7 +16,7 @@ import {
 export const taskKeys = {
   all: ['tasks'] as const,
   lists: () => [...taskKeys.all, 'list'] as const,
-  list: (filters?: any) => [...taskKeys.lists(), filters] as const,
+  list: (filters?: Record<string, unknown>) => [...taskKeys.lists(), filters] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
 };
@@ -67,9 +67,7 @@ export function useCreateTask() {
       return { previousTasks };
     },
 
-    // При успехе обновляем реальными данными
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
       toast.success('Задача успешно создана!');
     },
 
@@ -79,9 +77,7 @@ export function useCreateTask() {
         queryClient.setQueryData(taskKeys.all, context.previousTasks);
       }
 
-      // Проверяем, онлайн ли мы
       if (!navigator.onLine) {
-        // Добавляем в offline queue
         offlineQueue.add({
           type: 'create',
           entity: 'task',
@@ -94,7 +90,6 @@ export function useCreateTask() {
     },
 
     onSettled: () => {
-      // Всегда обновляем кэш после завершения
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },
   });
@@ -131,7 +126,6 @@ export function useUpdateTask() {
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
       toast.success('Задача успешно обновлена!');
     },
 
@@ -184,7 +178,6 @@ export function useDeleteTask() {
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
       toast.success('Задача успешно удалена!');
     },
 
@@ -242,7 +235,6 @@ export function useDuplicateTask() {
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
       toast.success('Задача успешно дублирована!');
     },
 

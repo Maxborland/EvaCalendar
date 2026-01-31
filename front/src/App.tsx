@@ -57,19 +57,7 @@ const PageLoader: React.FC = () => {
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(214, 239, 199, 1)',
-        zIndex: 9999,
-      }}
-      className={isLoading ? 'loader-visible' : 'loader-hidden'}
+      className={`fixed inset-0 w-screen h-screen flex justify-center items-center bg-[rgba(214,239,199,1)] z-[9999] ${isLoading ? 'loader-visible' : 'loader-hidden'}`}
     >
       <LoadingAnimation speed={finalSpeed} />
     </div>
@@ -87,7 +75,7 @@ const RootLayout: React.FC = () => {
 
 
 
-const noteDetailsLoader = async ({ params }: any) => {
+const noteDetailsLoader = async ({ params }: { params: Record<string, string | undefined> }) => {
   const date = params.date;
   if (!date) {
     throw new Response("Bad Request: date is required", { status: 400 });

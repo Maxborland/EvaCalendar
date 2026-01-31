@@ -6,21 +6,21 @@ const { app } = require('../index.js');
 
 describe('Note API', () => {
   let token;
-  const uniqueUser = {
-    username: `testuser_notes_${Date.now()}`,
-    email: `test_notes_${Date.now()}@example.com`,
-    password: 'password123',
-  };
-  // let createdNoteUuid; // Больше не используется глобально для describe
 
-  beforeEach(async () => { // Изменено с beforeAll на beforeEach
+  beforeEach(async () => {
+    const timestamp = Date.now();
+    const uniqueUser = {
+      username: `testuser_notes_${timestamp}`,
+      email: `test_notes_${timestamp}@example.com`,
+      password: 'password123',
+    };
     const registerRes = await request(app)
-      .post('/auth/register')
+      .post('/api/auth/register')
       .send(uniqueUser);
     expect(registerRes.statusCode).toEqual(201);
 
     const loginRes = await request(app)
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({
         identifier: uniqueUser.email,
         password: uniqueUser.password,
@@ -37,7 +37,7 @@ describe('Note API', () => {
 
   it('should create a new note', async () => {
     const res = await request(app)
-      .post('/notes')
+      .post('/api/notes')
       .set('Authorization', `Bearer ${token}`)
       .send(baseNote);
     expect(res.statusCode).toEqual(201);
@@ -51,7 +51,7 @@ describe('Note API', () => {
     // Создаем первую заметку
     const note1Data = { ...baseNote, content: 'Первая заметка для GET ALL', date: '2025-06-01' };
     const createRes1 = await request(app)
-        .post('/notes')
+        .post('/api/notes')
         .set('Authorization', `Bearer ${token}`)
         .send(note1Data);
     expect(createRes1.statusCode).toEqual(201);
@@ -59,13 +59,13 @@ describe('Note API', () => {
     // Создаем вторую заметку
     const note2Data = { ...baseNote, content: 'Вторая заметка для GET ALL', date: '2025-06-02' };
     const createRes2 = await request(app)
-        .post('/notes')
+        .post('/api/notes')
         .set('Authorization', `Bearer ${token}`)
         .send(note2Data);
     expect(createRes2.statusCode).toEqual(201);
 
     const res = await request(app)
-        .get('/notes')
+        .get('/api/notes')
         .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toEqual(200);
     expect(Array.isArray(res.body)).toBeTruthy();
@@ -77,14 +77,14 @@ describe('Note API', () => {
   it('should get a note by UUID', async () => {
     const noteData = { ...baseNote, content: 'Заметка для GET по UUID' };
     const createRes = await request(app)
-        .post('/notes')
+        .post('/api/notes')
         .set('Authorization', `Bearer ${token}`)
         .send(noteData);
     expect(createRes.statusCode).toEqual(201);
     const uuidToRetrieve = createRes.body.uuid;
 
     const res = await request(app)
-        .get(`/notes/${uuidToRetrieve}`)
+        .get(`/api/notes/${uuidToRetrieve}`)
         .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('uuid', uuidToRetrieve);
@@ -94,7 +94,7 @@ describe('Note API', () => {
   it('should update a note', async () => {
     const noteData = { ...baseNote, content: 'Начальная заметка для обновления' };
     const createRes = await request(app)
-        .post('/notes')
+        .post('/api/notes')
         .set('Authorization', `Bearer ${token}`)
         .send(noteData);
     expect(createRes.statusCode).toEqual(201);
@@ -103,7 +103,7 @@ describe('Note API', () => {
 
     const updatedContent = 'Обновленное содержание заметки';
     const res = await request(app)
-      .put(`/notes/${uuidToUpdate}`)
+      .put(`/api/notes/${uuidToUpdate}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ content: updatedContent }); // Отправляем только обновляемый контент
     expect(res.statusCode).toEqual(200);
@@ -114,26 +114,26 @@ describe('Note API', () => {
   it('should delete a note', async () => {
     const noteToDelete = { ...baseNote, content: 'Заметка для удаления' };
     const createRes = await request(app)
-      .post('/notes')
+      .post('/api/notes')
       .set('Authorization', `Bearer ${token}`)
       .send(noteToDelete);
     expect(createRes.statusCode).toEqual(201);
     const uuidToDelete = createRes.body.uuid;
 
     const res = await request(app)
-        .delete(`/notes/${uuidToDelete}`)
+        .delete(`/api/notes/${uuidToDelete}`)
         .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toEqual(204);
 
     const checkRes = await request(app)
-        .get(`/notes/${uuidToDelete}`)
+        .get(`/api/notes/${uuidToDelete}`)
         .set('Authorization', `Bearer ${token}`);
     expect(checkRes.statusCode).toEqual(404);
   });
 
   it('should return 400 if date is missing when creating a note', async () => {
     const res = await request(app)
-      .post('/notes')
+      .post('/api/notes')
       .set('Authorization', `Bearer ${token}`)
       .send({ content: 'Заметка без даты' });
     expect(res.statusCode).toEqual(400);
@@ -141,7 +141,7 @@ describe('Note API', () => {
 
   it('should return 404 if note not found when updating', async () => {
     const res = await request(app)
-      .put('/notes/00000000-0000-0000-0000-000000000000')
+      .put('/api/notes/00000000-0000-0000-0000-000000000000')
       .set('Authorization', `Bearer ${token}`)
       .send({ content: 'Попытка обновить несуществующую' });
     expect(res.statusCode).toEqual(404);
@@ -149,12 +149,12 @@ describe('Note API', () => {
 
   it('should return 404 if note not found when deleting', async () => {
     const res = await request(app)
-        .delete('/notes/00000000-0000-0000-0000-000000000000')
+        .delete('/api/notes/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toEqual(404);
   });
 
-  describe('GET /notes/date/:dateString', () => {
+  describe('GET /api/notes/date/:dateString', () => {
     const testDate = '2025-07-15';
     // baseNoteForDate будет использоваться для создания уникальной заметки в beforeEach
     const baseNoteForDate = {
@@ -162,7 +162,7 @@ describe('Note API', () => {
     };
     // let noteForDateUuid; // Не используется в этой версии
 
-    // beforeEach для describe('/notes/date/:dateString') остается,
+    // beforeEach для describe('/api/notes/date/:dateString') остается,
     // но теперь он будет работать в контексте beforeEach верхнего уровня,
     // который уже создал пользователя и токен.
     beforeEach(async () => {
@@ -182,26 +182,31 @@ describe('Note API', () => {
     it('should get a note by date if it exists for the authenticated user', async () => {
       const notePayload = { ...baseNoteForDate, date: testDate };
       const createRes = await request(app)
-        .post('/notes')
+        .post('/api/notes')
         .set('Authorization', `Bearer ${token}`)
         .send(notePayload);
       expect(createRes.statusCode).toEqual(201);
 
       const res = await request(app)
-        .get(`/notes/date/${testDate}`)
+        .get(`/api/notes/date/${testDate}`)
         .set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toEqual(200);
-      expect(res.body).toHaveProperty('uuid', createRes.body.uuid); // Проверяем uuid созданной заметки
-      expect(res.body.date).toEqual(testDate);
-      expect(res.body.content).toEqual(baseNoteForDate.content);
+      expect(Array.isArray(res.body)).toBeTruthy();
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+      const note = res.body.find(n => n.uuid === createRes.body.uuid);
+      expect(note).toBeDefined();
+      expect(note.date).toEqual(testDate);
+      expect(note.content).toEqual(baseNoteForDate.content);
     });
 
-    it('should return 404 if note for the date does not exist for the user', async () => {
+    it('should return empty array if note for the date does not exist for the user', async () => {
       const nonExistentDate = '2025-07-16';
       const res = await request(app)
-        .get(`/notes/date/${nonExistentDate}`)
+        .get(`/api/notes/date/${nonExistentDate}`)
         .set('Authorization', `Bearer ${token}`);
-      expect(res.statusCode).toEqual(404);
+      expect(res.statusCode).toEqual(200);
+      expect(Array.isArray(res.body)).toBeTruthy();
+      expect(res.body.length).toEqual(0);
     });
   });
 });

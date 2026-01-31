@@ -380,8 +380,9 @@ const searchUsers = asyncHandler(async (req, res) => {
        return res.json([]);
    }
 
+   const escaped = q.replace(/[%_]/g, '\\$&');
    const users = await knex('users')
-       .where('username', 'like', `%${q}%`)
+       .where('username', 'like', `%${escaped}%`)
        .select('uuid', 'username');
 
    res.status(200).json(users);

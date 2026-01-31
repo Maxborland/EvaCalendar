@@ -5,21 +5,22 @@ const { app } = require('../index.js');
 
 describe('Expense Category API', () => {
   let token;
-  const uniqueUser = {
-    username: `testuser_exp_cat_${Date.now()}`,
-    email: `test_exp_cat_${Date.now()}@example.com`,
-    password: 'password123',
-  };
   let createdCategoryUuid;
 
   beforeEach(async () => {
+    const timestamp = Date.now();
+    const uniqueUser = {
+      username: `testuser_exp_cat_${timestamp}`,
+      email: `test_exp_cat_${timestamp}@example.com`,
+      password: 'password123',
+    };
     const registerRes = await request(app)
-      .post('/auth/register')
+      .post('/api/auth/register')
       .send(uniqueUser);
     expect(registerRes.statusCode).toEqual(201);
 
     const loginRes = await request(app)
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({
         identifier: uniqueUser.email,
         password: uniqueUser.password,
@@ -33,7 +34,7 @@ describe('Expense Category API', () => {
 
   it('should create a new expense category', async () => {
     const res = await request(app)
-      .post('/expense-categories')
+      .post('/api/expense-categories')
       .set('Authorization', `Bearer ${token}`)
       .send(baseCategory);
     expect(res.statusCode).toEqual(201);
@@ -45,20 +46,20 @@ describe('Expense Category API', () => {
   it('should get all expense categories for the authenticated user', async () => {
     const catData1 = { ...baseCategory, categoryName: 'Категория для GET ALL 1' };
     const createRes1 = await request(app)
-      .post('/expense-categories')
+      .post('/api/expense-categories')
       .set('Authorization', `Bearer ${token}`)
       .send(catData1);
     expect(createRes1.statusCode).toEqual(201);
 
     const catData2 = { ...baseCategory, categoryName: 'Категория для GET ALL 2' };
     const createRes2 = await request(app)
-      .post('/expense-categories')
+      .post('/api/expense-categories')
       .set('Authorization', `Bearer ${token}`)
       .send(catData2);
     expect(createRes2.statusCode).toEqual(201);
 
     const res = await request(app)
-      .get('/expense-categories')
+      .get('/api/expense-categories')
       .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toEqual(200);
     expect(Array.isArray(res.body)).toBeTruthy();
@@ -70,14 +71,14 @@ describe('Expense Category API', () => {
   it('should get an expense category by uuid', async () => {
     const categoryForGet = { categoryName: 'Категория для GET по UUID' };
     const createResponse = await request(app)
-      .post('/expense-categories')
+      .post('/api/expense-categories')
       .set('Authorization', `Bearer ${token}`)
       .send(categoryForGet);
     expect(createResponse.statusCode).toEqual(201);
     const uuidToGet = createResponse.body.uuid;
 
     const res = await request(app)
-      .get(`/expense-categories/${uuidToGet}`)
+      .get(`/api/expense-categories/${uuidToGet}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('uuid', uuidToGet);
@@ -87,7 +88,7 @@ describe('Expense Category API', () => {
   it('should update an expense category', async () => {
     const catToUpdate = { categoryName: 'Категория для Обновления Начальная' };
     const createRes = await request(app)
-        .post('/expense-categories')
+        .post('/api/expense-categories')
         .set('Authorization', `Bearer ${token}`)
         .send(catToUpdate);
     expect(createRes.statusCode).toEqual(201);
@@ -95,7 +96,7 @@ describe('Expense Category API', () => {
 
     const updatedName = 'Обновленная Категория Расходов';
     const res = await request(app)
-      .put(`/expense-categories/${uuidToUpdate}`)
+      .put(`/api/expense-categories/${uuidToUpdate}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ categoryName: updatedName });
     expect(res.statusCode).toEqual(200);
@@ -103,7 +104,7 @@ describe('Expense Category API', () => {
     expect(res.body.categoryName).toEqual(updatedName);
 
     const getRes = await request(app)
-        .get(`/expense-categories/${uuidToUpdate}`)
+        .get(`/api/expense-categories/${uuidToUpdate}`)
         .set('Authorization', `Bearer ${token}`);
     expect(getRes.statusCode).toEqual(200);
     expect(getRes.body.categoryName).toEqual(updatedName);
@@ -112,26 +113,26 @@ describe('Expense Category API', () => {
   it('should delete an expense category', async () => {
     const categoryToDelete = { categoryName: 'Категория для Удаления' };
     const createRes = await request(app)
-      .post('/expense-categories')
+      .post('/api/expense-categories')
       .set('Authorization', `Bearer ${token}`)
       .send(categoryToDelete);
     expect(createRes.statusCode).toEqual(201);
     const uuidToDelete = createRes.body.uuid;
 
     const res = await request(app)
-      .delete(`/expense-categories/${uuidToDelete}`)
+      .delete(`/api/expense-categories/${uuidToDelete}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toEqual(204);
 
     const getRes = await request(app)
-        .get(`/expense-categories/${uuidToDelete}`)
+        .get(`/api/expense-categories/${uuidToDelete}`)
         .set('Authorization', `Bearer ${token}`);
     expect(getRes.statusCode).toEqual(404);
   });
 
   it('should return 400 if categoryName is missing when creating', async () => {
     const res = await request(app)
-      .post('/expense-categories')
+      .post('/api/expense-categories')
       .set('Authorization', `Bearer ${token}`)
       .send({});
     expect(res.statusCode).toEqual(400);
@@ -141,14 +142,14 @@ describe('Expense Category API', () => {
   it('should return 400 if categoryName is missing when updating', async () => {
     const tempCategory = { categoryName: 'Временная для Ошибки Обновления' };
     const createRes = await request(app)
-      .post('/expense-categories')
+      .post('/api/expense-categories')
       .set('Authorization', `Bearer ${token}`)
       .send(tempCategory);
     expect(createRes.statusCode).toEqual(201);
     const uuidToUpdate = createRes.body.uuid;
 
     const res = await request(app)
-      .put(`/expense-categories/${uuidToUpdate}`)
+      .put(`/api/expense-categories/${uuidToUpdate}`)
       .set('Authorization', `Bearer ${token}`)
       .send({});
     expect(res.statusCode).toEqual(400);
@@ -157,7 +158,7 @@ describe('Expense Category API', () => {
 
   it('should return 404 if category not found when updating', async () => {
     const res = await request(app)
-      .put(`/expense-categories/00000000-0000-0000-0000-000000000000`)
+      .put(`/api/expense-categories/00000000-0000-0000-0000-000000000000`)
       .set('Authorization', `Bearer ${token}`)
       .send({ categoryName: 'Несуществующая' });
     expect(res.statusCode).toEqual(404);
@@ -165,7 +166,7 @@ describe('Expense Category API', () => {
 
   it('should return 404 if category not found when deleting', async () => {
     const res = await request(app)
-      .delete(`/expense-categories/00000000-0000-0000-0000-000000000000`)
+      .delete(`/api/expense-categories/00000000-0000-0000-0000-000000000000`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toEqual(404);
   });

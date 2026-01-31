@@ -159,7 +159,6 @@ export interface NewUserCredentials {
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
-withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -226,7 +225,7 @@ export const getNoteByDate = async (dateString: string): Promise<Note[]> => {
   try {
     const response = await api.get<Note[]>(`notes/date/${dateString}`);
     return response.data; // API должен возвращать массив, даже если он пустой
-  } catch (error: any) {
+  } catch (error) {
     // Ошибка будет обработана глобальным interceptor'ом
     // Если API возвращает 404, когда заметок нет, это будет обработано как ошибка.
     // Если ожидается пустой массив, то 404 не должно быть.
@@ -254,20 +253,23 @@ export const getTasksForDay = async (dateString: string): Promise<Task[]> => {
   return response.data as Task[];
 };
 
-export const createTask = (taskData: Omit<Task, 'uuid'>) => {
-  return api.post<Task>('/tasks', taskData);
+export const createTask = async (taskData: Omit<Task, 'uuid'>): Promise<Task> => {
+  const response = await api.post<Task>('/tasks', taskData);
+  return response.data;
 };
 
-export const updateTask = (uuid: string, taskData: Partial<Omit<Task, 'uuid'>>) => {
-  return api.put<Task>(`/tasks/${uuid}`, taskData);
+export const updateTask = async (uuid: string, taskData: Partial<Omit<Task, 'uuid'>>): Promise<Task> => {
+  const response = await api.put<Task>(`/tasks/${uuid}`, taskData);
+  return response.data;
 };
 
-export const deleteTask = (uuid: string) => {
-  return api.delete(`/tasks/${uuid}`);
+export const deleteTask = async (uuid: string): Promise<void> => {
+  await api.delete(`/tasks/${uuid}`);
 };
 
-export const duplicateTask = (uuid: string) => {
-  return api.post<Task>(`/tasks/${uuid}/duplicate`);
+export const duplicateTask = async (uuid: string): Promise<Task> => {
+  const response = await api.post<Task>(`/tasks/${uuid}/duplicate`);
+  return response.data;
 };
 
 export const getAllTasks = async (): Promise<Task[]> => {

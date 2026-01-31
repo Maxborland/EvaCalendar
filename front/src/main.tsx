@@ -46,14 +46,11 @@ createRoot(document.getElementById('root')!).render(
   </>,
 );
 
-const splashScreenElement = document.getElementById('splashscreen');
-if (splashScreenElement) {
-  const splashRoot = createRoot(splashScreenElement);
-  splashRoot.render(<LoadingAnimation />);
-}
-
 const splashScreen = document.getElementById('splashscreen');
 if (splashScreen) {
+  const splashRoot = createRoot(splashScreen);
+  splashRoot.render(<LoadingAnimation />);
+
   setTimeout(() => {
     splashScreen.style.opacity = '0';
     splashScreen.style.transition = 'opacity 0.5s ease-out';
@@ -70,29 +67,19 @@ const disableSW = import.meta.env.VITE_DISABLE_SW === 'true';
 
 if ('serviceWorker' in navigator) {
   if (disableSW) {
-    console.log('[SW] Service Worker отключен через VITE_DISABLE_SW=true');
-
     // Удаляем все существующие service workers (однократно)
     navigator.serviceWorker.getRegistrations().then(registrations => {
-      if (registrations.length > 0) {
-        registrations.forEach(registration => {
-          registration.unregister().then(() => {
-            console.log('[SW] Service Worker удален:', registration.scope);
-          });
-        });
-      }
+      registrations.forEach(registration => {
+        registration.unregister();
+      });
     });
 
     // Очищаем все кэши (однократно)
     if ('caches' in window) {
       caches.keys().then(names => {
-        if (names.length > 0) {
-          names.forEach(name => {
-            caches.delete(name).then(() => {
-              console.log('[SW] Кэш удален:', name);
-            });
-          });
-        }
+        names.forEach(name => {
+          caches.delete(name);
+        });
       });
     }
   } else {
@@ -102,14 +89,9 @@ if ('serviceWorker' in navigator) {
 
       if (!swRegistered) {
         navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('[SW] Service Worker зарегистрирован:', registration.scope);
-          })
           .catch(error => {
             console.error('[SW] Ошибка регистрации Service Worker:', error);
           });
-      } else {
-        console.log('[SW] Service Worker уже зарегистрирован');
       }
     });
   }

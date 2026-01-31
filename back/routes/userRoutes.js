@@ -14,20 +14,17 @@ const {
   searchUsers
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const taskController = require('../controllers/taskController.js');
+const userService = require('../services/userService.js');
 
 
 // @route   GET /api/users/assignable
 // @desc    Get all users that can be assigned to a task
 // @access  Private
-router.get('/assignable', protect, (req, res, next) => {
-    // Находим нужный обработчик в экспортированном роутере
-    const assignableUsersHandler = taskController.stack.find(layer => layer.route && layer.route.path === '/assignable-users' && layer.route.methods.get);
-    if (assignableUsersHandler) {
-        assignableUsersHandler.handle(req, res, next);
-    } else {
-        res.status(404).send('Not Found');
-    }
+router.get('/assignable', protect, async (req, res, next) => {
+    try {
+        const users = await userService.getAssignableUsers(req.user.uuid);
+        res.json(users);
+    } catch (err) { next(err); }
 });
 
 // @route   GET /api/users/search

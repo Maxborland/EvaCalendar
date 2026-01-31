@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const knex = require('../db.cjs');
 const { getEnvConfig } = require('../config/env');
+const { log, error: logError } = require('../utils/logger.js');
 
 const SALT_ROUNDS = 10;
 const envConfig = getEnvConfig();
@@ -53,19 +54,13 @@ const registerUser = async (req, res, next) => {
       user: newUser,
     });
   } catch (error) {
-    console.error('Ошибка при регистрации пользователя:', error);
-    // Используем next(error) для передачи ошибки в централизованный обработчик, если он есть
-    // или возвращаем общую ошибку сервера
-    if (next) {
-        return next(error);
-    }
-    res.status(500).json({ message: 'Внутренняя ошибка сервера при регистрации.' });
+    logError('Ошибка при регистрации пользователя:', error);
+    return next(error);
   }
 };
 
 // POST /api/auth/login
 const loginUser = async (req, res, next) => {
-  console.log(`[${new Date().toISOString()}] - Starting login for: ${req.body.identifier}, User-Agent: ${req.headers['user-agent']}`);
   try {
     const { identifier, password } = req.body;
 
@@ -93,12 +88,9 @@ const loginUser = async (req, res, next) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    // Убедимся, что user.uuid существует, если нет, возможно, пользователь старый и его нужно обновить
-    // или обработать эту ситуацию. В данном случае, после миграции, uuid должен быть.
     if (!user.uuid) {
-        // Этого не должно произойти после миграции, но на всякий случай
-        console.error(`User with id ${user.id} is missing uuid after login attempt.`);
-        return res.status(500).json({ message: 'Ошибка конфигурации пользователя: отсутствует UUID.' });
+      logError(`User with id ${user.id} is missing uuid after login attempt.`);
+      return res.status(500).json({ message: 'Ошибка конфигурации пользователя: отсутствует UUID.' });
     }
 
     res.status(200).json({
@@ -112,56 +104,36 @@ const loginUser = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('Ошибка при входе пользователя:', error);
-    if (next) {
-      return next(error);
-    }
-    res.status(500).json({ message: 'Внутренняя ошибка сервера при входе.' });
+    logError('Ошибка при входе пользователя:', error);
+    return next(error);
   }
 };
 
 // POST /api/auth/logout
 const logoutUser = async (req, res, next) => {
-  console.log(`[${new Date().toISOString()}] - Starting logout. User-Agent: ${req.headers['user-agent']}`);
   try {
     const authHeader = req.headers.authorization;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
 
-      // Декодируем токен, чтобы получить время истечения (exp)
-      // jwt.decode не проверяет подпись, что нормально для этой цели,
-      // так как токен уже был проверен middleware protect при доступе к этому эндпоинту,
-      // либо это публичный эндпоинт, но мы все равно хотим заблокировать токен, если он предоставлен.
-      // Однако, для logout, который должен быть защищенным, токен уже должен быть валидным.
       const decodedToken = jwt.decode(token);
 
       if (decodedToken && decodedToken.exp) {
-        const expiresAt = new Date(decodedToken.exp * 1000); // exp в секундах, Date ожидает миллисекунды
+        const expiresAt = new Date(decodedToken.exp * 1000);
 
-        // Проверяем, не истек ли токен уже, чтобы не добавлять лишние записи
         if (expiresAt > new Date()) {
           await knex('token_blacklist').insert({
             token: token,
             expires_at: expiresAt,
           });
         }
-      } else {
-        // Если токен не может быть декодирован или не содержит exp,
-        // это может быть невалидный токен, но мы все равно можем попытаться его добавить,
-        // если хотим быть сверхагрессивными, или просто проигнорировать.
-        // Для простоты, если нет exp, не добавляем, т.к. не знаем, когда он истечет.
       }
     }
-    // Независимо от того, был ли токен предоставлен или обработан,
-    // клиент должен удалить токен на своей стороне.
     res.status(200).json({ message: 'Вы успешно вышли из системы' });
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] - Error during logout (adding token to blacklist). User-Agent: ${req.headers['user-agent']}`, error);
-    if (next) {
-      return next(error);
-    }
-    res.status(500).json({ message: 'Внутренняя ошибка сервера при выходе.' });
+    logError('Error during logout (adding token to blacklist):', error);
+    return next(error);
   }
 };
 module.exports = {

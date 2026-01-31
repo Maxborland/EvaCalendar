@@ -32,11 +32,10 @@ const validateEnv = () => {
 
   // Дополнительная валидация
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET is too short (< 32 characters). Minimum 32 characters required in production.');
+    }
     console.warn('⚠️ WARNING: JWT_SECRET is too short (< 32 characters). Recommended length is 256+ bits.');
-  }
-
-  if (process.env.NODE_ENV === 'production' && !process.env.NODE_ENV) {
-    throw new Error('NODE_ENV must be set in production environment');
   }
 };
 

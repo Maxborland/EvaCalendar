@@ -30,9 +30,9 @@ const subscribe = async (userId, subscription) => {
   }
 };
 
-const unsubscribe = async (endpoint) => {
+const unsubscribe = async (endpoint, userId) => {
   return knex(TABLE_NAME)
-    .where({ endpoint: endpoint })
+    .where({ endpoint, user_uuid: userId })
     .del();
 };
 const getVapidPublicKey = () => {

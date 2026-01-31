@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { offlineQueue, type QueuedMutation } from '../lib/offlineQueue';
 import {
@@ -55,6 +55,11 @@ export function useOnlineStatus() {
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
   const queryClient = useQueryClient();
+  const isOnlineRef = useRef(isOnline);
+
+  useEffect(() => {
+    isOnlineRef.current = isOnline;
+  }, [isOnline]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -79,7 +84,7 @@ export function useOnlineStatus() {
     // Дополнительная проверка каждые 30 секунд
     const intervalId = setInterval(() => {
       const currentStatus = navigator.onLine;
-      if (currentStatus !== isOnline) {
+      if (currentStatus !== isOnlineRef.current) {
         if (currentStatus) {
           handleOnline();
         } else {
@@ -93,7 +98,7 @@ export function useOnlineStatus() {
       window.removeEventListener('offline', handleOffline);
       clearInterval(intervalId);
     };
-  }, [queryClient, isOnline]);
+  }, [queryClient]);
 
   return isOnline;
 }
