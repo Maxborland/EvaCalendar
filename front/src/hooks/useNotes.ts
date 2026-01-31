@@ -85,7 +85,6 @@ export function useCreateNote() {
     onSuccess: (_data, { date }) => {
       queryClient.invalidateQueries({ queryKey: noteKeys.byDate(date) });
       queryClient.invalidateQueries({ queryKey: noteKeys.all });
-      toast.success('Заметка успешно создана!');
     },
 
     onError: (_error, { date, content }, context) => {
@@ -162,7 +161,6 @@ export function useUpdateNote() {
     onSuccess: (_data, { date }) => {
       queryClient.invalidateQueries({ queryKey: noteKeys.byDate(date) });
       queryClient.invalidateQueries({ queryKey: noteKeys.all });
-      toast.success('Заметка успешно обновлена!');
     },
 
     onError: (_error, { uuid, content, date }, context) => {

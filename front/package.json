@@ -30,6 +30,7 @@
     "react-imask": "^7.6.1",
     "react-router-dom": "^7.6.1",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.7.0",
     "tailwindcss": "^4.1.8",
     "uuid": "^11.1.0"
   },
