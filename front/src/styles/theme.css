@@ -133,91 +133,6 @@
   --bg-modal-content: var(--surface-raised);
 }
 
-input[readonly] {
-  background-color: var(--theme-gray-light);
-  border: 1px solid var(--theme-gray-medium);
-  color: var(--theme-gray-dark);
-  cursor: default;
-  opacity: 0.8;
-}
-
-/* Базовые стили для кнопок */
-.btn {
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  font-family: inherit; /* Наследуем шрифт из глобальных стилей */
-}
-
-.btn:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn .material-icons {
-  margin-right: 8px; /* Отступ для иконки, если она есть */
-  font-size: inherit; /* Размер иконки наследуется от кнопки */
-}
-
-.btn .material-icons:only-child {
-  margin-right: 0; /* Убираем отступ, если иконка единственная */
-}
-
-
-/* Основная кнопка */
-.btn-primary {
-  background-color: var(--btn-primary-bg);
-  color: var(--btn-primary-text-color);
-  padding: var(--btn-primary-padding);
-  border-radius: var(--btn-primary-border-radius);
-  font-size: var(--btn-primary-font-size);
-  font-weight: normal; /* Убираем жирный шрифт для основных кнопок */
-}
-
-.btn-primary:hover {
-  background-color: var(--btn-primary-bg-hover);
-}
-
-/* Вторичная кнопка */
-.btn-secondary {
-  background-color: var(--btn-secondary-bg);
-  color: var(--btn-secondary-text-color);
-  padding: var(--btn-secondary-padding);
-  border-radius: var(--btn-secondary-border-radius);
-  font-size: var(--btn-secondary-font-size);
-}
-
-.btn-secondary:hover {
-  background-color: var(--btn-secondary-bg-hover);
-}
-
-/* Кнопка-иконка */
-.btn-icon {
-  background-color: var(--btn-icon-bg);
-  color: var(--btn-icon-color);
-  border-radius: 50%; /* Делаем кнопку круглой */
-  width: var(--btn-icon-size);
-  height: var(--btn-icon-size);
-  padding: var(--btn-icon-padding); /* Отступы для самой иконки внутри кнопки */
-}
-
-.btn-icon .material-icons {
-  font-size: calc(var(--btn-icon-size) - (var(--btn-icon-padding) * 2)); /* Иконка занимает доступное место */
-  margin: 0; /* Убираем внешние отступы для иконки */
-}
-
-.btn-icon:hover {
-  background-color: var(--btn-icon-bg-hover);
-}
-
 /* Глобальные focus-visible стили для доступности */
 *:focus-visible {
   outline: 2px solid var(--color-border-focus);
@@ -240,117 +155,179 @@ select:focus-visible {
   border-color: var(--color-border-focus);
 }
 
-/* Card Styles */
-.card {
-  background-color: var(--surface-raised);
-  color: var(--color-text-primary);
-  padding: 20px;
-  margin: 20px 0 0 0; /* Отступ снизу для разделения карточек */
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Добавим небольшую тень для лучшего визуального отделения */
+input[readonly] {
+  background-color: var(--theme-gray-light);
+  border: 1px solid var(--theme-gray-medium);
+  color: var(--theme-gray-dark);
+  cursor: default;
+  opacity: 0.8;
 }
 
-.card-heading {
-  font-size: 18px;
-  font-weight: 500;
-  margin-bottom: 10px; /* Отступ снизу для разделения с основным текстом */
+/* Keyframes (shared across components) */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.card-text-detail {
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--color-text-secondary);
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
-/* Стили для контейнера с действиями в карточке, если он понадобится */
-.card-actions {
-  margin-top: 15px; /* Отступ сверху для отделения от основного контента */
-  display: flex;
-  gap: 10px; /* Пространство между кнопками действий */
-}
-/* Animation for SummaryBlock collapsible content */
-.summary-collapsible-content {
-    max-height: 0;
+@keyframes scale-up {
+  from {
+    transform: translateY(12px) scale(0.98);
     opacity: 0;
-    overflow: hidden;
-    visibility: hidden;
-    transition: max-height 0.35s ease-in-out,
-                opacity 0.35s ease-in-out,
-                visibility 0s linear 0.35s; /* Delay for hiding */
-    margin-top: 10px; /* Top margin when content is expanded */
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-down {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(12px) scale(0.96);
+    opacity: 0;
+  }
+}
+
+@keyframes note-skeleton {
+  0% { background-position: -120%; }
+  100% { background-position: 120%; }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
+
+/* Custom scrollbars (not expressible in Tailwind) */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 3px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.12); border-radius: 999px; }
+.scrollbar-thin:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.22); }
+
+/* Toggle switch (input:checked + .slider — not expressible in Tailwind) */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.12);
+  transition: all 0.3s ease;
+  border-radius: 28px;
+  border: 1px solid var(--color-border-subtle);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 2px;
+  background-color: var(--color-text-primary);
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .slider {
+  background-color: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+}
+
+input:focus-visible + .slider {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+input:disabled + .slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* SummaryBlock collapsible animation */
+.summary-collapsible-content {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  visibility: hidden;
+  transition: max-height 0.35s ease-in-out,
+              opacity 0.35s ease-in-out,
+              visibility 0s linear 0.35s;
+  margin-top: 10px;
 }
 
 .summary-block-container.expanded .summary-collapsible-content {
-    max-height: 1000px; /* Sufficiently large value for content */
-    opacity: 1;
-    visibility: visible;
-    transition: max-height 0.35s ease-in-out,
-                opacity 0.35s ease-in-out,
-                visibility 0s linear 0s; /* No delay for showing */
+  max-height: 1000px;
+  opacity: 1;
+  visibility: visible;
+  transition: max-height 0.35s ease-in-out,
+              opacity 0.35s ease-in-out,
+              visibility 0s linear 0s;
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background-color: var(--surface-app);
-    min-height: max(884px, 100dvh);
-    color: var(--color-text-primary);
-}
-.text-accent {
-    color: var(--theme-primary);
-}
-.bg-card {
-    background-color: var(--surface-raised);
-    color: var(--color-text-primary);
-}
-.bg-header {
-    background-color: var(--surface-muted);
-}
-.bg-button-green {
-    background-color: var(--btn-primary-bg);
-    color: var(--btn-primary-text-color);
-}
-.border-green-custom {
-    border-color: var(--color-border-accent);
-}
-.bg-modal-overlay {
-    background-color: var(--bg-modal-overlay);
-}
-.bg-modal-content {
-    background-color: var(--bg-modal-content);
+  font-family: 'Inter', sans-serif;
+  background-color: var(--surface-app);
+  min-height: max(884px, 100dvh);
+  color: var(--color-text-primary);
 }
 
-.bg-button-gray {
-    background-color: #3e3e3e;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
-/* Settings Menu Styles */
-.settings-menu-link {
-  display: block;
-  padding: var(--spacing-md) var(--spacing-lg);
-  margin: var(--spacing-md) 0;
-  text-decoration: none;
-  color: var(--color-text-secondary);
-  background-color: var(--surface-raised);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 12px;
-  transition: all 0.2s ease-in-out;
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 10000;
+  padding: 12px 24px;
+  background: var(--surface-raised);
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-border-focus);
+  border-radius: 8px;
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-}
-
-.settings-menu-link:hover {
-  background-color: var(--surface-elevated);
-  border-color: var(--color-border-strong);
-  transform: translateY(-1px);
-}
-
-.settings-menu-link-active {
-  background-color: var(--theme-primary);
-  color: var(--color-text-invert);
   font-weight: var(--font-weight-semibold);
-  border-color: var(--theme-primary);
+  text-decoration: none;
 }
 
-.settings-menu-link-active:hover {
-  background-color: var(--btn-primary-bg-hover);
-  border-color: var(--btn-primary-bg-hover);
+.skip-link:focus {
+  top: 16px;
 }

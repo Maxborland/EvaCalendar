@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import type { Child } from '../services/api';
 
@@ -121,10 +122,14 @@ const UnifiedChildSelector = ({
 
   if (childrenList.length === 0 && !inputValue) {
     return (
-      <div className="unified-child-selector">
-        {label && <label className="selector-label">{label}</label>}
-        <p>Список детей пуст.</p>
-        <button type="button" onClick={onGoToCreateChildPageRequest} className="btn btn-primary add-child-button">
+      <div className="relative flex flex-col w-full">
+        {label && <label className="mb-1.5 font-bold text-text-tertiary">{label}</label>}
+        <p className="mt-1 mb-3 text-text-tertiary">Список детей пуст.</p>
+        <button
+          type="button"
+          onClick={onGoToCreateChildPageRequest}
+          className="self-start min-h-[44px] py-2.5 px-4 bg-btn-primary-bg text-btn-primary-text border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 ease-in-out hover:opacity-85"
+        >
           Добавить ребенка
         </button>
       </div>
@@ -132,9 +137,9 @@ const UnifiedChildSelector = ({
   }
 
   return (
-    <div className="unified-child-selector form-group">
-      {label && <label htmlFor="child-input" className="selector-label label">{label}</label>}
-      <div style={{ position: 'relative' }}>
+    <div className="relative flex flex-col w-full">
+      {label && <label htmlFor="child-input" className="mb-1.5 font-bold text-text-tertiary">{label}</label>}
+      <div className="relative">
         <input
           type="text"
           id="child-input"
@@ -158,11 +163,19 @@ const UnifiedChildSelector = ({
           }}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={`selector-input ${className}`}
+          className={clsx(
+            'w-full rounded-xl border border-border-subtle bg-surface-elevated text-text-primary py-2.5 px-3 text-sm',
+            'transition-all duration-200 ease-in-out',
+            'focus:border-border-focus focus:ring-2 focus:ring-border-accent focus:outline-none',
+            className
+          )}
           autoComplete="off"
         />
         {showSuggestions && (
-          <ul className="suggestions-list" ref={suggestionsRef}>
+          <ul
+            className="absolute top-full left-0 right-0 bg-surface-elevated border border-border-strong border-t-0 rounded-b-xl list-none p-0 m-0 max-h-[200px] overflow-y-auto z-[1000] shadow-elevation-1 scrollbar-thin text-text-secondary"
+            ref={suggestionsRef}
+          >
             {filteredChildren.length > 0 ? (
               filteredChildren.map(child => {
                 const matchIndex = child.childName.toLowerCase().indexOf(inputValue.trim().toLowerCase());
@@ -170,23 +183,30 @@ const UnifiedChildSelector = ({
                 const match = child.childName.substring(matchIndex, matchIndex + inputValue.trim().length);
                 const suffix = child.childName.substring(matchIndex + inputValue.trim().length);
                 return (
-                  <li key={child.uuid} onClick={() => handleSuggestionClick(child)} className="suggestion-item">
+                  <li
+                    key={child.uuid}
+                    onClick={() => handleSuggestionClick(child)}
+                    className="p-2 min-h-[44px] flex items-center cursor-pointer text-text-secondary hover:bg-surface-raised"
+                  >
                     {prefix}
-                    <span className="suggestion-match">{match}</span>
+                    <span className="font-bold text-income-primary">{match}</span>
                     {suffix}
                   </li>
                 );
               })
             ) : (
               inputValue.trim() !== '' && (
-                <li className="suggestion-item no-results">Дети не найдены</li>
+                <li className="p-2 min-h-[44px] flex items-center text-text-tertiary cursor-default italic">Дети не найдены</li>
               )
             )}
             {inputValue.trim() !== '' &&
              !childrenList.some(c => c.childName.toLowerCase() === inputValue.trim().toLowerCase()) && // Проверяем по всему childrenList
              (filteredChildren.length === 0 || !filteredChildren.some(c => c.childName.toLowerCase() === inputValue.trim().toLowerCase())) && // И по отфильтрованному
             (
-              <li onClick={handleCreateNewChildClick} className="suggestion-item create-new-item">
+              <li
+                onClick={handleCreateNewChildClick}
+                className="p-2 min-h-[44px] flex items-center cursor-pointer italic text-income-primary hover:bg-income-bg"
+              >
                 Создать нового ребенка: "{inputValue.trim()}"
               </li>
             )}
@@ -195,29 +215,29 @@ const UnifiedChildSelector = ({
       </div>
       {selectedChildDetails && (
         <>
-          <div className="card mt-4">
-            <h4 className="card-heading">{selectedChildDetails.childName}</h4>
-            <div className="card-text-detail">
-              <div className="info-item">
-                <span className="info-label">Родитель:</span>
-                <span className="info-value">{selectedChildDetails.parentName}</span>
+          <div className="bg-surface-elevated border border-border-subtle rounded-xl p-3 mt-2 text-sm">
+            <h4 className="mt-0 mb-2 text-base font-semibold text-text-primary leading-tight">{selectedChildDetails.childName}</h4>
+            <div className="flex flex-col gap-1">
+              <div className="flex leading-normal">
+                <span className="font-medium mr-1 text-text-primary">Родитель:</span>
+                <span className="text-text-secondary break-words">{selectedChildDetails.parentName}</span>
               </div>
-              <div className="info-item">
-                <span className="info-label">Телефон:</span>
-                <span className="info-value">{selectedChildDetails.parentPhone}</span>
+              <div className="flex leading-normal">
+                <span className="font-medium mr-1 text-text-primary">Телефон:</span>
+                <span className="text-text-secondary break-words">{selectedChildDetails.parentPhone}</span>
               </div>
-              <div className="info-item">
-                <span className="info-label">Адрес:</span>
-                <span className="info-value">{selectedChildDetails.address}</span>
+              <div className="flex leading-normal">
+                <span className="font-medium mr-1 text-text-primary">Адрес:</span>
+                <span className="text-text-secondary break-words">{selectedChildDetails.address}</span>
               </div>
-              <div className="info-item">
-                <span className="info-label">Ставка:</span>
-                <span className="info-value">{selectedChildDetails.hourlyRate} ₽/час</span>
+              <div className="flex leading-normal">
+                <span className="font-medium mr-1 text-text-primary">Ставка:</span>
+                <span className="text-text-secondary break-words">{selectedChildDetails.hourlyRate} ₽/час</span>
               </div>
               {selectedChildDetails.comment && (
-                <div className="info-item">
-                  <span className="info-label">Комментарий:</span>
-                  <span className="info-value">{selectedChildDetails.comment}</span>
+                <div className="flex leading-normal">
+                  <span className="font-medium mr-1 text-text-primary">Комментарий:</span>
+                  <span className="text-text-secondary break-words">{selectedChildDetails.comment}</span>
                 </div>
               )}
             </div>

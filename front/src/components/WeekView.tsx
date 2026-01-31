@@ -1,27 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNav } from '../context/NavContext';
+import { useSwipe } from '../hooks/useSwipe';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useDuplicateTask } from '../hooks/useTasks';
-import { getDailySummary, getMonthlySummary, type Task } from '../services/api';
+import type { Task } from '../services/api';
 import {
   addDays,
   addWeeks,
   createDate,
-  getMonth,
-  getYear,
   isSameDay,
   startOfISOWeek,
   subtractWeeks
 } from '../utils/dateUtils';
 import DayColumn from './DayColumn';
 import NoteField from './NoteField';
-import SummaryModal from './SummaryModal';
 import TopNavigator from './TopNavigator';
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
 import NavigationBar from './NavigationBar';
-
-import './WeekView.css';
 
 const WeekView = () => {
   const { data: tasks = [] } = useTasks();
@@ -47,37 +43,14 @@ const WeekView = () => {
     }
     return days;
   }, [currentDate]);
-  const { setIsNavVisible, isModalOpen: isGlobalModalOpen, setIsModalOpen: setIsGlobalModalOpen } = useNav();
+  const { isNavVisible, setIsNavVisible, isModalOpen: isGlobalModalOpen, setIsModalOpen: setIsGlobalModalOpen } = useNav();
+  const gridRef = useRef<HTMLElement>(null);
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [modalTaskMode, setModalTaskMode] = useState<'create' | 'edit'>('create');
   const [currentTaskForModal, setCurrentTaskForModal] = useState<Task | undefined>(undefined);
   const [initialModalTaskType, setInitialModalTaskType] = useState<'income' | 'expense'>('income');
 
-
-  const fetchSummary = useCallback(async () => {
-    if (!isAuthenticated && !isAuthLoading) {
-      // Пользователь не аутентифицирован и загрузка завершена, не выполняем запрос
-      // Можно добавить логику перенаправления или уведомления
-      navigate('/login');
-      return;
-    }
-    if (isAuthLoading) {
-      // Еще идет проверка аутентификации, подождем
-      return;
-    }
-    try {
-      const dailyDate = createDate(today).toISOString().slice(0, 10);
-      await getDailySummary(dailyDate);
-
-      const year = getYear(currentDate);
-      const month = getMonth(currentDate);
-      await getMonthlySummary(year, month);
-    } catch (error) {
-      // [WeekView] Error fetching summary
-    }
-  }, [isAuthenticated, isAuthLoading, currentDate, today]);
 
   useEffect(() => {
     if (!isAuthenticated && !isAuthLoading) {
@@ -86,12 +59,8 @@ const WeekView = () => {
   }, [isAuthenticated, isAuthLoading, navigate]);
 
   useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary, tasks]);
-
-  useEffect(() => {
     const handleScroll = () => {
-      if (isGlobalModalOpen || isTaskModalOpen || isSummaryModalOpen) return;
+      if (isGlobalModalOpen || isTaskModalOpen) return;
 
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
       if (scrollTop + clientHeight >= scrollHeight - 20) {
@@ -103,7 +72,7 @@ const WeekView = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [setIsNavVisible, isGlobalModalOpen, isTaskModalOpen, isSummaryModalOpen]);
+  }, [setIsNavVisible, isGlobalModalOpen, isTaskModalOpen]);
 
 
   const goToPreviousWeek = () => {
@@ -114,6 +83,11 @@ const WeekView = () => {
     setCurrentDate(addWeeks(currentDate, 1));
   };
 
+  useSwipe(gridRef, {
+    onSwipeLeft: goToNextWeek,
+    onSwipeRight: goToPreviousWeek,
+    enabled: !isTaskModalOpen,
+  });
 
   const orderedWeekCells = useMemo(() => {
     if (weekDays.length !== 7) return [];
@@ -210,22 +184,29 @@ const WeekView = () => {
 
 
   return (
-    <div className="week-view">
+    <div className="min-h-dvh flex flex-col bg-surface-app">
       <TopNavigator title="Zyaka's Calendar" />
-      <main className="week-view__content">
-        <section className="week-view__grid" aria-label="План недели">
+      <main
+        id="main-content"
+        className="flex-1 flex flex-col gap-[var(--spacing-md)] p-[var(--spacing-md)] pb-[calc(80px+env(safe-area-inset-bottom))] min-[480px]:gap-[var(--spacing-lg)] min-[480px]:p-[var(--spacing-lg)] min-[480px]:pb-0 max-[360px]:gap-[var(--spacing-sm)] max-[360px]:p-[var(--spacing-sm)] max-[360px]:pb-0"
+      >
+        <section
+          ref={gridRef}
+          className="grid grid-cols-2 auto-rows-[minmax(140px,auto)] gap-[var(--spacing-sm)] content-start min-[480px]:gap-[var(--spacing-md)] max-[360px]:gap-1.5"
+          aria-label="План недели"
+        >
           {orderedWeekCells.map((cell) => {
             if (cell.type === 'note') {
               const noteWeekId = createDate(cell.date).toISOString().slice(0, 10);
               return (
-                <article key={cell.id} className="week-view__cell week-view__cell--note">
+                <article key={cell.id} className="min-w-0 flex self-stretch [&>*]:flex-1 [&>*]:min-w-0">
                   <NoteField weekId={noteWeekId} />
                 </article>
               );
             }
 
             return (
-              <article key={cell.id} className="week-view__cell">
+              <article key={cell.id} className="min-w-0 flex [&>*]:flex-1 [&>*]:min-w-0">
                 <DayColumn
                   fullDate={cell.date}
                   today={today}
@@ -242,28 +223,10 @@ const WeekView = () => {
       <NavigationBar
         goToPreviousWeek={goToPreviousWeek}
         goToNextWeek={goToNextWeek}
+        onSummaryClick={() => navigate('/statistics')}
+        onCreateClick={() => handleOpenTaskModal(undefined, 'income', today)}
+        isVisible={isNavVisible}
       />
-
-      <button
-        type="button"
-        className="week-view__fab week-view__fab--summary"
-        onClick={() => {
-          setIsSummaryModalOpen(true);
-          setIsGlobalModalOpen(true);
-        }}
-        aria-label="Сводка"
-      >
-        <span className="material-icons week-view__fab-icon">analytics</span>
-      </button>
-
-      <button
-        type="button"
-        className="week-view__fab week-view__fab--create"
-        onClick={() => handleOpenTaskModal(undefined, 'income', today)}
-        aria-label="Создать дело"
-      >
-        <span className="material-icons week-view__fab-icon">add_circle_outline</span>
-      </button>
       {isTaskModalOpen && (
         <UnifiedTaskFormModal
           isOpen={isTaskModalOpen}
@@ -275,16 +238,6 @@ const WeekView = () => {
           initialTaskType={initialModalTaskType}
           onDelete={currentTaskForModal?.uuid ? handleDeleteTask : undefined}
           onDuplicate={currentTaskForModal?.uuid ? handleDuplicateTask : undefined}
-        />
-      )}
-      {isSummaryModalOpen && (
-        <SummaryModal
-          isOpen={isSummaryModalOpen}
-          onClose={() => {
-            setIsSummaryModalOpen(false);
-            setIsGlobalModalOpen(false);
-          }}
-          weekStartDate={weekDays.length > 0 ? createDate(weekDays[0]).toISOString().slice(0, 10) : ''}
         />
       )}
     </div>

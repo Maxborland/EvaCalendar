@@ -41,7 +41,7 @@ createRoot(document.getElementById('root')!).render(
         </AuthProvider>
       </DndProvider>
       <ReactQueryDevtools initialIsOpen={false} />
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} limit={1} theme="dark" pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} limit={1} theme="dark" pauseOnFocusLoss draggable pauseOnHover />
     </QueryClientProvider>
   </>,
 );

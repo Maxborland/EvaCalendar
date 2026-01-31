@@ -1,8 +1,8 @@
+import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getVapidPublicKey, sendTestNotification, subscribeToNotifications, unsubscribeFromNotifications } from '../services/notificationService';
 import { getUserSettings, updateEmailNotificationSettings } from '../services/userService';
-import './NotificationSettings.css';
 
 const urlBase64ToUint8Array = (base64String: string) => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -143,15 +143,13 @@ const NotificationSettings = () => {
     };
 
     if (isLoading) {
-        return <div>Загрузка...</div>;
+        return <p className="text-text-secondary text-center py-8 text-base">Загрузка...</p>;
     }
 
     return (
-        <div className="notification-settings">
-            <h2>Настройки уведомлений</h2>
-
-            <div className="setting-item">
-                <span>Email-уведомления</span>
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center p-3 max-[480px]:p-2 rounded-xl bg-surface-glass border border-border-subtle transition-all duration-200 ease-linear hover:bg-surface-elevated hover:border-border-strong">
+                <span className="text-base max-[480px]:text-sm font-medium text-text-primary">Email-уведомления</span>
                 <label className="toggle-switch">
                     <input
                         id="email-toggle"
@@ -164,8 +162,8 @@ const NotificationSettings = () => {
             </div>
 
             {isPushSupported && (
-                <div className="setting-item">
-                    <span>Push-уведомления</span>
+                <div className="flex justify-between items-center p-3 max-[480px]:p-2 rounded-xl bg-surface-glass border border-border-subtle transition-all duration-200 ease-linear hover:bg-surface-elevated hover:border-border-strong">
+                    <span className="text-base max-[480px]:text-sm font-medium text-text-primary">Push-уведомления</span>
                     <label className="toggle-switch">
                         <input
                             id="push-toggle"
@@ -178,15 +176,20 @@ const NotificationSettings = () => {
                 </div>
             )}
 
-            <div className="setting-item">
+            <div className="flex justify-between items-center p-3 max-[480px]:p-2 rounded-xl bg-surface-glass border border-border-subtle transition-all duration-200 ease-linear hover:bg-surface-elevated hover:border-border-strong">
                 <button
                     onClick={handleSendTestNotification}
                     disabled={(!settings.emailEnabled && !settings.pushEnabled) || isSending}
-                    className="test-notification-btn">
+                    className={clsx(
+                        'bg-btn-primary-bg text-btn-primary-text py-3 px-4 border-none rounded-xl cursor-pointer text-base font-medium transition-all duration-200 ease-linear shadow-glass',
+                        'hover:bg-btn-primary-hover hover:-translate-y-px hover:shadow-elevation-2',
+                        'active:translate-y-0',
+                        'disabled:bg-surface-muted disabled:text-text-disabled disabled:cursor-not-allowed disabled:opacity-60'
+                    )}
+                >
                     Отправить тестовое уведомление
                 </button>
             </div>
-
         </div>
     );
 };

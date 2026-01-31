@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import clsx from 'clsx';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import * as ReactDOM from 'react-dom';
 import { toast } from 'react-toastify';
-import { useTasks } from '../context/TaskContext';
 import {
   addChild,
   getAllChildren,
@@ -15,7 +15,6 @@ import {
 } from '../services/api';
 import ChildForm from './ChildForm';
 import UnifiedChildSelector from './UnifiedChildSelector';
-import './UnifiedTaskFormModal.css';
 
 interface UnifiedTaskFormModalProps {
   isOpen: boolean;
@@ -34,11 +33,9 @@ function formatDateTimeForInput(isoDateTime: string | null | undefined): string 
  if (!isoDateTime) return '';
  try {
    const date = new Date(isoDateTime);
-   // Проверяем, валидна ли дата
    if (isNaN(date.getTime())) {
      return '';
    }
-   // Форматируем в 'YYYY-MM-DDTHH:MM'
    const year = date.getFullYear();
    const month = (date.getMonth() + 1).toString().padStart(2, '0');
    const day = date.getDate().toString().padStart(2, '0');
@@ -51,6 +48,9 @@ function formatDateTimeForInput(isoDateTime: string | null | undefined): string 
  }
 }
 
+const inputClass = 'w-full min-w-0 max-w-full rounded-xl border border-border-subtle bg-surface-elevated text-text-primary py-2.5 px-3 text-sm transition-all duration-[160ms] box-border focus-visible:outline-none focus-visible:border-[rgba(72,187,120,0.6)] focus-visible:shadow-[0_0_0_3px_rgba(72,187,120,0.16)]';
+const labelClass = 'text-sm font-medium text-text-primary leading-tight';
+
 const UnifiedTaskFormModal = ({
   isOpen,
   onClose: originalOnClose,
@@ -61,16 +61,54 @@ const UnifiedTaskFormModal = ({
   onDelete,
   onTaskUpsert,
 }: UnifiedTaskFormModalProps) => {
-  const { refetchTasks } = useTasks();
   const [isClosing, setIsClosing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const modalContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
       originalOnClose();
       setIsClosing(false);
+      setDragY(0);
     }, 300);
   }, [originalOnClose]);
+
+  const handleDragStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const rect = modalContentRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const touchRelY = touch.clientY - rect.top;
+    if (touchRelY > 60) return;
+    dragStartY.current = touch.clientY;
+    setIsDragging(true);
+  }, []);
+
+  const handleDragMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const delta = e.touches[0].clientY - dragStartY.current;
+    if (delta > 0) setDragY(delta);
+  }, [isDragging]);
+
+  const handleDragEnd = useCallback(() => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (dragY > 100) {
+      handleClose();
+    } else {
+      setDragY(0);
+    }
+  }, [isDragging, dragY, handleClose]);
 
   const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense' | 'task' | 'lesson'>('income');
 
@@ -113,7 +151,6 @@ const UnifiedTaskFormModal = ({
       const fetchedChildren = await getAllChildren();
       setChildren(fetchedChildren);
     } catch (error) {
-      // Ошибка при загрузке детей
       toast.error('Ошибка при загрузке списка детей.');
     }
   }, []);
@@ -121,7 +158,6 @@ const UnifiedTaskFormModal = ({
   useEffect(() => {
     const defaultDueDate = new Date().toISOString().split('T')[0];
 
-    // Determine task type
     let newType: 'income' | 'expense' | 'task' | 'lesson' = initialTaskType || 'income';
     if (mode === 'edit' && initialTaskData) {
         if (initialTaskData.type === 'expense') newType = 'expense';
@@ -131,7 +167,6 @@ const UnifiedTaskFormModal = ({
     }
     setTaskTypeInternal(newType);
 
-    // Initialize form data
     let newFormData = {
         id: initialTaskData?.uuid,
         title: initialTaskData?.title || '',
@@ -152,7 +187,6 @@ const UnifiedTaskFormModal = ({
         originalTaskType: initialTaskData?.type,
     };
 
-    // Clean up fields based on the determined type
     if (newType === 'expense') {
         newFormData.childId = null;
         newFormData.childName = undefined;
@@ -184,7 +218,6 @@ const UnifiedTaskFormModal = ({
         newFormData.reminder_offset = null;
     }
 
-    // Reset for create mode
     if (mode === 'create') {
         newFormData = {
             id: undefined,
@@ -206,7 +239,7 @@ const UnifiedTaskFormModal = ({
             assigned_to_id: null,
         };
         setSelectedChildUuid(null);
-    } else { // edit mode specific updates
+    } else {
         const childIdToSetForSelector = initialTaskData?.child_uuid || initialTaskData?.childId || null;
         setSelectedChildUuid(childIdToSetForSelector);
     }
@@ -224,7 +257,6 @@ const UnifiedTaskFormModal = ({
         const fetchedCategories = await getExpenseCategories();
         setCategories(fetchedCategories);
       } catch (error) {
-        // Ошибка при загрузке категорий
         toast.error('Ошибка при загрузке списка категорий.');
       }
     };
@@ -259,7 +291,7 @@ const UnifiedTaskFormModal = ({
         });
       } else if (children.length > 0 || (mode === 'create' && !initialTaskData?.childId) || (mode === 'edit' && initialTaskData && selectedChildUuid !== initialTaskData.childId)) {
         setSelectedChildDetails(null);
-        if (!initialTaskData?.childId || selectedChildUuid !== initialTaskData.childId) { // Оставляем childId здесь, так как он из initialTaskData
+        if (!initialTaskData?.childId || selectedChildUuid !== initialTaskData.childId) {
           setFormData(prev => {
             const resetData = {
               ...prev,
@@ -288,7 +320,7 @@ const UnifiedTaskFormModal = ({
   useEffect(() => {
     if (
       taskTypeInternal === 'income' &&
-      typeof formData.hourlyRate === 'number' && formData.hourlyRate > 0 && // hourlyRate может быть скрыто, но логика расчета остается
+      typeof formData.hourlyRate === 'number' && formData.hourlyRate > 0 &&
       typeof formData.hoursWorked === 'number' && formData.hoursWorked > 0
     ) {
       setFormData(prevData => ({
@@ -347,7 +379,6 @@ const UnifiedTaskFormModal = ({
       setSelectedChildUuid(savedOrUpdatedChild.uuid);
     } catch (error) {
       toast.error('Ошибка при сохранении карточки ребенка.');
-      // Ошибка при сохранении карточки ребенка из TaskForm
     }
   };
 
@@ -368,7 +399,7 @@ const UnifiedTaskFormModal = ({
       taskTypeForApi = 'task';
     } else if (taskTypeInternal === 'lesson') {
       taskTypeForApi = 'lesson';
-    } else { // income
+    } else {
       if (formData.hoursWorked && formData.hourlyRate) {
         taskTypeForApi = 'hourly';
       } else {
@@ -399,7 +430,7 @@ const UnifiedTaskFormModal = ({
       reminder_at: reminderAtUTC,
       assigned_to_id: taskTypeInternal === 'task' ? formData.assigned_to_id : null,
       reminder_offset: taskTypeInternal === 'task' ? formData.reminder_offset : null,
-      assignee_username: undefined, // We are sending assigned_to_id now
+      assignee_username: undefined,
     };
 
     if (taskTypeForApi === 'hourly' && dataToSave.hourlyRate && dataToSave.hoursWorked && dataToSave.amount === undefined) {
@@ -409,10 +440,7 @@ const UnifiedTaskFormModal = ({
     try {
       await onSubmit(dataToSave as Task | Omit<Task, 'uuid'>);
       if (onTaskUpsert) {
-        refetchTasks();
-        if (onTaskUpsert) {
-          onTaskUpsert();
-        }
+        onTaskUpsert();
       }
     } catch (error) {
       toast.error("Произошла ошибка при сохранении задачи.");
@@ -421,8 +449,14 @@ const UnifiedTaskFormModal = ({
 
   const handleDeleteClick = () => {
     if (mode === 'edit' && initialTaskData?.uuid && onDelete) {
-      onDelete(initialTaskData.uuid);
-      refetchTasks();
+      if (!confirmingDelete) {
+        setConfirmingDelete(true);
+        confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
+      } else {
+        if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+        setConfirmingDelete(false);
+        onDelete(initialTaskData.uuid);
+      }
     }
   };
 
@@ -437,24 +471,50 @@ const UnifiedTaskFormModal = ({
 
   const isAmountRequired = (taskTypeInternal === 'income' || taskTypeInternal === 'expense') && !isAmountDisabled;
 
-  const modalOverlayClass = `modal-overlay ${isClosing ? 'closing' : ''}`;
-  const modalContentClass = `modal-content ${isClosing ? 'closing' : ''}`;
+  const overlayClass = clsx(
+    'fixed inset-0 p-[clamp(12px,4vh,28px)_clamp(12px,4vw,24px)] bg-modal-overlay flex items-end justify-center z-[1050] font-[Inter,sans-serif]',
+    isClosing ? 'animate-fade-out' : 'animate-fade-in',
+    'min-[768px]:items-center',
+  );
+
+  const contentClass = clsx(
+    'w-[min(480px,100%)] max-h-[calc(100dvh-40px)] bg-modal-content rounded-[20px_20px_16px_16px] shadow-elevation-3 relative flex flex-col p-4 overflow-hidden',
+    isClosing ? 'animate-scale-down' : 'animate-scale-up',
+    isDragging && '!transition-none',
+    'min-[768px]:rounded-3xl min-[768px]:max-h-[min(90vh,720px)]',
+  );
 
   const modalContent = (
     <>
-      <div className={modalOverlayClass} onClick={handleClose} data-testid="modal-overlay">
-        <div className={modalContentClass} onClick={(e) => e.stopPropagation()}>
-          <button type="button" className="close-button" onClick={handleClose} aria-label="Закрыть">&times;</button>
-          <form className="form" onSubmit={handleSubmit}>
-            <h2>{mode === 'edit' ? 'Редактирование дела' : 'Создание дела'}</h2>
+      <div className={overlayClass} onClick={handleClose} data-testid="modal-overlay">
+        <div
+          ref={modalContentRef}
+          className={contentClass}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={handleDragStart}
+          onTouchMove={handleDragMove}
+          onTouchEnd={handleDragEnd}
+          style={dragY > 0 ? { transform: `translateY(${dragY}px)` } : undefined}
+        >
+          <div className="w-10 h-1 rounded-sm bg-white/20 mx-auto mb-2 shrink-0" />
+          <button
+            type="button"
+            className="absolute top-4 right-4 size-11 rounded-xl border border-white/[0.06] bg-white/[0.04] text-text-secondary text-xl leading-none inline-flex items-center justify-center transition-all duration-[160ms] hover:rotate-[-90deg] hover:border-white/[0.12] hover:bg-white/[0.08]"
+            onClick={handleClose}
+            aria-label="Закрыть"
+          >
+            &times;
+          </button>
+          <form className="mt-[var(--spacing-md)] flex flex-col gap-[var(--spacing-sm)] overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin" onSubmit={handleSubmit}>
+            <h2 className="m-0 pr-12 text-lg font-semibold text-text-primary leading-tight">{mode === 'edit' ? 'Редактирование дела' : 'Создание дела'}</h2>
 
-            <div className="form-group">
-              <label className="label">Тип:</label>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass}>Тип:</label>
               <select
                 name="taskType"
                 value={taskTypeInternal}
                 onChange={(e) => setTaskTypeInternal(e.target.value as 'income' | 'expense' | 'task' | 'lesson')}
-                className="input"
+                className={inputClass}
               >
                 <option value="income">Доход</option>
                 <option value="expense">Расход</option>
@@ -463,37 +523,37 @@ const UnifiedTaskFormModal = ({
               </select>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="title" className="label">Название<span className="required-star" aria-hidden="true">*</span>:</label>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="title" className={labelClass}>Название<span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span>:</label>
               <input
                 type="text"
                 id="title"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                className="input"
+                className={inputClass}
                 required
               />
             </div>
 
-            <div className="form-group">
-              <div style={{ display: 'flex', gap: '12px', minWidth: 0 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <label htmlFor="dueDate" className="label">Дата<span className="required-star" aria-hidden="true">*</span>:</label>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex gap-3 min-w-0">
+                <div className="flex-1 min-w-0">
+                  <label htmlFor="dueDate" className={labelClass}>Дата<span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span>:</label>
                   <input
                     type="date"
                     id="dueDate"
                     name="dueDate"
                     value={formData.dueDate}
                     onChange={handleChange}
-                    className="input"
+                    className={inputClass}
                     required
                   />
                 </div>
                 {(taskTypeInternal === 'income' || taskTypeInternal === 'task' || taskTypeInternal === 'lesson') && (
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <label htmlFor="time" className="label">
-                      Время{taskTypeInternal === 'lesson' ? <span className="required-star" aria-hidden="true">*</span> : ''}:
+                  <div className="flex-1 min-w-0">
+                    <label htmlFor="time" className={labelClass}>
+                      Время{taskTypeInternal === 'lesson' ? <span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span> : ''}:
                     </label>
                     <input
                       type="time"
@@ -501,7 +561,7 @@ const UnifiedTaskFormModal = ({
                       name="time"
                       value={formData.time}
                       onChange={handleChange}
-                      className="input"
+                      className={inputClass}
                       required={taskTypeInternal === 'lesson'}
                     />
                   </div>
@@ -510,42 +570,42 @@ const UnifiedTaskFormModal = ({
             </div>
 
             {taskTypeInternal === 'lesson' && (
-              <div className="form-group">
-                <label htmlFor="address" className="label">Адрес / Аудитория:</label>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="address" className={labelClass}>Адрес / Аудитория:</label>
                 <input
                   type="text"
                   id="address"
                   name="address"
                   value={formData.address || ''}
                   onChange={handleChange}
-                  className="input"
+                  className={inputClass}
                   placeholder="Например: Корпус Д, ауд. 301"
                 />
               </div>
             )}
 
-            <div className="form-group">
-              <label htmlFor="reminder_at" className="label">Напомнить в:</label>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="reminder_at" className={labelClass}>Напомнить в:</label>
               <input
                 type="datetime-local"
                 id="reminder_at"
                 name="reminder_at"
                 value={formData.reminder_at || ''}
                 onChange={handleChange}
-                className="input"
+                className={inputClass}
               />
             </div>
 
             {taskTypeInternal === 'task' && (
               <>
-                <div className="form-group">
-                  <label htmlFor="assigned_to_id" className="label">Кому:</label>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="assigned_to_id" className={labelClass}>Кому:</label>
                   <select
                     id="assigned_to_id"
                     name="assigned_to_id"
                     value={formData.assigned_to_id || ''}
                     onChange={handleChange}
-                    className="input"
+                    className={inputClass}
                   >
                     <option value="">Не назначено</option>
                     {assignableUsers.map(user => (
@@ -553,14 +613,14 @@ const UnifiedTaskFormModal = ({
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="reminder_offset" className="label">Напомнить за:</label>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="reminder_offset" className={labelClass}>Напомнить за:</label>
                   <select
                     id="reminder_offset"
                     name="reminder_offset"
                     value={formData.reminder_offset || ''}
                     onChange={handleChange}
-                    className="input"
+                    className={inputClass}
                   >
                     <option value="">Не напоминать</option>
                     <option value="900">15 минут</option>
@@ -573,15 +633,15 @@ const UnifiedTaskFormModal = ({
             )}
 
             {(taskTypeInternal === 'income' || taskTypeInternal === 'expense') && (
-              <div className="form-group">
-                <label htmlFor="amount" className="label">Сумма{isAmountRequired && <span className="required-star" aria-hidden="true">*</span>}:</label>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="amount" className={labelClass}>Сумма{isAmountRequired && <span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span>}:</label>
                 <input
                   type="number"
                   id="amount"
                   name="amount"
                   value={formData.amount ?? ''}
                   onChange={handleChange}
-                  className="input"
+                  className={inputClass}
                   placeholder="0"
                   required={!isAmountDisabled}
                   disabled={isAmountDisabled}
@@ -600,17 +660,17 @@ const UnifiedTaskFormModal = ({
                   label="Имя ребенка:"
                   placeholder="Выберите или добавьте ребенка"
                   selectedChildDetails={selectedChildDetails}
-                  className="input"
+                  className={inputClass}
                 />
-                <div className="form-group">
-                  <label htmlFor="hoursWorked" className="label">Часов отработано:</label>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="hoursWorked" className={labelClass}>Часов отработано:</label>
                   <input
                     type="number"
                     id="hoursWorked"
                     name="hoursWorked"
                     value={formData.hoursWorked ?? ''}
                     onChange={handleChange}
-                    className="input"
+                    className={inputClass}
                     placeholder="0"
                   />
                 </div>
@@ -618,14 +678,14 @@ const UnifiedTaskFormModal = ({
             )}
 
             {taskTypeInternal === 'expense' && (
-              <div className="form-group">
-                <label htmlFor="expenseCategoryName" className="label">Категория<span className="required-star" aria-hidden="true">*</span>:</label>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="expenseCategoryName" className={labelClass}>Категория<span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span>:</label>
                 <select
                   id="expenseCategoryName"
                   name="expenseCategoryName"
                   value={formData.expenseCategoryName}
                   onChange={handleChange}
-                  className="input"
+                  className={inputClass}
                   required
                 >
                   <option value="">Выберите категорию</option>
@@ -636,26 +696,38 @@ const UnifiedTaskFormModal = ({
               </div>
             )}
 
-            <div className="form-group">
-              <label htmlFor="comments" className="label">Комментарий:</label>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="comments" className={labelClass}>Комментарий:</label>
               <textarea
                 id="comments"
                 name="comments"
                 value={formData.comments}
                 onChange={handleChange}
-                className="textarea"
+                className={clsx(inputClass, 'min-h-[80px] resize-y')}
               />
             </div>
 
-            <div className="form-actions">
+            <div className="shrink-0 flex flex-col gap-[var(--spacing-sm)] pt-[var(--spacing-md)] mt-[var(--spacing-sm)] border-t border-border-subtle min-[520px]:flex-row min-[520px]:justify-end">
               {mode === 'edit' && onDelete && initialTaskData?.uuid && (
-                <button type="button" className="btn btn-secondary delete-button-form" onClick={handleDeleteClick}>
-                  Удалить
+                <button
+                  type="button"
+                  className={clsx(
+                    'rounded-xl p-3 text-base font-semibold border-none transition-all duration-[160ms] inline-flex justify-center items-center gap-[var(--spacing-sm)]',
+                    confirmingDelete
+                      ? 'bg-[rgba(224,86,86,0.32)] text-[#ffb3b8] border border-[rgba(224,86,86,0.5)]'
+                      : 'bg-[rgba(224,86,86,0.18)] text-[#ffb3b8] border border-[rgba(224,86,86,0.28)] hover:-translate-y-px hover:bg-[rgba(224,86,86,0.22)] hover:border-[rgba(224,86,86,0.36)]',
+                  )}
+                  onClick={handleDeleteClick}
+                >
+                  {confirmingDelete ? 'Точно удалить?' : 'Удалить'}
                 </button>
               )}
-              {!(mode === 'edit' && onDelete && initialTaskData?.uuid) && <div style={{ flexBasis: 'calc(50% - 5px)' }}></div>}
+              {!(mode === 'edit' && onDelete && initialTaskData?.uuid) && <div className="basis-[calc(50%-5px)]"></div>}
 
-              <button type="submit" className="btn btn-primary submit-button">
+              <button
+                type="submit"
+                className="rounded-xl p-3 text-base font-semibold border-none bg-gradient-to-br from-[rgba(47,143,82,1)] to-[rgba(73,187,120,0.92)] text-[var(--btn-primary-text-color)] shadow-elevation-2 transition-all duration-[160ms] inline-flex justify-center items-center gap-[var(--spacing-sm)] hover:-translate-y-px hover:shadow-elevation-3 active:translate-y-0 active:shadow-elevation-2"
+              >
                 {mode === 'edit' ? 'Сохранить' : 'Создать'}
               </button>
             </div>
@@ -663,9 +735,27 @@ const UnifiedTaskFormModal = ({
         </div>
       </div>
       {showChildFormModal && (
-        <div className={`modal-overlay ${isClosing && !showChildFormModal ? 'closing' : ''}`} onClick={handleChildFormCancel} data-testid="child-form-modal-overlay">
-          <div className={`modal-content ${isClosing && !showChildFormModal ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
-            <button className="btn btn-icon close-button" onClick={handleChildFormCancel}>&times;</button>
+        <div
+          className={clsx(
+            'fixed inset-0 p-[clamp(12px,4vh,28px)_clamp(12px,4vw,24px)] bg-modal-overlay flex items-end justify-center z-[1050] font-[Inter,sans-serif] min-[768px]:items-center',
+            isClosing && !showChildFormModal ? 'animate-fade-out' : 'animate-fade-in',
+          )}
+          onClick={handleChildFormCancel}
+          data-testid="child-form-modal-overlay"
+        >
+          <div
+            className={clsx(
+              'w-[min(480px,100%)] max-h-[calc(100dvh-40px)] bg-modal-content rounded-[20px_20px_16px_16px] shadow-elevation-3 relative flex flex-col p-4 overflow-hidden min-[768px]:rounded-3xl',
+              isClosing && !showChildFormModal ? 'animate-scale-down' : 'animate-scale-up',
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 size-11 rounded-xl border border-white/[0.06] bg-white/[0.04] text-text-secondary text-xl leading-none inline-flex items-center justify-center transition-all duration-[160ms] hover:rotate-[-90deg] hover:border-white/[0.12] hover:bg-white/[0.08]"
+              onClick={handleChildFormCancel}
+            >
+              &times;
+            </button>
             <ChildForm
               initialChild={childFormInitialData}
               onSave={handleChildFormSave}
@@ -679,7 +769,6 @@ const UnifiedTaskFormModal = ({
 
   const modalRoot = document.getElementById('modal-root');
   if (!modalRoot) {
-    // Элемент с id 'modal-root' не найден в DOM.
     return null;
   }
   return ReactDOM.createPortal(modalContent, modalRoot);

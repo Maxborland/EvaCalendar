@@ -1,5 +1,6 @@
+import clsx from 'clsx';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { type Task } from '../services/api';
-import './DetailedTaskCard.css';
 
 interface DetailedTaskCardProps {
   task: Task;
@@ -24,8 +25,26 @@ const DetailedTaskCard = ({ task, onEdit, onDelete }: DetailedTaskCardProps) => 
     assignee,
   } = task;
 
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
+
   const handleEdit = () => onEdit(task);
-  const handleDelete = () => onDelete(uuid);
+  const handleDelete = useCallback(() => {
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
+    } else {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+      setConfirmingDelete(false);
+      onDelete(uuid);
+    }
+  }, [confirmingDelete, onDelete, uuid]);
 
   let incomeDisplayValue: string | undefined;
   if (type === 'income' || type === 'hourly' || type === 'fixed') {
@@ -38,115 +57,124 @@ const DetailedTaskCard = ({ task, onEdit, onDelete }: DetailedTaskCardProps) => 
   const showChildInfo = parentName || parentPhone || childAddress || childHourlyRate !== undefined;
 
   return (
-    <div className="detailed-task-card">
-      <div className="detailed-task-card__header">
-        <h2 className="detailed-task-card__title">{title || 'Название задачи'}</h2>
-        <div className="detailed-task-card__actions">
+    <div className="bg-surface-raised border border-border-subtle rounded-2xl p-4 mb-4 shadow-glass transition-all duration-[180ms] ease-linear hover:border-border-strong hover:shadow-elevation-2 hover:-translate-y-0.5">
+      <div className="flex justify-between items-start gap-3 mb-4 pb-3 border-b border-border-subtle">
+        <h2 className="flex-1 m-0 text-xl font-semibold leading-tight text-text-primary">{title || 'Название задачи'}</h2>
+        <div className="flex gap-2 shrink-0">
           <button
             onClick={handleEdit}
-            className="detailed-task-card__btn detailed-task-card__btn--edit"
+            className="inline-flex items-center justify-center size-11 rounded-[10px] border border-border-subtle bg-[rgba(255,255,255,0.04)] text-text-primary cursor-pointer transition-all duration-[160ms] ease-linear hover:-translate-y-px hover:border-border-strong hover:bg-income-bg hover:border-income-border hover:text-income-primary"
             aria-label="Редактировать"
           >
-            <span className="material-icons">edit</span>
+            <span className="material-icons text-[20px]">edit</span>
           </button>
           <button
             onClick={handleDelete}
-            className="detailed-task-card__btn detailed-task-card__btn--delete"
-            aria-label="Удалить"
+            className={clsx(
+              'inline-flex items-center justify-center size-11 rounded-[10px] border cursor-pointer transition-all duration-[160ms] ease-linear',
+              confirmingDelete
+                ? 'w-auto px-3 bg-[rgba(224,86,86,0.22)] border-[rgba(224,86,86,0.4)] text-[#ffb3b8]'
+                : 'border-border-subtle bg-[rgba(255,255,255,0.04)] text-text-primary hover:-translate-y-px hover:border-border-strong hover:bg-expense-bg hover:border-expense-border hover:text-expense-primary'
+            )}
+            aria-label={confirmingDelete ? 'Точно удалить?' : 'Удалить'}
           >
-            <span className="material-icons">delete</span>
+            {confirmingDelete ? (
+              <span className="text-xs font-semibold whitespace-nowrap">Точно?</span>
+            ) : (
+              <span className="material-icons text-[20px]">delete</span>
+            )}
           </button>
         </div>
       </div>
 
-      <div className="detailed-task-card__body">
+      <div className="flex flex-col gap-3">
         {time && (
-          <div className="detailed-task-card__info-row">
-            <span className="material-icons detailed-task-card__icon">schedule</span>
-            <p><span className="detailed-task-card__label">Время:</span> {time}</p>
+          <div className="flex items-start gap-2">
+            <span className="material-icons shrink-0 text-[20px] text-text-secondary mt-0.5">schedule</span>
+            <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Время:</span> {time}</p>
           </div>
         )}
 
         {childName && (
-          <div className="detailed-task-card__info-row">
-            <span className="material-icons detailed-task-card__icon">child_care</span>
-            <p><span className="detailed-task-card__label">Ребенок:</span> {childName}</p>
+          <div className="flex items-start gap-2">
+            <span className="material-icons shrink-0 text-[20px] text-text-secondary mt-0.5">child_care</span>
+            <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Ребенок:</span> {childName}</p>
           </div>
         )}
 
         {type === 'lesson' && task.address && (
-          <div className="detailed-task-card__info-row">
-            <span className="material-icons detailed-task-card__icon detailed-task-card__icon--lesson">location_on</span>
-            <p><span className="detailed-task-card__label">Адрес:</span> {task.address}</p>
+          <div className="flex items-start gap-2">
+            <span className="material-icons shrink-0 text-[20px] text-lesson-primary mt-0.5">location_on</span>
+            <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Адрес:</span> {task.address}</p>
           </div>
         )}
 
         {type === 'lesson' && (
-          <div className="detailed-task-card__info-row">
-            <span className="material-icons detailed-task-card__icon detailed-task-card__icon--lesson">school</span>
-            <p><span className="detailed-task-card__label">Тип:</span> Занятие</p>
+          <div className="flex items-start gap-2">
+            <span className="material-icons shrink-0 text-[20px] text-lesson-primary mt-0.5">school</span>
+            <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Тип:</span> Занятие</p>
           </div>
         )}
 
         {type === 'task' && assignee && (
-          <div className="detailed-task-card__info-row">
-            <span className="material-icons detailed-task-card__icon">assignment_ind</span>
-            <p><span className="detailed-task-card__label">Исполнитель:</span> {assignee.username}</p>
+          <div className="flex items-start gap-2">
+            <span className="material-icons shrink-0 text-[20px] text-text-secondary mt-0.5">assignment_ind</span>
+            <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Исполнитель:</span> {assignee.username}</p>
           </div>
         )}
 
         {(type === 'income' || type === 'hourly' || type === 'fixed') && incomeDisplayValue && (
-          <div className="detailed-task-card__info-row">
-            <span className="material-icons detailed-task-card__icon detailed-task-card__icon--income">trending_up</span>
-            <p><span className="detailed-task-card__label">Доход:</span> <span className="detailed-task-card__amount detailed-task-card__amount--income">{incomeDisplayValue}</span></p>
+          <div className="flex items-start gap-2">
+            <span className="material-icons shrink-0 text-[20px] text-income-primary mt-0.5">trending_up</span>
+            <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Доход:</span> <span className="font-semibold text-income-primary">{incomeDisplayValue}</span></p>
           </div>
         )}
 
         {type === 'expense' && amountSpent !== undefined && (
-            <div className="detailed-task-card__info-row">
-                <span className="material-icons detailed-task-card__icon detailed-task-card__icon--expense">trending_down</span>
-                <p><span className="detailed-task-card__label">Расход:</span> <span className="detailed-task-card__amount detailed-task-card__amount--expense">-{amountSpent} ₽</span></p>
+            <div className="flex items-start gap-2">
+                <span className="material-icons shrink-0 text-[20px] text-expense-primary mt-0.5">trending_down</span>
+                <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Расход:</span> <span className="font-semibold text-expense-primary">-{amountSpent} ₽</span></p>
             </div>
         )}
 
         {type === 'lesson' && task.comments && (
-          <div className="detailed-task-card__section">
-            <h3 className="detailed-task-card__section-title">Заметки:</h3>
-            <div className="detailed-task-card__comments">
-              <p>{task.comments}</p>
+          <div className="mt-3 pt-3 border-t border-border-subtle">
+            <h3 className="m-0 mb-3 text-lg font-semibold text-text-primary leading-tight">Заметки:</h3>
+            <div className="p-3 rounded-xl bg-surface-muted border border-border-subtle">
+              <p className="m-0 text-sm leading-normal text-text-secondary whitespace-pre-wrap">{task.comments}</p>
             </div>
           </div>
         )}
 
         {showChildInfo && type !== 'lesson' && (
-          <div className="detailed-task-card__section">
-            <h3 className="detailed-task-card__section-title">Информация о ребенке:</h3>
+          <div className="mt-3 pt-3 border-t border-border-subtle">
+            <h3 className="m-0 mb-3 text-lg font-semibold text-text-primary leading-tight">Информация о ребенке:</h3>
 
             {parentName && (
-              <div className="detailed-task-card__info-row">
-                <span className="material-icons detailed-task-card__icon">person</span>
-                <p><span className="detailed-task-card__label">Имя родителя:</span> {parentName}</p>
+              <div className="flex items-start gap-2">
+                <span className="material-icons shrink-0 text-[20px] text-text-secondary mt-0.5">person</span>
+                <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Имя родителя:</span> {parentName}</p>
               </div>
             )}
 
             {parentPhone && (
-              <div className="detailed-task-card__info-row">
-                <span className="material-icons detailed-task-card__icon">phone</span>
-                <p><span className="detailed-task-card__label">Телефон:</span> {parentPhone}</p>
+              <div className="flex items-start gap-2">
+                <span className="material-icons shrink-0 text-[20px] text-text-secondary mt-0.5">phone</span>
+                <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Телефон:</span> {parentPhone}</p>
               </div>
             )}
 
             {childAddress && (
-              <div className="detailed-task-card__info-row">
-                <span className="material-icons detailed-task-card__icon">location_on</span>
-                <p><span className="detailed-task-card__label">Адрес:</span> {childAddress}</p>
+              <div className="flex items-start gap-2">
+                <span className="material-icons shrink-0 text-[20px] text-text-secondary mt-0.5">location_on</span>
+                <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Адрес:</span> {childAddress}</p>
               </div>
             )}
 
             {childHourlyRate !== undefined && (
-              <div className="detailed-task-card__info-row">
-                <span className="material-icons detailed-task-card__icon">payments</span>
-                <p><span className="detailed-task-card__label">Ставка:</span> {childHourlyRate} ₽/час</p>
+              <div className="flex items-start gap-2">
+                <span className="material-icons shrink-0 text-[20px] text-text-secondary mt-0.5">payments</span>
+                <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Ставка:</span> {childHourlyRate} ₽/час</p>
               </div>
             )}
           </div>

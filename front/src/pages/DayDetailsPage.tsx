@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import type { FC } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -5,15 +6,17 @@ import DetailedTaskCard from '../components/DetailedTaskCard';
 import TopNavigator from '../components/TopNavigator';
 import UnifiedTaskFormModal from '../components/UnifiedTaskFormModal';
 import { useAuth } from '../context/AuthContext';
-import { useTasks } from '../context/TaskContext';
-import { type Task, createTask, deleteTask, getDailySummary, updateTask } from '../services/api';
+import { useCreateTask, useDeleteTask, useTasks, useUpdateTask } from '../hooks/useTasks';
+import { type Task, getDailySummary } from '../services/api';
 import { createDate, formatDateForDisplay, isSameDay, parseDateString } from '../utils/dateUtils';
-import './DayDetailsPage.css';
 
 
 const DayDetailsPage: FC = () => {
   const { dateString } = useParams<{ dateString: string }>();
-  const { tasks: allTasks, refetchTasks } = useTasks();
+  const { data: allTasks = [] } = useTasks();
+  const createTaskMutation = useCreateTask();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth(); // Получаем состояние аутентификации
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -36,7 +39,7 @@ const DayDetailsPage: FC = () => {
         const parsedDate = parseDateString(dateString);
         setSelectedDate(parsedDate);
         setError(null);
-      } catch (e) {
+      } catch {
         // Error parsing date string
         setError("Неверный формат даты в URL.");
         return;
@@ -126,20 +129,18 @@ const DayDetailsPage: FC = () => {
     }
     if (isAuthLoading) {
       throw new Error("Аутентификация в процессе.");
-    };
+    }
 
     try {
       if ('uuid' in taskData && taskData.uuid) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { uuid, ...updateData } = taskData;
-        await updateTask(taskData.uuid, updateData as Partial<Omit<Task, 'uuid'>>);
+        const { uuid: taskUuid, ...updateData } = taskData;
+        await updateTaskMutation.mutateAsync({ uuid: taskUuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
       } else {
-        await createTask(taskData as Omit<Task, 'uuid'>);
+        await createTaskMutation.mutateAsync(taskData as Omit<Task, 'uuid'>);
       }
     } catch (err) {
-      // Error saving task
       setError("Ошибка при сохранении задачи.");
-      throw err; // Пробрасываем ошибку дальше, чтобы ее обработал handleSubmit в модалке
+      throw err;
     }
   };
 
@@ -151,55 +152,76 @@ const DayDetailsPage: FC = () => {
     }
     if (isAuthLoading) return;
 
-    if (window.confirm('Вы уверены, что хотите удалить эту задачу?')) {
-      try {
-        await deleteTask(taskId);
-        refetchTasks();
-      } catch (err) {
-        // Error deleting task
-        setError("Ошибка при удалении задачи.");
-      }
+    try {
+      await deleteTaskMutation.mutateAsync(taskId);
+    } catch {
+      setError("Ошибка при удалении задачи.");
     }
   };
   if (error) {
-    return <div className="day-details-error">Ошибка: {error}</div>;
+    return (
+      <div className="text-center p-8 text-expense-primary text-lg">
+        Ошибка: {error}
+      </div>
+    );
   }
 
   if (!selectedDate) {
-    return <div className="day-details-error">Дата не найдена.</div>;
+    return (
+      <div className="text-center p-8 text-expense-primary text-lg">
+        Дата не найдена.
+      </div>
+    );
   }
 
   return (
-    <div className="day-details-page">
+    <div className="flex flex-col h-dvh bg-surface-app overflow-hidden">
       <TopNavigator
         title={formatDateForDisplay(selectedDate)}
         showBackButton={true}
         showButtons={false}
       />
 
-      <main className="day-details-content">
+      <main className="flex-1 flex flex-col gap-4 p-4 overflow-y-auto min-h-0 scrollbar-thin max-[480px]:p-3 max-[480px]:gap-3">
         {dailySummary && (
-          <div className="day-details-summary">
-            <div className="day-details-summary__item day-details-summary__item--income">
-              <span className="day-details-summary__label">Доход:</span>
-              <span className="day-details-summary__value">{dailySummary.totalEarned} ₽</span>
+          <div className="flex gap-3 p-3 bg-surface-raised rounded-2xl border border-border-subtle shadow-glass max-[480px]:flex-col max-[480px]:gap-2">
+            <div className="flex-1 flex flex-col gap-1 p-2 rounded-xl bg-surface-muted border-l-[3px] border-l-income-primary">
+              <span className="text-sm font-medium text-text-secondary">Доход:</span>
+              <span className="text-xl font-semibold text-income-primary leading-tight max-[480px]:text-lg">
+                {dailySummary.totalEarned} ₽
+              </span>
             </div>
-            <div className="day-details-summary__item day-details-summary__item--expense">
-              <span className="day-details-summary__label">Расход:</span>
-              <span className="day-details-summary__value">{dailySummary.totalSpent} ₽</span>
+            <div className="flex-1 flex flex-col gap-1 p-2 rounded-xl bg-surface-muted border-l-[3px] border-l-expense-primary">
+              <span className="text-sm font-medium text-text-secondary">Расход:</span>
+              <span className="text-xl font-semibold text-expense-primary leading-tight max-[480px]:text-lg">
+                {dailySummary.totalSpent} ₽
+              </span>
             </div>
           </div>
         )}
 
-        <div className="day-details-header">
-          <h2 className="day-details-title">Дела</h2>
-          <button className="btn btn-primary day-details-add-btn" onClick={() => handleOpenTaskForm()}>
-            <span className="material-icons">add</span>
+        <div className="flex justify-between items-center gap-3 max-[480px]:flex-col max-[480px]:items-stretch">
+          <h2 className="m-0 text-2xl font-semibold text-text-primary leading-tight max-[480px]:text-xl">
+            Дела
+          </h2>
+          <button
+            className={clsx(
+              'inline-flex items-center gap-2 py-2 px-4 min-h-11 whitespace-nowrap',
+              'rounded-xl border-none text-base font-semibold cursor-pointer',
+              'bg-gradient-to-br from-btn-primary-bg to-[var(--theme-primary)] text-btn-primary-text shadow-glass',
+              'transition-all duration-[180ms]',
+              'hover:-translate-y-0.5 hover:shadow-elevation-2',
+              'active:translate-y-0 active:shadow-glass',
+              'max-[480px]:w-full max-[480px]:justify-center',
+            )}
+            onClick={() => handleOpenTaskForm()}
+          >
+            <span className="material-icons text-[20px]">add</span>
             Создать дело
           </button>
         </div>
 
-        <div className="day-details-tasks">
+        <div className="flex flex-col gap-3">
           {tasks.length > 0 ? (
             sortedTasks.map((task, index) => (
               <DetailedTaskCard
@@ -210,7 +232,9 @@ const DayDetailsPage: FC = () => {
               />
             ))
           ) : (
-            <p className="day-details-empty">На этот день задач нет.</p>
+            <p className="text-center p-8 text-text-secondary text-base border border-dashed border-border-subtle rounded-2xl bg-surface-muted">
+              На этот день задач нет.
+            </p>
           )}
         </div>
       </main>
@@ -222,7 +246,6 @@ const DayDetailsPage: FC = () => {
             onSubmit={handleTaskSave}
             onTaskUpsert={() => {
               handleCloseTaskForm();
-              refetchTasks();
             }}
             mode={modalMode}
             initialTaskData={editingTask}

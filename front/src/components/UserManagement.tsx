@@ -1,8 +1,9 @@
+import clsx from 'clsx';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext'; // Добавлен импорт useAuth
+import { useAuth } from '../context/AuthContext';
 import type { NewUserCredentials, User } from '../services/api';
-import { createUser, deleteUser, getUsers, updateUserPassword, updateUserRole } from '../services/api'; // Добавлены createUser, deleteUser
+import { createUser, deleteUser, getUsers, updateUserPassword, updateUserRole } from '../services/api';
 
 
 const UserManagement = () => {
@@ -12,7 +13,6 @@ const UserManagement = () => {
   const [editingUserPassword, setEditingUserPassword] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState<string>('');
 
-  // Состояния для добавления нового пользователя
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState<boolean>(false);
   const [newUserData, setNewUserData] = useState<NewUserCredentials>({
     username: '',
@@ -23,8 +23,8 @@ const UserManagement = () => {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof NewUserCredentials, string>>>({});
 
 
-  const authContext = useAuth(); // Используем useAuth
-  const currentUser = authContext.user; // Доступ к user напрямую, т.к. useAuth гарантирует контекст
+  const authContext = useAuth();
+  const currentUser = authContext.user;
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -49,7 +49,7 @@ const UserManagement = () => {
     try {
       await updateUserRole(userUuid, newRole);
       toast.success('Роль пользователя успешно обновлена!');
-      fetchUsers(); // Обновляем список пользователей
+      fetchUsers();
     } catch (err) {
       toast.error('Не удалось обновить роль пользователя.');
     }
@@ -150,45 +150,52 @@ const UserManagement = () => {
   }
 
   if (isLoading) {
-    return <div className="text-slate-100">Загрузка пользователей...</div>;
+    return <div className="text-text-primary">Загрузка пользователей...</div>;
   }
 
   if (error) {
-    return <div className="text-red-500 p-4 bg-red-100 border border-red-400 rounded-md">{error}</div>;
+    return <div className="text-expense-primary p-4 bg-expense-bg border border-expense-border rounded-md">{error}</div>;
   }
 
+  const inputClasses = (hasError: boolean) =>
+    clsx(
+      'w-full p-2.5 bg-surface-elevated border text-text-primary rounded-md',
+      'focus:ring-border-focus focus:border-border-focus',
+      hasError ? 'border-expense-primary' : 'border-border-subtle'
+    );
+
   return (
-    <div className="bg-slate-800 rounded-2xl p-6 text-slate-100 w-full">
-      <h2 className="text-2xl font-semibold mb-6 text-slate-100">Управление пользователями</h2>
+    <div className="bg-surface-raised rounded-2xl p-6 text-text-primary w-full">
+      <h2 className="text-2xl font-semibold mb-6 text-text-primary">Управление пользователями</h2>
 
       <div className="mb-6">
         <button
           onClick={handleOpenAddUserModal}
-          className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-sm"
+          className="bg-btn-primary-bg hover:bg-btn-primary-hover text-btn-primary-text font-semibold min-h-11 py-2 px-4 rounded-md text-sm"
         >
           Добавить пользователя
         </button>
       </div>
 
       {users.length === 0 ? (
-        <p className="text-slate-400">Пользователи не найдены.</p>
+        <p className="text-text-tertiary">Пользователи не найдены.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg shadow">
-          <table className="w-full min-w-full divide-y divide-slate-700 border border-slate-700 border-collapse">
-            <thead className="bg-slate-700/50">
+        <div className="overflow-x-auto rounded-lg shadow-elevation-1">
+          <table className="w-full min-w-full divide-y divide-border-subtle border border-border-subtle border-collapse">
+            <thead className="bg-surface-elevated">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider border border-slate-600">Имя пользователя</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider border border-slate-600">Email</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider border border-slate-600">Роль</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider border border-slate-600">Действия</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider border border-border-subtle">Имя пользователя</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider border border-border-subtle">Email</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider border border-border-subtle">Роль</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider border border-border-subtle">Действия</th>
               </tr>
             </thead>
-            <tbody className="bg-slate-800 divide-y divide-slate-700">
+            <tbody className="bg-surface-raised divide-y divide-border-subtle">
               {users.map((user) => (
-                <tr key={user.uuid} className="hover:bg-slate-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-200 border border-slate-700">{user.username}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-200 border border-slate-700">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-200 border border-slate-700">
+                <tr key={user.uuid} className="hover:bg-surface-elevated">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary border border-border-subtle">{user.username}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary border border-border-subtle">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary border border-border-subtle">
                     {user.uuid === currentUser?.uuid ? (
                       user.role
                     ) : (
@@ -196,24 +203,24 @@ const UserManagement = () => {
                         value={user.role}
                         onChange={(e) => handleRoleChange(user.uuid, e.target.value as 'user' | 'admin')}
                         disabled={user.uuid === currentUser?.uuid}
-                        className="bg-slate-700 border border-slate-600 text-slate-200 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-1.5"
+                        className="bg-surface-elevated border border-border-subtle text-text-secondary text-sm rounded-md focus:ring-border-focus focus:border-border-focus block w-full p-1.5 min-h-11"
                       >
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
                       </select>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium border border-slate-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium border border-border-subtle">
                     <button
                       onClick={() => openPasswordModal(user)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md text-sm mr-2"
+                      className="bg-lesson-primary hover:opacity-90 text-text-invert font-semibold min-h-11 py-1 px-3 rounded-md text-sm mr-2"
                     >
                       Изменить пароль
                     </button>
                     {user.uuid !== currentUser?.uuid && (
                        <button
                            onClick={() => handleDeleteUser(user.uuid, user.username)}
-                           className="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md text-sm"
+                           className="bg-expense-primary hover:opacity-90 text-text-invert font-semibold min-h-11 py-1 px-3 rounded-md text-sm"
                        >
                            Удалить
                        </button>
@@ -227,26 +234,26 @@ const UserManagement = () => {
       )}
 
       {editingUserPassword && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-md mx-auto">
-            <h3 className="text-xl font-semibold mb-4 text-slate-100">Изменить пароль для {editingUserPassword.username}</h3>
+        <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50">
+          <div className="bg-surface-raised p-6 rounded-2xl shadow-elevation-2 w-full max-w-md mx-auto">
+            <h3 className="text-xl font-semibold mb-4 text-text-primary">Изменить пароль для {editingUserPassword.username}</h3>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Новый пароль"
-              className="w-full p-2.5 mb-4 bg-slate-700 border border-slate-600 text-slate-200 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-2.5 mb-4 bg-surface-elevated border border-border-subtle text-text-primary rounded-md focus:ring-border-focus focus:border-border-focus"
             />
             <div className="flex justify-end space-x-3">
               <button
                 onClick={handlePasswordChange}
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-sm"
+                className="bg-btn-primary-bg hover:bg-btn-primary-hover text-btn-primary-text font-semibold min-h-11 py-2 px-4 rounded-md text-sm"
               >
                 Сохранить
               </button>
               <button
                 onClick={closePasswordModal}
-                className="bg-slate-600 hover:bg-slate-500 text-slate-200 font-semibold py-2 px-4 rounded-md text-sm"
+                className="bg-btn-secondary-bg hover:bg-btn-secondary-hover text-text-secondary font-semibold min-h-11 py-2 px-4 rounded-md text-sm"
               >
                 Отмена
               </button>
@@ -256,76 +263,76 @@ const UserManagement = () => {
       )}
 
       {isAddUserModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-lg mx-auto">
-            <h3 className="text-xl font-semibold mb-6 text-slate-100">Добавить нового пользователя</h3>
+        <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-raised p-6 rounded-2xl shadow-elevation-2 w-full max-w-lg mx-auto">
+            <h3 className="text-xl font-semibold mb-6 text-text-primary">Добавить нового пользователя</h3>
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-1">Имя пользователя</label>
+                <label htmlFor="username" className="block text-sm font-medium text-text-secondary mb-1">Имя пользователя</label>
                 <input
                   type="text"
                   name="username"
                   id="username"
                   value={newUserData.username}
                   onChange={handleNewUserInputChange}
-                  className={`w-full p-2.5 bg-slate-700 border ${formErrors.username ? 'border-red-500' : 'border-slate-600'} text-slate-200 rounded-md focus:ring-blue-500 focus:border-blue-500`}
+                  className={inputClasses(!!formErrors.username)}
                 />
-                {formErrors.username && <p className="text-red-500 text-xs mt-1">{formErrors.username}</p>}
+                {formErrors.username && <p className="text-expense-primary text-xs mt-1">{formErrors.username}</p>}
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1">Email</label>
                 <input
                   type="email"
                   name="email"
                   id="email"
                   value={newUserData.email}
                   onChange={handleNewUserInputChange}
-                  className={`w-full p-2.5 bg-slate-700 border ${formErrors.email ? 'border-red-500' : 'border-slate-600'} text-slate-200 rounded-md focus:ring-blue-500 focus:border-blue-500`}
+                  className={inputClasses(!!formErrors.email)}
                 />
-                {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                {formErrors.email && <p className="text-expense-primary text-xs mt-1">{formErrors.email}</p>}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1">Пароль</label>
+                <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-1">Пароль</label>
                 <input
                   type="password"
                   name="password"
                   id="password"
                   value={newUserData.password}
                   onChange={handleNewUserInputChange}
-                  className={`w-full p-2.5 bg-slate-700 border ${formErrors.password ? 'border-red-500' : 'border-slate-600'} text-slate-200 rounded-md focus:ring-blue-500 focus:border-blue-500`}
+                  className={inputClasses(!!formErrors.password)}
                 />
-                {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
+                {formErrors.password && <p className="text-expense-primary text-xs mt-1">{formErrors.password}</p>}
               </div>
 
               <div>
-                <label htmlFor="role" className="block text-sm font-medium text-slate-300 mb-1">Роль</label>
+                <label htmlFor="role" className="block text-sm font-medium text-text-secondary mb-1">Роль</label>
                 <select
                   name="role"
                   id="role"
                   value={newUserData.role}
                   onChange={handleNewUserInputChange}
-                  className={`w-full p-2.5 bg-slate-700 border ${formErrors.role ? 'border-red-500' : 'border-slate-600'} text-slate-200 rounded-md focus:ring-blue-500 focus:border-blue-500`}
+                  className={inputClasses(!!formErrors.role)}
                 >
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
-                {formErrors.role && <p className="text-red-500 text-xs mt-1">{formErrors.role}</p>}
+                {formErrors.role && <p className="text-expense-primary text-xs mt-1">{formErrors.role}</p>}
               </div>
             </div>
 
             <div className="flex justify-end space-x-3 mt-8">
               <button
                 onClick={handleCreateUser}
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-sm"
+                className="bg-btn-primary-bg hover:bg-btn-primary-hover text-btn-primary-text font-semibold min-h-11 py-2 px-4 rounded-md text-sm"
               >
                 Создать
               </button>
               <button
                 onClick={handleCloseAddUserModal}
-                className="bg-slate-600 hover:bg-slate-500 text-slate-200 font-semibold py-2 px-4 rounded-md text-sm"
+                className="bg-btn-secondary-bg hover:bg-btn-secondary-hover text-text-secondary font-semibold min-h-11 py-2 px-4 rounded-md text-sm"
               >
                 Отмена
               </button>

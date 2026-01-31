@@ -1,15 +1,14 @@
 import { NavLink } from 'react-router-dom';
-import './SettingsMenu.css';
 
 const SettingsMenu = () => {
   return (
     <nav>
-      <ul>
+      <ul className="list-none m-0 p-0 flex flex-col gap-1">
         <li>
           <NavLink
             to="/settings/expense-categories"
             className={({ isActive }) =>
-              isActive ? "settings-menu-link settings-menu-link-active" : "settings-menu-link"
+              `flex items-center gap-3 px-4 py-3 rounded-xl text-text-secondary transition-colors hover:bg-white/[0.06] ${isActive ? 'bg-white/[0.08] text-text-primary font-medium' : ''}`
             }
           >
             Категории расходов
@@ -19,7 +18,7 @@ const SettingsMenu = () => {
           <NavLink
             to="/settings/child-cards"
             className={({ isActive }) =>
-              isActive ? "settings-menu-link settings-menu-link-active" : "settings-menu-link"
+              `flex items-center gap-3 px-4 py-3 rounded-xl text-text-secondary transition-colors hover:bg-white/[0.06] ${isActive ? 'bg-white/[0.08] text-text-primary font-medium' : ''}`
             }
           >
             Карточки детей

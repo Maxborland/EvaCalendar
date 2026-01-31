@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -6,7 +7,7 @@ import api from '../../services/api';
 const LoginPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, isLoading, isAuthenticated } = useAuth(); // Добавлено isAuthenticated
+  const { login, isLoading, isAuthenticated } = useAuth();
 
   const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +18,6 @@ const LoginPage = () => {
   useEffect(() => {
     if (location.state?.message) {
       setSuccessMessage(location.state.message);
-      // Очищаем state из location, чтобы сообщение не показывалось снова при обновлении страницы или возврате
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate]);
@@ -27,13 +27,9 @@ const LoginPage = () => {
     if (!loginInput.trim()) {
       newErrors.loginInput = 'Email или имя пользователя обязательно';
     }
-    // Проверка на формат email здесь больше не нужна,
-    // так как поле принимает и имя пользователя.
-
     if (!password) {
       newErrors.password = 'Пароль обязателен';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -53,17 +49,8 @@ const LoginPage = () => {
         password: password,
       });
 
-      // Бэкенд возвращает { token, userId, username, email, role }
-      // Мы можем собрать объект пользователя из ответа
       const { token, ...user } = response.data;
-
-      // Вызываем обновленный метод login из контекста
       login(user, token);
-
-      // Навигация больше не нужна здесь, так как
-      // PublicOnlyRoute автоматически обработает изменение
-      // состояния isAuthenticated и выполнит редирект.
-      // navigate('/');
 
     } catch (error: any) {
       let specificMessage = '';
@@ -80,46 +67,50 @@ const LoginPage = () => {
     }
   };
 
-  // Если isLoading true, показываем заглушку, чтобы избежать моргания LoginPage,
-  // пока AuthContext определяет состояние аутентификации.
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen px-4 font-['Inter'] bg-slate-900 text-slate-100">
+      <div className="flex items-center justify-center min-h-screen px-4 font-['Inter'] bg-surface-app text-text-primary">
         Загрузка аутентификации...
       </div>
     );
   }
 
-  // Если пользователь аутентифицирован (и isLoading уже false), перенаправляем на главную
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
+  const inputClasses = (hasError: boolean) =>
+    clsx(
+      'rounded-lg py-3 px-4 w-full text-base',
+      'bg-surface-elevated text-text-primary border',
+      'focus:outline-none focus:ring-2 focus:ring-border-focus focus:border-transparent',
+      hasError ? 'border-expense-primary' : 'border-border-subtle'
+    );
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 font-['Inter'] bg-slate-900">
-      <div data-testid="debug-loginpage-info" style={{ display: 'none' }}>
+    <div className="flex items-center justify-center min-h-screen px-4 font-['Inter'] bg-surface-app">
+      <div data-testid="debug-loginpage-info" className="hidden">
         {JSON.stringify({ isLoading, isAuthenticated, serverError })}
       </div>
       <div className="flex flex-col items-center justify-center">
         <img className="max-w-24 mb-4" src="../../../icons/web/icon-512.png" alt="Login Icon" />
         <div className="flex items-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-100">Вход</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Вход</h1>
         </div>
-        <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md"> {/* Добавил w-full max-w-md для ограничения ширины */}
+        <div className="rounded-2xl p-6 w-full max-w-md bg-surface-raised">
           {successMessage && (
-            <div data-testid="success-message" className="success-message bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 text-sm" role="alert">
+            <div data-testid="success-message" className="px-4 py-3 rounded relative mb-4 text-sm bg-income-bg border border-income-border text-income-primary" role="alert">
               {successMessage}
             </div>
           )}
           {serverError && (
-            <div data-testid="server-error-message" className="text-red-700 text-sm mb-4 text-center p-3 bg-red-100 rounded-md border border-red-400">
+            <div data-testid="server-error-message" className="text-sm mb-4 text-center p-3 rounded-md bg-expense-bg border border-expense-border text-expense-primary">
               {serverError}
             </div>
           )}
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-6">
-              <label htmlFor="loginInput" className="block text-slate-200 text-sm mb-2">
+              <label htmlFor="loginInput" className="block text-sm mb-2 text-text-secondary">
                 Email или имя пользователя
               </label>
               <input
@@ -130,13 +121,13 @@ const LoginPage = () => {
                 onChange={(e) => setLoginInput(e.target.value)}
                 placeholder="Введите email или имя пользователя"
                 autoComplete="username"
-                className={`bg-slate-700 border ${errors.loginInput ? 'border-red-500' : 'border-slate-600'} text-slate-300 rounded-lg py-3 px-4 w-full text-base placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={inputClasses(!!errors.loginInput)}
               />
-              {errors.loginInput && <p data-testid="login-input-error" className="text-red-500 text-xs mt-1">{errors.loginInput}</p>}
+              {errors.loginInput && <p data-testid="login-input-error" className="text-xs mt-1 text-expense-primary">{errors.loginInput}</p>}
             </div>
 
-            <div className="mb-8"> {/* mb-8 для последнего поля перед кнопкой */}
-              <label htmlFor="password" className="block text-slate-200 text-sm mb-2">
+            <div className="mb-8">
+              <label htmlFor="password" className="block text-sm mb-2 text-text-secondary">
                 Пароль
               </label>
               <input
@@ -147,23 +138,23 @@ const LoginPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 autoComplete="current-password"
-                className={`bg-slate-700 border ${errors.password ? 'border-red-500' : 'border-slate-600'} text-slate-300 rounded-lg py-3 px-4 w-full text-base placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={inputClasses(!!errors.password)}
               />
-              {errors.password && <p data-testid="password-input-error" className="text-red-500 text-xs mt-1">{errors.password}</p>}
+              {errors.password && <p data-testid="password-input-error" className="text-xs mt-1 text-expense-primary">{errors.password}</p>}
             </div>
 
             <button
               data-testid="login-button"
               type="submit"
-              className="bg-green-500 text-white font-semibold py-3 px-4 rounded-lg w-full text-center text-base transition-colors duration-300 ease-in-out hover:bg-green-600 disabled:opacity-50"
-              disabled={isLoading} // Здесь isLoading из useAuth() все еще актуален для кнопки, даже если выше есть проверка
+              className="font-semibold py-3 px-4 rounded-lg w-full text-center text-base transition-colors duration-300 ease-in-out disabled:opacity-50 bg-btn-primary-bg hover:bg-btn-primary-hover text-btn-primary-text"
+              disabled={isLoading}
             >
               {isLoading ? 'Вход...' : 'Войти'}
             </button>
           </form>
-          <p className="text-center text-sm text-slate-400 mt-8">
+          <p className="text-center text-sm mt-8 text-text-tertiary">
             Нет аккаунта?{' '}
-            <a href="/register" className="font-medium text-green-400 no-underline hover:underline">
+            <a href="/register" className="font-medium no-underline hover:underline text-income-primary">
               Зарегистрироваться
             </a>
           </p>

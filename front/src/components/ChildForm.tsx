@@ -1,9 +1,13 @@
 import axios from 'axios';
+import clsx from 'clsx';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
 import type { Child } from '../services/api';
-import './ChildCardManager.css';
+
+const hasContactPicker = typeof navigator !== 'undefined'
+  && 'contacts' in navigator
+  && 'ContactsManager' in window;
 
 export interface ChildFormProps {
   initialChild?: Partial<Child>;
@@ -12,6 +16,9 @@ export interface ChildFormProps {
   isEmbeddedInModal?: boolean;
   formId?: string;
 }
+
+const formInputClass =
+  'w-full rounded-xl border border-border-subtle bg-surface-elevated text-text-primary py-2.5 px-3 text-sm mt-1 transition-[border-color,box-shadow] duration-[160ms] focus:border-border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(72,187,120,0.16)]';
 
 const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, formId }: ChildFormProps) => {
   const [formData, setFormData] = useState<Partial<Child>>(
@@ -98,6 +105,25 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
     };
   }, []);
 
+  const handlePickContact = async () => {
+    try {
+      const contacts = await (navigator as any).contacts.select(
+        ['name', 'tel'],
+        { multiple: false },
+      );
+      if (contacts && contacts.length > 0) {
+        const contact = contacts[0];
+        setFormData(prev => ({
+          ...prev,
+          parentName: contact.name?.[0] || prev.parentName,
+          parentPhone: contact.tel?.[0] || prev.parentPhone,
+        }));
+      }
+    } catch {
+      // Пользователь отменил выбор контакта
+    }
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!formData.childName?.trim()) {
@@ -121,19 +147,29 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
   };
 
   return (
-      <form onSubmit={handleSubmit} className="child-form" id={formId}>
+      <form onSubmit={handleSubmit} className="bg-transparent p-0 rounded-none mb-0" id={formId}>
         {!isEmbeddedInModal && (
           <h3 className='mb-4 text-center text-md font-bold text-slate-100'>{initialChild?.uuid ? 'Редактировать карточку ребенка' : 'Добавить карточку ребенка'}</h3>
         )}
-        <label className="block mb-2 text-slate-300">
+        <label className="block mb-2 text-sm font-medium text-text-secondary">
           Имя ребенка:
-          <input type="text" name="childName" value={formData.childName || ''} onChange={handleChange} required maxLength={50} />
+          <input type="text" name="childName" value={formData.childName || ''} onChange={handleChange} required maxLength={50} className={formInputClass} />
         </label>
-        <label className="block mb-2 text-slate-300">
+        <label className="block mb-2 text-sm font-medium text-text-secondary">
           Имя родителя:
-          <input type="text" name="parentName" value={formData.parentName || ''} onChange={handleChange} required />
+          <input type="text" name="parentName" value={formData.parentName || ''} onChange={handleChange} required className={formInputClass} />
         </label>
-        <label className="block mb-2 text-slate-300">
+        {hasContactPicker && (
+          <button
+            type="button"
+            onClick={handlePickContact}
+            className="flex items-center gap-1.5 mb-2 py-1.5 px-3 rounded-lg border border-border-subtle bg-surface-elevated text-text-secondary text-xs font-medium transition-all duration-[160ms] cursor-pointer hover:bg-surface-raised hover:text-text-primary active:scale-[0.97]"
+          >
+            <span className="material-icons text-[16px]">contacts</span>
+            Из контактов
+          </button>
+        )}
+        <label className="block mb-2 text-sm font-medium text-text-secondary">
           Телефон родителя:
           <IMaskInput
             mask={'+{7} (000) 000-00-00'}
@@ -146,9 +182,10 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
             }}
             type="tel"
             name="parentPhone"
+            className={formInputClass}
           />
         </label>
-        <label className="block mb-2 text-slate-300">
+        <label className="relative block mb-2 text-sm font-medium text-text-secondary">
           Адрес:
           <input
             type="text"
@@ -157,24 +194,36 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
             onChange={handleChange}
             autoComplete="off"
             onFocus={() => formData.address && formData.address.length >= 3 && fetchSuggestions(formData.address)}
+            className={formInputClass}
           />
           {showSuggestions && suggestions.length > 0 && (
-            <ul className="suggestions-list" ref={suggestionListRef}>
+            <ul
+              ref={suggestionListRef}
+              className={clsx(
+                'list-none p-0 mt-1 absolute top-full left-0 right-0 z-[1000]',
+                'border border-border-accent rounded-xl max-h-[200px] overflow-y-auto',
+                'bg-[rgba(17,21,32,0.98)] shadow-elevation-2 backdrop-blur-[12px]',
+              )}
+            >
               {suggestions.map((suggestion, index) => (
-                <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
+                <li
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="py-2.5 px-3.5 cursor-pointer text-text-secondary transition-colors duration-[160ms] hover:bg-[rgba(72,187,120,0.12)] hover:text-text-primary"
+                >
                   {suggestion}
                 </li>
               ))}
             </ul>
           )}
         </label>
-        <label className="block mb-2 text-slate-300">
+        <label className="block mb-2 text-sm font-medium text-text-secondary">
           Ставка в час:
-          <input type="number" required name="hourlyRate" value={formData.hourlyRate ?? ''} onChange={handleChange} step="0.01" inputMode="decimal" min="0" />
+          <input type="number" required name="hourlyRate" value={formData.hourlyRate ?? ''} onChange={handleChange} step="0.01" inputMode="decimal" min="0" className={formInputClass} />
         </label>
-        <label className="block mb-2 text-slate-300">
+        <label className="block mb-2 text-sm font-medium text-text-secondary">
           Комментарий:
-          <textarea name="comment" value={formData.comment || ''} onChange={handleChange} rows={3}></textarea>
+          <textarea name="comment" value={formData.comment || ''} onChange={handleChange} rows={3} className={clsx(formInputClass, 'resize-y min-h-[80px]')}></textarea>
         </label>
         {!isEmbeddedInModal && (
           <div className="form-actions">

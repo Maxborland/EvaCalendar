@@ -5,7 +5,6 @@ import { useNavigate, useRevalidator } from 'react-router-dom';
 import { useNav } from '../context/NavContext';
 import { createTask, deleteTask, duplicateTask, moveTask, updateTask, type Note, type Task } from '../services/api';
 import { createDate, formatDateForDayColumnHeader, formatDateToYYYYMMDD } from '../utils/dateUtils';
-import './DayColumn.css';
 import MiniEventCard, { type EventItem } from './MiniEventCard';
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
 
@@ -168,11 +167,6 @@ const DayColumn = (props: DayColumnProps) => {
 
   drop(dropRef);
 
-  const dayColumnClassName = clsx('day-column', {
-    'day-column--today': isToday,
-    'day-column--active-drop': isOver,
-  });
-
   const handleHeaderClick = () => {
     const dateString = formatDateToYYYYMMDD(fullDate);
     navigate(`/day/${dateString}`);
@@ -180,18 +174,20 @@ const DayColumn = (props: DayColumnProps) => {
 
   const dayHeader = (
     <div
-      className="day-column__header"
+      className="flex items-center justify-between gap-[var(--spacing-sm)] shrink-0"
       onClick={handleHeaderClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}
     >
-      <div className="day-column__header-text">
-        <span className="day-column__label">{formatDateForDayColumnHeader(fullDate)}</span>
+      <div className="flex flex-col items-start gap-0.5 min-w-0 flex-1">
+        <span className="text-sm font-semibold text-text-primary leading-tight min-[480px]:text-base max-[360px]:text-[0.8125rem]">
+          {formatDateForDayColumnHeader(fullDate)}
+        </span>
       </div>
       <button
         type="button"
-        className="day-column__add"
+        className="shrink-0 size-10 min-[480px]:size-11 rounded-[10px] border border-border-subtle bg-white/[0.04] text-text-primary inline-flex items-center justify-center transition-all duration-[160ms] hover:bg-white/[0.08] hover:border-border-strong hover:-translate-y-px active:translate-y-0 [&_.material-icons]:text-[20px] min-[480px]:[&_.material-icons]:text-[22px]"
         onClick={(e) => {
           e.stopPropagation();
           onOpenTaskModal(undefined, 'income', fullDate);
@@ -204,10 +200,19 @@ const DayColumn = (props: DayColumnProps) => {
   );
 
   return (
-    <div ref={dropRef} className={dayColumnClassName}>
+    <div
+      ref={dropRef}
+      className={clsx(
+        'flex flex-col gap-[var(--spacing-sm)] p-[var(--spacing-sm)] rounded-xl bg-surface-raised border border-border-subtle shadow-glass transition-[border-color,box-shadow] duration-200 min-h-0 h-full overflow-hidden',
+        'min-[480px]:p-[var(--spacing-md)] min-[480px]:gap-[var(--spacing-md)]',
+        'max-[360px]:p-1.5 max-[360px]:gap-1.5 max-[360px]:rounded-[10px]',
+        isToday && 'border-[var(--theme-primary)] shadow-[0_0_0_1px_var(--theme-primary),var(--elevation-1)]',
+        isOver && 'outline-2 outline-dashed outline-[var(--theme-primary)] outline-offset-[4px]',
+      )}
+    >
       {dayHeader}
-      <div className="day-column__scroll">
-        <div className="day-column__events" role="list">
+      <div className="flex-1 min-h-0 relative overflow-hidden">
+        <div className="flex flex-col gap-1.5 h-full overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin min-[480px]:gap-[var(--spacing-sm)] max-[360px]:gap-1" role="list">
           {events.length > 0 ? (
             events.map((event) => {
               const key = (event as Task).uuid || (event as Note).uuid;
@@ -220,7 +225,16 @@ const DayColumn = (props: DayColumnProps) => {
               );
             })
           ) : (
-            <p className="day-column__empty">Нет событий</p>
+            <div
+              className="flex flex-col items-center gap-1 py-[var(--spacing-md)] px-[var(--spacing-sm)] border border-dashed border-border-strong rounded-[10px] bg-white/[0.02] cursor-pointer transition-all duration-[160ms] min-h-11 justify-center hover:bg-white/[0.06] hover:border-income-border group max-[360px]:py-[var(--spacing-sm)] max-[360px]:px-1"
+              onClick={() => onOpenTaskModal(undefined, 'income', fullDate)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && onOpenTaskModal(undefined, 'income', fullDate)}
+            >
+              <span className="material-icons text-[20px] text-text-tertiary group-hover:text-income-primary">add_circle_outline</span>
+              <span className="text-xs text-text-tertiary max-[360px]:text-[0.7rem]">Нажмите, чтобы добавить</span>
+            </div>
           )}
         </div>
       </div>
