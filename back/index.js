@@ -64,6 +64,7 @@ const expenseCategoryController = require('./controllers/expenseCategoryControll
 const noteController = require('./controllers/noteController.js');
 const taskController = require('./controllers/taskController.js');
 const summaryController = require('./controllers/summaryController.js');
+const familyController = require('./controllers/familyController.js');
 const authRoutes = require('./routes/authRoutes.js');
 const userRoutes = require('./routes/userRoutes.js');
 const subscriptionRoutes = require('./routes/subscriptionRoutes.js');
@@ -79,6 +80,7 @@ app.use('/api/expense-categories', protect, expenseCategoryController);
 app.use('/api/notes', protect, noteController);
 app.use('/api/tasks', protect, taskController);
 app.use('/api/summary', protect, summaryController);
+app.use('/api/families', protect, familyController);
 
 // Маршруты для API должны быть выше обработчиков статики и catch-all
 app.use('/api/subscriptions', subscriptionRoutes);

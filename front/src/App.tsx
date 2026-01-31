@@ -6,7 +6,6 @@ import PrivateRoute from './components/PrivateRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute'; // Импорт PublicOnlyRoute
 import WeekView from './components/WeekView';
 import { NavProvider } from './context/NavContext';
-import { TaskProvider } from './context/TaskContext';
 import LoginPage from './pages/Auth/LoginPage';
 import RegistrationPage from './pages/Auth/RegistrationPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
@@ -16,8 +15,10 @@ import DayDetailsPage from './pages/DayDetailsPage';
 import ExpenseCategoriesSettingsPage from './pages/ExpenseCategoriesSettingsPage';
 import NoteDetailsPage from './pages/NoteDetailsPage';
 import NotFoundPage from './pages/NotFoundPage'; // Импорт страницы 404
+import StatisticsPage from './pages/StatisticsPage';
 import ProfilePage from './pages/ProfilePage'; // Импортируем созданную страницу профиля
 import SettingsPage from './pages/SettingsPage';
+import FamilySettingsPage from './pages/FamilySettingsPage';
 import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import { getNoteByDate } from './services/api';
 
@@ -117,11 +118,9 @@ const routes: RouteObject[] = [
   {
     path: "/",
     element: (
-      <TaskProvider>
-        <NavProvider>
-          <RootLayout />
-        </NavProvider>
-      </TaskProvider>
+      <NavProvider>
+        <RootLayout />
+      </NavProvider>
     ),
     errorElement: <ErrorBoundary />,
     children: [
@@ -153,7 +152,16 @@ const routes: RouteObject[] = [
           { path: "notifications", element: <NotificationSettingsPage /> },
           { path: "expense-categories", element: <ExpenseCategoriesSettingsPage /> },
           { path: "child-cards", element: <ChildCardsSettingsPage /> },
+          { path: "family", element: <FamilySettingsPage /> },
         ],
+      },
+      {
+        path: "statistics",
+        element: (
+          <PrivateRoute>
+            <StatisticsPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "day/:dateString",
@@ -195,12 +203,10 @@ const routes: RouteObject[] = [
   // чтобы не перехватывать существующие маршруты.
   {
     path: "*",
-    element: ( // Используем RootLayout для консистентности
-      <TaskProvider>
-        <NavProvider>
-          <RootLayout />
-        </NavProvider>
-      </TaskProvider>
+    element: (
+      <NavProvider>
+        <RootLayout />
+      </NavProvider>
     ),
     children: [
       {

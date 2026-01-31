@@ -40,6 +40,17 @@ export interface MonthlySummaryAPIResponse {
 
 // Старый интерфейс SummaryData, который использовался для getMonthlySummary, переименуем
 // и будем использовать для возвращаемого значения getMonthlySummary
+export interface DailyBreakdownItem {
+  date: string;
+  totalIncome: number;
+  totalExpenses: number;
+}
+
+export interface CategoryBreakdownItem {
+  categoryName: string;
+  totalSpent: number;
+}
+
 export interface OldMonthlySummaryData {
     totalIncome: number;
     totalExpense: number; // В старом интерфейсе было totalExpense
@@ -106,7 +117,37 @@ export interface User {
   uuid: string;
   username: string;
   email: string;
-  role: 'user' | 'admin'; // Предполагаем, что роли могут быть только 'user' или 'admin'
+  role: 'user' | 'admin';
+}
+
+export interface FamilyMember {
+  uuid: string;
+  user_uuid: string;
+  role: 'owner' | 'admin' | 'member';
+  status: string;
+  accepted_at: string | null;
+  username: string;
+  email: string;
+}
+
+export interface Family {
+  uuid: string;
+  name: string;
+  owner_uuid: string;
+  memberRole: 'owner' | 'admin' | 'member';
+  members: FamilyMember[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FamilyInvitation {
+  uuid: string;
+  email: string;
+  token?: string;
+  familyName?: string;
+  status: string;
+  expires_at: string;
+  created_at?: string;
 }
 
 export interface NewUserCredentials {
@@ -271,6 +312,20 @@ export const getMonthlySummary = async (year: number, month: number): Promise<Ol
   };
 };
 
+export const getDailyBreakdown = async (start: string, end: string): Promise<DailyBreakdownItem[]> => {
+  const response = await api.get<DailyBreakdownItem[]>('/summary/daily-breakdown', {
+    params: { start, end },
+  });
+  return response.data;
+};
+
+export const getCategoryBreakdown = async (start: string, end: string): Promise<CategoryBreakdownItem[]> => {
+  const response = await api.get<CategoryBreakdownItem[]>('/summary/category-breakdown', {
+    params: { start, end },
+  });
+  return response.data;
+};
+
 export const getExpenseCategories = async () => {
     const response = await api.get('/expense-categories');
     return response.data as ExpenseCategory[];
@@ -358,6 +413,58 @@ export const deleteChild = async (uuid: string) => { // Было id: string
   export const getAssignableUsers = async (): Promise<User[]> => {
     const response = await api.get<User[]>('/users/assignable');
     return response.data;
+  };
+
+  // Family API
+  export const getMyFamily = async (): Promise<Family | null> => {
+    const response = await api.get<Family | null>('/families/my');
+    return response.data;
+  };
+
+  export const createFamily = async (name: string): Promise<Family> => {
+    const response = await api.post<Family>('/families', { name });
+    return response.data;
+  };
+
+  export const updateFamily = async (uuid: string, name: string): Promise<Family> => {
+    const response = await api.put<Family>(`/families/${uuid}`, { name });
+    return response.data;
+  };
+
+  export const deleteFamily = async (uuid: string): Promise<void> => {
+    await api.delete(`/families/${uuid}`);
+  };
+
+  export const getFamilyMembers = async (uuid: string): Promise<FamilyMember[]> => {
+    const response = await api.get<FamilyMember[]>(`/families/${uuid}/members`);
+    return response.data;
+  };
+
+  export const removeFamilyMember = async (familyUuid: string, userUuid: string): Promise<void> => {
+    await api.delete(`/families/${familyUuid}/members/${userUuid}`);
+  };
+
+  export const leaveFamily = async (): Promise<void> => {
+    await api.post('/families/leave');
+  };
+
+  export const sendFamilyInvitation = async (familyUuid: string, email: string): Promise<FamilyInvitation> => {
+    const response = await api.post<FamilyInvitation>(`/families/${familyUuid}/invitations`, { email });
+    return response.data;
+  };
+
+  export const acceptFamilyInvitation = async (token: string): Promise<Family> => {
+    const response = await api.post<Family>('/families/accept-invitation', { token });
+    return response.data;
+  };
+
+  export const getPendingInvitations = async (familyUuid: string): Promise<FamilyInvitation[]> => {
+    const response = await api.get<FamilyInvitation[]>(`/families/${familyUuid}/invitations`);
+    return response.data;
+  };
+
+  export const cancelFamilyInvitation = async (invitationUuid: string): Promise<void> => {
+    await api.delete(`/families/invitations/${invitationUuid}`);
   };
 
   export default api;
