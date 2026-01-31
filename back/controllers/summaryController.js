@@ -75,4 +75,34 @@ router.get('/month/:year/:month', validateMonthlySummary, asyncHandler(async (re
     res.status(200).json(summary);
 }));
 
+// Валидация для daily-breakdown и category-breakdown
+const validateDateRange = [
+  query('start').isISO8601().withMessage('start должен быть валидной датой в формате YYYY-MM-DD.'),
+  query('end').isISO8601().withMessage('end должен быть валидной датой в формате YYYY-MM-DD.'),
+];
+
+// GET /summary/daily-breakdown?start=YYYY-MM-DD&end=YYYY-MM-DD - Разбивка доходов/расходов по дням
+router.get('/daily-breakdown', validateDateRange, asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+  }
+  const { start, end } = req.query;
+  const user_uuid = req.user.uuid;
+  const data = await summaryService.getDailyBreakdown(start, end, user_uuid);
+  res.status(200).json(data);
+}));
+
+// GET /summary/category-breakdown?start=YYYY-MM-DD&end=YYYY-MM-DD - Разбивка расходов по категориям
+router.get('/category-breakdown', validateDateRange, asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(ApiError.badRequest('Ошибки валидации', errors.array()));
+  }
+  const { start, end } = req.query;
+  const user_uuid = req.user.uuid;
+  const data = await summaryService.getCategoryBreakdown(start, end, user_uuid);
+  res.status(200).json(data);
+}));
+
 module.exports = router;

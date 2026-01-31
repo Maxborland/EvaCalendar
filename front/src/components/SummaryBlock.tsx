@@ -1,8 +1,8 @@
+import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import type { SummaryData } from '../services/api';
 import { getSummaryByWeek } from '../services/api';
 import { createDate } from '../utils/dateUtils';
-import './SummaryBlock.css';
 
 interface SummaryBlockProps {
     weekStartDate: string;
@@ -29,8 +29,7 @@ const SummaryBlock = ({
             try {
                 const data = await getSummaryByWeek(weekStartDate);
                 setSummaryData(data);
-            } catch (err) {
-                // Failed to fetch week summary
+            } catch {
                 setError("Не удалось загрузить сводку за неделю.");
                 setSummaryData({
                     monthlySummary: { totalIncome: 0, totalExpenses: 0, balance: 0, calculatedForMonth: '' },
@@ -62,11 +61,19 @@ const SummaryBlock = ({
     };
 
     if (isLoading) {
-        return <div className="p-4 rounded-xl mb-2.5 bg-light-background shadow-[0_4px_12px_var(--color-shadow-light)] flex flex-col gap-2.5"><p>Загрузка сводки...</p></div>;
+        return (
+            <div className="rounded-2xl mb-3 bg-surface-raised shadow-glass flex flex-col overflow-hidden">
+                <p className="p-4 text-text-secondary text-center text-sm m-0">Загрузка сводки...</p>
+            </div>
+        );
     }
 
     if (error || !summaryData) {
-        return <div className="p-4 rounded-xl mb-2.5 bg-light-background shadow-[0_4px_12px_var(--color-shadow-light)] flex flex-col gap-2.5"><p className="text-danger-text text-center p-2.5">{error || 'Нет данных для отображения.'}</p></div>;
+        return (
+            <div className="rounded-2xl mb-3 bg-surface-raised shadow-glass flex flex-col overflow-hidden">
+                <p className="p-4 text-expense-primary text-center text-sm m-0">{error || 'Нет данных для отображения.'}</p>
+            </div>
+        );
     }
 
     const { monthlySummary, dailySummary } = summaryData;
@@ -75,71 +82,54 @@ const SummaryBlock = ({
     const todayDateFormatted = formatFullDate(dailySummary.calculatedForDate);
 
     return (
-        <section className="rounded-xl mb-2.5 bg-light-background shadow-[0_4px_12px_var(--color-shadow-light)] flex flex-col">
-
+        <section className="rounded-2xl mb-3 bg-surface-raised shadow-glass flex flex-col overflow-hidden">
             <div
-                className={`p-4 cursor-pointer transition-colors duration-200 ease-in-out
-                    ${isExpanded
-                        ? 'bg-sky-100 hover:bg-sky-200 rounded-t-xl'
-                        : 'bg-sky-100 hover:bg-sky-200 rounded-xl'
-                    }`}
+                className={clsx(
+                    'p-4 cursor-pointer transition-colors duration-200 ease-linear bg-surface-elevated',
+                    isExpanded ? 'rounded-t-2xl' : 'rounded-2xl',
+                    'hover:bg-[rgba(255,255,255,0.08)]'
+                )}
                 onClick={toggleExpansion}
             >
                 {isExpanded ? (
-                    <div className="text-gray-800 text-lg font-semibold text-center">
+                    <div className="text-text-primary text-lg font-semibold text-center">
                         Сводка за {titleMonthYear}
                     </div>
-
                 ) : (
                     <>
-                        <div className="text-sm text-gray-700">Сегодня: {todayDateFormatted}</div>
-                        <div className="text-lg font-semibold text-gray-800">
+                        <div className="text-sm text-text-secondary">{todayDateFormatted}</div>
+                        <div className="text-lg font-semibold text-text-primary">
                             Баланс: {formatCurrency(monthlySummary.balance)}
                         </div>
                     </>
                 )}
             </div>
 
-
             <div
-                className={`
-                    transition-all duration-700 ease-out overflow-hidden
-                    ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}
-                    ${isExpanded ? 'rounded-b-xl' : ''}
-                    bg-light-background
-                `}
+                className={clsx(
+                    'overflow-hidden transition-all duration-500 ease-out',
+                    isExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+                )}
             >
-
                 {isExpanded && (
-                    <div className="p-4 flex flex-col gap-3 bg-gray-600">
-
-                        <div className="p-3 rounded-lg bg-sky-100 text-gray-800 text-base font-semibold text-center shadow-sm">
-                             Баланс ({titleMonthYear}): <span className="font-semibold text-gray-800">{formatCurrency(monthlySummary.balance)}</span>
+                    <div className="p-4 flex flex-col gap-3 bg-surface-muted">
+                        <div className="p-3 rounded-xl bg-surface-elevated text-text-primary text-base font-semibold text-center shadow-elevation-1">
+                             Баланс ({titleMonthYear}): <span className="font-bold">{formatCurrency(monthlySummary.balance)}</span>
                         </div>
 
-
-                        <div className="p-3 rounded-lg bg-green-200 shadow-sm">
-                            <h4 className="text-md font-bold text-emerald-800 mb-2">Доход:</h4>
-                            <div className="flex justify-between items-center gap-2 w-full text-sm">
-                                <p className="text-emerald-700 mb-0">
-                                    Сегодня: <span className="font-semibold">{formatCurrency(dailySummary.totalIncome)}</span>
-                                </p>
-                                <p className="text-emerald-700 mb-0">
-                                    Месяц: <span className="font-semibold">{formatCurrency(monthlySummary.totalIncome)}</span>
-                                </p>
+                        <div className="p-3 rounded-xl bg-income-bg border border-income-border">
+                            <h4 className="text-base font-bold text-income-primary m-0 mb-2">Доход:</h4>
+                            <div className="flex justify-between items-center gap-2 text-sm">
+                                <p className="m-0 text-text-secondary">Сегодня: <span className="font-semibold text-income-primary">{formatCurrency(dailySummary.totalIncome)}</span></p>
+                                <p className="m-0 text-text-secondary">Месяц: <span className="font-semibold text-income-primary">{formatCurrency(monthlySummary.totalIncome)}</span></p>
                             </div>
                         </div>
 
-
-                        <div className="p-3 rounded-lg bg-rose-100 shadow-sm">
-                            <h4 className="text-md font-bold text-rose-800 mb-2">Расход:</h4>
-                            <div className="flex justify-between items-center gap-2 w-full text-sm">
-                                <p className="text-rose-700 mb-0">
-                                    Сегодня: <span className="font-semibold">{formatCurrency(dailySummary.totalExpenses)}</span>
-                                </p>
-                                <p className="text-rose-700 mb-0">
-                                    Месяц: <span className="font-semibold">{formatCurrency(monthlySummary.totalExpenses)}</span>
-                                </p>
+                        <div className="p-3 rounded-xl bg-expense-bg border border-expense-border">
+                            <h4 className="text-base font-bold text-expense-primary m-0 mb-2">Расход:</h4>
+                            <div className="flex justify-between items-center gap-2 text-sm">
+                                <p className="m-0 text-text-secondary">Сегодня: <span className="font-semibold text-expense-primary">{formatCurrency(dailySummary.totalExpenses)}</span></p>
+                                <p className="m-0 text-text-secondary">Месяц: <span className="font-semibold text-expense-primary">{formatCurrency(monthlySummary.totalExpenses)}</span></p>
                             </div>
                         </div>
                     </div>
