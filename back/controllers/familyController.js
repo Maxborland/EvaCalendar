@@ -90,7 +90,11 @@ router.post('/:uuid/invitations', async (req, res, next) => {
 
     try {
       const envConfig = getEnvConfig();
-      const frontendUrl = envConfig.cors.origins[0] || 'http://localhost:5173';
+      const allOrigins = [...envConfig.cors.origins, ...envConfig.cors.defaultOrigins];
+      const requestOrigin = req.get('origin');
+      const frontendUrl = (allOrigins.includes(requestOrigin) && requestOrigin)
+        || allOrigins.find(u => !u.includes('localhost'))
+        || allOrigins[0];
       const inviteLink = `${frontendUrl}/settings/family?invite=${invitation.token}`;
 
       await sendEmail(
