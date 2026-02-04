@@ -67,7 +67,9 @@ const getEnvConfig = () => {
 
     cors: {
       origins: (process.env.FRONTEND_URL || '').split(',').map(url => url.trim()).filter(Boolean),
-      defaultOrigins: ['http://localhost:5173', 'https://calendar.home.local']
+      defaultOrigins: process.env.NODE_ENV === 'production'
+        ? ['https://calendar.home.local']
+        : ['http://localhost:5173', 'https://calendar.home.local']
     },
 
     rateLimit: {
