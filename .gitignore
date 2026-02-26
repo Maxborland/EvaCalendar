@@ -68,3 +68,8 @@ front/tests/*
 front/test-results/*
 /archive/
 /back/seeds/
+node_modules/
+.env
+.env.local
+*.db
+data/
