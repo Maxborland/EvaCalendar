@@ -16,7 +16,7 @@
     "@tanstack/react-query-devtools": "^5.90.2",
     "@tanstack/react-query-persist-client": "^5.90.7",
     "@types/axios": "^0.14.4",
-    "axios": "^1.9.0",
+    "axios": "^1.13.5",
     "clsx": "^2.1.1",
     "dnd-multi-backend": "^9.0.0",
     "idb-keyval": "^6.2.2",
