@@ -54,7 +54,7 @@ exports.up = async function(knex) {
 
       // Восстанавливаем данные с генерацией UUID
       if (data.length > 0) {
-        const { v4: uuidv4 } = require('uuid');
+        const { randomUUID: uuidv4 } = require('crypto');
         const dataToInsert = data.map(row => ({
           uuid: uuidv4(),
           user_uuid: row.user_uuid || row.user_id,
