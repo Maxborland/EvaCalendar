@@ -1,6 +1,14 @@
 import { QueryClient, onlineManager } from '@tanstack/react-query';
+import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { persistQueryClient } from '@tanstack/react-query-persist-client';
 import { get, set, del } from 'idb-keyval';
+
+type QueryError = Error & {
+  code?: string;
+  response?: {
+    status?: number;
+  };
+};
 
 // Настраиваем React Query для отслеживания онлайн статуса
 onlineManager.setEventListener((setOnline) => {
@@ -28,8 +36,8 @@ onlineManager.setEventListener((setOnline) => {
 });
 
 // Создаем персистер для IndexedDB
-const persister = {
-  persistClient: async (client: any) => {
+const persister: Persister = {
+  persistClient: async (client: PersistedClient) => {
     await set('REACT_QUERY_OFFLINE_CACHE', client);
   },
   restoreClient: async () => {
@@ -53,15 +61,16 @@ export const queryClient = new QueryClient({
       // Обновлять при восстановлении соединения
       refetchOnReconnect: true,
       // Не повторять запрос при отсутствии сети
-      retry: (failureCount, error: any) => {
+      retry: (failureCount, error) => {
+        const queryError = error as QueryError;
         // Не повторять если нет интернета
-        if (error?.message?.includes('ERR_INTERNET_DISCONNECTED') ||
-            error?.message?.includes('Network Error') ||
-            error?.code === 'ERR_NETWORK') {
+        if (queryError.message?.includes('ERR_INTERNET_DISCONNECTED') ||
+            queryError.message?.includes('Network Error') ||
+            queryError.code === 'ERR_NETWORK') {
           return false;
         }
         // Не повторять для 4xx ошибок (клиентские ошибки)
-        if (error?.response?.status >= 400 && error?.response?.status < 500) {
+        if (queryError.response?.status !== undefined && queryError.response.status >= 400 && queryError.response.status < 500) {
           return false;
         }
         // Максимум 3 попытки для 5xx ошибок
@@ -76,11 +85,12 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       // Не повторять мутации при сетевых ошибках
-      retry: (failureCount, error: any) => {
+      retry: (failureCount, error) => {
+        const queryError = error as QueryError;
         // Не повторять если нет интернета
-        if (error?.message?.includes('ERR_INTERNET_DISCONNECTED') ||
-            error?.message?.includes('Network Error') ||
-            error?.code === 'ERR_NETWORK') {
+        if (queryError.message?.includes('ERR_INTERNET_DISCONNECTED') ||
+            queryError.message?.includes('Network Error') ||
+            queryError.code === 'ERR_NETWORK') {
           return false;
         }
         return failureCount < 1;

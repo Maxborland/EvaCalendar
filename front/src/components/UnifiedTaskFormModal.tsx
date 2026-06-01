@@ -3,6 +3,14 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEv
 import * as ReactDOM from 'react-dom';
 import { toast } from 'react-toastify';
 import {
+  applyTaskEntryType,
+  buildInitialTaskEntryState,
+  buildTaskEntryPayload,
+  type TaskEntryFormData,
+  type TaskEntryType,
+} from '../domain/taskEntry';
+import { getTodayDateString } from '../domain/datePeriod';
+import {
   addChild,
   getAllChildren,
   getAssignableUsers,
@@ -22,34 +30,70 @@ interface UnifiedTaskFormModalProps {
   onSubmit: (taskData: Task | Omit<Task, 'uuid'>) => Promise<void>;
   mode: 'create' | 'edit';
   initialTaskData?: Task;
-  initialTaskType?: 'income' | 'expense' | 'task';
+  initialTaskType?: TaskFormType;
   onDelete?: (uuid: string) => void;
   onDuplicate?: (uuid: string) => void;
   onTaskUpsert?: () => void;
 }
 
+type TaskFormType = TaskEntryType;
 
-function formatDateTimeForInput(isoDateTime: string | null | undefined): string {
- if (!isoDateTime) return '';
- try {
-   const date = new Date(isoDateTime);
-   if (isNaN(date.getTime())) {
-     return '';
-   }
-   const year = date.getFullYear();
-   const month = (date.getMonth() + 1).toString().padStart(2, '0');
-   const day = date.getDate().toString().padStart(2, '0');
-   const hours = date.getHours().toString().padStart(2, '0');
-   const minutes = date.getMinutes().toString().padStart(2, '0');
-   return `${year}-${month}-${day}T${hours}:${minutes}`;
- } catch (error) {
-   console.error("Error formatting date-time:", error);
-   return '';
- }
+interface TaskTypeOption {
+  value: TaskFormType;
+  label: string;
+  description: string;
+  icon: string;
+  className: string;
 }
 
 const inputClass = 'w-full min-w-0 max-w-full rounded-xl border border-border-subtle bg-surface-elevated text-text-primary py-2.5 px-3 text-sm transition-all duration-[160ms] box-border focus-visible:outline-none focus-visible:border-[rgba(72,187,120,0.6)] focus-visible:shadow-[0_0_0_3px_rgba(72,187,120,0.16)]';
 const labelClass = 'text-sm font-medium text-text-primary leading-tight';
+const typeOptions: TaskTypeOption[] = [
+  {
+    value: 'income',
+    label: 'Доход',
+    description: 'Оплата от ребенка',
+    icon: 'add_card',
+    className: 'border-income-border bg-income-bg text-income-primary',
+  },
+  {
+    value: 'expense',
+    label: 'Расход',
+    description: 'Покупка или трата',
+    icon: 'payments',
+    className: 'border-expense-border bg-expense-bg text-expense-primary',
+  },
+  {
+    value: 'task',
+    label: 'Задача',
+    description: 'Сделать или поручить',
+    icon: 'task_alt',
+    className: 'border-[var(--color-task-border)] bg-[var(--color-task-bg)] text-[var(--color-task-primary)]',
+  },
+  {
+    value: 'lesson',
+    label: 'Занятие',
+    description: 'Пара, урок, встреча',
+    icon: 'school',
+    className: 'border-[var(--color-lesson-border)] bg-[var(--color-lesson-bg)] text-[var(--color-lesson-primary)]',
+  },
+];
+
+const typeTitlePlaceholder: Record<TaskFormType, string> = {
+  income: 'Например: Оплата за занятие',
+  expense: 'Например: Материалы для урока',
+  task: 'Например: Напомнить родителю',
+  lesson: 'Например: Математика',
+};
+
+const modalTitleByType: Record<TaskFormType, string> = {
+  income: 'Новый доход',
+  expense: 'Новый расход',
+  task: 'Новая задача',
+  lesson: 'Новое занятие',
+};
+
+const hourPresets = [0.5, 1, 1.5, 2];
 
 const UnifiedTaskFormModal = ({
   isOpen,
@@ -61,6 +105,12 @@ const UnifiedTaskFormModal = ({
   onDelete,
   onTaskUpsert,
 }: UnifiedTaskFormModalProps) => {
+  const buildInitialState = useCallback(() => buildInitialTaskEntryState({
+    mode,
+    initialTaskData,
+    initialTaskType,
+    today: getTodayDateString(),
+  }), [initialTaskData, initialTaskType, mode]);
   const [isClosing, setIsClosing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,38 +160,16 @@ const UnifiedTaskFormModal = ({
     }
   }, [isDragging, dragY, handleClose]);
 
-  const [taskTypeInternal, setTaskTypeInternal] = useState<'income' | 'expense' | 'task' | 'lesson'>('income');
-
-  const [formData, setFormData] = useState(() => {
-    const defaultDueDate = initialTaskData?.dueDate || new Date().toISOString().split('T')[0];
-    const baseData = {
-      id: mode === 'edit' ? initialTaskData?.uuid : undefined,
-      title: initialTaskData?.title || '',
-      time: initialTaskData?.time || '',
-      address: initialTaskData?.address || '',
-      childId: initialTaskData?.childId || null,
-      hourlyRate: initialTaskData?.hourlyRate || undefined,
-      comments: initialTaskData?.comments || '',
-      expenseCategoryName: initialTaskData?.expenseCategoryName || '',
-      amount: initialTaskData?.amount || undefined,
-      hoursWorked: initialTaskData?.hoursWorked || undefined,
-      dueDate: defaultDueDate,
-      expense_category_uuid: initialTaskData?.expense_category_uuid,
-      childName: initialTaskData?.childName,
-      originalTaskType: initialTaskData?.type,
-      reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
-      reminder_offset: initialTaskData?.reminder_offset ?? null,
-      assigned_to_id: initialTaskData?.assigned_to_id ?? null,
-    };
-    return baseData;
-  });
+  const [taskTypeInternal, setTaskTypeInternal] = useState<TaskFormType>(() => buildInitialState().taskType);
+  const [formData, setFormData] = useState<TaskEntryFormData>(() => buildInitialState().formData);
 
 
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(initialTaskData?.childId || null);
+  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(() => buildInitialState().selectedChildUuid);
   const [selectedChildDetails, setSelectedChildDetails] = useState<Child | null>(null);
 
   const [showChildFormModal, setShowChildFormModal] = useState(false);
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
   const [childFormInitialData, setChildFormInitialData] = useState<Partial<Child> | undefined>(undefined);
   const [assignableUsers, setAssignableUsers] = useState<User[]>([]);
 
@@ -150,103 +178,19 @@ const UnifiedTaskFormModal = ({
     try {
       const fetchedChildren = await getAllChildren();
       setChildren(fetchedChildren);
-    } catch (error) {
+    } catch {
       toast.error('Ошибка при загрузке списка детей.');
     }
   }, []);
 
   useEffect(() => {
-    const defaultDueDate = new Date().toISOString().split('T')[0];
+    const nextState = buildInitialState();
+    setTaskTypeInternal(nextState.taskType);
+    setSelectedChildUuid(nextState.selectedChildUuid);
+    setFormData(nextState.formData);
+    setShowAdvancedFields(false);
 
-    let newType: 'income' | 'expense' | 'task' | 'lesson' = initialTaskType || 'income';
-    if (mode === 'edit' && initialTaskData) {
-        if (initialTaskData.type === 'expense') newType = 'expense';
-        else if (initialTaskData.type === 'task') newType = 'task';
-        else if (initialTaskData.type === 'lesson') newType = 'lesson';
-        else if (['income', 'hourly', 'fixed'].includes(initialTaskData.type)) newType = 'income';
-    }
-    setTaskTypeInternal(newType);
-
-    let newFormData = {
-        id: initialTaskData?.uuid,
-        title: initialTaskData?.title || '',
-        dueDate: initialTaskData?.dueDate || defaultDueDate,
-        time: initialTaskData?.time || '',
-        address: initialTaskData?.address || '',
-        comments: initialTaskData?.comments || '',
-        reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
-        reminder_offset: initialTaskData?.reminder_offset ?? null,
-        assigned_to_id: initialTaskData?.user_uuid || initialTaskData?.assigned_to_id || null,
-        childId: initialTaskData?.child_uuid || initialTaskData?.childId || null,
-        hourlyRate: initialTaskData?.hourlyRate,
-        hoursWorked: initialTaskData?.hoursWorked,
-        amount: initialTaskData?.amount,
-        expense_category_uuid: initialTaskData?.expense_category_uuid,
-        expenseCategoryName: initialTaskData?.expenseCategoryName || '',
-        childName: initialTaskData?.childName,
-        originalTaskType: initialTaskData?.type,
-    };
-
-    if (newType === 'expense') {
-        newFormData.childId = null;
-        newFormData.childName = undefined;
-        newFormData.hourlyRate = undefined;
-        newFormData.hoursWorked = undefined;
-        newFormData.time = '';
-    } else if (newType === 'income') {
-        newFormData.expense_category_uuid = undefined;
-        newFormData.expenseCategoryName = '';
-        newFormData.assigned_to_id = null;
-        newFormData.reminder_offset = null;
-    } else if (newType === 'task') {
-        newFormData.expense_category_uuid = undefined;
-        newFormData.expenseCategoryName = '';
-        newFormData.childId = null;
-        newFormData.childName = undefined;
-        newFormData.hourlyRate = undefined;
-        newFormData.hoursWorked = undefined;
-        newFormData.amount = undefined;
-    } else if (newType === 'lesson') {
-        newFormData.expense_category_uuid = undefined;
-        newFormData.expenseCategoryName = '';
-        newFormData.childId = null;
-        newFormData.childName = undefined;
-        newFormData.hourlyRate = undefined;
-        newFormData.hoursWorked = undefined;
-        newFormData.amount = undefined;
-        newFormData.assigned_to_id = null;
-        newFormData.reminder_offset = null;
-    }
-
-    if (mode === 'create') {
-        newFormData = {
-            id: undefined,
-            title: '',
-            time: '',
-            address: '',
-            childId: null,
-            hourlyRate: undefined,
-            comments: '',
-            expenseCategoryName: '',
-            amount: undefined,
-            hoursWorked: undefined,
-            dueDate: initialTaskData?.dueDate || defaultDueDate,
-            expense_category_uuid: undefined,
-            childName: undefined,
-            originalTaskType: undefined,
-            reminder_at: '',
-            reminder_offset: null,
-            assigned_to_id: null,
-        };
-        setSelectedChildUuid(null);
-    } else {
-        const childIdToSetForSelector = initialTaskData?.child_uuid || initialTaskData?.childId || null;
-        setSelectedChildUuid(childIdToSetForSelector);
-    }
-
-    setFormData(newFormData);
-
-}, [mode, initialTaskData, initialTaskType]);
+  }, [buildInitialState]);
 
 
       const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -256,7 +200,7 @@ const UnifiedTaskFormModal = ({
       try {
         const fetchedCategories = await getExpenseCategories();
         setCategories(fetchedCategories);
-      } catch (error) {
+      } catch {
         toast.error('Ошибка при загрузке списка категорий.');
       }
     };
@@ -267,7 +211,7 @@ const UnifiedTaskFormModal = ({
       try {
         const users = await getAssignableUsers();
         setAssignableUsers(users);
-      } catch (error) {
+      } catch {
         toast.error('Ошибка при загрузке списка пользователей.');
       }
     };
@@ -280,12 +224,20 @@ const UnifiedTaskFormModal = ({
       if (childData) {
         setSelectedChildDetails(childData);
         setFormData((prevData) => {
+          const defaultIncomeHours = taskTypeInternal === 'income' && !prevData.hoursWorked && childData.hourlyRate
+            ? 1
+            : prevData.hoursWorked;
+          const defaultIncomeAmount = taskTypeInternal === 'income' && !prevData.amount && childData.hourlyRate && defaultIncomeHours
+            ? childData.hourlyRate * defaultIncomeHours
+            : prevData.amount;
           const updatedData = {
             ...prevData,
             childId: childData.uuid,
             hourlyRate: childData.hourlyRate ?? prevData.hourlyRate,
             address: childData.address || prevData.address,
             childName: childData.childName,
+            hoursWorked: defaultIncomeHours,
+            amount: defaultIncomeAmount,
           };
           return updatedData;
         });
@@ -301,7 +253,6 @@ const UnifiedTaskFormModal = ({
               return resetData;
             });
         }
-      } else {
       }
     } else {
       setSelectedChildDetails(null);
@@ -315,7 +266,7 @@ const UnifiedTaskFormModal = ({
         return resetData;
       });
     }
-  }, [selectedChildUuid, children, initialTaskData, mode]);
+  }, [selectedChildUuid, children, initialTaskData, mode, taskTypeInternal]);
 
   useEffect(() => {
     if (
@@ -343,14 +294,40 @@ const UnifiedTaskFormModal = ({
         ...prevData,
         [name]: newValue,
       };
-      if (name === 'dueDate') {
-      }
       return newFormData;
+    });
+  };
+
+  const handleTaskTypeChange = (nextType: TaskFormType) => {
+    setTaskTypeInternal(nextType);
+    setShowAdvancedFields(false);
+
+    setFormData((prevData) => {
+      const nextState = applyTaskEntryType({ formData: prevData, nextType });
+      setSelectedChildUuid(nextState.selectedChildUuid);
+      return nextState.formData;
     });
   };
 
   const handleUnifiedChildChange = (childUuid: string | null) => {
     setSelectedChildUuid(childUuid);
+  };
+
+  const setHoursWorkedPreset = (hoursWorked: number) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      hoursWorked,
+      amount: typeof prevData.hourlyRate === 'number' && prevData.hourlyRate > 0
+        ? prevData.hourlyRate * hoursWorked
+        : prevData.amount,
+    }));
+  };
+
+  const setAmountPreset = (amount: number) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      amount,
+    }));
   };
 
   const handleOpenChildFormForNew = (childName?: string) => {
@@ -370,14 +347,15 @@ const UnifiedTaskFormModal = ({
         savedOrUpdatedChild = await updateChildAPI(childDataFromForm.uuid, childDataFromForm as Child);
         toast.success('Карточка ребенка успешно обновлена!');
       } else {
-        const { uuid, ...dataToSend } = childDataFromForm;
+        const dataToSend = { ...childDataFromForm };
+        delete dataToSend.uuid;
         savedOrUpdatedChild = await addChild(dataToSend as Omit<Child, 'uuid'>);
         toast.success('Новая карточка ребенка успешно добавлена!');
       }
       setShowChildFormModal(false);
       await fetchChildrenCallback();
       setSelectedChildUuid(savedOrUpdatedChild.uuid);
-    } catch (error) {
+    } catch {
       toast.error('Ошибка при сохранении карточки ребенка.');
     }
   };
@@ -390,59 +368,22 @@ const UnifiedTaskFormModal = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    const childNameForTitle = selectedChildUuid ? children.find(c => c.uuid === selectedChildUuid)?.childName : undefined;
-
-    let taskTypeForApi: 'income' | 'expense' | 'task' | 'hourly' | 'fixed' | 'lesson';
-    if (taskTypeInternal === 'expense') {
-      taskTypeForApi = 'expense';
-    } else if (taskTypeInternal === 'task') {
-      taskTypeForApi = 'task';
-    } else if (taskTypeInternal === 'lesson') {
-      taskTypeForApi = 'lesson';
-    } else {
-      if (formData.hoursWorked && formData.hourlyRate) {
-        taskTypeForApi = 'hourly';
-      } else {
-        taskTypeForApi = 'fixed';
-      }
-    }
-
-    const reminderAtUTC = formData.reminder_at
-    ? new Date(formData.reminder_at).toISOString()
-    : null;
-
-    const dataToSave: Omit<Task, 'uuid'> & { uuid?: string } = {
-      uuid: mode === 'edit' ? initialTaskData?.uuid : undefined,
-      title: formData.title,
-      type: taskTypeForApi,
-      time: (taskTypeInternal === 'income' || taskTypeInternal === 'task' || taskTypeInternal === 'lesson') ? (formData.time || undefined) : undefined,
-      dueDate: formData.dueDate,
-      address: taskTypeInternal === 'lesson' ? (formData.address || undefined) : undefined,
-      childId: taskTypeInternal === 'income' ? (selectedChildUuid || undefined) : undefined,
-      childName: taskTypeInternal === 'income' ? (childNameForTitle || undefined) : undefined,
-      expense_category_uuid: taskTypeInternal === 'expense'
-        ? categories.find(c => c.categoryName === formData.expenseCategoryName)?.uuid
-        : undefined,
-      amount: (taskTypeInternal === 'income' || taskTypeInternal === 'expense') ? formData.amount : undefined,
-      hourlyRate: taskTypeInternal === 'income' && (taskTypeForApi === 'hourly' || taskTypeForApi === 'fixed') ? formData.hourlyRate : undefined,
-      hoursWorked: taskTypeInternal === 'income' && (taskTypeForApi === 'hourly' || taskTypeForApi === 'fixed') ? formData.hoursWorked : undefined,
-      comments: formData.comments || undefined,
-      reminder_at: reminderAtUTC,
-      assigned_to_id: taskTypeInternal === 'task' ? formData.assigned_to_id : null,
-      reminder_offset: taskTypeInternal === 'task' ? formData.reminder_offset : null,
-      assignee_username: undefined,
-    };
-
-    if (taskTypeForApi === 'hourly' && dataToSave.hourlyRate && dataToSave.hoursWorked && dataToSave.amount === undefined) {
-        dataToSave.amount = dataToSave.hourlyRate * dataToSave.hoursWorked;
-    }
+    const dataToSave = buildTaskEntryPayload({
+      formData,
+      taskType: taskTypeInternal,
+      mode,
+      initialTaskData,
+      selectedChildUuid,
+      children,
+      categories,
+    });
 
     try {
       await onSubmit(dataToSave as Task | Omit<Task, 'uuid'>);
       if (onTaskUpsert) {
         onTaskUpsert();
       }
-    } catch (error) {
+    } catch {
       toast.error("Произошла ошибка при сохранении задачи.");
     }
   };
@@ -470,6 +411,17 @@ const UnifiedTaskFormModal = ({
     typeof formData.hoursWorked === 'number' && formData.hoursWorked > 0;
 
   const isAmountRequired = (taskTypeInternal === 'income' || taskTypeInternal === 'expense') && !isAmountDisabled;
+  const amountPresets = taskTypeInternal === 'expense'
+    ? [300, 500, 1000, 2000]
+    : [1000, 1500, 2000, 3000];
+  const activeTypeOption = typeOptions.find((option) => option.value === taskTypeInternal) || typeOptions[0];
+  const isTitleRequired = taskTypeInternal === 'task';
+  const submitLabelByType: Record<TaskFormType, string> = {
+    income: 'Создать доход',
+    expense: 'Создать расход',
+    task: 'Создать задачу',
+    lesson: 'Создать занятие',
+  };
 
   const overlayClass = clsx(
     'fixed inset-0 p-[clamp(12px,4vh,28px)_clamp(12px,4vw,24px)] bg-modal-overlay flex items-end justify-center z-[1050] font-[Inter,sans-serif]',
@@ -505,26 +457,50 @@ const UnifiedTaskFormModal = ({
           >
             &times;
           </button>
-          <form className="mt-[var(--spacing-md)] flex flex-col gap-[var(--spacing-sm)] overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin" onSubmit={handleSubmit}>
-            <h2 className="m-0 pr-12 text-lg font-semibold text-text-primary leading-tight">{mode === 'edit' ? 'Редактирование дела' : 'Создание дела'}</h2>
+          <form className="mt-[var(--spacing-md)] flex flex-col gap-[var(--spacing-md)] overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin" onSubmit={handleSubmit}>
+            <div className="pr-12">
+              <h2 className="m-0 text-lg font-semibold text-text-primary leading-tight">
+                {mode === 'edit' ? 'Редактирование' : modalTitleByType[taskTypeInternal]}
+              </h2>
+              <p className="m-0 mt-1 text-xs text-text-tertiary leading-normal">{activeTypeOption.description}</p>
+            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Тип:</label>
-              <select
-                name="taskType"
-                value={taskTypeInternal}
-                onChange={(e) => setTaskTypeInternal(e.target.value as 'income' | 'expense' | 'task' | 'lesson')}
-                className={inputClass}
-              >
-                <option value="income">Доход</option>
-                <option value="expense">Расход</option>
-                <option value="task">Задача</option>
-                <option value="lesson">Занятие</option>
-              </select>
+            <div className="flex flex-col gap-2">
+              <span className={labelClass}>Что добавить</span>
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Тип записи">
+                {typeOptions.map((option) => {
+                  const isActive = taskTypeInternal === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={isActive}
+                      className={clsx(
+                        'min-h-[64px] rounded-xl border px-3 py-2 text-left transition-all duration-[160ms] active:scale-[0.98]',
+                        'flex items-center gap-2.5',
+                        option.className,
+                        isActive
+                          ? 'shadow-[0_0_0_2px_currentColor,var(--elevation-1)]'
+                          : 'opacity-72 hover:opacity-100',
+                      )}
+                      onClick={() => handleTaskTypeChange(option.value)}
+                    >
+                      <span className="material-icons text-[22px] shrink-0" aria-hidden="true">{option.icon}</span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold leading-tight">{option.label}</span>
+                        <span className="block text-[0.6875rem] leading-tight text-text-secondary mt-0.5">{option.description}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="title" className={labelClass}>Название<span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span>:</label>
+              <label htmlFor="title" className={labelClass}>
+                Название{isTitleRequired && <span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span>}:
+              </label>
               <input
                 type="text"
                 id="title"
@@ -532,8 +508,14 @@ const UnifiedTaskFormModal = ({
                 value={formData.title}
                 onChange={handleChange}
                 className={inputClass}
-                required
+                placeholder={typeTitlePlaceholder[taskTypeInternal]}
+                required={isTitleRequired}
               />
+              {!isTitleRequired && (
+                <p className="m-0 text-[0.6875rem] leading-tight text-text-tertiary">
+                  Можно оставить пустым, название подставится автоматически.
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -584,54 +566,6 @@ const UnifiedTaskFormModal = ({
               </div>
             )}
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="reminder_at" className={labelClass}>Напомнить в:</label>
-              <input
-                type="datetime-local"
-                id="reminder_at"
-                name="reminder_at"
-                value={formData.reminder_at || ''}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            {taskTypeInternal === 'task' && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="assigned_to_id" className={labelClass}>Кому:</label>
-                  <select
-                    id="assigned_to_id"
-                    name="assigned_to_id"
-                    value={formData.assigned_to_id || ''}
-                    onChange={handleChange}
-                    className={inputClass}
-                  >
-                    <option value="">Не назначено</option>
-                    {assignableUsers.map(user => (
-                      <option key={user.uuid} value={user.uuid}>{user.username}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="reminder_offset" className={labelClass}>Напомнить за:</label>
-                  <select
-                    id="reminder_offset"
-                    name="reminder_offset"
-                    value={formData.reminder_offset || ''}
-                    onChange={handleChange}
-                    className={inputClass}
-                  >
-                    <option value="">Не напоминать</option>
-                    <option value="900">15 минут</option>
-                    <option value="1800">30 минут</option>
-                    <option value="3600">1 час</option>
-                    <option value="86400">1 день</option>
-                  </select>
-                </div>
-              </>
-            )}
-
             {(taskTypeInternal === 'income' || taskTypeInternal === 'expense') && (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="amount" className={labelClass}>Сумма{isAmountRequired && <span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span>}:</label>
@@ -646,10 +580,32 @@ const UnifiedTaskFormModal = ({
                   required={!isAmountDisabled}
                   disabled={isAmountDisabled}
                 />
+                {!isAmountDisabled && (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {amountPresets.map((amount) => {
+                      const isActive = formData.amount === amount;
+                      return (
+                        <button
+                          key={amount}
+                          type="button"
+                          className={clsx(
+                            'min-h-10 rounded-xl border px-2 text-xs font-semibold active:scale-[0.98]',
+                            isActive
+                              ? activeTypeOption.className
+                              : 'border-border-subtle bg-surface-elevated text-text-secondary',
+                          )}
+                          onClick={() => setAmountPreset(amount)}
+                        >
+                          {amount} ₽
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
-            {taskTypeInternal === 'income' && (
+            {(taskTypeInternal === 'income' || taskTypeInternal === 'lesson') && (
               <>
                 <UnifiedChildSelector
                   value={selectedChildUuid}
@@ -657,57 +613,155 @@ const UnifiedTaskFormModal = ({
                   childrenList={children}
                   onAddNewChildRequest={() => handleOpenChildFormForNew(undefined)}
                   onGoToCreateChildPageRequest={handleOpenChildFormDefault}
-                  label="Имя ребенка:"
+                  label={taskTypeInternal === 'lesson' ? 'Ребенок:' : 'Имя ребенка:'}
                   placeholder="Выберите или добавьте ребенка"
                   selectedChildDetails={selectedChildDetails}
                   className={inputClass}
                 />
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="hoursWorked" className={labelClass}>Часов отработано:</label>
-                  <input
-                    type="number"
-                    id="hoursWorked"
-                    name="hoursWorked"
-                    value={formData.hoursWorked ?? ''}
-                    onChange={handleChange}
-                    className={inputClass}
-                    placeholder="0"
-                  />
-                </div>
+                {taskTypeInternal === 'income' && (
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="hoursWorked" className={labelClass}>Часов отработано:</label>
+                    <input
+                      type="number"
+                      id="hoursWorked"
+                      name="hoursWorked"
+                      value={formData.hoursWorked ?? ''}
+                      onChange={handleChange}
+                      className={inputClass}
+                      placeholder="0"
+                    />
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {hourPresets.map((hoursWorked) => {
+                        const isActive = formData.hoursWorked === hoursWorked;
+                        return (
+                          <button
+                            key={hoursWorked}
+                            type="button"
+                            className={clsx(
+                              'min-h-10 rounded-xl border px-2 text-xs font-semibold active:scale-[0.98]',
+                              isActive
+                                ? 'border-income-border bg-income-bg text-income-primary'
+                                : 'border-border-subtle bg-surface-elevated text-text-secondary',
+                            )}
+                            onClick={() => setHoursWorkedPreset(hoursWorked)}
+                          >
+                            {hoursWorked} ч
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {typeof formData.hourlyRate === 'number' && formData.hourlyRate > 0 && (
+                      <p className="m-0 text-[0.6875rem] leading-tight text-text-tertiary">
+                        Ставка {formData.hourlyRate} ₽/ч, сумма посчитается автоматически.
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
             {taskTypeInternal === 'expense' && (
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="expenseCategoryName" className={labelClass}>Категория<span className="text-[rgba(224,86,86,0.92)] ml-1" aria-hidden="true">*</span>:</label>
+                <label htmlFor="expenseCategoryName" className={labelClass}>Категория:</label>
                 <select
                   id="expenseCategoryName"
                   name="expenseCategoryName"
                   value={formData.expenseCategoryName}
                   onChange={handleChange}
                   className={inputClass}
-                  required
                 >
-                  <option value="">Выберите категорию</option>
+                  <option value="">Без категории</option>
                   {categories.map((category) => (
                     <option key={category.uuid} value={category.categoryName}>{category.categoryName}</option>
                   ))}
                 </select>
+                <p className="m-0 text-[0.6875rem] leading-tight text-text-tertiary">
+                  Можно добавить расход без категории и разобрать позже.
+                </p>
               </div>
             )}
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="comments" className={labelClass}>Комментарий:</label>
-              <textarea
-                id="comments"
-                name="comments"
-                value={formData.comments}
-                onChange={handleChange}
-                className={clsx(inputClass, 'min-h-[80px] resize-y')}
-              />
-            </div>
+            <section className="rounded-2xl border border-border-subtle bg-surface-muted p-2">
+              <button
+                type="button"
+                className="w-full min-h-11 rounded-xl border border-transparent bg-transparent px-2 text-sm font-semibold text-text-primary inline-flex items-center justify-between gap-3 active:scale-[0.99]"
+                onClick={() => setShowAdvancedFields((value) => !value)}
+                aria-expanded={showAdvancedFields}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <span className="material-icons text-[18px] text-text-tertiary" aria-hidden="true">tune</span>
+                  Детали
+                </span>
+                <span className="material-icons text-[20px] text-text-tertiary" aria-hidden="true">
+                  {showAdvancedFields ? 'expand_less' : 'expand_more'}
+                </span>
+              </button>
 
-            <div className="shrink-0 flex flex-col gap-[var(--spacing-sm)] pt-[var(--spacing-md)] mt-[var(--spacing-sm)] border-t border-border-subtle min-[520px]:flex-row min-[520px]:justify-end">
+              {showAdvancedFields && (
+                <div className="mt-2 flex flex-col gap-3 px-1 pb-1">
+                  {taskTypeInternal === 'task' && (
+                    <>
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="assigned_to_id" className={labelClass}>Кому:</label>
+                        <select
+                          id="assigned_to_id"
+                          name="assigned_to_id"
+                          value={formData.assigned_to_id || ''}
+                          onChange={handleChange}
+                          className={inputClass}
+                        >
+                          <option value="">Не назначено</option>
+                          {assignableUsers.map(user => (
+                            <option key={user.uuid} value={user.uuid}>{user.username}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="reminder_offset" className={labelClass}>Напомнить за:</label>
+                        <select
+                          id="reminder_offset"
+                          name="reminder_offset"
+                          value={formData.reminder_offset || ''}
+                          onChange={handleChange}
+                          className={inputClass}
+                        >
+                          <option value="">Не напоминать</option>
+                          <option value="900">15 минут</option>
+                          <option value="1800">30 минут</option>
+                          <option value="3600">1 час</option>
+                          <option value="86400">1 день</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="reminder_at" className={labelClass}>Напомнить в:</label>
+                    <input
+                      type="datetime-local"
+                      id="reminder_at"
+                      name="reminder_at"
+                      value={formData.reminder_at || ''}
+                      onChange={handleChange}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="comments" className={labelClass}>Комментарий:</label>
+                    <textarea
+                      id="comments"
+                      name="comments"
+                      value={formData.comments}
+                      onChange={handleChange}
+                      className={clsx(inputClass, 'min-h-[80px] resize-y')}
+                    />
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <div className="sticky bottom-0 z-10 -mx-1 flex shrink-0 flex-col gap-[var(--spacing-sm)] border-t border-border-subtle bg-modal-content px-1 pt-3 pb-1 shadow-[0_-14px_24px_rgba(8,13,24,0.28)] min-[520px]:flex-row min-[520px]:justify-end">
               {mode === 'edit' && onDelete && initialTaskData?.uuid && (
                 <button
                   type="button"
@@ -726,9 +780,9 @@ const UnifiedTaskFormModal = ({
 
               <button
                 type="submit"
-                className="rounded-xl p-3 text-base font-semibold border-none bg-gradient-to-br from-[rgba(47,143,82,1)] to-[rgba(73,187,120,0.92)] text-[var(--btn-primary-text-color)] shadow-elevation-2 transition-all duration-[160ms] inline-flex justify-center items-center gap-[var(--spacing-sm)] hover:-translate-y-px hover:shadow-elevation-3 active:translate-y-0 active:shadow-elevation-2"
+                className="min-h-12 rounded-xl p-3 text-base font-semibold border-none bg-gradient-to-br from-[rgba(47,143,82,1)] to-[rgba(73,187,120,0.92)] text-[var(--btn-primary-text-color)] shadow-elevation-2 transition-all duration-[160ms] inline-flex justify-center items-center gap-[var(--spacing-sm)] hover:-translate-y-px hover:shadow-elevation-3 active:translate-y-0 active:shadow-elevation-2"
               >
-                {mode === 'edit' ? 'Сохранить' : 'Создать'}
+                {mode === 'edit' ? 'Сохранить' : submitLabelByType[taskTypeInternal]}
               </button>
             </div>
           </form>

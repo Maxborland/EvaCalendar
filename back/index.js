@@ -120,9 +120,11 @@ if (process.env.NODE_ENV !== 'test') {
   scheduleTaskReminders();
 }
 
-const server = app.listen(envConfig.port, () => {
-  console.log(`✅ Сервер запущен на http://localhost:${envConfig.port}`);
-});
+const server = process.env.NODE_ENV !== 'test'
+  ? app.listen(envConfig.port, () => {
+      console.log(`✅ Сервер запущен на http://localhost:${envConfig.port}`);
+    })
+  : null;
 
 const db = require('./db.cjs');
 const { log, error: logError } = require('./utils/logger.js');
@@ -131,6 +133,18 @@ const gracefulShutdown = async (signal) => {
   log(`Получен сигнал ${signal}. Начинается грациозное завершение работы...`);
 
   stopAllCronJobs();
+
+  if (!server) {
+    try {
+      await db.destroy();
+      log('Соединение с базой данных успешно закрыто.');
+      process.exit(0);
+    } catch (err) {
+      logError('Ошибка при закрытии соединения с базой данных:', err);
+      process.exit(1);
+    }
+    return;
+  }
 
   server.close(async () => {
     log('HTTP-сервер закрыт.');

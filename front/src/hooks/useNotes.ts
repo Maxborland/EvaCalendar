@@ -15,7 +15,7 @@ import {
 export const noteKeys = {
   all: ['notes'] as const,
   lists: () => [...noteKeys.all, 'list'] as const,
-  list: (filters?: any) => [...noteKeys.lists(), filters] as const,
+  list: (filters?: Record<string, unknown>) => [...noteKeys.lists(), filters] as const,
   byDate: (date: string) => [...noteKeys.all, 'byDate', date] as const,
   details: () => [...noteKeys.all, 'detail'] as const,
   detail: (uuid: string) => [...noteKeys.details(), uuid] as const,

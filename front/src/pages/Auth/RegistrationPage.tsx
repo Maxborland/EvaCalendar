@@ -2,8 +2,16 @@ import clsx from 'clsx';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import api from '../../services/api';
+
+type ApiError = Error & {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
 
 const RegistrationPage = () => {
   const navigate = useNavigate();
@@ -62,11 +70,12 @@ const RegistrationPage = () => {
           setServerError(registerResponse.data?.message || `Ошибка регистрации: статус ${registerResponse.status}`);
           toast.error(registerResponse.data?.message || `Ошибка регистрации: статус ${registerResponse.status}`);
         }
-      } catch (error: any) {
-        if (error.response && error.response.data && error.response.data.message) {
-          setServerError(error.response.data.message);
-        } else if (error.message) {
-          setServerError(error.message);
+      } catch (error) {
+        const apiError = error as ApiError;
+        if (apiError.response && apiError.response.data && apiError.response.data.message) {
+          setServerError(apiError.response.data.message);
+        } else if (apiError.message) {
+          setServerError(apiError.message);
         } else {
           setServerError('Не удалось подключиться к серверу или произошла неизвестная ошибка.');
         }

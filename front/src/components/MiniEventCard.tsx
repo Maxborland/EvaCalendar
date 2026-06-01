@@ -2,13 +2,15 @@ import clsx from 'clsx';
 import type { CSSProperties } from 'react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
+import { formatRubles } from '../domain/moneyFormat';
+import { getOptionalTaskAmount, isIncomeTask } from '../domain/taskRecord';
 import type { Note, Task } from '../services/api';
 
 export type EventItem = (Task | Note) & {
   itemType: 'task' | 'note' | 'expense';
   type?: string;
-  childName?: string;
+  childName?: string | null;
   amount?: number;
   time?: string;
   title?: string;
@@ -129,17 +131,13 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
         case 'income':
         case 'fixed':
         case 'hourly': {
-          const amountText =
-            typeof task.amount === 'number'
-              ? ` · ${task.amount.toFixed(2)} ₽`
-              : '';
+          const amount = getOptionalTaskAmount(task);
+          const amountText = typeof amount === 'number' ? ` · ${formatRubles(amount)}` : '';
           return `${task.title || task.childName || 'Доход'}${amountText}`;
         }
         case 'expense': {
-          const amountText =
-            typeof task.amount === 'number'
-              ? ` · ${task.amount.toFixed(2)} ₽`
-              : '';
+          const amount = getOptionalTaskAmount(task);
+          const amountText = typeof amount === 'number' ? ` · ${formatRubles(amount)}` : '';
           const categoryText = task.expenseCategoryName
             ? ` · ${task.expenseCategoryName}`
             : '';
@@ -152,11 +150,12 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
           }`;
         }
         case 'lesson': {
+          const childText = task.childName ? ` · ${task.childName}` : '';
           const shortAddress =
             task.address && task.address.length > 18
               ? `${task.address.substring(0, 18)}…`
               : task.address || '';
-          return `${task.title || 'Занятие'}${shortAddress ? ` · ${shortAddress}` : ''}`;
+          return `${task.title || 'Занятие'}${childText}${shortAddress ? ` · ${shortAddress}` : ''}`;
         }
         default:
           return task.title || 'Задача';
@@ -165,10 +164,8 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
 
     if (event.itemType === 'expense') {
       const expense = event as Task;
-      const amountText =
-        typeof expense.amount === 'number'
-          ? ` · ${expense.amount.toFixed(2)} ₽`
-          : '';
+      const amount = getOptionalTaskAmount(expense);
+      const amountText = typeof amount === 'number' ? ` · ${formatRubles(amount)}` : '';
       const categoryText = expense.expenseCategoryName
         ? ` · ${expense.expenseCategoryName}`
         : '';
@@ -190,7 +187,7 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
       const task = event as Task;
       if (task.type === 'expense') return 'expense';
       if (task.type === 'lesson') return 'lesson';
-      if (task.type === 'income' || task.type === 'fixed' || task.type === 'hourly') {
+      if (isIncomeTask(task)) {
         return 'income';
       }
     }
@@ -208,6 +205,8 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
     }
     return null;
   }, [event, user]);
+
+  const isCompletedTask = event.itemType === 'task' && (event as Task).type === 'task' && Boolean((event as Task).completed);
 
   const handleKeyDown = (keyboardEvent: React.KeyboardEvent<HTMLDivElement>) => {
     if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
@@ -228,6 +227,7 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
         'hover:-translate-y-0.5 hover:shadow-elevation-2 hover:border-border-strong hover:bg-surface-raised',
         'active:translate-y-0 active:shadow-glass',
         'min-[480px]:grid-cols-[6px_60px_minmax(0,1fr)] min-[480px]:p-2.5',
+        isCompletedTask && 'opacity-65',
         isDragging && 'opacity-55 scale-[0.97]',
       )}
       onClick={showMoveMenu ? undefined : handleEditClick}
@@ -252,9 +252,17 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
         )}
       </div>
       <div className="col-start-2 min-[480px]:col-start-3 flex items-center gap-2 mt-1">
-        <span className="flex-1 min-w-0 text-sm font-semibold leading-tight text-text-primary line-clamp-2 min-[480px]:line-clamp-1 min-[480px]:text-base">
+        <span className={clsx(
+          'flex-1 min-w-0 text-sm font-semibold leading-tight text-text-primary line-clamp-2 min-[480px]:line-clamp-1 min-[480px]:text-base',
+          isCompletedTask && 'line-through decoration-text-tertiary text-text-tertiary',
+        )}>
           {eventTitle}
         </span>
+        {isCompletedTask && (
+          <span className="shrink-0 size-5 rounded-md border border-income-border bg-income-bg text-income-primary inline-flex items-center justify-center">
+            <span className="material-icons text-[14px]" aria-hidden="true">check</span>
+          </span>
+        )}
         {ownershipBadge && (
           <span
             className={clsx(

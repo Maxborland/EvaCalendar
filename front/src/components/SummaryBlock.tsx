@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
+import { formatRubles } from '../domain/moneyFormat';
 import type { SummaryData } from '../services/api';
 import { getSummaryByWeek } from '../services/api';
 import { createDate } from '../utils/dateUtils';
@@ -42,10 +43,6 @@ const SummaryBlock = ({
 
         fetchWeekSummary();
     }, [weekStartDate]);
-
-    const formatCurrency = (amount: number | undefined) => {
-        return (amount ?? 0).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    };
 
     const formatMonthYear = (dateString?: string) => {
         if (!dateString) return '';
@@ -99,7 +96,7 @@ const SummaryBlock = ({
                     <>
                         <div className="text-sm text-text-secondary">{todayDateFormatted}</div>
                         <div className="text-lg font-semibold text-text-primary">
-                            Баланс: {formatCurrency(monthlySummary.balance)}
+                            Баланс: {formatRubles(monthlySummary.balance)}
                         </div>
                     </>
                 )}
@@ -114,22 +111,22 @@ const SummaryBlock = ({
                 {isExpanded && (
                     <div className="p-4 flex flex-col gap-3 bg-surface-muted">
                         <div className="p-3 rounded-xl bg-surface-elevated text-text-primary text-base font-semibold text-center shadow-elevation-1">
-                             Баланс ({titleMonthYear}): <span className="font-bold">{formatCurrency(monthlySummary.balance)}</span>
+                             Баланс ({titleMonthYear}): <span className="font-bold">{formatRubles(monthlySummary.balance)}</span>
                         </div>
 
                         <div className="p-3 rounded-xl bg-income-bg border border-income-border">
                             <h4 className="text-base font-bold text-income-primary m-0 mb-2">Доход:</h4>
                             <div className="flex justify-between items-center gap-2 text-sm">
-                                <p className="m-0 text-text-secondary">Сегодня: <span className="font-semibold text-income-primary">{formatCurrency(dailySummary.totalIncome)}</span></p>
-                                <p className="m-0 text-text-secondary">Месяц: <span className="font-semibold text-income-primary">{formatCurrency(monthlySummary.totalIncome)}</span></p>
+                                <p className="m-0 text-text-secondary">Сегодня: <span className="font-semibold text-income-primary">{formatRubles(dailySummary.totalIncome)}</span></p>
+                                <p className="m-0 text-text-secondary">Месяц: <span className="font-semibold text-income-primary">{formatRubles(monthlySummary.totalIncome)}</span></p>
                             </div>
                         </div>
 
                         <div className="p-3 rounded-xl bg-expense-bg border border-expense-border">
                             <h4 className="text-base font-bold text-expense-primary m-0 mb-2">Расход:</h4>
                             <div className="flex justify-between items-center gap-2 text-sm">
-                                <p className="m-0 text-text-secondary">Сегодня: <span className="font-semibold text-expense-primary">{formatCurrency(dailySummary.totalExpenses)}</span></p>
-                                <p className="m-0 text-text-secondary">Месяц: <span className="font-semibold text-expense-primary">{formatCurrency(monthlySummary.totalExpenses)}</span></p>
+                                <p className="m-0 text-text-secondary">Сегодня: <span className="font-semibold text-expense-primary">{formatRubles(dailySummary.totalExpenses)}</span></p>
+                                <p className="m-0 text-text-secondary">Месяц: <span className="font-semibold text-expense-primary">{formatRubles(monthlySummary.totalExpenses)}</span></p>
                             </div>
                         </div>
                     </div>

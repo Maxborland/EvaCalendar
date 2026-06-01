@@ -1,26 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createBrowserRouter, Outlet, type RouteObject, RouterProvider, useNavigation, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingAnimation from './components/LoadingAnimation';
 import PrivateRoute from './components/PrivateRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute'; // Импорт PublicOnlyRoute
-import WeekView from './components/WeekView';
 import { NavProvider } from './context/NavContext';
-import LoginPage from './pages/Auth/LoginPage';
-import RegistrationPage from './pages/Auth/RegistrationPage';
-import ChangePasswordPage from './pages/ChangePasswordPage';
-import ChildCardsSettingsPage from './pages/ChildCardsSettingsPage';
-import DashboardPage from './pages/DashboardPage';
-import DayDetailsPage from './pages/DayDetailsPage';
-import ExpenseCategoriesSettingsPage from './pages/ExpenseCategoriesSettingsPage';
-import NoteDetailsPage from './pages/NoteDetailsPage';
-import NotFoundPage from './pages/NotFoundPage'; // Импорт страницы 404
-import StatisticsPage from './pages/StatisticsPage';
-import ProfilePage from './pages/ProfilePage'; // Импортируем созданную страницу профиля
-import SettingsPage from './pages/SettingsPage';
-import FamilySettingsPage from './pages/FamilySettingsPage';
-import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import { getNoteByDate } from './services/api';
+
+const WeekView = lazy(() => import('./components/WeekView'));
+const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
+const RegistrationPage = lazy(() => import('./pages/Auth/RegistrationPage'));
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
+const ChildCardsSettingsPage = lazy(() => import('./pages/ChildCardsSettingsPage'));
+const ChildrenPage = lazy(() => import('./pages/ChildrenPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const DayDetailsPage = lazy(() => import('./pages/DayDetailsPage'));
+const ExpenseCategoriesSettingsPage = lazy(() => import('./pages/ExpenseCategoriesSettingsPage'));
+const NoteDetailsPage = lazy(() => import('./pages/NoteDetailsPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const MoneyPage = lazy(() => import('./pages/MoneyPage'));
+const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
+const TasksPage = lazy(() => import('./pages/TasksPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const FamilySettingsPage = lazy(() => import('./pages/FamilySettingsPage'));
+const NotificationSettingsPage = lazy(() => import('./pages/NotificationSettingsPage'));
+
+const routeSuspense = (children: ReactNode) => (
+  <Suspense fallback={<LoadingAnimation />}>
+    {children}
+  </Suspense>
+);
 
 const PageLoader: React.FC = () => {
   const navigation = useNavigation();
@@ -84,7 +94,7 @@ const noteDetailsLoader = async ({ params }: { params: Record<string, string | u
     const notes = await getNoteByDate(date);
     const note = notes && notes.length > 0 ? notes[0] : null;
     return { note, date };
-  } catch (error) {
+  } catch {
     throw new Response("Not Found or Error Loading Note Data", { status: 404 });
   }
 };
@@ -95,11 +105,11 @@ const routes: RouteObject[] = [
     children: [
       {
         path: "/login",
-        element: <LoginPage />,
+        element: routeSuspense(<LoginPage />),
       },
       {
         path: "/register",
-        element: <RegistrationPage />,
+        element: routeSuspense(<RegistrationPage />),
       },
     ]
   },
@@ -116,7 +126,7 @@ const routes: RouteObject[] = [
         index: true,
         element: (
           <PrivateRoute>
-            <WeekView />
+            {routeSuspense(<WeekView />)}
           </PrivateRoute>
         ),
       },
@@ -124,7 +134,7 @@ const routes: RouteObject[] = [
         path: "dashboard",
         element: (
           <PrivateRoute allowedRoles={['admin']}>
-            <DashboardPage />
+            {routeSuspense(<DashboardPage />)}
           </PrivateRoute>
         ),
       },
@@ -132,22 +142,46 @@ const routes: RouteObject[] = [
         path: "settings",
         element: (
           <PrivateRoute>
-            <SettingsPage />
+            {routeSuspense(<SettingsPage />)}
           </PrivateRoute>
         ),
         children: [
           { index: true, element: <Navigate to="notifications" replace /> },
-          { path: "notifications", element: <NotificationSettingsPage /> },
-          { path: "expense-categories", element: <ExpenseCategoriesSettingsPage /> },
-          { path: "child-cards", element: <ChildCardsSettingsPage /> },
-          { path: "family", element: <FamilySettingsPage /> },
+          { path: "notifications", element: routeSuspense(<NotificationSettingsPage />) },
+          { path: "expense-categories", element: routeSuspense(<ExpenseCategoriesSettingsPage />) },
+          { path: "child-cards", element: routeSuspense(<ChildCardsSettingsPage />) },
+          { path: "family", element: routeSuspense(<FamilySettingsPage />) },
         ],
       },
       {
         path: "statistics",
         element: (
           <PrivateRoute>
-            <StatisticsPage />
+            {routeSuspense(<StatisticsPage />)}
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "money",
+        element: (
+          <PrivateRoute>
+            {routeSuspense(<MoneyPage />)}
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "children",
+        element: (
+          <PrivateRoute>
+            {routeSuspense(<ChildrenPage />)}
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "tasks",
+        element: (
+          <PrivateRoute>
+            {routeSuspense(<TasksPage />)}
           </PrivateRoute>
         ),
       },
@@ -155,7 +189,7 @@ const routes: RouteObject[] = [
         path: "day/:dateString",
         element: (
           <PrivateRoute>
-            <DayDetailsPage />
+            {routeSuspense(<DayDetailsPage />)}
           </PrivateRoute>
         ),
       },
@@ -163,7 +197,7 @@ const routes: RouteObject[] = [
         path: "notes/:date",
         element: (
           <PrivateRoute>
-            <NoteDetailsPage />
+            {routeSuspense(<NoteDetailsPage />)}
           </PrivateRoute>
         ),
         loader: noteDetailsLoader,
@@ -172,7 +206,7 @@ const routes: RouteObject[] = [
         path: "change-password",
         element: (
           <PrivateRoute>
-            <ChangePasswordPage />
+            {routeSuspense(<ChangePasswordPage />)}
           </PrivateRoute>
         ),
       },
@@ -180,7 +214,7 @@ const routes: RouteObject[] = [
         path: "profile", // Новый роут для страницы профиля
         element: (
           <PrivateRoute>
-            <ProfilePage />
+            {routeSuspense(<ProfilePage />)}
           </PrivateRoute>
         ),
       },
@@ -199,7 +233,7 @@ const routes: RouteObject[] = [
     children: [
       {
         path: "*", // Вложенный path: "*" для корректной работы с Outlet в RootLayout
-        element: <NotFoundPage />
+        element: routeSuspense(<NotFoundPage />)
       }
     ]
   }

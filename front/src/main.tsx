@@ -1,5 +1,4 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { MultiBackend } from 'react-dnd-multi-backend';
@@ -40,8 +39,7 @@ createRoot(document.getElementById('root')!).render(
           <App />
         </AuthProvider>
       </DndProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} limit={1} theme="dark" pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick closeButton={false} rtl={false} limit={1} theme="dark" pauseOnFocusLoss draggable pauseOnHover />
     </QueryClientProvider>
   </>,
 );
@@ -53,13 +51,13 @@ if (splashScreen) {
 
   setTimeout(() => {
     splashScreen.style.opacity = '0';
-    splashScreen.style.transition = 'opacity 0.5s ease-out';
+    splashScreen.style.transition = 'opacity 0.25s ease-out';
     setTimeout(() => {
       if (splashScreen) {
         splashScreen.style.display = 'none';
       }
-    }, 500);
-  }, 1500);
+    }, 250);
+  }, 450);
 }
 
 // Service Worker: можно отключить через VITE_DISABLE_SW=true в .env

@@ -9,7 +9,7 @@ interface FirstHalfOfWeekProps {
   tasksForWeek: Task[];
   today: Date;
   onDataChange: () => void;
-  onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense', defaultDate?: Date) => void;
+  onOpenTaskModal: (taskToEdit?: Task, taskType?: 'income' | 'expense' | 'task' | 'lesson', defaultDate?: Date) => void;
 }
 
 const FirstHalfOfWeek = ({ days, tasksForWeek, today, onDataChange, onOpenTaskModal }: FirstHalfOfWeekProps) => {

@@ -1,9 +1,4 @@
-import axios from 'axios';
-import { toast } from 'react-toastify';
-
-
-
-const API_URL = import.meta.env.VITE_API_URL || '';
+import api from './apiClient';
 
 export interface ExpenseCategory {
   uuid: string; // Changed from id to uuid to match API response
@@ -76,9 +71,9 @@ export interface Task {
   time?: string; // Может быть eventTime или taskTime от бэкенда
   dueDate: string; // Может быть date от бэкенда
   completed?: boolean; // Изменено с isDone
-  childId?: string; // Изменено с child_id на camelCase для соответствия данным с бэкенда
-  childName?: string;
-  expense_category_uuid?: string; // Изменено с category_id и expenseTypeId
+  childId?: string | null; // Изменено с child_id на camelCase для соответствия данным с бэкенда
+  childName?: string | null;
+  expense_category_uuid?: string | null; // Изменено с category_id и expenseTypeId
   expenseCategoryName?: string;
   amount?: number; // Общее поле для суммы (доход/расход)
   amountEarned?: number; // Добавлено для явного получения с бэкенда
@@ -96,13 +91,13 @@ export interface Task {
   createdAt?: string;
   updatedAt?: string;
   reminder_at?: string | null;
-  reminder_offset?: number | null;
+  reminder_offset?: number | string | null;
   assigned_to_id?: string | null;
   creator?: User;
   assignee?: User;
   assignee_username?: string;
   user_uuid?: string;
-  child_uuid?: string;
+  child_uuid?: string | null;
 }
 
 export interface Note {
@@ -157,80 +152,9 @@ export interface NewUserCredentials {
   role: 'user' | 'admin';
 }
 
-const api = axios.create({
-  baseURL: `${API_URL}/api`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Перехватчик запросов для добавления JWT токена
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    // URL-адреса, для которых не нужно добавлять токен авторизации
-    const noAuthEndpoints = ['/auth/login', '/auth/register'];
-    const isAuthPath = noAuthEndpoints.some(path => config.url?.endsWith(path));
-
-    if (token && config.url && !isAuthPath) {
-      config.headers.Authorization = `Bearer ${token}`;
-    } else {
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Устанавливаем перехватчик один раз при инициализации модуля
-api.interceptors.response.use(
-  response => response,
-  error => {
-    // Проверяем, является ли ошибка ответом с кодом 401
-    if (error.response && error.response.status === 401) {
-      // Исключаем эндпоинт входа, чтобы избежать бесконечного цикла редиректов
-      // Проверяем, что URL существует и не является эндпоинтом для входа
-      if (error.config.url && !error.config.url.endsWith('/auth/login')) {
-        // Очищаем токен из localStorage, чтобы избежать проблем при следующем входе
-        localStorage.removeItem('token');
-        // Принудительно перенаправляем пользователя на страницу входа
-        window.location.href = '/login';
-        // Прерываем дальнейшую обработку ошибки, чтобы избежать лишних действий
-        return new Promise(() => {});
-      }
-    }
-
-    // Для всех остальных ошибок (включая 401 на странице входа)
-    // позволяем ошибке "всплыть" для локальной обработки в компонентах.
-    // Можно добавить более сложную логику отображения уведомлений здесь, если потребуется.
-    let errorMessage = 'Произошла неизвестная ошибка!';
-    if (error.response && error.response.data && error.response.data.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-
-    // Показываем уведомление для всех ошибок, кроме 401, которые приводят к редиректу.
-    if (!error.response || error.response.status !== 401) {
-        toast.error(errorMessage);
-    }
-
-    return Promise.reject(error);
-  }
-);
-// Больше нет setupApiInterceptors, перехватчик установлен выше
-
 export const getNoteByDate = async (dateString: string): Promise<Note[]> => {
-  try {
-    const response = await api.get<Note[]>(`notes/date/${dateString}`);
-    return response.data; // API должен возвращать массив, даже если он пустой
-  } catch (error) {
-    // Ошибка будет обработана глобальным interceptor'ом
-    // Если API возвращает 404, когда заметок нет, это будет обработано как ошибка.
-    // Если ожидается пустой массив, то 404 не должно быть.
-    throw error;
-  }
+  const response = await api.get<Note[]>(`notes/date/${dateString}`);
+  return response.data; // API должен возвращать массив, даже если он пустой
 };
 
 export const createNote = async (dateString: string, content: string): Promise<Note> => {
@@ -293,7 +217,7 @@ export const getDailySummary = async (date: string): Promise<{ totalEarned: numb
   try {
     const response = await api.get(`/summary/daily?date=${date}`);
     return response.data;
-  } catch (error) {
+  } catch {
     // Error fetching daily summary
     return null;
   }
@@ -369,7 +293,8 @@ export const addChild = async (child: Omit<Child, 'uuid'>) => { // Было Omit
 
 export const updateChild = async (uuid: string, child: Child) => { // Было id: string
     // Деструктурируем объект child, чтобы исключить поле 'uuid' из тела запроса
-    const { uuid: childUuidToExclude, ...childDataToSend } = child; // Было id: childIdToExclude
+    const childDataToSend: Partial<Child> = { ...child };
+    delete childDataToSend.uuid;
     const response = await api.put(`/children/${uuid}`, childDataToSend); // Было /children/${id}
     return response.data as Child;
 };

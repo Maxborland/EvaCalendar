@@ -9,6 +9,14 @@ import {
 import type { ExpenseCategory } from '../services/api';
 import { getTasksByCategory } from '../services/api';
 
+type ApiError = Error & {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
 const inputClass =
   'w-full rounded-xl border border-border-subtle bg-surface-elevated text-text-primary py-2.5 px-3 text-sm transition-all duration-[180ms] placeholder:text-text-tertiary focus-visible:outline-none focus-visible:border-border-focus focus-visible:shadow-[0_0_0_3px_rgba(72,187,120,0.16)]';
 
@@ -37,7 +45,8 @@ const ExpenseCategoryManager = () => {
       await createCategoryMutation.mutateAsync(newCategoryName);
       setNewCategoryName('');
     } catch (error) {
-      if ((error as any)?.response?.data?.message === 'Category with this name already exists') {
+      const apiError = error as ApiError;
+      if (apiError.response?.data?.message === 'Category with this name already exists') {
         alert('Категория с таким названием уже существует (проверка на сервере).');
       }
     }
@@ -63,9 +72,10 @@ const ExpenseCategoryManager = () => {
         categoryName: editingCategory.categoryName
       });
       setEditingCategory(null);
-    } catch (error: any) {
-      if (error.response && error.response.data && error.response.data.message) {
-        const errorMessage = error.response.data.message;
+    } catch (error) {
+      const apiError = error as ApiError;
+      if (apiError.response && apiError.response.data && apiError.response.data.message) {
+        const errorMessage = apiError.response.data.message;
         if (errorMessage === 'Category with this name already exists') {
           alert('Категория с таким именем уже существует. Пожалуйста, выберите другое имя.');
         } else {
@@ -86,7 +96,7 @@ const ExpenseCategoryManager = () => {
         alert('Невозможно удалить категорию, так как с ней связаны расходы. Сначала измените или удалите эти расходы.');
         return;
       }
-    } catch (error) {
+    } catch {
       alert('Произошла ошибка при проверке связанных задач. Попробуйте еще раз.');
       return;
     }
@@ -95,7 +105,7 @@ const ExpenseCategoryManager = () => {
 
     try {
       await deleteCategoryMutation.mutateAsync(uuid);
-    } catch (error) {
+    } catch {
       alert('Ошибка при удалении категории. Пожалуйста, попробуйте еще раз.');
     }
   };
