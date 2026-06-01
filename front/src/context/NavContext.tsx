@@ -1,13 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-
-interface NavContextType {
-  isNavVisible: boolean;
-  setIsNavVisible: (visible: boolean) => void;
-  isModalOpen: boolean;
-  setIsModalOpen: (open: boolean) => void;
-}
-
-const NavContext = createContext<NavContextType | undefined>(undefined);
+import { useState, type ReactNode } from 'react';
+import { NavContext } from './navContextValue';
 
 export const NavProvider = ({ children }: { children: ReactNode }) => {
   const [isNavVisible, setIsNavVisible] = useState(true);
@@ -18,12 +10,4 @@ export const NavProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </NavContext.Provider>
   );
-};
-
-export const useNav = () => {
-  const context = useContext(NavContext);
-  if (context === undefined) {
-    throw new Error('useNav must be used within a NavProvider');
-  }
-  return context;
 };

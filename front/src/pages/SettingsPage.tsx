@@ -2,6 +2,29 @@ import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import TopNavigator from '../components/TopNavigator';
 
+const settingsItems = [
+  {
+    to: '/settings/notifications',
+    label: 'Уведомления',
+    icon: 'notifications',
+  },
+  {
+    to: '/settings/expense-categories',
+    label: 'Категории',
+    icon: 'category',
+  },
+  {
+    to: '/settings/child-cards',
+    label: 'Дети',
+    icon: 'groups',
+  },
+  {
+    to: '/settings/family',
+    label: 'Семья',
+    icon: 'supervisor_account',
+  },
+];
+
 const SettingsPage = () => {
   const location = useLocation();
 
@@ -10,61 +33,37 @@ const SettingsPage = () => {
   }, [location.pathname]);
 
   return (
-    <div className="text-text-primary flex flex-col min-h-screen">
-      <TopNavigator title="Настройки" showButtons={false} />
+    <div className="min-h-dvh flex flex-col bg-surface-app text-text-primary">
+      <TopNavigator title="Настройки" showButtons={false} showBackButton={true} />
 
-      <main className="flex-grow p-6">
-        <nav className="border-b border-border-subtle mb-4">
-          <ul className="flex gap-2 flex-wrap">
-            <li className="flex-none">
-              <NavLink
-                to="/settings/notifications"
-                className={({ isActive }) =>
-                  `inline-flex items-center min-h-11 px-4 whitespace-nowrap rounded-t-md -mb-px border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${isActive ? 'bg-surface-raised text-text-primary border-border-subtle border-b-transparent' : 'bg-surface-glass text-text-secondary hover:bg-surface-elevated border-border-subtle/40'}`
-                }
-                end
-              >
-                Уведомления
-              </NavLink>
-            </li>
-            <li className="flex-none">
-              <NavLink
-                to="/settings/expense-categories"
-                className={({ isActive }) =>
-                  `inline-flex items-center min-h-11 px-4 whitespace-nowrap rounded-t-md -mb-px border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${isActive ? 'bg-surface-raised text-text-primary border-border-subtle border-b-transparent' : 'bg-surface-glass text-text-secondary hover:bg-surface-elevated border-border-subtle/40'}`
-                }
-              >
-                Категории
-              </NavLink>
-            </li>
-            <li className="flex-none">
-              <NavLink
-                to="/settings/child-cards"
-                className={({ isActive }) =>
-                  `inline-flex items-center min-h-11 px-4 whitespace-nowrap rounded-t-md -mb-px border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${isActive ? 'bg-surface-raised text-text-primary border-border-subtle border-b-transparent' : 'bg-surface-glass text-text-secondary hover:bg-surface-elevated border-border-subtle/40'}`
-                }
-              >
-                Дети
-              </NavLink>
-            </li>
-            <li className="flex-none">
-              <NavLink
-                to="/settings/family"
-                className={({ isActive }) =>
-                  `inline-flex items-center min-h-11 px-4 whitespace-nowrap rounded-t-md -mb-px border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${isActive ? 'bg-surface-raised text-text-primary border-border-subtle border-b-transparent' : 'bg-surface-glass text-text-secondary hover:bg-surface-elevated border-border-subtle/40'}`
-                }
-              >
-                Семья
-              </NavLink>
-            </li>
+      <main className="flex-1 p-4 pb-[calc(24px+env(safe-area-inset-bottom))] max-[360px]:p-3">
+        <nav className="rounded-2xl border border-border-subtle bg-surface-raised p-2 shadow-glass" aria-label="Разделы настроек">
+          <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
+            {settingsItems.map((item) => (
+              <li key={item.to} className="min-w-0">
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `min-h-14 rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-[160ms] inline-flex items-center gap-2 active:scale-[0.98] ${
+                      isActive
+                        ? 'border-income-border bg-income-bg text-income-primary'
+                        : 'border-border-subtle bg-surface-elevated text-text-secondary hover:text-text-primary'
+                    }`
+                  }
+                  end={item.to === '/settings/notifications'}
+                >
+                  <span className="material-icons shrink-0 text-[20px]" aria-hidden="true">{item.icon}</span>
+                  <span className="min-w-0 truncate">{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
           </ul>
         </nav>
 
-        <div className="max-w-2xl mx-auto mt-4">
+        <div className="mt-4">
           <Outlet />
         </div>
       </main>
-
     </div>
   );
 };

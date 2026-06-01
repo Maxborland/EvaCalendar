@@ -42,7 +42,7 @@ const ChildCardManager = () => {
         await addChildMutation.mutateAsync(childData as Omit<Child, 'uuid'>);
       }
       handleModalClose();
-    } catch (error) {
+    } catch {
       // Ошибка обрабатывается в мутации
     }
   };
@@ -52,7 +52,7 @@ const ChildCardManager = () => {
       try {
         await deleteChildMutation.mutateAsync(uuid);
         handleModalClose();
-      } catch (error) {
+      } catch {
         // Ошибка обрабатывается в мутации
       }
     }

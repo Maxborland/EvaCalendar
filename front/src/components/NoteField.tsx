@@ -55,7 +55,7 @@ const NoteField = ({ weekId }: NoteFieldProps) => {
         </div>
         <button
           type="button"
-          className="inline-flex items-center self-start gap-1 py-1.5 px-3 min-[480px]:py-2 min-[480px]:px-3.5 max-[360px]:py-1 max-[360px]:px-2.5 max-[360px]:text-[0.7rem] rounded-full border border-border-subtle bg-[rgba(255,255,255,0.04)] text-text-secondary text-xs font-medium tracking-[0.02em] transition-all duration-[160ms] ease-linear hover:bg-[rgba(255,255,255,0.08)] hover:border-border-strong hover:-translate-y-px active:translate-y-0"
+          className="inline-flex min-h-11 items-center self-start gap-1 px-3 min-[480px]:px-3.5 max-[360px]:px-2.5 max-[360px]:text-[0.7rem] rounded-full border border-border-subtle bg-[rgba(255,255,255,0.04)] text-text-secondary text-xs font-medium tracking-[0.02em] transition-all duration-[160ms] ease-linear hover:bg-[rgba(255,255,255,0.08)] hover:border-border-strong hover:-translate-y-px active:translate-y-0"
           onClick={handleNavigate}
         >
           Открыть заметку
@@ -70,10 +70,11 @@ const NoteField = ({ weekId }: NoteFieldProps) => {
         <span className="text-sm min-[480px]:text-base max-[360px]:text-[0.8125rem] font-semibold text-text-primary leading-tight">Заметки недели</span>
         <button
           type="button"
-          className="inline-flex items-center gap-1 py-1.5 px-3 min-[480px]:py-2 min-[480px]:px-3.5 max-[360px]:py-1 max-[360px]:px-2.5 max-[360px]:text-[0.7rem] rounded-full border border-border-subtle bg-[rgba(255,255,255,0.04)] text-text-secondary text-xs font-medium tracking-[0.02em] transition-all duration-[160ms] ease-linear hover:bg-[rgba(255,255,255,0.08)] hover:border-border-strong hover:-translate-y-px active:translate-y-0"
+          className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl border border-border-subtle bg-[rgba(255,255,255,0.04)] text-text-secondary transition-all duration-[160ms] ease-linear hover:bg-[rgba(255,255,255,0.08)] hover:border-border-strong hover:-translate-y-px active:translate-y-0"
           onClick={handleNavigate}
+          aria-label="Открыть заметку недели"
         >
-          <span className="material-icons text-[16px] max-[360px]:text-[14px] bg-white">edit_note</span>
+          <span className="material-icons text-[20px]" aria-hidden="true">edit_note</span>
         </button>
       </header>
       <button

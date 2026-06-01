@@ -212,6 +212,28 @@ describe('Task API Endpoints', () => {
             expect(res.body.message).toBe('Only the creator can delete the task');
         });
     });
+
+    describe('POST /api/tasks/:id/duplicate', () => {
+        it('should duplicate a visible task for the current user', async () => {
+            const taskData = { type: 'task', title: 'Task to Duplicate', dueDate: '2025-10-12' };
+            const createRes = await request(app)
+                .post('/api/tasks')
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send(taskData);
+
+            const duplicateRes = await request(app)
+                .post(`/api/tasks/${createRes.body.uuid}/duplicate`)
+                .set('Authorization', `Bearer ${mainUserToken}`);
+
+            expect(duplicateRes.statusCode).toBe(201);
+            expect(duplicateRes.body.uuid).not.toBe(createRes.body.uuid);
+            expect(duplicateRes.body.title).toBe('Task to Duplicate (копия)');
+            expect(duplicateRes.body.type).toBe('task');
+            expect(duplicateRes.body.dueDate).toBe(taskData.dueDate);
+            expect(duplicateRes.body.creator_uuid).toBe(mainUserId);
+            expect(duplicateRes.body.user_uuid).toBe(mainUserId);
+        });
+    });
 describe('PUT /api/tasks/:id', () => {
         let taskId;
         let newCategoryUuid;

@@ -1,7 +1,7 @@
 {
-  "name": "Zyaka's Calendar: ваш персональный СДВГ планировщик",
-  "short_name": "Zyaka's Calendar",
-  "description": "Zyaka's Calendar помогает вам организовывать задачи, события и заметки.",
+  "name": "EvaCalendar: неделя, дети, деньги и задачи",
+  "short_name": "EvaCalendar",
+  "description": "EvaCalendar помогает видеть неделю, детей, доходы, расходы и задачи в одном мобильном хабе.",
   "icons": [
     {
       "src": "icons/android/res/mipmap-mdpi/ic_launcher.png",

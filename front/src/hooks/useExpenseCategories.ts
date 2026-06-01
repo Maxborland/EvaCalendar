@@ -15,7 +15,7 @@ import {
 export const expenseCategoryKeys = {
   all: ['expenseCategories'] as const,
   lists: () => [...expenseCategoryKeys.all, 'list'] as const,
-  list: (filters?: any) => [...expenseCategoryKeys.lists(), filters] as const,
+  list: (filters?: Record<string, unknown>) => [...expenseCategoryKeys.lists(), filters] as const,
   details: () => [...expenseCategoryKeys.all, 'detail'] as const,
   detail: (uuid: string) => [...expenseCategoryKeys.details(), uuid] as const,
 };

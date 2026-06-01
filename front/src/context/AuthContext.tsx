@@ -1,30 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import LoadingAnimation from '../components/LoadingAnimation';
 import api from '../services/api';
 import { loadSubscriptionStatus, saveSubscriptionStatus } from '../services/subscriptionService';
-
-// Типы
-interface User {
-  uuid: string;
-  username: string;
-  email: string;
-  role: 'user' | 'admin';
-}
-
-interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  isSubscribed: boolean;
-}
-
-interface AuthContextType extends AuthState {
-  login: (user: User, token: string) => Promise<void>;
-  logout: () => Promise<void>;
-  updateSubscriptionStatus: (isSubscribed: boolean) => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext, type User } from './authContextValue';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -49,6 +27,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsSubscribed(false);
   }, []);
 
+  const updateSubscriptionStatus = useCallback((status: boolean) => {
+    setIsSubscribed(status);
+    saveSubscriptionStatus(status);
+  }, []);
+
   const checkSubscriptionStatus = useCallback(async () => {
     try {
       const { data } = await api.get<{ isSubscribed: boolean }>('/subscriptions/status');
@@ -57,7 +40,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('Failed to check subscription status', error);
       updateSubscriptionStatus(false); // В случае ошибки считаем, что не подписан
     }
-  }, []);
+  }, [updateSubscriptionStatus]);
 
   // Эффект для проверки токена при монтировании компонента
   useEffect(() => {
@@ -103,10 +86,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [clearAuthState]);
 
-  const updateSubscriptionStatus = useCallback((status: boolean) => {
-    setIsSubscribed(status);
-    saveSubscriptionStatus(status);
-  }, []);
   // Синхронизация между вкладками
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
@@ -135,12 +114,4 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

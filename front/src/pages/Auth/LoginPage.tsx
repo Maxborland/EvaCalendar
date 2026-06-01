@@ -1,8 +1,17 @@
 import clsx from 'clsx';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import api from '../../services/api';
+
+type ApiError = Error & {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+};
 
 const LoginPage = () => {
   const location = useLocation();
@@ -52,14 +61,15 @@ const LoginPage = () => {
       const { token, ...user } = response.data;
       login(user, token);
 
-    } catch (error: any) {
+    } catch (error) {
+      const apiError = error as ApiError;
       let specificMessage = '';
-      if (error.response && error.response.data && typeof error.response.data.message === 'string' && error.response.data.message.trim() !== '') {
-        specificMessage = error.response.data.message;
-      } else if (error.response && error.response.status === 401) {
+      if (apiError.response && apiError.response.data && typeof apiError.response.data.message === 'string' && apiError.response.data.message.trim() !== '') {
+        specificMessage = apiError.response.data.message;
+      } else if (apiError.response && apiError.response.status === 401) {
         specificMessage = 'Неверный логин или пароль.';
-      } else if (typeof error.message === 'string' && error.message.trim() !== '') {
-        specificMessage = error.message;
+      } else if (typeof apiError.message === 'string' && apiError.message.trim() !== '') {
+        specificMessage = apiError.message;
       } else {
         specificMessage = 'Произошла ошибка при входе. Пожалуйста, попробуйте снова.';
       }

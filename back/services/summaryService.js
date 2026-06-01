@@ -1,19 +1,5 @@
 const knex = require('../db.cjs');
-
-async function _getFamilyUuid(userId) {
-  const familyService = require('./familyService.js');
-  const membership = await familyService.getUserFamilyMembership(userId);
-  return membership ? membership.family_uuid : null;
-}
-
-function _addUserOrFamilyFilter(query, user_uuid, familyUuid) {
-  return query.andWhere(function() {
-    this.where('tasks.user_uuid', user_uuid);
-    if (familyUuid) {
-      this.orWhere('tasks.family_uuid', familyUuid);
-    }
-  });
-}
+const accessScope = require('./accessScopeService.js');
 
 class SummaryService {
   async getSummaryForMonthByWeekStart(weekStartDate, user_uuid) {
@@ -27,7 +13,7 @@ class SummaryService {
     const startDateString = startDateOfMonth.toISOString().slice(0, 10);
     const endDateString = endDateOfMonth.toISOString().slice(0, 10);
 
-    const familyUuid = await _getFamilyUuid(user_uuid);
+    const familyUuid = await accessScope.getFamilyUuid(user_uuid);
 
     let query = knex('tasks')
       .select(
@@ -37,7 +23,7 @@ class SummaryService {
       .whereRaw('DATE(dueDate) >= ?', [startDateString])
       .andWhereRaw('DATE(dueDate) <= ?', [endDateString]);
 
-    query = _addUserOrFamilyFilter(query, user_uuid, familyUuid);
+    query = accessScope.addFinancialScopeFilter(query, user_uuid, familyUuid);
 
     const result = await query.first();
 
@@ -54,7 +40,7 @@ class SummaryService {
   }
 
   async getDailySummary(date, user_uuid) {
-    const familyUuid = await _getFamilyUuid(user_uuid);
+    const familyUuid = await accessScope.getFamilyUuid(user_uuid);
 
     let query = knex('tasks')
       .select(
@@ -63,7 +49,7 @@ class SummaryService {
       )
       .whereRaw('DATE(dueDate) = ?', [date]);
 
-    query = _addUserOrFamilyFilter(query, user_uuid, familyUuid);
+    query = accessScope.addFinancialScopeFilter(query, user_uuid, familyUuid);
 
     const result = await query.first();
 
@@ -79,7 +65,7 @@ class SummaryService {
   }
 
   async getDailyBreakdown(startDate, endDate, user_uuid) {
-    const familyUuid = await _getFamilyUuid(user_uuid);
+    const familyUuid = await accessScope.getFamilyUuid(user_uuid);
 
     let query = knex('tasks')
       .select(
@@ -90,7 +76,7 @@ class SummaryService {
       .whereRaw('DATE(dueDate) >= ?', [startDate])
       .andWhereRaw('DATE(dueDate) <= ?', [endDate]);
 
-    query = _addUserOrFamilyFilter(query, user_uuid, familyUuid);
+    query = accessScope.addFinancialScopeFilter(query, user_uuid, familyUuid);
 
     const rows = await query
       .groupByRaw('DATE(dueDate)')
@@ -104,7 +90,7 @@ class SummaryService {
   }
 
   async getCategoryBreakdown(startDate, endDate, user_uuid) {
-    const familyUuid = await _getFamilyUuid(user_uuid);
+    const familyUuid = await accessScope.getFamilyUuid(user_uuid);
 
     let query = knex('tasks')
       .select(
@@ -116,7 +102,7 @@ class SummaryService {
       .whereRaw('DATE(tasks.dueDate) >= ?', [startDate])
       .andWhereRaw('DATE(tasks.dueDate) <= ?', [endDate]);
 
-    query = _addUserOrFamilyFilter(query, user_uuid, familyUuid);
+    query = accessScope.addFinancialScopeFilter(query, user_uuid, familyUuid);
 
     const rows = await query
       .groupBy('tasks.expense_category_uuid')
@@ -135,7 +121,7 @@ class SummaryService {
     const startDateString = startDate.toISOString().slice(0, 10);
     const endDateString = endDate.toISOString().slice(0, 10);
 
-    const familyUuid = await _getFamilyUuid(user_uuid);
+    const familyUuid = await accessScope.getFamilyUuid(user_uuid);
 
     let query = knex('tasks')
       .select(
@@ -145,7 +131,7 @@ class SummaryService {
       .whereRaw('DATE(dueDate) >= ?', [startDateString])
       .andWhereRaw('DATE(dueDate) <= ?', [endDateString]);
 
-    query = _addUserOrFamilyFilter(query, user_uuid, familyUuid);
+    query = accessScope.addFinancialScopeFilter(query, user_uuid, familyUuid);
 
     const result = await query.first();
 

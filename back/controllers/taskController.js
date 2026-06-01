@@ -53,6 +53,13 @@ router.get('/by-category-uuid/:uuid', asyncHandler(async (req, res) => {
     }
     res.json(tasks);
 }));
+
+// POST /tasks/:uuid/duplicate - Дублирование задачи
+router.post('/:uuid/duplicate', asyncHandler(async (req, res) => {
+    const duplicatedTask = await taskService.duplicateTask(req.params.uuid, req.user.uuid);
+    res.status(201).json(duplicatedTask);
+}));
+
 // GET /tasks/:uuid - Получение задачи по UUID
 router.get('/:uuid', asyncHandler(async (req, res, next) => {
     const { uuid } = req.params;

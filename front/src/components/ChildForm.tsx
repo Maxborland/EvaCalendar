@@ -5,6 +5,21 @@ import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
 import type { Child } from '../services/api';
 
+interface DadataSuggestion {
+  value: string;
+}
+
+interface ContactPickerContact {
+  name?: string[];
+  tel?: string[];
+}
+
+interface ContactPickerNavigator extends Navigator {
+  contacts: {
+    select: (properties: string[], options: { multiple: boolean }) => Promise<ContactPickerContact[]>;
+  };
+}
+
 const hasContactPicker = typeof navigator !== 'undefined'
   && 'contacts' in navigator
   && 'ContactsManager' in window;
@@ -53,9 +68,9 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
           "X-Secret": DADATA_SECRET_KEY,
         }
       });
-      setSuggestions(response.data.suggestions.map((s: any) => s.value));
+      setSuggestions((response.data.suggestions as DadataSuggestion[]).map((s) => s.value));
       setShowSuggestions(true);
-    } catch (error) {
+    } catch {
       // Error fetching suggestions
       setSuggestions([]);
       setShowSuggestions(false);
@@ -107,7 +122,7 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
 
   const handlePickContact = async () => {
     try {
-      const contacts = await (navigator as any).contacts.select(
+      const contacts = await (navigator as ContactPickerNavigator).contacts.select(
         ['name', 'tel'],
         { multiple: false },
       );

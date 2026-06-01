@@ -3,6 +3,7 @@ const knex = require('../db.cjs');
 const ApiError = require('../utils/ApiError.js');
 const moment = require('moment');
 const { log, error: logError } = require('../utils/logger.js');
+const accessScope = require('./accessScopeService.js');
 
 async function validateExistence(table, id) {
     if (!id) return true;
@@ -47,34 +48,6 @@ function _baseTaskQuery() {
         .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
         .leftJoin('children', 'tasks.child_uuid', 'children.uuid')
         .leftJoin('expense_categories', 'tasks.expense_category_uuid', 'expense_categories.uuid');
-}
-
-async function _getFamilyUuid(userId) {
-    const familyService = require('./familyService.js');
-    const membership = await familyService.getUserFamilyMembership(userId);
-    return membership ? membership.family_uuid : null;
-}
-
-function _addAccessFilter(query, userId, familyUuid) {
-    return query.where(function() {
-        this.where('tasks.creator_uuid', userId).orWhere('tasks.user_uuid', userId);
-        if (familyUuid) {
-            this.orWhere('tasks.family_uuid', familyUuid);
-        }
-    });
-}
-
-async function _assertTaskAccess(task, userId) {
-    if (task.creator_uuid !== userId && task.user_uuid !== userId) {
-        if (task.family_uuid) {
-            const familyUuid = await _getFamilyUuid(userId);
-            if (!familyUuid || familyUuid !== task.family_uuid) {
-                throw ApiError.forbidden('Access denied');
-            }
-        } else {
-            throw ApiError.forbidden('Access denied');
-        }
-    }
 }
 
 const taskService = {
@@ -148,7 +121,7 @@ const taskService = {
                 }
                 if (!dataForDb.title) {
                     const category = await knex('expense_categories').where({ uuid: dataForDb.expense_category_uuid }).first();
-                    dataForDb.title = `Расход: ${category ? category.categoryName : 'категория'}`;
+                    dataForDb.title = category ? `Расход: ${category.categoryName}` : 'Расход';
                 }
             }
         } else if (type === 'task') {
@@ -164,7 +137,7 @@ const taskService = {
                 final_assigned_to_id = assigned_to_id;
 
                 if (assigned_to_id !== userId) {
-                    const familyUuid = await _getFamilyUuid(userId);
+                    const familyUuid = await accessScope.getFamilyUuid(userId);
                     if (familyUuid) {
                         dataForDb.family_uuid = familyUuid;
                     }
@@ -188,8 +161,9 @@ const taskService = {
             if (assigned_to_id) {
                 throw ApiError.badRequest('Lessons cannot be assigned to other users.');
             }
-            if (child_uuid) {
-                throw ApiError.badRequest('Lessons cannot be associated with children.');
+            dataForDb.child_uuid = child_uuid || null;
+            if (dataForDb.child_uuid && !(await validateExistence('children', dataForDb.child_uuid))) {
+                throw ApiError.badRequest('Child not found');
             }
             if (expense_category_uuid) {
                 throw ApiError.badRequest('Lessons cannot have expense categories.');
@@ -214,8 +188,8 @@ const taskService = {
     },
 
     async getAllTasks(userId) {
-        const familyUuid = await _getFamilyUuid(userId);
-        return _addAccessFilter(_baseTaskQuery(), userId, familyUuid);
+        const familyUuid = await accessScope.getFamilyUuid(userId);
+        return accessScope.addTaskAccessFilter(_baseTaskQuery(), userId, familyUuid);
     },
 
     async getTaskById(uuid, userId) {
@@ -224,7 +198,7 @@ const taskService = {
             .first();
 
         if (task) {
-            await _assertTaskAccess(task, userId);
+            await accessScope.assertTaskAccess(task, userId);
         }
 
         return task;
@@ -236,7 +210,7 @@ const taskService = {
             throw ApiError.notFound('Task not found');
         }
 
-        await _assertTaskAccess(existingTask, userId);
+        await accessScope.assertTaskAccess(existingTask, userId);
 
         const allowedFields = [
             'title', 'type', 'dueDate', 'time', 'address', 'comments', 'reminder_offset', 'reminder_at',
@@ -270,7 +244,9 @@ const taskService = {
             // При смене типа обнуляем специфичные поля
             dataToUpdate.amountEarned = null;
             dataToUpdate.amountSpent = null;
-            dataToUpdate.child_uuid = null;
+            if (newType !== 'lesson') {
+                dataToUpdate.child_uuid = null;
+            }
             dataToUpdate.hoursWorked = null;
             dataToUpdate.expense_category_uuid = null;
             dataToUpdate.address = null;
@@ -319,7 +295,9 @@ const taskService = {
             }
             dataToUpdate.amountEarned = null;
             dataToUpdate.amountSpent = null;
-            dataToUpdate.child_uuid = null;
+            if (dataToUpdate.child_uuid && !(await validateExistence('children', dataToUpdate.child_uuid))) {
+                throw ApiError.badRequest('Child not found');
+            }
             dataToUpdate.hoursWorked = null;
             dataToUpdate.expense_category_uuid = null;
             // НЕ обнуляем address для lesson - он нужен
@@ -357,7 +335,7 @@ const taskService = {
             return null;
         }
 
-        const familyUuid = await _getFamilyUuid(userId);
+        const familyUuid = await accessScope.getFamilyUuid(userId);
 
         const query = knex('tasks')
             .where({ expense_category_uuid: category.uuid })
@@ -373,7 +351,7 @@ const taskService = {
             .leftJoin('users as assignee', 'tasks.user_uuid', 'assignee.uuid')
             .leftJoin('children', 'tasks.child_uuid', 'children.uuid');
 
-        return _addAccessFilter(query, userId, familyUuid);
+        return accessScope.addTaskAccessFilter(query, userId, familyUuid);
     },
 
     async deleteTask(uuid, userId) {
@@ -388,13 +366,44 @@ const taskService = {
         return deleted;
     },
 
+    async duplicateTask(uuid, userId) {
+        const existingTask = await this.getTaskById(uuid, userId);
+        if (!existingTask) {
+            throw ApiError.notFound('Task not found');
+        }
+
+        const duplicatedTask = {
+            uuid: uuidv4(),
+            type: existingTask.type,
+            title: `${existingTask.title} (копия)`,
+            time: existingTask.time || null,
+            hoursWorked: existingTask.hoursWorked || null,
+            dueDate: existingTask.dueDate,
+            amountEarned: existingTask.amountEarned || null,
+            amountSpent: existingTask.amountSpent || null,
+            comments: existingTask.comments || null,
+            reminder_sent: false,
+            reminder_at: existingTask.reminder_at || null,
+            reminder_offset: existingTask.reminder_offset || null,
+            user_uuid: userId,
+            child_uuid: existingTask.child_uuid || null,
+            expense_category_uuid: existingTask.expense_category_uuid || null,
+            creator_uuid: userId,
+            family_uuid: existingTask.family_uuid || null,
+            address: existingTask.address || null,
+        };
+
+        await knex('tasks').insert(duplicatedTask);
+        return this.getTaskById(duplicatedTask.uuid, userId);
+    },
+
     async getTasksByDate(dateString, userId) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
             throw ApiError.badRequest('Invalid date format. Please use YYYY-MM-DD.');
         }
-        const familyUuid = await _getFamilyUuid(userId);
+        const familyUuid = await accessScope.getFamilyUuid(userId);
 
-        return _addAccessFilter(
+        return accessScope.addTaskAccessFilter(
             _baseTaskQuery().where('tasks.dueDate', dateString),
             userId,
             familyUuid

@@ -55,18 +55,23 @@
 
 #root {
   margin: 0 auto;
+  width: min(100%, 480px);
+  min-height: 100dvh;
+  background: var(--surface-app);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 24px 80px rgba(0, 0, 0, 0.28);
 }
 
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   display: block;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--surface-app);
   color: var(--color-text-primary);
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -80,7 +85,8 @@ body {
 
 @media (max-width: 768px) {
   #root {
-    max-width: none;
+    width: 100%;
+    box-shadow: none;
   }
   body, html {
     overflow-x: hidden;
@@ -89,8 +95,7 @@ body {
 
 @media (min-width: 769px) {
   #root {
-    max-width: 1200px;
-    padding: 0 20px;
+    max-width: 480px;
   }
 }
 

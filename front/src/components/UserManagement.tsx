@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import type { NewUserCredentials, User } from '../services/api';
 import { createUser, deleteUser, getUsers, updateUserPassword, updateUserRole } from '../services/api';
 
@@ -32,7 +32,7 @@ const UserManagement = () => {
     try {
       const data = await getUsers();
       setUsers(data);
-    } catch (err) {
+    } catch {
       setError('Не удалось загрузить пользователей.');
     } finally {
       setIsLoading(false);
@@ -50,7 +50,7 @@ const UserManagement = () => {
       await updateUserRole(userUuid, newRole);
       toast.success('Роль пользователя успешно обновлена!');
       fetchUsers();
-    } catch (err) {
+    } catch {
       toast.error('Не удалось обновить роль пользователя.');
     }
   };
@@ -74,7 +74,7 @@ const UserManagement = () => {
       await updateUserPassword(editingUserPassword.uuid, newPassword);
       toast.success(`Пароль для пользователя ${editingUserPassword.username} успешно изменен!`);
       closePasswordModal();
-    } catch (err) {
+    } catch {
       toast.error('Не удалось изменить пароль.');
     }
   };
@@ -128,7 +128,7 @@ const UserManagement = () => {
       toast.success(`Пользователь ${newUserData.username} успешно создан!`);
       fetchUsers();
       handleCloseAddUserModal();
-    } catch (err) {
+    } catch {
       toast.error(`Не удалось создать пользователя ${newUserData.username}. Пожалуйста, попробуйте еще раз.`);
     }
   };
@@ -139,7 +139,7 @@ const UserManagement = () => {
         await deleteUser(userUuid);
         toast.success(`Пользователь ${username} успешно удален!`);
         fetchUsers();
-      } catch (err) {
+      } catch {
         toast.error(`Не удалось удалить пользователя ${username}. Пожалуйста, попробуйте еще раз.`);
       }
     }

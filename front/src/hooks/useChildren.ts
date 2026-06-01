@@ -16,7 +16,7 @@ import {
 export const childKeys = {
   all: ['children'] as const,
   lists: () => [...childKeys.all, 'list'] as const,
-  list: (filters?: any) => [...childKeys.lists(), filters] as const,
+  list: (filters?: Record<string, unknown>) => [...childKeys.lists(), filters] as const,
   details: () => [...childKeys.all, 'detail'] as const,
   detail: (uuid: string) => [...childKeys.details(), uuid] as const,
 };

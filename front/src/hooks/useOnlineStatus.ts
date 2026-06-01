@@ -5,6 +5,8 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  type Child,
+  type Task,
 } from '../services/api';
 import {
   addChild,
@@ -25,24 +27,30 @@ async function executeMutation(mutation: QueuedMutation): Promise<void> {
   const { type, entity, data } = mutation;
 
   if (entity === 'task') {
-    if (type === 'create') await createTask(data);
+    const taskData = data as Partial<Task> & { uuid?: string };
+    if (type === 'create') await createTask(taskData as Omit<Task, 'uuid'>);
     else if (type === 'update') {
-      const { uuid, ...rest } = data;
+      const { uuid, ...rest } = taskData;
+      if (!uuid) return;
       await updateTask(uuid, rest);
-    } else if (type === 'delete') await deleteTask(data.uuid);
+    } else if (type === 'delete' && taskData.uuid) await deleteTask(taskData.uuid);
   } else if (entity === 'child') {
-    if (type === 'create') await addChild(data);
+    const childData = data as Partial<Child> & { uuid?: string };
+    if (type === 'create') await addChild(childData as Omit<Child, 'uuid'>);
     else if (type === 'update') {
-      const { uuid, ...rest } = data;
-      await updateChild(uuid, rest);
-    } else if (type === 'delete') await deleteChild(data.uuid);
+      const { uuid, ...rest } = childData;
+      if (!uuid) return;
+      await updateChild(uuid, rest as Child);
+    } else if (type === 'delete' && childData.uuid) await deleteChild(childData.uuid);
   } else if (entity === 'category') {
-    if (type === 'create') await createExpenseCategory(data.categoryName);
-    else if (type === 'update') await updateExpenseCategory(data.uuid, data.categoryName);
-    else if (type === 'delete') await deleteExpenseCategory(data.uuid);
+    const categoryData = data as { uuid?: string; categoryName?: string };
+    if (type === 'create' && categoryData.categoryName) await createExpenseCategory(categoryData.categoryName);
+    else if (type === 'update' && categoryData.uuid && categoryData.categoryName) await updateExpenseCategory(categoryData.uuid, categoryData.categoryName);
+    else if (type === 'delete' && categoryData.uuid) await deleteExpenseCategory(categoryData.uuid);
   } else if (entity === 'note') {
-    if (type === 'create') await createNote(data.dateString, data.content);
-    else if (type === 'update') await updateNote(data.uuid, data.content);
+    const noteData = data as { uuid?: string; dateString?: string; content?: string };
+    if (type === 'create' && noteData.dateString && noteData.content !== undefined) await createNote(noteData.dateString, noteData.content);
+    else if (type === 'update' && noteData.uuid && noteData.content !== undefined) await updateNote(noteData.uuid, noteData.content);
   }
 }
 

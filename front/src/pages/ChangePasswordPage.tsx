@@ -1,6 +1,15 @@
 import { type FormEvent, useState } from 'react';
 import api from '../services/api';
 
+type ApiError = Error & {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+};
+
 const ChangePasswordPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -40,12 +49,13 @@ const ChangePasswordPage = () => {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
-    } catch (err: any) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
-      } else if (err.response && err.response.status === 401) {
+    } catch (err) {
+      const apiError = err as ApiError;
+      if (apiError.response && apiError.response.data && apiError.response.data.message) {
+        setError(apiError.response.data.message);
+      } else if (apiError.response && apiError.response.status === 401) {
         setError('Неверный текущий пароль или проблема с аутентификацией.');
-      } else if (err.response && err.response.status === 422) {
+      } else if (apiError.response && apiError.response.status === 422) {
         setError('Новый пароль не соответствует требованиям безопасности (например, слишком простой).');
       }
       else {

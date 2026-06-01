@@ -53,6 +53,7 @@ lerna-debug.log*
 /front/node_modules/
 /front/dist/
 /front/dist-ssr/
+/front/.tmp/
 /front/.env*
 /front/coverage/
 /front/*.local

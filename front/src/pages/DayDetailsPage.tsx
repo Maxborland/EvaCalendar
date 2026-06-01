@@ -1,15 +1,24 @@
 import clsx from 'clsx';
 import type { FC } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DetailedTaskCard from '../components/DetailedTaskCard';
+import NavigationBar from '../components/NavigationBar';
 import TopNavigator from '../components/TopNavigator';
 import UnifiedTaskFormModal from '../components/UnifiedTaskFormModal';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
+import { useNav } from '../context/useNav';
+import { getLessonsWithoutIncome, getTaskMetrics } from '../domain/planningProjection';
 import { useCreateTask, useDeleteTask, useTasks, useUpdateTask } from '../hooks/useTasks';
 import { type Task, getDailySummary } from '../services/api';
 import { createDate, formatDateForDisplay, isSameDay, parseDateString } from '../utils/dateUtils';
 
+type DayCreateType = 'income' | 'expense' | 'task' | 'lesson';
+
+const formatMoney = (value: number) =>
+  new Intl.NumberFormat('ru-RU', {
+    maximumFractionDigits: 0,
+  }).format(value);
 
 const DayDetailsPage: FC = () => {
   const { dateString } = useParams<{ dateString: string }>();
@@ -19,13 +28,14 @@ const DayDetailsPage: FC = () => {
   const deleteTaskMutation = useDeleteTask();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth(); // Получаем состояние аутентификации
+  const { setIsModalOpen, setIsNavVisible } = useNav();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dailySummary, setDailySummary] = useState<{ totalEarned: number; totalSpent: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [currentTaskType, setCurrentTaskType] = useState<'income' | 'expense' | undefined>('income');
+  const [currentTaskType, setCurrentTaskType] = useState<DayCreateType>('income');
 
   useEffect(() => {
     if (!isAuthenticated && !isAuthLoading) {
@@ -100,25 +110,73 @@ const DayDetailsPage: FC = () => {
     return [...timeSpecificTasks, ...otherTasks, ...expenseTasks];
   }, [tasks]);
 
-  const handleOpenTaskForm = (task?: Task) => {
+  const dayMetrics = useMemo(() => getTaskMetrics(tasks), [tasks]);
+
+  const displayIncome = dailySummary?.totalEarned ?? dayMetrics.income;
+  const displayExpense = dailySummary?.totalSpent ?? dayMetrics.expense;
+  const displayBalance = displayIncome - displayExpense;
+
+  const handleOpenTaskForm = (task?: Task, createType: DayCreateType = 'income') => {
     if (task) {
       setEditingTask(task);
       setModalMode('edit');
-      setCurrentTaskType(task.type === 'expense' ? 'expense' : 'income');
+      setCurrentTaskType(task.type === 'expense' ? 'expense' : task.type === 'task' ? 'task' : task.type === 'lesson' ? 'lesson' : 'income');
     } else {
       const newInitialTask = {
         dueDate: dateString,
       };
       setEditingTask(newInitialTask as Task);
       setModalMode('create');
-      setCurrentTaskType(undefined);
+      setCurrentTaskType(createType);
     }
     setShowTaskForm(true);
+    setIsModalOpen(true);
+    setIsNavVisible(false);
   };
+
+  const handleCreateIncomeFromLesson = (lesson: Task) => {
+    const childUuid = lesson.child_uuid || lesson.childId;
+
+    setEditingTask({
+      dueDate: lesson.dueDate || dateString,
+      time: lesson.time || '',
+      title: lesson.childName ? `Оплата: ${lesson.childName}` : 'Оплата за занятие',
+      childId: childUuid,
+      child_uuid: childUuid,
+      childName: lesson.childName,
+      hourlyRate: lesson.childHourlyRate ?? lesson.hourlyRate,
+      hoursWorked: 1,
+      address: lesson.childAddress || lesson.address,
+    } as Task);
+    setModalMode('create');
+    setCurrentTaskType('income');
+    setShowTaskForm(true);
+    setIsModalOpen(true);
+    setIsNavVisible(false);
+  };
+
+  const lessonsWithoutIncome = useMemo(() => getLessonsWithoutIncome(tasks), [tasks]);
+  const lessonsWithoutIncomeIds = useMemo(
+    () => new Set(lessonsWithoutIncome.map((lesson) => lesson.uuid)),
+    [lessonsWithoutIncome],
+  );
+  const hasIncomeForLesson = useCallback((lesson: Task) => {
+    if (lesson.type !== 'lesson') return false;
+    return !lessonsWithoutIncomeIds.has(lesson.uuid);
+  }, [lessonsWithoutIncomeIds]);
+
+
+  const openDayTasks = useMemo(
+    () => tasks.filter((task) => task.type === 'task' && !task.completed),
+    [tasks],
+  );
+  const focusOpenTask = openDayTasks[0];
 
   const handleCloseTaskForm = () => {
     setEditingTask(undefined);
     setShowTaskForm(false);
+    setIsModalOpen(false);
+    setIsNavVisible(true);
   };
 
   const handleTaskSave = async (taskData: Task | Omit<Task, 'uuid'>): Promise<void> => {
@@ -158,6 +216,43 @@ const DayDetailsPage: FC = () => {
       setError("Ошибка при удалении задачи.");
     }
   };
+
+  const handleTaskComplete = (taskId: string) => {
+    updateTaskMutation.mutate(
+      { uuid: taskId, data: { completed: true } },
+      {
+        onError: () => setError("Ошибка при закрытии задачи."),
+      },
+    );
+  };
+
+  const quickActions: Array<{ type: DayCreateType; label: string; icon: string; className: string }> = [
+    {
+      type: 'income',
+      label: 'Доход',
+      icon: 'add_card',
+      className: 'border-income-border bg-income-bg text-income-primary',
+    },
+    {
+      type: 'expense',
+      label: 'Расход',
+      icon: 'payments',
+      className: 'border-expense-border bg-expense-bg text-expense-primary',
+    },
+    {
+      type: 'lesson',
+      label: 'Занятие',
+      icon: 'school',
+      className: 'border-[var(--color-lesson-border)] bg-[var(--color-lesson-bg)] text-[var(--color-lesson-primary)]',
+    },
+    {
+      type: 'task',
+      label: 'Задача',
+      icon: 'task_alt',
+      className: 'border-[var(--color-task-border)] bg-[var(--color-task-bg)] text-[var(--color-task-primary)]',
+    },
+  ];
+
   if (error) {
     return (
       <div className="text-center p-8 text-expense-primary text-lg">
@@ -175,51 +270,154 @@ const DayDetailsPage: FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-dvh bg-surface-app overflow-hidden">
+    <div className="flex flex-col min-h-dvh bg-surface-app overflow-hidden text-text-primary">
       <TopNavigator
         title={formatDateForDisplay(selectedDate)}
         showBackButton={true}
         showButtons={false}
       />
 
-      <main className="flex-1 flex flex-col gap-4 p-4 overflow-y-auto min-h-0 scrollbar-thin max-[480px]:p-3 max-[480px]:gap-3">
-        {dailySummary && (
-          <div className="flex gap-3 p-3 bg-surface-raised rounded-2xl border border-border-subtle shadow-glass max-[480px]:flex-col max-[480px]:gap-2">
-            <div className="flex-1 flex flex-col gap-1 p-2 rounded-xl bg-surface-muted border-l-[3px] border-l-income-primary">
-              <span className="text-sm font-medium text-text-secondary">Доход:</span>
-              <span className="text-xl font-semibold text-income-primary leading-tight max-[480px]:text-lg">
-                {dailySummary.totalEarned} ₽
-              </span>
+      <main className="flex-1 flex flex-col gap-4 p-4 pb-[calc(96px+env(safe-area-inset-bottom))] overflow-y-auto min-h-0 scrollbar-thin max-[480px]:p-3 max-[480px]:pb-[calc(92px+env(safe-area-inset-bottom))] max-[480px]:gap-3">
+        <section className="rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-glass">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs text-text-tertiary">День</div>
+              <h1 className="m-0 mt-1 text-xl font-semibold leading-tight truncate">
+                {formatDateForDisplay(selectedDate)}
+              </h1>
             </div>
-            <div className="flex-1 flex flex-col gap-1 p-2 rounded-xl bg-surface-muted border-l-[3px] border-l-expense-primary">
-              <span className="text-sm font-medium text-text-secondary">Расход:</span>
-              <span className="text-xl font-semibold text-expense-primary leading-tight max-[480px]:text-lg">
-                {dailySummary.totalSpent} ₽
-              </span>
+            <button
+              type="button"
+              className="shrink-0 size-11 rounded-xl border border-border-subtle bg-white/[0.04] text-text-primary inline-flex items-center justify-center active:scale-95"
+              onClick={() => navigate('/')}
+              aria-label="Вернуться к неделе"
+            >
+              <span className="material-icons text-[22px]" aria-hidden="true">calendar_view_week</span>
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="col-span-2 min-w-0 rounded-xl border border-border-subtle bg-surface-elevated p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs text-text-secondary">Итог дня</div>
+                  <div className={clsx(
+                    'mt-1 text-2xl font-bold leading-tight truncate',
+                    displayBalance >= 0 ? 'text-income-primary' : 'text-expense-primary',
+                  )}>
+                    {displayBalance >= 0 ? '+' : '-'}{formatMoney(Math.abs(displayBalance))} ₽
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="shrink-0 min-h-10 rounded-xl border border-border-subtle bg-white/[0.04] px-3 text-xs font-semibold text-text-primary inline-flex items-center justify-center gap-1 active:scale-[0.98]"
+                  onClick={() => navigate('/money')}
+                >
+                  <span className="material-icons text-[16px] text-text-tertiary" aria-hidden="true">account_balance_wallet</span>
+                  Деньги
+                </button>
+              </div>
+            </div>
+            <div className="min-w-0 rounded-xl border border-income-border bg-income-bg p-3">
+              <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                <span className="material-icons text-[15px] text-income-primary" aria-hidden="true">trending_up</span>
+                Доход
+              </div>
+              <div className="mt-1 text-lg font-bold text-income-primary truncate">+{formatMoney(displayIncome)} ₽</div>
+            </div>
+            <div className="min-w-0 rounded-xl border border-expense-border bg-expense-bg p-3">
+              <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                <span className="material-icons text-[15px] text-expense-primary" aria-hidden="true">trending_down</span>
+                Расход
+              </div>
+              <div className="mt-1 text-lg font-bold text-expense-primary truncate">-{formatMoney(displayExpense)} ₽</div>
+            </div>
+            <div className="min-w-0 rounded-xl border border-[var(--color-task-border)] bg-[var(--color-task-bg)] p-3">
+              <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                <span className="material-icons text-[15px] text-[var(--color-task-primary)]" aria-hidden="true">task_alt</span>
+                Задачи
+              </div>
+              <div className="mt-1 text-lg font-bold text-[var(--color-task-primary)] truncate">{dayMetrics.openTasks}/{dayMetrics.tasks}</div>
+            </div>
+            <div className="min-w-0 rounded-xl border border-[var(--color-lesson-border)] bg-[var(--color-lesson-bg)] p-3">
+              <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                <span className="material-icons text-[15px] text-[var(--color-lesson-primary)]" aria-hidden="true">school</span>
+                Занятия
+              </div>
+              <div className="mt-1 text-lg font-bold text-[var(--color-lesson-primary)] truncate">{dayMetrics.lessons}</div>
             </div>
           </div>
-        )}
 
-        <div className="flex justify-between items-center gap-3 max-[480px]:flex-col max-[480px]:items-stretch">
-          <h2 className="m-0 text-2xl font-semibold text-text-primary leading-tight max-[480px]:text-xl">
-            Дела
+          {(lessonsWithoutIncome.length > 0 || openDayTasks.length > 0) && (
+            <div className="mt-4 rounded-xl border border-border-subtle bg-surface-elevated p-3">
+              {lessonsWithoutIncome.length > 0 ? (
+                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+                  <span className="size-9 rounded-lg border border-income-border bg-income-bg text-income-primary inline-flex items-center justify-center">
+                    <span className="material-icons text-[18px]" aria-hidden="true">add_card</span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-text-primary">Внести доход за занятие</span>
+                    <span className="block truncate text-[0.6875rem] text-text-tertiary">
+                      {lessonsWithoutIncome.length} занятий без дохода
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="min-h-10 rounded-xl border border-income-border bg-income-bg px-3 text-xs font-semibold text-income-primary active:scale-[0.98]"
+                    onClick={() => handleCreateIncomeFromLesson(lessonsWithoutIncome[0])}
+                  >
+                    Доход
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+                  <span className="size-9 rounded-lg border border-[var(--color-task-border)] bg-[var(--color-task-bg)] text-[var(--color-task-primary)] inline-flex items-center justify-center">
+                    <span className="material-icons text-[18px]" aria-hidden="true">task_alt</span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-text-primary">Закрыть задачу дня</span>
+                    <span className="block truncate text-[0.6875rem] text-text-tertiary">
+                      {focusOpenTask?.title || 'Открытая задача'}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="size-10 rounded-xl border border-income-border bg-income-bg text-income-primary inline-flex items-center justify-center active:scale-[0.98] disabled:opacity-50"
+                    onClick={() => focusOpenTask?.uuid && handleTaskComplete(focusOpenTask.uuid)}
+                    disabled={updateTaskMutation.isPending || !focusOpenTask?.uuid}
+                    aria-label="Закрыть задачу дня"
+                  >
+                    <span className="material-icons text-[18px]" aria-hidden="true">check</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-4 grid grid-cols-4 gap-2 max-[360px]:grid-cols-2">
+            {quickActions.map((action) => (
+              <button
+                key={action.type}
+                type="button"
+                className={clsx(
+                  'min-h-12 rounded-xl border px-2 py-2 text-xs font-semibold inline-flex flex-col items-center justify-center gap-1 active:scale-[0.98]',
+                  action.className,
+                )}
+                onClick={() => handleOpenTaskForm(undefined, action.type)}
+              >
+                <span className="material-icons text-[18px]" aria-hidden="true">{action.icon}</span>
+                <span>{action.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="flex items-center justify-between gap-3">
+          <h2 className="m-0 text-lg font-semibold text-text-primary leading-tight">
+            План дня
           </h2>
-          <button
-            className={clsx(
-              'inline-flex items-center gap-2 py-2 px-4 min-h-11 whitespace-nowrap',
-              'rounded-xl border-none text-base font-semibold cursor-pointer',
-              'bg-gradient-to-br from-btn-primary-bg to-[var(--theme-primary)] text-btn-primary-text shadow-glass',
-              'transition-all duration-[180ms]',
-              'hover:-translate-y-0.5 hover:shadow-elevation-2',
-              'active:translate-y-0 active:shadow-glass',
-              'max-[480px]:w-full max-[480px]:justify-center',
-            )}
-            onClick={() => handleOpenTaskForm()}
-          >
-            <span className="material-icons text-[20px]">add</span>
-            Создать дело
-          </button>
-        </div>
+          <span className="shrink-0 text-xs text-text-tertiary">{sortedTasks.length}</span>
+        </section>
 
         <div className="flex flex-col gap-3">
           {tasks.length > 0 ? (
@@ -229,15 +427,29 @@ const DayDetailsPage: FC = () => {
                 task={task}
                 onEdit={handleOpenTaskForm}
                 onDelete={() => handleTaskDelete(task.uuid)}
+                onComplete={handleTaskComplete}
+                onCreateIncome={handleCreateIncomeFromLesson}
+                hasIncomeForLesson={hasIncomeForLesson(task)}
+                isMutating={updateTaskMutation.isPending}
               />
             ))
           ) : (
-            <p className="text-center p-8 text-text-secondary text-base border border-dashed border-border-subtle rounded-2xl bg-surface-muted">
-              На этот день задач нет.
-            </p>
+            <div className="rounded-2xl border border-dashed border-border-strong bg-surface-raised p-6 text-center">
+              <div className="text-sm text-text-tertiary">На этот день пока ничего нет</div>
+              <button
+                type="button"
+                className="mt-4 min-h-11 rounded-xl border border-income-border bg-income-bg text-income-primary px-4 text-sm font-semibold inline-flex items-center justify-center gap-1.5"
+                onClick={() => handleOpenTaskForm(undefined, 'income')}
+              >
+                <span className="material-icons text-[18px]" aria-hidden="true">add_card</span>
+                Добавить первую запись
+              </button>
+            </div>
           )}
         </div>
       </main>
+
+      <NavigationBar onCreateClick={() => handleOpenTaskForm(undefined, 'income')} />
 
       {showTaskForm && selectedDate && dateString && (
           <UnifiedTaskFormModal
@@ -249,7 +461,7 @@ const DayDetailsPage: FC = () => {
             }}
             mode={modalMode}
             initialTaskData={editingTask}
-            initialTaskType={currentTaskType} // Исправлено taskType на initialTaskType
+            initialTaskType={currentTaskType}
             onDelete={editingTask?.uuid ? () => handleTaskDelete(editingTask!.uuid!) : undefined}
           />
         )

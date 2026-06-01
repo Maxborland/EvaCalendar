@@ -5,7 +5,7 @@ export interface QueuedMutation {
   id: string;
   type: 'create' | 'update' | 'delete';
   entity: 'task' | 'child' | 'category' | 'note';
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
   retryCount: number;
 }
@@ -102,7 +102,7 @@ class OfflineQueueService {
           await this.remove(mutation.id);
           toast.error(`Не удалось синхронизировать изменение (${mutation.entity}). Попробуйте еще раз.`);
         } else {
-          console.warn('[OfflineQueue] Ошибка выполнения мутации (попытка ${mutation.retryCount}):', mutation.id, error);
+          console.warn(`[OfflineQueue] Ошибка выполнения мутации (попытка ${mutation.retryCount}):`, mutation.id, error);
           await this.saveQueue();
         }
       }
