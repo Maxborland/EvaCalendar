@@ -34,6 +34,11 @@ const formatShortDate = (dateStr: string) => {
   return `${parseInt(parts[2], 10)}.${parts[1]}`;
 };
 
+const formatChartRubles = (value: unknown) => {
+  const numericValue = typeof value === 'number' ? value : Number(value);
+  return formatRubles(Number.isFinite(numericValue) ? numericValue : 0);
+};
+
 const StatisticsPage = () => {
   const [period, setPeriod] = useState<PeriodType>('month');
   const [customStart, setCustomStart] = useState('');
@@ -274,7 +279,7 @@ const StatisticsPage = () => {
                         tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
                       />
                       <Tooltip
-                        formatter={(value?: number) => formatRubles(value ?? 0)}
+                        formatter={formatChartRubles}
                         contentStyle={{
                           backgroundColor: 'var(--color-surface-elevated)',
                           border: '1px solid var(--color-border-subtle)',
@@ -324,7 +329,7 @@ const StatisticsPage = () => {
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value?: number) => formatRubles(value ?? 0)}
+                        formatter={formatChartRubles}
                         contentStyle={{
                           backgroundColor: 'var(--color-surface-elevated)',
                           border: '1px solid var(--color-border-subtle)',

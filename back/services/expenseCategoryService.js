@@ -1,5 +1,5 @@
 const knex = require('../db.cjs');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const ApiError = require('../utils/ApiError');
 
 const ALLOWED_FIELDS = ['categoryName'];

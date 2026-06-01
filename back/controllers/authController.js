@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const knex = require('../db.cjs');
 const { getEnvConfig } = require('../config/env');
 const { log, error: logError } = require('../utils/logger.js');

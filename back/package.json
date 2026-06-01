@@ -35,11 +35,10 @@
     "knex": "^3.1.0",
     "knex-migrate": "^1.7.4",
     "moment": "^2.30.1",
-    "node-cron": "^3.0.3",
-    "nodemailer": "^7.0.3",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.10",
     "nodemon": "^3.1.10",
-    "sqlite3": "^5.1.7",
-    "uuid": "^11.1.0",
+    "sqlite3": "^6.0.1",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
