@@ -36,9 +36,9 @@ export const getOptionalTaskAmount = (
 
 type ChildKeySource = {
   uuid?: string;
-  child_uuid?: string;
-  childId?: string;
-  childName?: string;
+  child_uuid?: string | null;
+  childId?: string | null;
+  childName?: string | null;
 };
 
 export const getTaskChildKey = (task: ChildKeySource) =>

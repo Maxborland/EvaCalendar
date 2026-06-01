@@ -116,6 +116,35 @@ describe('taskEntry contract', () => {
     });
   });
 
+  it('sends null when editing a lesson and clearing the selected child', () => {
+    const payload = buildTaskEntryPayload({
+      formData: {
+        ...baseFormData,
+        title: 'Занятие без привязки',
+      },
+      taskType: 'lesson',
+      mode: 'edit',
+      initialTaskData: {
+        uuid: 'lesson-1',
+        title: 'Занятие: Аня',
+        type: 'lesson',
+        dueDate: '2026-06-01',
+        child_uuid: 'child-1',
+        childId: 'child-1',
+      } as Task,
+      selectedChildUuid: null,
+      children,
+      categories,
+    });
+
+    expect(payload).toMatchObject({
+      uuid: 'lesson-1',
+      type: 'lesson',
+      childId: null,
+      child_uuid: null,
+    });
+  });
+
   it('formats existing reminder datetime for native datetime-local inputs', () => {
     expect(formatDateTimeForInput('2026-06-01T08:05:00.000Z')).toMatch(/2026-06-01T\d{2}:05/);
     expect(formatDateTimeForInput('not-a-date')).toBe('');

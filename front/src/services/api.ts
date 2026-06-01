@@ -71,8 +71,8 @@ export interface Task {
   time?: string; // Может быть eventTime или taskTime от бэкенда
   dueDate: string; // Может быть date от бэкенда
   completed?: boolean; // Изменено с isDone
-  childId?: string; // Изменено с child_id на camelCase для соответствия данным с бэкенда
-  childName?: string;
+  childId?: string | null; // Изменено с child_id на camelCase для соответствия данным с бэкенда
+  childName?: string | null;
   expense_category_uuid?: string; // Изменено с category_id и expenseTypeId
   expenseCategoryName?: string;
   amount?: number; // Общее поле для суммы (доход/расход)
@@ -97,7 +97,7 @@ export interface Task {
   assignee?: User;
   assignee_username?: string;
   user_uuid?: string;
-  child_uuid?: string;
+  child_uuid?: string | null;
 }
 
 export interface Note {

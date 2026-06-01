@@ -16,7 +16,7 @@ export interface TaskEntryFormData {
   hoursWorked?: number;
   dueDate: string;
   expense_category_uuid?: string;
-  childName?: string;
+  childName?: string | null;
   originalTaskType?: Task['type'];
   reminder_at: string;
   reminder_offset: number | string | null;
@@ -43,8 +43,8 @@ export function formatDateTimeForInput(isoDateTime: string | null | undefined): 
 
 export const getFallbackTaskTitle = (
   taskType: TaskEntryType,
-  childName?: string,
-  expenseCategoryName?: string,
+  childName?: string | null,
+  expenseCategoryName?: string | null,
 ) => {
   if (taskType === 'income') {
     return childName ? `Оплата: ${childName}` : 'Доход';
@@ -77,6 +77,10 @@ export const buildTaskEntryPayload = ({
   children,
   categories,
 }: BuildTaskEntryPayloadParams): Omit<Task, 'uuid'> & { uuid?: string } => {
+  const canHaveChild = taskType === 'income' || taskType === 'lesson';
+  const selectedChildForPayload = canHaveChild
+    ? selectedChildUuid ?? (mode === 'edit' ? null : undefined)
+    : undefined;
   const childNameForTitle = selectedChildUuid
     ? children.find((child) => child.uuid === selectedChildUuid)?.childName
     : undefined;
@@ -98,8 +102,8 @@ export const buildTaskEntryPayload = ({
       : undefined,
     dueDate: formData.dueDate,
     address: taskType === 'lesson' ? (formData.address || undefined) : undefined,
-    childId: (taskType === 'income' || taskType === 'lesson') ? (selectedChildUuid || undefined) : undefined,
-    child_uuid: (taskType === 'income' || taskType === 'lesson') ? (selectedChildUuid || undefined) : undefined,
+    childId: selectedChildForPayload,
+    child_uuid: selectedChildForPayload,
     childName: (taskType === 'income' || taskType === 'lesson') ? (childNameForTitle || undefined) : undefined,
     expense_category_uuid: taskType === 'expense'
       ? categories.find((category) => category.categoryName === formData.expenseCategoryName)?.uuid

@@ -9,7 +9,7 @@ import type { Note, Task } from '../services/api';
 export type EventItem = (Task | Note) & {
   itemType: 'task' | 'note' | 'expense';
   type?: string;
-  childName?: string;
+  childName?: string | null;
   amount?: number;
   time?: string;
   title?: string;

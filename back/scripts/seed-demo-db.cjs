@@ -235,7 +235,7 @@ async function main() {
 
   const summary = {
     login: demo.email,
-    password: demo.password,
+    passwordHint: 'Use the local demo password from project docs.',
     familyMembers: await db('family_members').where({ family_uuid: family.uuid }).count({ count: '*' }).first(),
     children: await db('children').where({ user_uuid: demo.uuid }).count({ count: '*' }).first(),
     categories: await db('expense_categories').where({ user_uuid: demo.uuid }).count({ count: '*' }).first(),
