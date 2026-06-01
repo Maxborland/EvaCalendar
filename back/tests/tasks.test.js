@@ -384,5 +384,37 @@ describe('PUT /api/tasks/:id', () => {
             expect(lessonUpdate.statusCode).toBe(400);
             expect(lessonUpdate.body.message).toBe('Child not found');
         });
+
+        it('should preserve child when converting a lesson to income', async () => {
+            const lessonCreate = await request(app)
+                .post('/api/tasks')
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({
+                    type: 'lesson',
+                    title: 'Paid lesson',
+                    dueDate: '2025-07-08',
+                    time: '12:00',
+                    child_uuid: childUuid
+                });
+            expect(lessonCreate.statusCode).toBe(201);
+
+            const res = await request(app)
+                .put(`/api/tasks/${lessonCreate.body.uuid}`)
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({
+                    type: 'income',
+                    title: 'Paid lesson income',
+                    amount: 300,
+                    child_uuid: childUuid
+                });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.type).toBe('income');
+            expect(res.body.amountEarned).toBe(300);
+            expect(res.body.child_uuid).toBe(childUuid);
+
+            const taskInDb = await knex('tasks').where({ uuid: lessonCreate.body.uuid }).first();
+            expect(taskInDb.child_uuid).toBe(childUuid);
+        });
     });
 });

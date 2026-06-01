@@ -249,7 +249,7 @@ const taskService = {
             // При смене типа обнуляем специфичные поля
             dataToUpdate.amountEarned = null;
             dataToUpdate.amountSpent = null;
-            if (newType !== 'lesson') {
+            if (newType === 'expense' || newType === 'task') {
                 dataToUpdate.child_uuid = null;
             }
             dataToUpdate.hoursWorked = null;
