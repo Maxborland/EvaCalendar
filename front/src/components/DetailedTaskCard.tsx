@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { formatMoneyNumber, formatRubles, formatSignedRubles } from '../domain/moneyFormat';
 import { getOptionalTaskAmount, isExpenseTask, isIncomeTask } from '../domain/taskRecord';
 import { type Task } from '../services/api';
 
@@ -12,11 +13,6 @@ interface DetailedTaskCardProps {
   hasIncomeForLesson?: boolean;
   isMutating?: boolean;
 }
-
-const formatMoney = (value: number) =>
-  new Intl.NumberFormat('ru-RU', {
-    maximumFractionDigits: 0,
-  }).format(value);
 
 const getTaskKind = (task: Task) => {
   if (isExpenseTask(task)) {
@@ -96,7 +92,7 @@ const DetailedTaskCard = ({
   if (isIncomeTask(task)) {
     const displayAmount = getOptionalTaskAmount(task);
     if (displayAmount !== undefined) {
-      incomeDisplayValue = `+${displayAmount} ₽`;
+      incomeDisplayValue = formatSignedRubles(displayAmount);
     }
   }
 
@@ -207,7 +203,7 @@ const DetailedTaskCard = ({
               {hasIncomeForLesson
                 ? 'Добавить еще доход'
                 : childHourlyRate
-                  ? `Доход: ${formatMoney(childHourlyRate)} ₽/ч`
+                  ? `Доход: ${formatMoneyNumber(childHourlyRate)} ₽/ч`
                   : 'Создать доход'}
             </span>
           </button>
@@ -230,7 +226,7 @@ const DetailedTaskCard = ({
         {isExpenseTask(task) && getOptionalTaskAmount(task) !== undefined && (
             <div className="flex items-start gap-2">
                 <span className="material-icons shrink-0 text-[20px] text-expense-primary mt-0.5">trending_down</span>
-                <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Расход:</span> <span className="font-semibold text-expense-primary">-{formatMoney(getOptionalTaskAmount(task) ?? 0)} ₽</span></p>
+                <p className="m-0 text-base leading-normal text-text-primary"><span className="font-medium text-text-primary mr-1">Расход:</span> <span className="font-semibold text-expense-primary">-{formatRubles(getOptionalTaskAmount(task) ?? 0)}</span></p>
             </div>
         )}
 

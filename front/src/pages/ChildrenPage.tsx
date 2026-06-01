@@ -3,33 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
 import TopNavigator from '../components/TopNavigator';
 import CoreStateNotice from '../components/CoreStateNotice';
+import { getCurrentPeriodRange, getTodayDateString } from '../domain/datePeriod';
+import { formatMoneyNumber, formatSignedRubles } from '../domain/moneyFormat';
 import { getTaskAmount, isIncomeTask, isTaskForChild } from '../domain/taskRecord';
 import { useChildren } from '../hooks/useChildren';
 import { useCreateTaskModal } from '../hooks/useCreateTaskModal';
 import { useTasks } from '../hooks/useTasks';
 import type { Child, Task } from '../services/api';
-
-const formatMoney = (value: number) =>
-  new Intl.NumberFormat('ru-RU', {
-    maximumFractionDigits: 0,
-  }).format(value);
-
-const formatSignedMoney = (value: number) => `+${formatMoney(value)} ₽`;
-
-const getTodayDateString = () => {
-  const now = new Date();
-  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).toISOString().slice(0, 10);
-};
-
-const getMonthStartDateString = () => {
-  const now = new Date();
-  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString().slice(0, 10);
-};
-
-const getMonthEndDateString = () => {
-  const now = new Date();
-  return new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0)).toISOString().slice(0, 10);
-};
 
 const isLessonForChild = (task: Task, child: Child) =>
   task.type === 'lesson' &&
@@ -59,8 +39,7 @@ const ChildrenPage = () => {
   const hasChildTimelineError = tasksQuery.isError && tasks.length === 0;
 
   const today = getTodayDateString();
-  const monthStart = getMonthStartDateString();
-  const monthEnd = getMonthEndDateString();
+  const { start: monthStart, end: monthEnd } = getCurrentPeriodRange('month');
 
   const childInsights = useMemo(() => {
     return new Map(children.map((child) => {
@@ -177,7 +156,7 @@ const ChildrenPage = () => {
             </div>
             <div className="min-w-0 rounded-xl border border-income-border bg-income-bg p-3">
               <div className="text-[0.6875rem] text-text-secondary">Доход</div>
-              <div className="mt-1 text-sm font-bold text-income-primary truncate">{hasInitialChildrenError || hasChildTimelineError ? '—' : `+${formatMoney(childrenOverview.totalMonthIncome)} ₽`}</div>
+              <div className="mt-1 text-sm font-bold text-income-primary truncate">{hasInitialChildrenError || hasChildTimelineError ? '—' : formatSignedRubles(childrenOverview.totalMonthIncome)}</div>
             </div>
           </div>
 
@@ -240,7 +219,7 @@ const ChildrenPage = () => {
                         </span>
                       </span>
                       {isIncome && amount > 0 ? (
-                        <span className="shrink-0 text-xs font-bold text-income-primary">{formatSignedMoney(amount)}</span>
+                        <span className="shrink-0 text-xs font-bold text-income-primary">{formatSignedRubles(amount)}</span>
                       ) : (
                         <span className="material-icons text-[18px] text-text-tertiary" aria-hidden="true">chevron_right</span>
                       )}
@@ -307,7 +286,7 @@ const ChildrenPage = () => {
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <div className="min-w-0 rounded-xl border border-income-border bg-income-bg p-3">
                       <div className="text-[0.6875rem] text-text-secondary">Доход месяца</div>
-                      <div className="mt-1 text-sm font-bold text-income-primary truncate">+{formatMoney(insight?.monthIncome ?? 0)} ₽</div>
+                      <div className="mt-1 text-sm font-bold text-income-primary truncate">+{formatMoneyNumber(insight?.monthIncome ?? 0)} ₽</div>
                     </div>
                     <button
                       type="button"

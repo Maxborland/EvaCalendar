@@ -10,18 +10,21 @@ import {
   getTasksForDate as getTasksForDateProjection,
   getWeekMetrics,
 } from '../domain/planningProjection';
+import { getTodayUTC } from '../domain/datePeriod';
+import { formatCompactMoneyNumber } from '../domain/moneyFormat';
 import {
   getTaskAmount,
   isIncomeTask,
 } from '../domain/taskRecord';
+import { useCreateTaskModal } from '../hooks/useCreateTaskModal';
 import { useSwipe } from '../hooks/useSwipe';
-import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useDuplicateTask } from '../hooks/useTasks';
+import { useTasks, useUpdateTask, useDeleteTask, useDuplicateTask } from '../hooks/useTasks';
 import type { Task } from '../services/api';
 import {
   addDays,
   addWeeks,
-  createDate,
   formatDateRange,
+  formatDateToYYYYMMDD,
   isSameDay,
   startOfISOWeek,
   subtractWeeks
@@ -32,12 +35,6 @@ import TopNavigator from './TopNavigator';
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
 import NavigationBar from './NavigationBar';
 import CoreStateNotice from './CoreStateNotice';
-
-const formatCompactMoney = (value: number) =>
-  new Intl.NumberFormat('ru-RU', {
-    maximumFractionDigits: 0,
-    notation: Math.abs(value) >= 10000 ? 'compact' : 'standard',
-  }).format(value);
 
 const getTodayItemMeta = (task: Task) => {
   if (task.type === 'expense') {
@@ -92,14 +89,10 @@ const WeekView = () => {
   const location = useLocation();
 
   // React Query мутации
-  const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
   const duplicateTaskMutation = useDuplicateTask();
-  const getTodayUTC = () => {
-    const today = new Date();
-    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-  };
+  const { openCreateModal, createModalElement } = useCreateTaskModal();
   const [currentDate, setCurrentDate] = useState(getTodayUTC());
   const [today] = useState(getTodayUTC());
   const weekDays = useMemo<Date[]>(() => {
@@ -114,7 +107,6 @@ const WeekView = () => {
   const gridRef = useRef<HTMLElement>(null);
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [modalTaskMode, setModalTaskMode] = useState<'create' | 'edit'>('create');
   const [currentTaskForModal, setCurrentTaskForModal] = useState<Task | undefined>(undefined);
   const [initialModalTaskType, setInitialModalTaskType] = useState<CreateTaskType>('income');
 
@@ -176,7 +168,7 @@ const WeekView = () => {
     [tasks]
   );
 
-  const todayDateString = useMemo(() => createDate(today).toISOString().slice(0, 10), [today]);
+  const todayDateString = useMemo(() => formatDateToYYYYMMDD(today), [today]);
 
   const todayTasks = useMemo(() => getTasksForDate(today), [getTasksForDate, today]);
 
@@ -231,28 +223,26 @@ const WeekView = () => {
   const isInitialTasksLoading = tasksQuery.isLoading && !tasksQuery.data;
   const hasInitialTasksError = tasksQuery.isError && tasks.length === 0;
 
-  const handleOpenTaskModal = useCallback((taskToEdit?: Task, taskType?: CreateTaskType, defaultDate?: Date, createDefaults?: Partial<Task>) => {
+  const handleOpenTaskModal = useCallback((taskToEdit?: Task, taskType?: CreateTaskType, defaultDate?: Date | string, createDefaults?: Partial<Task>) => {
     if (taskToEdit) {
       setCurrentTaskForModal(taskToEdit);
-      setModalTaskMode('edit');
       setInitialModalTaskType(taskType || (taskToEdit.type === 'expense' ? 'expense' : taskToEdit.type === 'task' ? 'task' : taskToEdit.type === 'lesson' ? 'lesson' : 'income'));
-    } else {
-      setCurrentTaskForModal({
-        dueDate: createDate(defaultDate || today).toISOString().slice(0, 10),
-        ...createDefaults,
-      } as Task);
-      setModalTaskMode('create');
-      setInitialModalTaskType(taskType || 'income');
+      setIsTaskModalOpen(true);
+      setIsGlobalModalOpen(true);
+      setIsNavVisible(false);
+      return;
     }
-    setIsTaskModalOpen(true);
-    setIsGlobalModalOpen(true);
-    setIsNavVisible(false);
-  }, [today, setIsGlobalModalOpen, setIsNavVisible]);
+
+    openCreateModal(taskType || 'income', {
+      dueDate: formatDateToYYYYMMDD(defaultDate || today),
+      ...createDefaults,
+    });
+  }, [openCreateModal, today, setIsGlobalModalOpen, setIsNavVisible]);
 
   const handleCreateIncomeFromLesson = useCallback((lesson: Task) => {
     const childUuid = lesson.child_uuid || lesson.childId;
 
-    handleOpenTaskModal(undefined, 'income', createDate(lesson.dueDate || today), {
+    handleOpenTaskModal(undefined, 'income', lesson.dueDate || today, {
       title: lesson.childName ? `Оплата: ${lesson.childName}` : 'Оплата за занятие',
       time: lesson.time || undefined,
       childId: childUuid,
@@ -290,12 +280,12 @@ const WeekView = () => {
       throw new Error("Аутентификация в процессе.");
     }
 
-    if ('uuid' in taskData && taskData.uuid) {
-      const { uuid, ...updateData } = taskData;
-      await updateTaskMutation.mutateAsync({ uuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
-    } else {
-      await createTaskMutation.mutateAsync(taskData as Omit<Task, 'uuid'>);
+    if (!('uuid' in taskData) || !taskData.uuid) {
+      throw new Error('Редактирование задачи требует uuid.');
     }
+
+    const { uuid, ...updateData } = taskData;
+    await updateTaskMutation.mutateAsync({ uuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
   };
 
   const handleCompleteTask = async (id: string) => {
@@ -407,11 +397,11 @@ const WeekView = () => {
           <div className="mt-3 grid grid-cols-4 gap-1.5">
             <div className="min-w-0 rounded-xl border border-income-border bg-income-bg p-2">
               <div className="text-[0.6875rem] text-text-secondary leading-tight">Доход</div>
-              <div className="mt-1 text-sm font-bold text-income-primary leading-tight truncate">+{formatCompactMoney(todayMetrics.income)} ₽</div>
+              <div className="mt-1 text-sm font-bold text-income-primary leading-tight truncate">+{formatCompactMoneyNumber(todayMetrics.income)} ₽</div>
             </div>
             <div className="min-w-0 rounded-xl border border-expense-border bg-expense-bg p-2">
               <div className="text-[0.6875rem] text-text-secondary leading-tight">Расход</div>
-              <div className="mt-1 text-sm font-bold text-expense-primary leading-tight truncate">-{formatCompactMoney(todayMetrics.expense)} ₽</div>
+              <div className="mt-1 text-sm font-bold text-expense-primary leading-tight truncate">-{formatCompactMoneyNumber(todayMetrics.expense)} ₽</div>
             </div>
             <div className="min-w-0 rounded-xl border border-[var(--color-task-border)] bg-[var(--color-task-bg)] p-2">
               <div className="text-[0.6875rem] text-text-secondary leading-tight">Задачи</div>
@@ -465,7 +455,7 @@ const WeekView = () => {
                     </button>
                     {(task.type === 'expense' || isIncomeTask(task)) && amount > 0 && (
                       <span className={task.type === 'expense' ? 'text-xs font-bold text-expense-primary' : 'text-xs font-bold text-income-primary'}>
-                        {task.type === 'expense' ? '-' : '+'}{formatCompactMoney(amount)} ₽
+                        {task.type === 'expense' ? '-' : '+'}{formatCompactMoneyNumber(amount)} ₽
                       </span>
                     )}
                     {task.type === 'task' && !task.completed && (
@@ -513,7 +503,7 @@ const WeekView = () => {
             <div className="min-w-0">
               <div className="text-[0.6875rem] text-text-tertiary leading-tight">Итог недели</div>
               <div className={`mt-0.5 text-lg font-bold leading-tight truncate ${weeklyBalance >= 0 ? 'text-income-primary' : 'text-expense-primary'}`}>
-                {weeklyBalance >= 0 ? '+' : '-'}{formatCompactMoney(Math.abs(weeklyBalance))} ₽
+                {weeklyBalance >= 0 ? '+' : '-'}{formatCompactMoneyNumber(Math.abs(weeklyBalance))} ₽
               </div>
               <div className="mt-0.5 text-[0.6875rem] text-text-tertiary leading-tight">
                 Активных дней: {weeklyMetrics.activeDays}/7 · детей: {weeklyMetrics.children}
@@ -535,7 +525,7 @@ const WeekView = () => {
                 <span className="truncate">Доход</span>
               </div>
               <div className="mt-1 text-sm font-bold text-income-primary leading-tight truncate">
-                +{formatCompactMoney(weeklyMetrics.income)} ₽
+                +{formatCompactMoneyNumber(weeklyMetrics.income)} ₽
               </div>
             </div>
             <div className="min-w-0 rounded-xl border border-expense-border bg-expense-bg p-2">
@@ -544,7 +534,7 @@ const WeekView = () => {
                 <span className="truncate">Расход</span>
               </div>
               <div className="mt-1 text-sm font-bold text-expense-primary leading-tight truncate">
-                -{formatCompactMoney(weeklyMetrics.expense)} ₽
+                -{formatCompactMoneyNumber(weeklyMetrics.expense)} ₽
               </div>
             </div>
             <div className="min-w-0 rounded-xl border border-[var(--color-task-border)] bg-[var(--color-task-bg)] p-2">
@@ -598,7 +588,7 @@ const WeekView = () => {
         >
           {orderedWeekCells.map((cell) => {
             if (cell.type === 'note') {
-              const noteWeekId = createDate(cell.date).toISOString().slice(0, 10);
+              const noteWeekId = formatDateToYYYYMMDD(cell.date);
               return (
                 <article key={cell.id} className="min-w-0 flex self-stretch [&>*]:flex-1 [&>*]:min-w-0">
                   <NoteField weekId={noteWeekId} />
@@ -624,7 +614,7 @@ const WeekView = () => {
       </main>
 
       <NavigationBar
-        onCreateClick={() => handleOpenTaskModal(undefined, 'income', today)}
+        onCreateClick={() => openCreateModal('income', { dueDate: todayDateString })}
         isVisible={isNavVisible}
       />
       {isTaskModalOpen && (
@@ -633,13 +623,14 @@ const WeekView = () => {
           onClose={handleCloseTaskModal}
           onSubmit={handleSubmitTask}
           onTaskUpsert={handleCloseTaskModal}
-          mode={modalTaskMode}
+          mode="edit"
           initialTaskData={currentTaskForModal}
           initialTaskType={initialModalTaskType}
           onDelete={currentTaskForModal?.uuid ? handleDeleteTask : undefined}
           onDuplicate={currentTaskForModal?.uuid ? handleDuplicateTask : undefined}
         />
       )}
+      {createModalElement}
     </div>
   );
 };

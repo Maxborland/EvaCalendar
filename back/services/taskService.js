@@ -11,6 +11,18 @@ async function validateExistence(table, id) {
     return !!exists;
 }
 
+async function findOwnedReference(table, id, userId, notFoundMessage) {
+    if (id === null || id === undefined || id === '') {
+        return null;
+    }
+
+    const row = await knex(table).where({ uuid: id, user_uuid: userId }).first();
+    if (!row) {
+        throw ApiError.badRequest(notFoundMessage);
+    }
+    return row;
+}
+
 function _calculateReminderAt(dueDate, time, reminderOffset, reminderAt) {
     if (reminderOffset) {
         const [value, unit] = reminderOffset.split(' ');
@@ -104,11 +116,8 @@ const taskService = {
                 dataForDb.amountEarned = amount || amountEarned || null;
                 dataForDb.child_uuid = child_uuid || null;
                 dataForDb.hoursWorked = hoursWorked || null;
-                if (dataForDb.child_uuid && !(await validateExistence('children', dataForDb.child_uuid))) {
-                    throw ApiError.badRequest('Child not found');
-                }
+                const child = await findOwnedReference('children', dataForDb.child_uuid, userId, 'Child not found');
                 if (!dataForDb.title) {
-                    const child = await knex('children').where({ uuid: dataForDb.child_uuid }).first();
                     dataForDb.title = `Доход от ${child ? child.childName : 'ребенка'}`;
                 }
                 // После обработки, приводим тип к 'income' для хранения в БД
@@ -116,11 +125,8 @@ const taskService = {
             } else { // expense
                 dataForDb.amountSpent = amount || amountSpent || null;
                 dataForDb.expense_category_uuid = expense_category_uuid || null;
-                if (dataForDb.expense_category_uuid && !(await validateExistence('expense_categories', dataForDb.expense_category_uuid))) {
-                    throw ApiError.badRequest('Expense category not found');
-                }
+                const category = await findOwnedReference('expense_categories', dataForDb.expense_category_uuid, userId, 'Expense category not found');
                 if (!dataForDb.title) {
-                    const category = await knex('expense_categories').where({ uuid: dataForDb.expense_category_uuid }).first();
                     dataForDb.title = category ? `Расход: ${category.categoryName}` : 'Расход';
                 }
             }
@@ -162,9 +168,7 @@ const taskService = {
                 throw ApiError.badRequest('Lessons cannot be assigned to other users.');
             }
             dataForDb.child_uuid = child_uuid || null;
-            if (dataForDb.child_uuid && !(await validateExistence('children', dataForDb.child_uuid))) {
-                throw ApiError.badRequest('Child not found');
-            }
+            await findOwnedReference('children', dataForDb.child_uuid, userId, 'Child not found');
             if (expense_category_uuid) {
                 throw ApiError.badRequest('Lessons cannot have expense categories.');
             }
@@ -240,6 +244,7 @@ const taskService = {
         }
 
         const newType = dataToUpdate.type || existingTask.type;
+        const ownerId = existingTask.creator_uuid;
         if (dataToUpdate.type && dataToUpdate.type !== existingTask.type) {
             // При смене типа обнуляем специфичные поля
             dataToUpdate.amountEarned = null;
@@ -261,10 +266,16 @@ const taskService = {
             dataToUpdate.user_uuid = existingTask.creator_uuid;
 
             if (newType === 'income') {
+                if (dataToUpdate.hasOwnProperty('child_uuid')) {
+                    await findOwnedReference('children', dataToUpdate.child_uuid, ownerId, 'Child not found');
+                }
                 if (dataToUpdate.hasOwnProperty('amount') || dataToUpdate.hasOwnProperty('amountEarned')) {
                     dataToUpdate.amountEarned = dataToUpdate.amount || dataToUpdate.amountEarned;
                 }
             } else { // expense
+                 if (dataToUpdate.hasOwnProperty('expense_category_uuid')) {
+                    await findOwnedReference('expense_categories', dataToUpdate.expense_category_uuid, ownerId, 'Expense category not found');
+                }
                  if (dataToUpdate.hasOwnProperty('amount') || dataToUpdate.hasOwnProperty('amountSpent')) {
                     dataToUpdate.amountSpent = dataToUpdate.amount || dataToUpdate.amountSpent;
                 }
@@ -295,8 +306,8 @@ const taskService = {
             }
             dataToUpdate.amountEarned = null;
             dataToUpdate.amountSpent = null;
-            if (dataToUpdate.child_uuid && !(await validateExistence('children', dataToUpdate.child_uuid))) {
-                throw ApiError.badRequest('Child not found');
+            if (dataToUpdate.hasOwnProperty('child_uuid')) {
+                await findOwnedReference('children', dataToUpdate.child_uuid, ownerId, 'Child not found');
             }
             dataToUpdate.hoursWorked = null;
             dataToUpdate.expense_category_uuid = null;
@@ -329,7 +340,7 @@ const taskService = {
     },
 
     async getTasksByCategoryUuid(categoryUuid, userId) {
-        const category = await knex('expense_categories').where({ uuid: categoryUuid }).first();
+        const category = await knex('expense_categories').where({ uuid: categoryUuid, user_uuid: userId }).first();
 
         if (!category) {
             return null;

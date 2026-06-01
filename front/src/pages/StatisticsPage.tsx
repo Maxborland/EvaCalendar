@@ -15,12 +15,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
 import TopNavigator from '../components/TopNavigator';
+import { getCurrentPeriodRange, getTodayUTC } from '../domain/datePeriod';
+import { formatRubles } from '../domain/moneyFormat';
 import { useCategoryBreakdown, useDailyBreakdown, useMonthlySummary } from '../hooks/useSummary';
-import {
-  addDays,
-  formatDateToYYYYMMDD,
-  startOfISOWeek,
-} from '../utils/dateUtils';
 
 type PeriodType = 'week' | 'month' | 'custom';
 
@@ -31,23 +28,10 @@ const PIE_COLORS = [
   '#f687b3', '#b794f4', '#76e4f7', '#68d391',
 ];
 
-const formatCurrency = (value: number) =>
-  value.toLocaleString('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-
 const formatShortDate = (dateStr: string) => {
   const parts = dateStr.split('-');
   if (parts.length < 3) return dateStr;
   return `${parseInt(parts[2], 10)}.${parts[1]}`;
-};
-
-const getTodayUTC = () => {
-  const now = new Date();
-  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 };
 
 const StatisticsPage = () => {
@@ -59,11 +43,10 @@ const StatisticsPage = () => {
   const { start, end, year, month } = useMemo(() => {
     const today = getTodayUTC();
     if (period === 'week') {
-      const weekStart = startOfISOWeek(today);
-      const weekEnd = addDays(weekStart, 6);
+      const range = getCurrentPeriodRange('week', today);
       return {
-        start: formatDateToYYYYMMDD(weekStart),
-        end: formatDateToYYYYMMDD(weekEnd),
+        start: range.start,
+        end: range.end,
         year: today.getUTCFullYear(),
         month: today.getUTCMonth() + 1,
       };
@@ -79,11 +62,10 @@ const StatisticsPage = () => {
     // month
     const y = today.getUTCFullYear();
     const m = today.getUTCMonth() + 1;
-    const firstDay = new Date(Date.UTC(y, m - 1, 1));
-    const lastDay = new Date(Date.UTC(y, m, 0));
+    const range = getCurrentPeriodRange('month', today);
     return {
-      start: formatDateToYYYYMMDD(firstDay),
-      end: formatDateToYYYYMMDD(lastDay),
+      start: range.start,
+      end: range.end,
       year: y,
       month: m,
     };
@@ -229,20 +211,20 @@ const StatisticsPage = () => {
                   'text-3xl font-bold leading-tight',
                   summaryBalance >= 0 ? 'text-income-primary' : 'text-expense-primary',
                 )}>
-                  {formatCurrency(summaryBalance)}
+                  {formatRubles(summaryBalance)}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-xl bg-income-bg border border-income-border">
                   <div className="text-xs text-text-secondary mb-1">Доход</div>
                   <div className="text-base font-semibold text-income-primary">
-                    {formatCurrency(summaryIncome)}
+                    {formatRubles(summaryIncome)}
                   </div>
                 </div>
                 <div className="p-3 rounded-xl bg-expense-bg border border-expense-border">
                   <div className="text-xs text-text-secondary mb-1">Расход</div>
                   <div className="text-base font-semibold text-expense-primary">
-                    {formatCurrency(summaryExpense)}
+                    {formatRubles(summaryExpense)}
                   </div>
                 </div>
               </div>
@@ -254,13 +236,13 @@ const StatisticsPage = () => {
                 <div className="rounded-xl bg-surface-elevated px-3 py-2">
                   <div className="text-[0.6875rem] text-text-tertiary">Лучший доход</div>
                   <div className="mt-0.5 truncate text-sm font-semibold text-income-primary">
-                    {formatCurrency(strongestIncomeDay?.totalIncome ?? 0)}
+                    {formatRubles(strongestIncomeDay?.totalIncome ?? 0)}
                   </div>
                 </div>
                 <div className="rounded-xl bg-surface-elevated px-3 py-2">
                   <div className="text-[0.6875rem] text-text-tertiary">Топ расход</div>
                   <div className="mt-0.5 truncate text-sm font-semibold text-expense-primary">
-                    {formatCurrency(strongestExpenseDay?.totalExpenses ?? 0)}
+                    {formatRubles(strongestExpenseDay?.totalExpenses ?? 0)}
                   </div>
                 </div>
               </div>
@@ -292,7 +274,7 @@ const StatisticsPage = () => {
                         tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
                       />
                       <Tooltip
-                        formatter={(value?: number) => formatCurrency(value ?? 0)}
+                        formatter={(value?: number) => formatRubles(value ?? 0)}
                         contentStyle={{
                           backgroundColor: 'var(--color-surface-elevated)',
                           border: '1px solid var(--color-border-subtle)',
@@ -342,7 +324,7 @@ const StatisticsPage = () => {
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value?: number) => formatCurrency(value ?? 0)}
+                        formatter={(value?: number) => formatRubles(value ?? 0)}
                         contentStyle={{
                           backgroundColor: 'var(--color-surface-elevated)',
                           border: '1px solid var(--color-border-subtle)',
@@ -365,7 +347,7 @@ const StatisticsPage = () => {
                         />
                         <span className="truncate text-text-secondary">{cat.categoryName}</span>
                       </div>
-                      <span className="shrink-0 font-medium text-text-primary">{formatCurrency(cat.totalSpent)}</span>
+                      <span className="shrink-0 font-medium text-text-primary">{formatRubles(cat.totalSpent)}</span>
                     </div>
                   ))}
                 </div>

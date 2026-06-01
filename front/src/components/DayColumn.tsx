@@ -3,10 +3,11 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNavigate } from 'react-router-dom';
 import { useNav } from '../context/useNav';
+import { formatCompactMoneyNumber } from '../domain/moneyFormat';
 import { getTaskMetrics } from '../domain/planningProjection';
-import { useCreateTask, useDeleteTask, useDuplicateTask, useUpdateTask } from '../hooks/useTasks';
+import { useDeleteTask, useDuplicateTask, useUpdateTask } from '../hooks/useTasks';
 import { type Note, type Task } from '../services/api';
-import { createDate, formatDateForDayColumnHeader, formatDateToYYYYMMDD } from '../utils/dateUtils';
+import { formatDateForDayColumnHeader, formatDateToYYYYMMDD } from '../utils/dateUtils';
 import MiniEventCard, { type EventItem } from './MiniEventCard';
 import UnifiedTaskFormModal from './UnifiedTaskFormModal';
 
@@ -26,12 +27,6 @@ interface DayColumnProps {
 
 type QuickTaskType = 'income' | 'expense' | 'task' | 'lesson';
 
-const formatCompactMoney = (value: number) =>
-  new Intl.NumberFormat('ru-RU', {
-    maximumFractionDigits: 0,
-    notation: Math.abs(value) >= 10000 ? 'compact' : 'standard',
-  }).format(value);
-
 const DayColumn = (props: DayColumnProps) => {
   const { fullDate, tasksForDay, onDataChange, onOpenTaskModal, isToday } = props;
   const navigate = useNavigate();
@@ -39,11 +34,9 @@ const DayColumn = (props: DayColumnProps) => {
   const { setIsNavVisible, setIsModalOpen } = useNav();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [isModalOpenState, setIsModalOpenState] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   const [currentTaskType, setCurrentTaskType] = useState<QuickTaskType>('income');
 
-  const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
   const duplicateTaskMutation = useDuplicateTask();
@@ -90,15 +83,10 @@ const DayColumn = (props: DayColumnProps) => {
     if (eventToEdit && (eventToEdit.itemType === 'task' || eventToEdit.itemType === 'expense')) {
       const taskToEdit = eventToEdit as Task;
       setCurrentTask(taskToEdit);
-      setModalMode('edit');
       setCurrentTaskType(taskToEdit.type === 'expense' ? 'expense' : taskToEdit.type === 'task' ? 'task' : taskToEdit.type === 'lesson' ? 'lesson' : 'income');
     } else if (!eventToEdit) {
-      const newInitialTask = {
-        dueDate: dayDateString,
-      };
-      setCurrentTask(newInitialTask as Task);
-      setModalMode('create');
-      setCurrentTaskType(type || 'income');
+      onOpenTaskModal(undefined, type || 'income', fullDate);
+      return;
     } else {
       return;
     }
@@ -116,12 +104,11 @@ const DayColumn = (props: DayColumnProps) => {
   };
 
   const handleSubmitTask = async (taskData: Task | Omit<Task, 'uuid'>): Promise<void> => {
-    if ('uuid' in taskData && taskData.uuid) {
-      const { uuid, ...updateData } = taskData;
-      await updateTaskMutation.mutateAsync({ uuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
-    } else {
-      await createTaskMutation.mutateAsync(taskData as Omit<Task, 'uuid'>);
+    if (!('uuid' in taskData) || !taskData.uuid) {
+      throw new Error('Редактирование задачи требует uuid.');
     }
+    const { uuid, ...updateData } = taskData;
+    await updateTaskMutation.mutateAsync({ uuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -147,13 +134,13 @@ const DayColumn = (props: DayColumnProps) => {
     accept: ItemTypes.EVENT_CARD,
     drop: (item: { id: string; itemType: string; originalEvent: EventItem }, monitor: DropTargetMonitor) => {
       if (!monitor.didDrop() && item.id) {
-        handleMoveEvent(item.id, item.itemType, createDate(props.fullDate).toISOString().slice(0, 10));
+        handleMoveEvent(item.id, item.itemType, dayDateString);
       }
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
-  }), [props.fullDate, onDataChange]);
+  }), [dayDateString, onDataChange]);
 
   drop(dropRef);
 
@@ -235,13 +222,13 @@ const DayColumn = (props: DayColumnProps) => {
           {dayMetrics.income > 0 && (
             <span className="min-h-7 rounded-lg border border-income-border bg-income-bg px-2 py-1 text-income-primary font-semibold flex items-center gap-1 min-w-0">
               <span className="material-icons text-[14px]" aria-hidden="true">trending_up</span>
-              <span className="truncate">+{formatCompactMoney(dayMetrics.income)} ₽</span>
+              <span className="truncate">+{formatCompactMoneyNumber(dayMetrics.income)} ₽</span>
             </span>
           )}
           {dayMetrics.expense > 0 && (
             <span className="min-h-7 rounded-lg border border-expense-border bg-expense-bg px-2 py-1 text-expense-primary font-semibold flex items-center gap-1 min-w-0">
               <span className="material-icons text-[14px]" aria-hidden="true">trending_down</span>
-              <span className="truncate">-{formatCompactMoney(dayMetrics.expense)} ₽</span>
+              <span className="truncate">-{formatCompactMoneyNumber(dayMetrics.expense)} ₽</span>
             </span>
           )}
           {dayMetrics.tasks > 0 && (
@@ -307,7 +294,7 @@ const DayColumn = (props: DayColumnProps) => {
           onTaskUpsert={() => {
             handleCloseModal();
           }}
-          mode={modalMode}
+          mode="edit"
           initialTaskData={currentTask}
           initialTaskType={currentTaskType}
           onDelete={currentTask?.uuid ? handleDeleteTask : undefined}

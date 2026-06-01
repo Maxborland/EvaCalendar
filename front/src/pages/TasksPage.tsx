@@ -3,22 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
 import TopNavigator from '../components/TopNavigator';
 import CoreStateNotice from '../components/CoreStateNotice';
+import { getDateOffsetString, getTodayDateString } from '../domain/datePeriod';
 import { getTaskQueueProjection, getTaskStatusLabel } from '../domain/planningProjection';
 import { useCreateTaskModal } from '../hooks/useCreateTaskModal';
 import { useTasks, useUpdateTask } from '../hooks/useTasks';
 import type { Task } from '../services/api';
-import { formatDateToYYYYMMDD } from '../utils/dateUtils';
-
-const getTodayDateString = () => {
-  const now = new Date();
-  return formatDateToYYYYMMDD(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())));
-};
-
-const getDateOffsetString = (daysOffset: number) => {
-  const now = new Date();
-  const date = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + daysOffset));
-  return formatDateToYYYYMMDD(date);
-};
 
 interface TaskQueueCardProps {
   task: Task;

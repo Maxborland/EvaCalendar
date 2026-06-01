@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "test:domain": "vitest --run src/domain/taskRecord.test.ts src/domain/taskEntry.test.ts src/domain/planningProjection.test.ts",
+    "test:domain": "vitest --run src/domain/taskRecord.test.ts src/domain/taskEntry.test.ts src/domain/planningProjection.test.ts src/domain/moneyFormat.test.ts src/domain/datePeriod.test.ts",
     "test:e2e": "playwright test",
     "test:v2-smoke": "node scripts/v2-smoke.cjs"
   },

@@ -1,5 +1,5 @@
 import type { Child, ExpenseCategory, Task } from '../services/api';
-import type { TaskRecordKind } from './taskRecord';
+import { getTaskRecordKind, type TaskRecordKind } from './taskRecord';
 
 export type TaskEntryType = TaskRecordKind;
 
@@ -21,6 +21,24 @@ export interface TaskEntryFormData {
   reminder_at: string;
   reminder_offset: number | string | null;
   assigned_to_id: string | null;
+}
+
+export interface TaskEntryState {
+  taskType: TaskEntryType;
+  formData: TaskEntryFormData;
+  selectedChildUuid: string | null;
+}
+
+export interface BuildInitialTaskEntryStateParams {
+  mode: 'create' | 'edit';
+  initialTaskType?: TaskEntryType;
+  initialTaskData?: Task;
+  today: string;
+}
+
+export interface ApplyTaskEntryTypeParams {
+  formData: TaskEntryFormData;
+  nextType: TaskEntryType;
 }
 
 export function formatDateTimeForInput(isoDateTime: string | null | undefined): string {
@@ -56,6 +74,111 @@ export const getFallbackTaskTitle = (
     return childName ? `Занятие: ${childName}` : 'Занятие';
   }
   return 'Задача';
+};
+
+const getTaskAmountForForm = (task: Task | undefined, taskType: TaskEntryType) => {
+  if (!task) return undefined;
+  if (typeof task.amount === 'number') return task.amount;
+  if (taskType === 'income') return task.amountEarned;
+  if (taskType === 'expense') return task.amountSpent;
+  return undefined;
+};
+
+const getInitialChildUuid = (task: Task | undefined) => task?.child_uuid || task?.childId || null;
+
+export const applyTaskEntryType = ({ formData, nextType }: ApplyTaskEntryTypeParams): Omit<TaskEntryState, 'taskType'> => {
+  const nextData: TaskEntryFormData = { ...formData };
+  let selectedChildUuid = nextData.childId;
+
+  if (nextType === 'expense') {
+    nextData.time = '';
+    nextData.address = '';
+    nextData.childId = null;
+    nextData.childName = undefined;
+    nextData.hourlyRate = undefined;
+    nextData.hoursWorked = undefined;
+    nextData.assigned_to_id = null;
+    nextData.reminder_offset = null;
+    selectedChildUuid = null;
+  } else if (nextType === 'income') {
+    nextData.address = '';
+    nextData.expense_category_uuid = undefined;
+    nextData.expenseCategoryName = '';
+    nextData.assigned_to_id = null;
+    nextData.reminder_offset = null;
+    selectedChildUuid = nextData.childId;
+  } else if (nextType === 'task') {
+    nextData.address = '';
+    nextData.amount = undefined;
+    nextData.expense_category_uuid = undefined;
+    nextData.expenseCategoryName = '';
+    nextData.childId = null;
+    nextData.childName = undefined;
+    nextData.hourlyRate = undefined;
+    nextData.hoursWorked = undefined;
+    selectedChildUuid = null;
+  } else {
+    nextData.amount = undefined;
+    nextData.expense_category_uuid = undefined;
+    nextData.expenseCategoryName = '';
+    nextData.hourlyRate = undefined;
+    nextData.hoursWorked = undefined;
+    nextData.assigned_to_id = null;
+    nextData.reminder_offset = null;
+    selectedChildUuid = nextData.childId;
+  }
+
+  return { formData: nextData, selectedChildUuid };
+};
+
+export const buildInitialTaskEntryState = ({
+  mode,
+  initialTaskType,
+  initialTaskData,
+  today,
+}: BuildInitialTaskEntryStateParams): TaskEntryState => {
+  const taskType = mode === 'edit' && initialTaskData
+    ? getTaskRecordKind(initialTaskData)
+    : initialTaskType || 'income';
+  const childUuid = (taskType === 'income' || taskType === 'lesson')
+    ? getInitialChildUuid(initialTaskData)
+    : null;
+  const hourlyRate = taskType === 'income' ? initialTaskData?.hourlyRate : undefined;
+  const hoursWorked = taskType === 'income'
+    ? (initialTaskData?.hoursWorked ?? (mode === 'create' && hourlyRate ? 1 : undefined))
+    : undefined;
+  const amount = taskType === 'income' && hourlyRate && hoursWorked && getTaskAmountForForm(initialTaskData, taskType) === undefined
+    ? hourlyRate * hoursWorked
+    : getTaskAmountForForm(initialTaskData, taskType);
+
+  const baseData: TaskEntryFormData = {
+    id: mode === 'edit' ? initialTaskData?.uuid : undefined,
+    title: initialTaskData?.title || '',
+    time: initialTaskData?.time || '',
+    address: initialTaskData?.address || '',
+    childId: childUuid,
+    hourlyRate,
+    comments: initialTaskData?.comments || '',
+    expenseCategoryName: taskType === 'expense' ? (initialTaskData?.expenseCategoryName || '') : '',
+    amount: taskType === 'income' || taskType === 'expense' ? amount : undefined,
+    hoursWorked,
+    dueDate: initialTaskData?.dueDate || today,
+    expense_category_uuid: taskType === 'expense' ? initialTaskData?.expense_category_uuid : undefined,
+    childName: taskType === 'income' || taskType === 'lesson' ? initialTaskData?.childName : undefined,
+    originalTaskType: mode === 'edit' ? initialTaskData?.type : undefined,
+    reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
+    reminder_offset: taskType === 'task' ? (initialTaskData?.reminder_offset ?? null) : null,
+    assigned_to_id: taskType === 'task'
+      ? (initialTaskData?.user_uuid || initialTaskData?.assigned_to_id || null)
+      : null,
+  };
+  const typedState = applyTaskEntryType({ formData: baseData, nextType: taskType });
+
+  return {
+    taskType,
+    formData: typedState.formData,
+    selectedChildUuid: typedState.selectedChildUuid,
+  };
 };
 
 export interface BuildTaskEntryPayloadParams {

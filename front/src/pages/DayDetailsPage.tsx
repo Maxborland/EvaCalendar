@@ -8,22 +8,18 @@ import TopNavigator from '../components/TopNavigator';
 import UnifiedTaskFormModal from '../components/UnifiedTaskFormModal';
 import { useAuth } from '../context/useAuth';
 import { useNav } from '../context/useNav';
+import { formatRubles, formatSignedRubles } from '../domain/moneyFormat';
 import { getLessonsWithoutIncome, getTaskMetrics } from '../domain/planningProjection';
-import { useCreateTask, useDeleteTask, useTasks, useUpdateTask } from '../hooks/useTasks';
+import { useCreateTaskModal } from '../hooks/useCreateTaskModal';
+import { useDeleteTask, useTasks, useUpdateTask } from '../hooks/useTasks';
 import { type Task, getDailySummary } from '../services/api';
 import { createDate, formatDateForDisplay, isSameDay, parseDateString } from '../utils/dateUtils';
 
 type DayCreateType = 'income' | 'expense' | 'task' | 'lesson';
 
-const formatMoney = (value: number) =>
-  new Intl.NumberFormat('ru-RU', {
-    maximumFractionDigits: 0,
-  }).format(value);
-
 const DayDetailsPage: FC = () => {
   const { dateString } = useParams<{ dateString: string }>();
   const { data: allTasks = [] } = useTasks();
-  const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
   const navigate = useNavigate();
@@ -34,8 +30,7 @@ const DayDetailsPage: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [currentTaskType, setCurrentTaskType] = useState<DayCreateType>('income');
+  const { openCreateModal, createModalElement } = useCreateTaskModal();
 
   useEffect(() => {
     if (!isAuthenticated && !isAuthLoading) {
@@ -119,26 +114,20 @@ const DayDetailsPage: FC = () => {
   const handleOpenTaskForm = (task?: Task, createType: DayCreateType = 'income') => {
     if (task) {
       setEditingTask(task);
-      setModalMode('edit');
-      setCurrentTaskType(task.type === 'expense' ? 'expense' : task.type === 'task' ? 'task' : task.type === 'lesson' ? 'lesson' : 'income');
-    } else {
-      const newInitialTask = {
-        dueDate: dateString,
-      };
-      setEditingTask(newInitialTask as Task);
-      setModalMode('create');
-      setCurrentTaskType(createType);
+      setShowTaskForm(true);
+      setIsModalOpen(true);
+      setIsNavVisible(false);
+      return;
     }
-    setShowTaskForm(true);
-    setIsModalOpen(true);
-    setIsNavVisible(false);
+
+    openCreateModal(createType, dateString ? { dueDate: dateString } : {});
   };
 
   const handleCreateIncomeFromLesson = (lesson: Task) => {
     const childUuid = lesson.child_uuid || lesson.childId;
 
-    setEditingTask({
-      dueDate: lesson.dueDate || dateString,
+    openCreateModal('income', {
+      ...(lesson.dueDate || dateString ? { dueDate: lesson.dueDate || dateString } : {}),
       time: lesson.time || '',
       title: lesson.childName ? `Оплата: ${lesson.childName}` : 'Оплата за занятие',
       childId: childUuid,
@@ -147,12 +136,7 @@ const DayDetailsPage: FC = () => {
       hourlyRate: lesson.childHourlyRate ?? lesson.hourlyRate,
       hoursWorked: 1,
       address: lesson.childAddress || lesson.address,
-    } as Task);
-    setModalMode('create');
-    setCurrentTaskType('income');
-    setShowTaskForm(true);
-    setIsModalOpen(true);
-    setIsNavVisible(false);
+    });
   };
 
   const lessonsWithoutIncome = useMemo(() => getLessonsWithoutIncome(tasks), [tasks]);
@@ -190,12 +174,11 @@ const DayDetailsPage: FC = () => {
     }
 
     try {
-      if ('uuid' in taskData && taskData.uuid) {
-        const { uuid: taskUuid, ...updateData } = taskData;
-        await updateTaskMutation.mutateAsync({ uuid: taskUuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
-      } else {
-        await createTaskMutation.mutateAsync(taskData as Omit<Task, 'uuid'>);
+      if (!('uuid' in taskData) || !taskData.uuid) {
+        throw new Error('Редактирование задачи требует uuid.');
       }
+      const { uuid: taskUuid, ...updateData } = taskData;
+      await updateTaskMutation.mutateAsync({ uuid: taskUuid, data: updateData as Partial<Omit<Task, 'uuid'>> });
     } catch (err) {
       setError("Ошибка при сохранении задачи.");
       throw err;
@@ -305,7 +288,7 @@ const DayDetailsPage: FC = () => {
                     'mt-1 text-2xl font-bold leading-tight truncate',
                     displayBalance >= 0 ? 'text-income-primary' : 'text-expense-primary',
                   )}>
-                    {displayBalance >= 0 ? '+' : '-'}{formatMoney(Math.abs(displayBalance))} ₽
+                    {formatSignedRubles(displayBalance)}
                   </div>
                 </div>
                 <button
@@ -323,14 +306,14 @@ const DayDetailsPage: FC = () => {
                 <span className="material-icons text-[15px] text-income-primary" aria-hidden="true">trending_up</span>
                 Доход
               </div>
-              <div className="mt-1 text-lg font-bold text-income-primary truncate">+{formatMoney(displayIncome)} ₽</div>
+              <div className="mt-1 text-lg font-bold text-income-primary truncate">+{formatRubles(displayIncome)}</div>
             </div>
             <div className="min-w-0 rounded-xl border border-expense-border bg-expense-bg p-3">
               <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                 <span className="material-icons text-[15px] text-expense-primary" aria-hidden="true">trending_down</span>
                 Расход
               </div>
-              <div className="mt-1 text-lg font-bold text-expense-primary truncate">-{formatMoney(displayExpense)} ₽</div>
+              <div className="mt-1 text-lg font-bold text-expense-primary truncate">-{formatRubles(displayExpense)}</div>
             </div>
             <div className="min-w-0 rounded-xl border border-[var(--color-task-border)] bg-[var(--color-task-bg)] p-3">
               <div className="flex items-center gap-1.5 text-xs text-text-secondary">
@@ -459,13 +442,14 @@ const DayDetailsPage: FC = () => {
             onTaskUpsert={() => {
               handleCloseTaskForm();
             }}
-            mode={modalMode}
+            mode="edit"
             initialTaskData={editingTask}
-            initialTaskType={currentTaskType}
+            initialTaskType={editingTask?.type === 'expense' ? 'expense' : editingTask?.type === 'task' ? 'task' : editingTask?.type === 'lesson' ? 'lesson' : 'income'}
             onDelete={editingTask?.uuid ? () => handleTaskDelete(editingTask!.uuid!) : undefined}
           />
         )
       }
+      {createModalElement}
     </div>
   );
 };

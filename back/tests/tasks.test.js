@@ -6,6 +6,7 @@ describe('Task API Endpoints', () => {
     let mainUserToken, otherUserToken;
     let mainUserId, otherUserId;
     let childUuid, categoryUuid;
+    let otherChildUuid, otherCategoryUuid;
 
     beforeAll(async () => {
         // Создаем двух пользователей для тестов
@@ -38,6 +39,20 @@ describe('Task API Endpoints', () => {
         res = await request(app).post('/api/expense-categories').set('Authorization', `Bearer ${mainUserToken}`).send({ categoryName: 'Test Category' });
         expect(res.statusCode).toBe(201);
         categoryUuid = res.body.uuid;
+
+        res = await request(app).post('/api/children').set('Authorization', `Bearer ${otherUserToken}`).send({
+            childName: 'Other Child',
+            parentName: 'Other Parent',
+            parentPhone: '0987654321',
+            address: 'Other Address',
+            hourlyRate: 200
+        });
+        expect(res.statusCode).toBe(201);
+        otherChildUuid = res.body.uuid;
+
+        res = await request(app).post('/api/expense-categories').set('Authorization', `Bearer ${otherUserToken}`).send({ categoryName: 'Other Category' });
+        expect(res.statusCode).toBe(201);
+        otherCategoryUuid = res.body.uuid;
     });
 
     afterAll(async () => {
@@ -48,6 +63,12 @@ describe('Task API Endpoints', () => {
         }
         if (categoryUuid) {
             await knex('expense_categories').where({ uuid: categoryUuid }).del();
+        }
+        if (otherChildUuid) {
+            await knex('children').where({ uuid: otherChildUuid }).del();
+        }
+        if (otherCategoryUuid) {
+            await knex('expense_categories').where({ uuid: otherCategoryUuid }).del();
         }
         await knex.destroy();
     });
@@ -130,6 +151,29 @@ describe('Task API Endpoints', () => {
             const res = await request(app).post('/api/tasks').set('Authorization', `Bearer ${mainUserToken}`).send(taskData);
             expect(res.statusCode).toBe(400);
             expect(res.body.message).toBe('Tasks cannot have amountEarned or amountSpent.');
+        });
+
+        it('should reject child and category references owned by another user', async () => {
+            const incomeRes = await request(app)
+                .post('/api/tasks')
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ type: 'income', dueDate: '2025-01-01', amount: 100, child_uuid: otherChildUuid });
+            expect(incomeRes.statusCode).toBe(400);
+            expect(incomeRes.body.message).toBe('Child not found');
+
+            const lessonRes = await request(app)
+                .post('/api/tasks')
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ type: 'lesson', title: 'Lesson with foreign child', dueDate: '2025-01-01', time: '10:00', child_uuid: otherChildUuid });
+            expect(lessonRes.statusCode).toBe(400);
+            expect(lessonRes.body.message).toBe('Child not found');
+
+            const expenseRes = await request(app)
+                .post('/api/tasks')
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ type: 'expense', dueDate: '2025-01-01', amount: 100, expense_category_uuid: otherCategoryUuid });
+            expect(expenseRes.statusCode).toBe(400);
+            expect(expenseRes.body.message).toBe('Expense category not found');
         });
     });
 
@@ -298,6 +342,47 @@ describe('PUT /api/tasks/:id', () => {
             const taskInDb = await knex('tasks').where({ uuid: taskId }).first();
             expect(taskInDb.title).toBe('Updated Title with Extra Stuff');
             expect(taskInDb).not.toHaveProperty('someExtraField');
+        });
+
+        it('should reject updating an expense to another user category', async () => {
+            const res = await request(app)
+                .put(`/api/tasks/${taskId}`)
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ expense_category_uuid: otherCategoryUuid });
+
+            expect(res.statusCode).toBe(400);
+            expect(res.body.message).toBe('Expense category not found');
+
+            const taskInDb = await knex('tasks').where({ uuid: taskId }).first();
+            expect(taskInDb.expense_category_uuid).toBe(categoryUuid);
+        });
+
+        it('should reject updating income or lesson to another user child', async () => {
+            const incomeCreate = await request(app)
+                .post('/api/tasks')
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ type: 'income', dueDate: '2025-07-07', amount: 150, child_uuid: childUuid });
+            expect(incomeCreate.statusCode).toBe(201);
+
+            const incomeUpdate = await request(app)
+                .put(`/api/tasks/${incomeCreate.body.uuid}`)
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ child_uuid: otherChildUuid });
+            expect(incomeUpdate.statusCode).toBe(400);
+            expect(incomeUpdate.body.message).toBe('Child not found');
+
+            const lessonCreate = await request(app)
+                .post('/api/tasks')
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ type: 'lesson', title: 'Lesson', dueDate: '2025-07-07', time: '10:00', child_uuid: childUuid });
+            expect(lessonCreate.statusCode).toBe(201);
+
+            const lessonUpdate = await request(app)
+                .put(`/api/tasks/${lessonCreate.body.uuid}`)
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ child_uuid: otherChildUuid });
+            expect(lessonUpdate.statusCode).toBe(400);
+            expect(lessonUpdate.body.message).toBe('Child not found');
         });
     });
 });

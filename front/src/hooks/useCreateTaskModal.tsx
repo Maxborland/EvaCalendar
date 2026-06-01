@@ -3,16 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import UnifiedTaskFormModal from '../components/UnifiedTaskFormModal';
 import { useAuth } from '../context/useAuth';
 import { useNav } from '../context/useNav';
+import { getTodayDateString } from '../domain/datePeriod';
 import { useCreateTask } from './useTasks';
 import type { Task } from '../services/api';
-import { formatDateToYYYYMMDD } from '../utils/dateUtils';
 
 type CreateTaskType = 'income' | 'expense' | 'task' | 'lesson';
-
-const getTodayDateString = () => {
-  const now = new Date();
-  return formatDateToYYYYMMDD(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())));
-};
 
 export const useCreateTaskModal = () => {
   const navigate = useNavigate();

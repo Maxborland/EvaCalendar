@@ -3,12 +3,13 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEv
 import * as ReactDOM from 'react-dom';
 import { toast } from 'react-toastify';
 import {
+  applyTaskEntryType,
+  buildInitialTaskEntryState,
   buildTaskEntryPayload,
-  formatDateTimeForInput,
   type TaskEntryFormData,
   type TaskEntryType,
 } from '../domain/taskEntry';
-import { getTaskRecordKind } from '../domain/taskRecord';
+import { getTodayDateString } from '../domain/datePeriod';
 import {
   addChild,
   getAllChildren,
@@ -104,6 +105,12 @@ const UnifiedTaskFormModal = ({
   onDelete,
   onTaskUpsert,
 }: UnifiedTaskFormModalProps) => {
+  const buildInitialState = useCallback(() => buildInitialTaskEntryState({
+    mode,
+    initialTaskData,
+    initialTaskType,
+    today: getTodayDateString(),
+  }), [initialTaskData, initialTaskType, mode]);
   const [isClosing, setIsClosing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -153,35 +160,12 @@ const UnifiedTaskFormModal = ({
     }
   }, [isDragging, dragY, handleClose]);
 
-  const [taskTypeInternal, setTaskTypeInternal] = useState<TaskFormType>('income');
-
-  const [formData, setFormData] = useState<TaskEntryFormData>(() => {
-    const defaultDueDate = initialTaskData?.dueDate || new Date().toISOString().split('T')[0];
-    const baseData = {
-      id: mode === 'edit' ? initialTaskData?.uuid : undefined,
-      title: initialTaskData?.title || '',
-      time: initialTaskData?.time || '',
-      address: initialTaskData?.address || '',
-      childId: initialTaskData?.childId || null,
-      hourlyRate: initialTaskData?.hourlyRate || undefined,
-      comments: initialTaskData?.comments || '',
-      expenseCategoryName: initialTaskData?.expenseCategoryName || '',
-      amount: initialTaskData?.amount || undefined,
-      hoursWorked: initialTaskData?.hoursWorked || undefined,
-      dueDate: defaultDueDate,
-      expense_category_uuid: initialTaskData?.expense_category_uuid,
-      childName: initialTaskData?.childName,
-      originalTaskType: initialTaskData?.type,
-      reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
-      reminder_offset: initialTaskData?.reminder_offset ?? null,
-      assigned_to_id: initialTaskData?.assigned_to_id ?? null,
-    };
-    return baseData;
-  });
+  const [taskTypeInternal, setTaskTypeInternal] = useState<TaskFormType>(() => buildInitialState().taskType);
+  const [formData, setFormData] = useState<TaskEntryFormData>(() => buildInitialState().formData);
 
 
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(initialTaskData?.child_uuid || initialTaskData?.childId || null);
+  const [selectedChildUuid, setSelectedChildUuid] = useState<string | null>(() => buildInitialState().selectedChildUuid);
   const [selectedChildDetails, setSelectedChildDetails] = useState<Child | null>(null);
 
   const [showChildFormModal, setShowChildFormModal] = useState(false);
@@ -200,102 +184,13 @@ const UnifiedTaskFormModal = ({
   }, []);
 
   useEffect(() => {
-    const defaultDueDate = new Date().toISOString().split('T')[0];
-
-    let newType: TaskFormType = initialTaskType || 'income';
-    if (mode === 'edit' && initialTaskData) {
-        newType = getTaskRecordKind(initialTaskData);
-    }
-    setTaskTypeInternal(newType);
-
-    let newFormData: TaskEntryFormData = {
-        id: initialTaskData?.uuid,
-        title: initialTaskData?.title || '',
-        dueDate: initialTaskData?.dueDate || defaultDueDate,
-        time: initialTaskData?.time || '',
-        address: initialTaskData?.address || '',
-        comments: initialTaskData?.comments || '',
-        reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
-        reminder_offset: initialTaskData?.reminder_offset ?? null,
-        assigned_to_id: initialTaskData?.user_uuid || initialTaskData?.assigned_to_id || null,
-        childId: initialTaskData?.child_uuid || initialTaskData?.childId || null,
-        hourlyRate: initialTaskData?.hourlyRate,
-        hoursWorked: initialTaskData?.hoursWorked,
-        amount: initialTaskData?.amount,
-        expense_category_uuid: initialTaskData?.expense_category_uuid,
-        expenseCategoryName: initialTaskData?.expenseCategoryName || '',
-        childName: initialTaskData?.childName,
-        originalTaskType: initialTaskData?.type,
-    };
-
-    if (newType === 'expense') {
-        newFormData.childId = null;
-        newFormData.childName = undefined;
-        newFormData.hourlyRate = undefined;
-        newFormData.hoursWorked = undefined;
-        newFormData.time = '';
-    } else if (newType === 'income') {
-        newFormData.expense_category_uuid = undefined;
-        newFormData.expenseCategoryName = '';
-        newFormData.assigned_to_id = null;
-        newFormData.reminder_offset = null;
-    } else if (newType === 'task') {
-        newFormData.expense_category_uuid = undefined;
-        newFormData.expenseCategoryName = '';
-        newFormData.childId = null;
-        newFormData.childName = undefined;
-        newFormData.hourlyRate = undefined;
-        newFormData.hoursWorked = undefined;
-        newFormData.amount = undefined;
-    } else if (newType === 'lesson') {
-        newFormData.expense_category_uuid = undefined;
-        newFormData.expenseCategoryName = '';
-        newFormData.hourlyRate = undefined;
-        newFormData.hoursWorked = undefined;
-        newFormData.amount = undefined;
-        newFormData.assigned_to_id = null;
-        newFormData.reminder_offset = null;
-    }
-
-    if (mode === 'create') {
-        const createChildId = newType === 'income' || newType === 'lesson'
-            ? initialTaskData?.child_uuid || initialTaskData?.childId || null
-            : null;
-        newFormData = {
-            id: undefined,
-            title: initialTaskData?.title || '',
-            time: initialTaskData?.time || '',
-            address: initialTaskData?.address || '',
-            childId: createChildId,
-            hourlyRate: newType === 'income' ? initialTaskData?.hourlyRate : undefined,
-            comments: initialTaskData?.comments || '',
-            expenseCategoryName: newType === 'expense' ? (initialTaskData?.expenseCategoryName || '') : '',
-            amount: (newType === 'income' || newType === 'expense')
-                ? (initialTaskData?.amount ?? (newType === 'income' && initialTaskData?.hourlyRate ? initialTaskData.hourlyRate : undefined))
-                : undefined,
-            hoursWorked: newType === 'income'
-                ? (initialTaskData?.hoursWorked ?? (initialTaskData?.hourlyRate ? 1 : undefined))
-                : undefined,
-            dueDate: initialTaskData?.dueDate || defaultDueDate,
-            expense_category_uuid: newType === 'expense' ? initialTaskData?.expense_category_uuid : undefined,
-            childName: (newType === 'income' || newType === 'lesson') ? initialTaskData?.childName : undefined,
-            originalTaskType: undefined,
-            reminder_at: formatDateTimeForInput(initialTaskData?.reminder_at),
-            reminder_offset: newType === 'task' ? (initialTaskData?.reminder_offset ?? null) : null,
-            assigned_to_id: newType === 'task'
-                ? (initialTaskData?.user_uuid || initialTaskData?.assigned_to_id || null)
-                : null,
-        };
-        setSelectedChildUuid(createChildId);
-    } else {
-        const childIdToSetForSelector = initialTaskData?.child_uuid || initialTaskData?.childId || null;
-        setSelectedChildUuid(childIdToSetForSelector);
-    }
-
-    setFormData(newFormData);
+    const nextState = buildInitialState();
+    setTaskTypeInternal(nextState.taskType);
+    setSelectedChildUuid(nextState.selectedChildUuid);
+    setFormData(nextState.formData);
     setShowAdvancedFields(false);
 
-}, [mode, initialTaskData, initialTaskType]);
+  }, [buildInitialState]);
 
 
       const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -407,48 +302,10 @@ const UnifiedTaskFormModal = ({
     setTaskTypeInternal(nextType);
     setShowAdvancedFields(false);
 
-    if (nextType !== 'income' && nextType !== 'lesson') {
-      setSelectedChildUuid(null);
-    }
-
     setFormData((prevData) => {
-      const nextData = { ...prevData };
-
-      if (nextType === 'expense') {
-        nextData.time = '';
-        nextData.childId = null;
-        nextData.childName = undefined;
-        nextData.hourlyRate = undefined;
-        nextData.hoursWorked = undefined;
-        nextData.assigned_to_id = null;
-        nextData.reminder_offset = null;
-        nextData.address = '';
-      } else if (nextType === 'income') {
-        nextData.expense_category_uuid = undefined;
-        nextData.expenseCategoryName = '';
-        nextData.assigned_to_id = null;
-        nextData.reminder_offset = null;
-        nextData.address = '';
-      } else if (nextType === 'task') {
-        nextData.amount = undefined;
-        nextData.expense_category_uuid = undefined;
-        nextData.expenseCategoryName = '';
-        nextData.childId = null;
-        nextData.childName = undefined;
-        nextData.hourlyRate = undefined;
-        nextData.hoursWorked = undefined;
-        nextData.address = '';
-      } else {
-        nextData.amount = undefined;
-        nextData.expense_category_uuid = undefined;
-        nextData.expenseCategoryName = '';
-        nextData.hourlyRate = undefined;
-        nextData.hoursWorked = undefined;
-        nextData.assigned_to_id = null;
-        nextData.reminder_offset = null;
-      }
-
-      return nextData;
+      const nextState = applyTaskEntryType({ formData: prevData, nextType });
+      setSelectedChildUuid(nextState.selectedChildUuid);
+      return nextState.formData;
     });
   };
 

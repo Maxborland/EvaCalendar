@@ -1,196 +1,27 @@
 const fs = require('node:fs');
-const http = require('node:http');
-const path = require('node:path');
-const { spawn } = require('node:child_process');
 const { chromium } = require('playwright');
 const {
-  buildTasks,
+  assert,
+  assertMobileSurface,
+  expectVisibleText,
+  waitForCondition,
+} = require('./v2-smoke/assertions.cjs');
+const {
+  emptyJson,
+  mockApi,
+  setupAuthedEmptyApi,
+} = require('./v2-smoke/mockApi.cjs');
+const {
+  baseURL,
+  edgePath,
+  ensureServer,
+} = require('./v2-smoke/server.cjs');
+const {
   child,
   getToday,
   getTomorrow,
   lessonChild,
-  moneyCategory,
 } = require('./v2-fixtures.cjs');
-
-const defaultSmokePort = 5179 + Math.floor(Math.random() * 1000);
-const baseURL = process.env.V2_SMOKE_BASE_URL || `http://127.0.0.1:${defaultSmokePort}`;
-const smokeUrl = new URL(baseURL);
-const smokePort = smokeUrl.port || (smokeUrl.protocol === 'https:' ? '443' : '80');
-const viteBin = path.join(__dirname, '..', 'node_modules', 'vite', 'bin', 'vite.js');
-const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-
-const requestUrl = (url) => new Promise((resolve) => {
-  const request = http.get(url, (response) => {
-    response.resume();
-    resolve(response.statusCode >= 200 && response.statusCode < 500);
-  });
-  request.setTimeout(1000, () => {
-    request.destroy();
-    resolve(false);
-  });
-  request.on('error', () => resolve(false));
-});
-
-const waitForServer = async (url, timeoutMs = 30000) => {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeoutMs) {
-    if (await requestUrl(url)) return;
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  throw new Error(`Vite server did not become ready at ${url}`);
-};
-
-const ensureServer = async () => {
-  if (await requestUrl(baseURL)) return null;
-  if (!fs.existsSync(viteBin)) {
-    throw new Error(`Vite binary not found at ${viteBin}. Run npm install in front/.`);
-  }
-
-  const server = spawn(process.execPath, [viteBin, '--host', smokeUrl.hostname, '--port', smokePort], {
-    cwd: path.join(__dirname, '..'),
-    stdio: 'ignore',
-    windowsHide: true,
-  });
-  server.unref();
-
-  await waitForServer(baseURL);
-  return server;
-};
-
-const mockApi = async (page, posts, updates = []) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('token', 'v2-smoke-token');
-    localStorage.setItem('isSubscribed', 'true');
-  });
-
-  await page.route('**/api/**', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify([]),
-  }));
-
-  await page.route('**/api/users/me', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ uuid: 'u1', username: 'demo', email: 'demo@example.com', role: 'user' }),
-  }));
-
-  await page.route('**/api/subscriptions/status', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ isSubscribed: true }),
-  }));
-
-  await page.route('**/api/children**', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify([child, lessonChild]),
-  }));
-
-  await page.route('**/api/expense-categories**', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify([moneyCategory]),
-  }));
-
-  await page.route('**/api/summary/daily-breakdown**', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify([{ date: getToday(), totalIncome: 2500, totalExpenses: 700 }]),
-  }));
-
-  await page.route('**/api/summary/category-breakdown**', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify([{ categoryName: moneyCategory.categoryName, totalSpent: 700 }]),
-  }));
-
-  await page.route('**/api/notes**', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify([]),
-  }));
-
-  const handleTasksRoute = async (route) => {
-    if (route.request().method() === 'POST') {
-      const payload = JSON.parse(route.request().postData() || '{}');
-      posts.push(payload);
-      return route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({ uuid: `created-${posts.length}`, ...payload }),
-      });
-    }
-
-    if (route.request().method() === 'PUT') {
-      const payload = JSON.parse(route.request().postData() || '{}');
-      updates.push(payload);
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ uuid: 'updated-task', ...payload }),
-      });
-    }
-
-    return route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(buildTasks()),
-    });
-  };
-
-  await page.route('**/api/tasks', handleTasksRoute);
-  await page.route('**/api/tasks/**', handleTasksRoute);
-
-};
-
-const assert = (condition, message) => {
-  if (!condition) throw new Error(message);
-};
-
-const waitForCondition = async (predicate, message, timeoutMs = 5000) => {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeoutMs) {
-    if (predicate()) return;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error(message);
-};
-
-const expectVisibleText = async (page, text) => {
-  await page.getByText(text).first().waitFor({ state: 'visible', timeout: 5000 });
-};
-
-const assertMobileSurface = async (page, label, minTapSize = 44) => {
-  const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
-  assert(!hasHorizontalOverflow, `${label} has horizontal overflow`);
-
-  const roleButtonSelector = '[' + 'role="button"' + ']' + ':visible';
-  const smallTargets = await page.locator(`button:visible, ${roleButtonSelector}`).evaluateAll((targets, minSize) => {
-    const seen = new Set();
-
-    return targets
-      .filter((target) => {
-        const element = target;
-        if (seen.has(element)) return false;
-        seen.add(element);
-        const rect = element.getBoundingClientRect();
-        return rect.width < minSize || rect.height < minSize;
-      })
-      .map((target) => {
-        const rect = target.getBoundingClientRect();
-        return {
-          text: target.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80) || '',
-          aria: target.getAttribute('aria-label') || '',
-          role: target.getAttribute('role') || target.tagName.toLowerCase(),
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
-        };
-      });
-  }, minTapSize);
-
-  assert(smallTargets.length === 0, `${label} has tap targets below ${minTapSize}px: ${JSON.stringify(smallTargets, null, 2)}`);
-};
 
 const runWeeklyHubSmoke = async (page, posts, updates) => {
   console.log('[v2-smoke] weekly hub');
@@ -308,7 +139,6 @@ const runDayDrillDownSmoke = async (page, posts, updates) => {
 const runMoneyEmptyStateSmoke = async (browser) => {
   console.log('[v2-smoke] money empty state');
 
-  const emptyJson = JSON.stringify([]);
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -358,7 +188,6 @@ const runMoneyEmptyStateSmoke = async (browser) => {
 const runChildrenEmptyStateSmoke = async (browser) => {
   console.log('[v2-smoke] children empty state');
 
-  const emptyJson = JSON.stringify([]);
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -397,7 +226,6 @@ const runChildrenEmptyStateSmoke = async (browser) => {
 const runTasksEmptyStateSmoke = async (browser) => {
   console.log('[v2-smoke] tasks empty state');
 
-  const emptyJson = JSON.stringify([]);
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -472,27 +300,6 @@ const runEmptyDayQuickActionsSmoke = async (browser) => {
   }
 
   await context.close();
-};
-
-const setupAuthedEmptyApi = async (page) => {
-  const emptyJson = JSON.stringify([]);
-
-  await page.addInitScript(() => {
-    localStorage.setItem('token', 'v2-smoke-token');
-    localStorage.setItem('isSubscribed', 'true');
-  });
-
-  await page.route('**/api/**', route => route.fulfill({ status: 200, contentType: 'application/json', body: emptyJson }));
-  await page.route('**/api/users/me', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ uuid: 'u1', username: 'demo', email: 'demo@example.com', role: 'user' }),
-  }));
-  await page.route('**/api/subscriptions/status', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ isSubscribed: true }),
-  }));
 };
 
 const runCoreErrorStateSmoke = async (browser) => {

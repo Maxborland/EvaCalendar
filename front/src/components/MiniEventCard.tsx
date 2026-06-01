@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { useAuth } from '../context/useAuth';
+import { formatRubles } from '../domain/moneyFormat';
 import { getOptionalTaskAmount, isIncomeTask } from '../domain/taskRecord';
 import type { Note, Task } from '../services/api';
 
@@ -58,11 +59,6 @@ const ACCENT_STYLES: Record<string, CSSProperties> = {
   task: { background: 'linear-gradient(180deg, var(--color-task-primary), rgba(167, 139, 250, 0.2))' },
   note: { background: 'linear-gradient(180deg, rgba(229, 234, 247, 0.5), rgba(229, 234, 247, 0.12))' },
 };
-
-const formatMoney = (amount: number) =>
-  amount.toLocaleString('ru-RU', {
-    maximumFractionDigits: 0,
-  });
 
 const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -136,12 +132,12 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
         case 'fixed':
         case 'hourly': {
           const amount = getOptionalTaskAmount(task);
-          const amountText = typeof amount === 'number' ? ` · ${formatMoney(amount)} ₽` : '';
+          const amountText = typeof amount === 'number' ? ` · ${formatRubles(amount)}` : '';
           return `${task.title || task.childName || 'Доход'}${amountText}`;
         }
         case 'expense': {
           const amount = getOptionalTaskAmount(task);
-          const amountText = typeof amount === 'number' ? ` · ${formatMoney(amount)} ₽` : '';
+          const amountText = typeof amount === 'number' ? ` · ${formatRubles(amount)}` : '';
           const categoryText = task.expenseCategoryName
             ? ` · ${task.expenseCategoryName}`
             : '';
@@ -169,7 +165,7 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
     if (event.itemType === 'expense') {
       const expense = event as Task;
       const amount = getOptionalTaskAmount(expense);
-      const amountText = typeof amount === 'number' ? ` · ${formatMoney(amount)} ₽` : '';
+      const amountText = typeof amount === 'number' ? ` · ${formatRubles(amount)}` : '';
       const categoryText = expense.expenseCategoryName
         ? ` · ${expense.expenseCategoryName}`
         : '';

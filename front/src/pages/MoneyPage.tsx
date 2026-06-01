@@ -3,53 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
 import TopNavigator from '../components/TopNavigator';
 import CoreStateNotice from '../components/CoreStateNotice';
+import { getCurrentPeriodRange } from '../domain/datePeriod';
+import { formatRubles } from '../domain/moneyFormat';
 import { getTaskAmount, isIncomeTask, isMoneyTask } from '../domain/taskRecord';
 import { useCreateTaskModal } from '../hooks/useCreateTaskModal';
 import { useCategoryBreakdown, useDailyBreakdown } from '../hooks/useSummary';
 import { useTasks } from '../hooks/useTasks';
-import { addDays, formatDateToYYYYMMDD, startOfISOWeek } from '../utils/dateUtils';
 
 type MoneyPeriod = 'week' | 'month';
-
-const formatCurrency = (value: number) =>
-  value.toLocaleString('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  });
-
-const getTodayUTC = () => {
-  const now = new Date();
-  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-};
 
 const MoneyPage = () => {
   const navigate = useNavigate();
   const { openCreateModal, createModalElement } = useCreateTaskModal();
   const [period, setPeriod] = useState<MoneyPeriod>('week');
 
-  const { start, end, label } = useMemo(() => {
-    const today = getTodayUTC();
-    if (period === 'week') {
-      const weekStart = startOfISOWeek(today);
-      const weekEnd = addDays(weekStart, 6);
-      return {
-        start: formatDateToYYYYMMDD(weekStart),
-        end: formatDateToYYYYMMDD(weekEnd),
-        label: 'Эта неделя',
-      };
-    }
-
-    const year = today.getUTCFullYear();
-    const month = today.getUTCMonth();
-    const firstDay = new Date(Date.UTC(year, month, 1));
-    const lastDay = new Date(Date.UTC(year, month + 1, 0));
-    return {
-      start: formatDateToYYYYMMDD(firstDay),
-      end: formatDateToYYYYMMDD(lastDay),
-      label: 'Этот месяц',
-    };
-  }, [period]);
+  const { start, end, label } = useMemo(() => getCurrentPeriodRange(period), [period]);
 
   const dailyQuery = useDailyBreakdown(start, end);
   const categoryQuery = useCategoryBreakdown(start, end);
@@ -141,16 +109,16 @@ const MoneyPage = () => {
             <span className="material-icons text-income-primary text-[28px]" aria-hidden="true">account_balance_wallet</span>
           </div>
           <div className={`mt-4 text-3xl font-bold leading-tight ${totals.balance >= 0 ? 'text-income-primary' : 'text-expense-primary'}`}>
-            {hasInitialMoneyError ? 'Не загружено' : isLoading ? '...' : formatCurrency(totals.balance)}
+            {hasInitialMoneyError ? 'Не загружено' : isLoading ? '...' : formatRubles(totals.balance)}
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-income-border bg-income-bg p-3">
               <div className="text-xs text-text-secondary">Доход</div>
-              <div className="mt-1 text-lg font-bold text-income-primary">{hasInitialMoneyError ? '—' : formatCurrency(totals.income)}</div>
+              <div className="mt-1 text-lg font-bold text-income-primary">{hasInitialMoneyError ? '—' : formatRubles(totals.income)}</div>
             </div>
             <div className="rounded-xl border border-expense-border bg-expense-bg p-3">
               <div className="text-xs text-text-secondary">Расход</div>
-              <div className="mt-1 text-lg font-bold text-expense-primary">{hasInitialMoneyError ? '—' : formatCurrency(totals.expense)}</div>
+              <div className="mt-1 text-lg font-bold text-expense-primary">{hasInitialMoneyError ? '—' : formatRubles(totals.expense)}</div>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -219,12 +187,12 @@ const MoneyPage = () => {
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-text-primary">{day.date}</span>
                       <span className="mt-0.5 grid grid-cols-2 gap-2 text-[0.6875rem]">
-                        <span className="truncate text-income-primary">+{formatCurrency(day.totalIncome)}</span>
-                        <span className="truncate text-expense-primary">-{formatCurrency(day.totalExpenses)}</span>
+                        <span className="truncate text-income-primary">+{formatRubles(day.totalIncome)}</span>
+                        <span className="truncate text-expense-primary">-{formatRubles(day.totalExpenses)}</span>
                       </span>
                     </span>
                     <span className={`shrink-0 text-sm font-bold ${balance >= 0 ? 'text-income-primary' : 'text-expense-primary'}`}>
-                      {formatCurrency(balance)}
+                      {formatRubles(balance)}
                     </span>
                   </button>
                 );
@@ -274,7 +242,7 @@ const MoneyPage = () => {
               incomeByChild.map((item) => (
                 <div key={item.childName} className="flex items-center justify-between gap-3 rounded-xl bg-surface-elevated px-3 py-2">
                   <span className="min-w-0 truncate text-sm text-text-primary">{item.childName}</span>
-                  <span className="shrink-0 text-sm font-semibold text-income-primary">{formatCurrency(item.total)}</span>
+                  <span className="shrink-0 text-sm font-semibold text-income-primary">{formatRubles(item.total)}</span>
                 </div>
               ))
             ) : (
@@ -318,7 +286,7 @@ const MoneyPage = () => {
                 .map((category) => (
                   <div key={category.categoryName} className="flex items-center justify-between gap-3 rounded-xl bg-surface-elevated px-3 py-2">
                     <span className="min-w-0 truncate text-sm text-text-primary">{category.categoryName}</span>
-                    <span className="shrink-0 text-sm font-semibold text-expense-primary">{formatCurrency(category.totalSpent)}</span>
+                    <span className="shrink-0 text-sm font-semibold text-expense-primary">{formatRubles(category.totalSpent)}</span>
                   </div>
                 ))
             ) : (
@@ -365,7 +333,7 @@ const MoneyPage = () => {
                         </div>
                       </div>
                       <span className={`shrink-0 text-sm font-bold ${isExpense ? 'text-expense-primary' : 'text-income-primary'}`}>
-                        {isExpense ? '-' : '+'}{formatCurrency(amount)}
+                        {isExpense ? '-' : '+'}{formatRubles(amount)}
                       </span>
                     </div>
                   </button>
