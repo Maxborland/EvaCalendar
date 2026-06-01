@@ -15,7 +15,7 @@ export interface TaskEntryFormData {
   amount?: number;
   hoursWorked?: number;
   dueDate: string;
-  expense_category_uuid?: string;
+  expense_category_uuid?: string | null;
   childName?: string | null;
   originalTaskType?: Task['type'];
   reminder_at: string;
@@ -81,6 +81,10 @@ export const buildTaskEntryPayload = ({
   const selectedChildForPayload = canHaveChild
     ? selectedChildUuid ?? (mode === 'edit' ? null : undefined)
     : undefined;
+  const selectedExpenseCategoryUuid = taskType === 'expense'
+    ? categories.find((category) => category.categoryName === formData.expenseCategoryName)?.uuid
+      ?? (mode === 'edit' ? null : undefined)
+    : undefined;
   const childNameForTitle = selectedChildUuid
     ? children.find((child) => child.uuid === selectedChildUuid)?.childName
     : undefined;
@@ -105,9 +109,7 @@ export const buildTaskEntryPayload = ({
     childId: selectedChildForPayload,
     child_uuid: selectedChildForPayload,
     childName: (taskType === 'income' || taskType === 'lesson') ? (childNameForTitle || undefined) : undefined,
-    expense_category_uuid: taskType === 'expense'
-      ? categories.find((category) => category.categoryName === formData.expenseCategoryName)?.uuid
-      : undefined,
+    expense_category_uuid: selectedExpenseCategoryUuid,
     amount: (taskType === 'income' || taskType === 'expense') ? formData.amount : undefined,
     hourlyRate: taskType === 'income' ? formData.hourlyRate : undefined,
     hoursWorked: taskType === 'income' ? formData.hoursWorked : undefined,

@@ -88,6 +88,35 @@ describe('taskEntry contract', () => {
     });
   });
 
+  it('sends null when editing an expense and clearing the selected category', () => {
+    const payload = buildTaskEntryPayload({
+      formData: {
+        ...baseFormData,
+        title: 'Расход без категории',
+        amount: 700,
+        expenseCategoryName: '',
+      },
+      taskType: 'expense',
+      mode: 'edit',
+      initialTaskData: {
+        uuid: 'expense-1',
+        title: 'Расход: Материалы',
+        type: 'expense',
+        dueDate: '2026-06-01',
+        expense_category_uuid: 'category-1',
+      } as Task,
+      selectedChildUuid: null,
+      children,
+      categories,
+    });
+
+    expect(payload).toMatchObject({
+      uuid: 'expense-1',
+      type: 'expense',
+      expense_category_uuid: null,
+    });
+  });
+
   it('keeps task reminders and assignment only for task entries', () => {
     const reminderInput = '2026-06-01T14:00';
     const payload = buildTaskEntryPayload({

@@ -73,7 +73,7 @@ export interface Task {
   completed?: boolean; // Изменено с isDone
   childId?: string | null; // Изменено с child_id на camelCase для соответствия данным с бэкенда
   childName?: string | null;
-  expense_category_uuid?: string; // Изменено с category_id и expenseTypeId
+  expense_category_uuid?: string | null; // Изменено с category_id и expenseTypeId
   expenseCategoryName?: string;
   amount?: number; // Общее поле для суммы (доход/расход)
   amountEarned?: number; // Добавлено для явного получения с бэкенда
