@@ -219,6 +219,16 @@ describe('Task API Endpoints', () => {
             expect(res.statusCode).toBe(403);
             expect(res.body.message).toBe('Only the creator can reassign the task');
         });
+
+        it('should allow marking a task as completed', async () => {
+            const res = await request(app)
+                .put(`/api/tasks/${taskId}`)
+                .set('Authorization', `Bearer ${mainUserToken}`)
+                .send({ completed: true });
+
+            expect(res.statusCode).toBe(200);
+            expect(Boolean(res.body.completed)).toBe(true);
+        });
     });
 
     describe('GET /api/users/assignable', () => {

@@ -7,6 +7,7 @@ const helmet = require('helmet');
 
 const { scheduleTaskReminders, stopAllCronJobs } = require('./scheduler');
 const { validateEnv, getEnvConfig } = require('./config/env');
+const { createCorsOriginChecker } = require('./utils/corsOrigin');
 
 // Валидируем все необходимые переменные окружения при старте
 try {
@@ -23,17 +24,15 @@ const app = express();
 app.set('trust proxy', 1);
 const notificationRoutes = require('./routes/notificationRoutes');
 
-// CORS: Точное сравнение вместо startsWith
+const isCorsOriginAllowed = createCorsOriginChecker({
+  defaultOrigins: envConfig.cors.defaultOrigins,
+  origins: envConfig.cors.origins,
+  nodeEnv: envConfig.nodeEnv,
+});
+
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      ...envConfig.cors.defaultOrigins,
-      ...envConfig.cors.origins
-    ];
-
-    const allowedSet = new Set(allowedOrigins);
-
-    if (!origin || allowedSet.has(origin)) {
+    if (isCorsOriginAllowed(origin)) {
       callback(null, true);
     } else {
       console.warn(`⚠️ CORS blocked request from origin: ${origin}`);
