@@ -12,13 +12,7 @@ const waitForCondition = async (predicate, message, timeoutMs = 5000) => {
 };
 
 const expectVisibleText = async (page, text) => {
-  await page.waitForFunction((expectedText) => {
-    return Array.from(document.querySelectorAll('body *')).some((element) => {
-      const hasText = element.textContent?.includes(expectedText);
-      const isVisible = element.getClientRects().length > 0;
-      return hasText && isVisible;
-    });
-  }, text, { timeout: 5000 });
+  await page.getByText(text).first().waitFor({ state: 'visible', timeout: 5000 });
 };
 
 const assertMobileSurface = async (page, label, minTapSize = 44) => {
