@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { memo, useMemo, useRef } from 'react';
-import { useDrop, type DropTargetMonitor } from 'react-dnd';
+import { useDrag, useDrop, type DropTargetMonitor } from 'react-dnd';
 import { useNavigate } from 'react-router-dom';
 import { formatCompactMoneyNumber } from '../domain/moneyFormat';
 import { getOptionalTaskAmount, isIncomeTask } from '../domain/taskRecord';
@@ -51,6 +51,57 @@ const getPreviewTitle = (task: Task) => {
   }
 
   return task.title || task.childName || 'Доход';
+};
+
+interface DayPreviewTaskProps {
+  task: Task;
+  onOpenDay: () => void;
+}
+
+const DayPreviewTask = ({ task, onOpenDay }: DayPreviewTaskProps) => {
+  const previewRef = useRef<HTMLDivElement>(null);
+  const amount = getOptionalTaskAmount(task);
+  const variant = getPreviewVariant(task);
+  const dragItemType = task.type === 'expense' ? 'expense' : 'task';
+
+  const [{ isDragging }, drag] = useDrag(
+    () => ({
+      type: ItemTypes.EVENT_CARD,
+      item: {
+        id: task.uuid,
+        itemType: dragItemType,
+        originalEvent: task,
+      },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }),
+    [dragItemType, task],
+  );
+
+  drag(previewRef);
+
+  return (
+    <div
+      ref={previewRef}
+      className={clsx(
+        `day-preview-item day-preview-item--${variant}`,
+        isDragging && 'day-preview-item--dragging',
+      )}
+      role="listitem"
+      onClick={onOpenDay}
+    >
+      <span className="day-preview-time">
+        {isTimedTask(task) ? task.time : '•'}
+      </span>
+      <span className="day-preview-title">{getPreviewTitle(task)}</span>
+      {typeof amount === 'number' && amount > 0 && (
+        <span className="day-preview-amount">
+          {task.type === 'expense' ? '-' : '+'}{formatCompactMoneyNumber(amount)}
+        </span>
+      )}
+    </div>
+  );
 };
 
 const DayColumn = (props: DayColumnProps) => {
@@ -153,28 +204,13 @@ const DayColumn = (props: DayColumnProps) => {
         <div className="day-bento-list" role="list" aria-label={`Дела на ${dayDateString}`}>
           {visibleTasks.length > 0 ? (
             <>
-              {visibleTasks.map((task) => {
-                const amount = getOptionalTaskAmount(task);
-                const variant = getPreviewVariant(task);
-
-                return (
-                  <div
-                    key={task.uuid}
-                    className={`day-preview-item day-preview-item--${variant}`}
-                    role="listitem"
-                  >
-                    <span className="day-preview-time">
-                      {isTimedTask(task) ? task.time : '•'}
-                    </span>
-                    <span className="day-preview-title">{getPreviewTitle(task)}</span>
-                    {typeof amount === 'number' && amount > 0 && (
-                      <span className="day-preview-amount">
-                        {task.type === 'expense' ? '-' : '+'}{formatCompactMoneyNumber(amount)}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
+              {visibleTasks.map((task) => (
+                <DayPreviewTask
+                  key={task.uuid}
+                  task={task}
+                  onOpenDay={openDay}
+                />
+              ))}
             </>
           ) : (
             <div className="day-bento-empty" aria-label="День свободен">
