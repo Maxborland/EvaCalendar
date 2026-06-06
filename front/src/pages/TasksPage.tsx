@@ -93,7 +93,7 @@ const TasksPage = () => {
   return (
     <div className="min-h-dvh flex flex-col bg-surface-app text-text-primary">
       <TopNavigator title="Задачи" showButtons={false} />
-      <main className="flex-1 flex flex-col gap-4 p-4 pb-[calc(96px+env(safe-area-inset-bottom))] max-[360px]:p-3 max-[360px]:pb-[calc(92px+env(safe-area-inset-bottom))]">
+      <main className="eva-screen eva-screen--with-nav flex-1 flex flex-col gap-4 p-4 pb-[calc(96px+env(safe-area-inset-bottom))] max-[360px]:p-3 max-[360px]:pb-[calc(92px+env(safe-area-inset-bottom))]">
         <section className="grid grid-cols-4 gap-2 max-[360px]:grid-cols-2">
           <div className="rounded-2xl border border-[var(--color-task-border)] bg-[var(--color-task-bg)] p-3">
             <div className="text-xs text-text-secondary">Открыто</div>

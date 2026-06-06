@@ -98,10 +98,11 @@ const NoteDetailsPage = () => {
       <TopNavigator
         title={`Заметка на ${date}`}
         showBackButton={true}
+        backTo="/"
         showButtons={false}
       />
 
-      <div className="flex-1 flex flex-col p-4 gap-3 min-[480px]:p-6 max-[360px]:p-3">
+      <main className="eva-screen eva-screen--plain flex-1 flex flex-col p-4 gap-3 min-[480px]:p-6 max-[360px]:p-3">
         <textarea
           ref={textareaRef}
           className={clsx(
@@ -134,7 +135,7 @@ const NoteDetailsPage = () => {
             </span>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import clsx from 'clsx';
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import * as ReactDOM from 'react-dom';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
 import type { Child } from '../services/api';
@@ -49,10 +50,23 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionListRef = useRef<HTMLUListElement>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const [suggestionBox, setSuggestionBox] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const DADATA_API_KEY = import.meta.env.VITE_DADATA_API_KEY;
   const DADATA_SECRET_KEY = import.meta.env.VITE_DADATA_SECRET_KEY;
   const DADATA_SUGGESTION_URL = import.meta.env.VITE_DADATA_SUGGESTION_URL;
+
+  const updateSuggestionBox = useCallback(() => {
+    const box = addressInputRef.current?.getBoundingClientRect();
+    if (!box) return;
+
+    setSuggestionBox({
+      top: Math.round(box.bottom + 6),
+      left: Math.round(box.left),
+      width: Math.round(box.width),
+    });
+  }, []);
 
   const fetchSuggestions = async (query: string) => {
     if (query.length < 3) {
@@ -60,6 +74,7 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
       setShowSuggestions(false);
       return;
     }
+    updateSuggestionBox();
     try {
       const response = await axios.post(DADATA_SUGGESTION_URL, { query }, {
         headers: {
@@ -110,7 +125,13 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionListRef.current && !suggestionListRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        suggestionListRef.current &&
+        !suggestionListRef.current.contains(target) &&
+        addressInputRef.current &&
+        !addressInputRef.current.contains(target)
+      ) {
         setShowSuggestions(false);
       }
     };
@@ -119,6 +140,19 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    if (!showSuggestions) return undefined;
+
+    updateSuggestionBox();
+    window.addEventListener('resize', updateSuggestionBox);
+    window.addEventListener('scroll', updateSuggestionBox, true);
+
+    return () => {
+      window.removeEventListener('resize', updateSuggestionBox);
+      window.removeEventListener('scroll', updateSuggestionBox, true);
+    };
+  }, [showSuggestions, updateSuggestionBox]);
 
   const handlePickContact = async () => {
     try {
@@ -203,35 +237,43 @@ const ChildForm = ({ initialChild, onSave, onCancel, isEmbeddedInModal = false, 
         <label className="relative block mb-2 text-sm font-medium text-text-secondary">
           Адрес:
           <input
+            ref={addressInputRef}
             type="text"
             name="address"
             value={formData.address || ''}
             onChange={handleChange}
             autoComplete="off"
-            onFocus={() => formData.address && formData.address.length >= 3 && fetchSuggestions(formData.address)}
+            onFocus={() => {
+              updateSuggestionBox();
+              if (formData.address && formData.address.length >= 3) {
+                fetchSuggestions(formData.address);
+              }
+            }}
             className={formInputClass}
           />
-          {showSuggestions && suggestions.length > 0 && (
-            <ul
-              ref={suggestionListRef}
-              className={clsx(
-                'list-none p-0 mt-1 absolute top-full left-0 right-0 z-[1000]',
-                'border border-border-accent rounded-xl max-h-[200px] overflow-y-auto',
-                'bg-[rgba(17,21,32,0.98)] shadow-elevation-2 backdrop-blur-[12px]',
-              )}
-            >
-              {suggestions.map((suggestion, index) => (
-                <li
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="py-2.5 px-3.5 cursor-pointer text-text-secondary transition-colors duration-[160ms] hover:bg-[rgba(72,187,120,0.12)] hover:text-text-primary"
-                >
-                  {suggestion}
-                </li>
-              ))}
-            </ul>
-          )}
         </label>
+        {showSuggestions && suggestions.length > 0 && suggestionBox && typeof document !== 'undefined' && ReactDOM.createPortal(
+          <ul
+            ref={suggestionListRef}
+            className="eva-suggestion-list"
+            style={{
+              top: suggestionBox.top,
+              left: suggestionBox.left,
+              width: suggestionBox.width,
+            }}
+          >
+            {suggestions.map((suggestion, index) => (
+              <li
+                key={index}
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="eva-suggestion-item"
+              >
+                {suggestion}
+              </li>
+            ))}
+          </ul>,
+          document.getElementById('modal-root') || document.body
+        )}
         <label className="block mb-2 text-sm font-medium text-text-secondary">
           Ставка в час:
           <input type="number" required name="hourlyRate" value={formData.hourlyRate ?? ''} onChange={handleChange} step="0.01" inputMode="decimal" min="0" className={formInputClass} />

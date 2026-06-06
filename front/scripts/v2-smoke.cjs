@@ -23,50 +23,42 @@ const {
   lessonChild,
 } = require('./v2-fixtures.cjs');
 
-const runWeeklyHubSmoke = async (page, posts, updates) => {
+const runWeeklyHubSmoke = async (page, posts) => {
   console.log('[v2-smoke] weekly hub');
   await page.goto(`${baseURL}/`);
 
   await page.getByRole('heading', { name: 'План недели' }).waitFor({ state: 'visible', timeout: 5000 });
   await page.waitForURL(`${baseURL}/`, { timeout: 5000 });
   await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined);
-  assert(await page.locator('button[aria-label="Настройки"]').count() === 0, 'Weekly hub header should not show secondary settings action');
+  assert(await page.locator('button[aria-label="Настройки"]').count() === 1, 'Weekly hub header should expose settings');
   assert(await page.locator('button[aria-label="Выход"]').count() === 0, 'Weekly hub header should not show secondary logout action');
-  await expectVisibleText(page, 'Итог недели');
-  await expectVisibleText(page, 'детей: 2');
-  await expectVisibleText(page, '+2 500 ₽');
-  await expectVisibleText(page, '-700 ₽');
-  await expectVisibleText(page, 'Внести оплату: Боря');
   await expectVisibleText(page, 'Позвонить родителю');
   await expectVisibleText(page, 'Занятие: Боря');
+  await expectVisibleText(page, 'Заметки недели');
+  assert(await page.locator('article[aria-label="Текущая неделя"]').count() === 0, 'Weekly grid should not include a top week summary tile');
+  assert(await page.locator('article[aria-label="Фокус дня"]').count() === 0, 'Weekly grid should not include a top focus tile');
 
   const gridColumns = await page.locator('section[aria-label="План недели"]').evaluate((node) => {
     return window.getComputedStyle(node).gridTemplateColumns.split(' ').length;
   });
   assert(gridColumns === 2, `Expected two-column weekly grid, got ${gridColumns}`);
+  const gridRows = await page.locator('section[aria-label="План недели"]').evaluate((node) => {
+    return window.getComputedStyle(node).gridTemplateRows.split(' ').length;
+  });
+  assert(gridRows === 4, `Expected four-row weekly grid, got ${gridRows}`);
+  const weekTilesFit = await page.evaluate(() => {
+    const switcher = document.querySelector('.week-thumb-switcher')?.getBoundingClientRect();
+    const tiles = Array.from(document.querySelectorAll('.week-bento-day-tile'));
+    return Boolean(switcher) && tiles.length === 8 && tiles.every((tile) => tile.getBoundingClientRect().bottom <= switcher.top);
+  });
+  assert(weekTilesFit, 'All weekday blocks and weekly note tile must fit above the week switcher');
   assert(await page.locator('button[aria-label="План"]').getAttribute('aria-current') === 'page', 'Plan nav item is not active');
   await page.locator('button[aria-label="Деньги"]').waitFor({ state: 'visible', timeout: 5000 });
   await page.locator('button[aria-label="Дети"]').waitFor({ state: 'visible', timeout: 5000 });
   await page.locator('button[aria-label="Задачи"]').waitFor({ state: 'visible', timeout: 5000 });
 
-  const closeTaskBox = await page.locator('section[aria-label="Фокус дня"] button[aria-label="Закрыть задачу"]').boundingBox();
-  assert(closeTaskBox && closeTaskBox.width >= 44 && closeTaskBox.height >= 44, `Weekly close-task tap target is too small: ${JSON.stringify(closeTaskBox)}`);
-
-  await page.locator('section[aria-label="Фокус дня"]').getByRole('button', { name: /Доход/ }).first().click();
-  await expectVisibleText(page, 'Новый доход');
-  assert(page.url() === `${baseURL}/`, `Weekly unpaid lesson income changed URL to ${page.url()}`);
-  assert(await page.locator('#child-input').inputValue() === lessonChild.childName, 'Weekly unpaid lesson income did not preserve lesson child');
-  assert(await page.locator('#amount').inputValue() === String(lessonChild.hourlyRate), 'Weekly unpaid lesson income did not prefill amount from rate');
-  await page.getByRole('button', { name: 'Создать доход' }).click();
-  await page.getByText('Новый доход').waitFor({ state: 'hidden', timeout: 5000 });
-  assert(posts.some(post => post.type === 'income' && post.child_uuid === lessonChild.uuid && post.amount === lessonChild.hourlyRate), 'Weekly unpaid lesson income payload is missing or invalid');
-
-  const updatesBeforeClose = updates.length;
-  await page.locator('section[aria-label="Фокус дня"] button[aria-label="Закрыть задачу"]').click();
-  await waitForCondition(
-    () => updates.length > updatesBeforeClose && updates.some(update => update.completed === true),
-    'Weekly hub task completion did not send completed=true',
-  );
+  const switcherBox = await page.locator('.week-thumb-switcher button[aria-label="Следующая неделя"]').boundingBox();
+  assert(switcherBox && switcherBox.width >= 44 && switcherBox.height >= 44, `Week switcher tap target is too small: ${JSON.stringify(switcherBox)}`);
 };
 
 const runLocalCreateSmoke = async (page, posts) => {
@@ -134,6 +126,25 @@ const runDayDrillDownSmoke = async (page, posts, updates) => {
     posts.slice(postsBeforeDayIncome).some(post => post.type === 'income' && post.child_uuid === lessonChild.uuid && post.amount === lessonChild.hourlyRate && post.dueDate === getToday()),
     'Day lesson income payload is missing or invalid',
   );
+};
+
+const runAppBackSmoke = async (page) => {
+  console.log('[v2-smoke] app back navigation');
+
+  await page.goto(`${baseURL}/money`);
+  await page.goto(`${baseURL}/settings/notifications`);
+  await page.getByRole('button', { name: 'Назад' }).click();
+  await page.waitForURL(`${baseURL}/`, { timeout: 5000 });
+
+  await page.goto(`${baseURL}/money`);
+  await page.goto(`${baseURL}/statistics`);
+  await page.getByRole('button', { name: 'Назад' }).click();
+  await page.waitForURL(`${baseURL}/money`, { timeout: 5000 });
+
+  await page.goto(`${baseURL}/children`);
+  await page.goto(`${baseURL}/day/${getToday()}`);
+  await page.getByRole('button', { name: 'Назад' }).click();
+  await page.waitForURL(`${baseURL}/`, { timeout: 5000 });
 };
 
 const runMoneyEmptyStateSmoke = async (browser) => {
@@ -280,24 +291,14 @@ const runEmptyDayQuickActionsSmoke = async (browser) => {
   const page = await context.newPage();
   await mockApi(page, [], []);
 
-  const targetDate = getTomorrow();
-  const checks = [
-    { label: 'доход', title: 'Новый доход' },
-    { label: 'расход', title: 'Новый расход' },
-    { label: 'задача', title: 'Новая задача' },
-  ];
-
   await page.goto(`${baseURL}/`);
   await expectVisibleText(page, 'План недели');
-
-  for (const check of checks) {
-    await page.getByRole('button', { name: `Добавить ${check.label} на ${targetDate}` }).click();
-    await expectVisibleText(page, check.title);
-    assert(page.url() === `${baseURL}/`, `Empty day ${check.label} create changed URL to ${page.url()}`);
-    assert(await page.locator('#dueDate').inputValue() === targetDate, `Empty day ${check.label} did not prefill ${targetDate}`);
-    await page.getByRole('button', { name: 'Закрыть', exact: true }).click();
-    await page.getByText(check.title).waitFor({ state: 'hidden', timeout: 5000 });
-  }
+  await expectVisibleText(page, 'Свободно');
+  await page.getByRole('button', { name: 'Добавить событие' }).last().click();
+  await expectVisibleText(page, 'Новый доход');
+  assert(page.url() === `${baseURL}/`, `Empty day create changed URL to ${page.url()}`);
+  await page.getByRole('button', { name: 'Закрыть', exact: true }).click();
+  await page.getByText('Новый доход').waitFor({ state: 'hidden', timeout: 5000 });
 
   await context.close();
 };
@@ -399,8 +400,9 @@ const main = async () => {
     const page = await context.newPage();
     await mockApi(page, posts, updates);
 
-    await runWeeklyHubSmoke(page, posts, updates);
+    await runWeeklyHubSmoke(page, posts);
     await runDayDrillDownSmoke(page, posts, updates);
+    await runAppBackSmoke(page);
     await runLocalCreateSmoke(page, posts);
     await runMoneyEmptyStateSmoke(browser);
     await runChildrenEmptyStateSmoke(browser);
@@ -409,7 +411,7 @@ const main = async () => {
     await runCoreErrorStateSmoke(browser);
     await runCoreMobileAudit(browser);
 
-    console.log(JSON.stringify({ ok: true, checks: ['weekly-hub', 'day-drill-down', 'local-create', 'money-empty-state', 'children-empty-state', 'tasks-empty-state', 'empty-day-quick-actions', 'core-error-states', 'core-mobile-audit'], posts, updates }, null, 2));
+    console.log(JSON.stringify({ ok: true, checks: ['weekly-hub', 'day-drill-down', 'app-back-navigation', 'local-create', 'money-empty-state', 'children-empty-state', 'tasks-empty-state', 'empty-day-quick-actions', 'core-error-states', 'core-mobile-audit'], posts, updates }, null, 2));
   } finally {
     await browser.close();
     if (server) server.kill();

@@ -5,11 +5,22 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus';
 interface TopNavigatorProps {
   title: string;
   showButtons?: boolean;
+  showSettingsButton?: boolean;
+  showLogoutButton?: boolean;
   showBackButton?: boolean;
+  backTo?: string;
   onBack?: () => void;
 }
 
-const TopNavigator = ({ title, showButtons = true, showBackButton = false, onBack }: TopNavigatorProps) => {
+const TopNavigator = ({
+  title,
+  showButtons = true,
+  showSettingsButton = showButtons,
+  showLogoutButton = showButtons,
+  showBackButton = false,
+  backTo,
+  onBack,
+}: TopNavigatorProps) => {
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
   const isOnline = useOnlineStatus();
@@ -25,6 +36,8 @@ const TopNavigator = ({ title, showButtons = true, showBackButton = false, onBac
   const handleBackClick = () => {
     if (onBack) {
       onBack();
+    } else if (backTo) {
+      navigate(backTo);
     } else {
       navigate(-1);
     }
@@ -64,17 +77,19 @@ const TopNavigator = ({ title, showButtons = true, showBackButton = false, onBac
         {title}
       </h1>
       <div className="flex items-center gap-[var(--spacing-xs)] shrink-0">
-        {showButtons ? (
+        {showSettingsButton || (showLogoutButton && isAuthenticated) ? (
           <>
-            <button
-              data-testid="settings-button"
-              onClick={handleSettingsClick}
-              className={iconBtnClass}
-              aria-label="Настройки"
-            >
-              <span className="material-icons">settings</span>
-            </button>
-            {isAuthenticated && (
+            {showSettingsButton && (
+              <button
+                data-testid="settings-button"
+                onClick={handleSettingsClick}
+                className={iconBtnClass}
+                aria-label="Настройки"
+              >
+                <span className="material-icons">settings</span>
+              </button>
+            )}
+            {showLogoutButton && isAuthenticated && (
               <button
                 data-testid="logout-button"
                 onClick={handleLogout}

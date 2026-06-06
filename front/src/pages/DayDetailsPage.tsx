@@ -257,10 +257,11 @@ const DayDetailsPage: FC = () => {
       <TopNavigator
         title={formatDateForDisplay(selectedDate)}
         showBackButton={true}
+        backTo="/"
         showButtons={false}
       />
 
-      <main className="flex-1 flex flex-col gap-4 p-4 pb-[calc(96px+env(safe-area-inset-bottom))] overflow-y-auto min-h-0 scrollbar-thin max-[480px]:p-3 max-[480px]:pb-[calc(92px+env(safe-area-inset-bottom))] max-[480px]:gap-3">
+      <main className="eva-screen eva-screen--with-nav flex-1 flex flex-col gap-4 p-4 pb-[calc(96px+env(safe-area-inset-bottom))] overflow-y-auto min-h-0 scrollbar-thin max-[480px]:p-3 max-[480px]:pb-[calc(92px+env(safe-area-inset-bottom))] max-[480px]:gap-3">
         <section className="rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-glass">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
