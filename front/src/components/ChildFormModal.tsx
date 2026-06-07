@@ -76,7 +76,7 @@ const ChildFormModal = ({
   const modalContent = (
     <div
       className={clsx(
-        'fixed inset-0 p-[clamp(12px,4vh,28px)_clamp(12px,4vw,24px)] bg-modal-overlay flex items-end justify-center z-[1050] font-[Inter,sans-serif] min-[768px]:items-center',
+        'eva-modal-overlay',
         isClosing ? 'animate-fade-out' : 'animate-fade-in',
       )}
       onClick={handleClose}
@@ -84,29 +84,32 @@ const ChildFormModal = ({
     >
       <div
         className={clsx(
-          'w-[min(420px,100%)] max-h-[calc(100dvh-clamp(24px,8vh,56px))] bg-modal-content rounded-[22px_22px_16px_16px] shadow-elevation-3 relative flex flex-col py-6 px-[22px] pb-[clamp(20px,4vh,28px)] overflow-hidden',
-          'min-[768px]:rounded-3xl min-[768px]:max-h-[min(90vh,600px)]',
+          'eva-modal-content w-[min(420px,100%)]',
           isClosing ? 'animate-scale-down' : 'animate-scale-up',
         )}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
-          className="absolute top-4 right-4 size-11 rounded-xl border border-white/[0.06] bg-white/[0.04] text-text-secondary text-xl leading-none inline-flex items-center justify-center transition-all duration-[160ms] hover:rotate-[-90deg] hover:border-white/[0.12] hover:bg-white/[0.08]"
+          className="eva-button eva-button--soft eva-icon-button absolute top-4 right-4 text-xl leading-none"
           onClick={handleClose}
           aria-label="Закрыть"
         >
           &times;
         </button>
-        <h2 className="m-0 pr-12 text-[1.12rem] font-semibold text-text-primary">{title}</h2>
+        <div className="px-[22px] pt-6 pb-2 shrink-0">
+          <h2 className="m-0 pr-12 text-[1.12rem] font-semibold text-text-primary">{title}</h2>
+        </div>
 
-        <ChildForm {...childFormProps} />
+        <div className="eva-modal-body px-[22px] pb-3">
+          <ChildForm {...childFormProps} />
+        </div>
 
-        <div className="mt-auto flex flex-col gap-2.5 pt-3.5 border-t border-white/[0.08] bg-gradient-to-b from-transparent to-[rgba(17,21,32,0.6)] min-[520px]:flex-row min-[520px]:justify-end">
+        <div className="eva-modal-footer p-3.5 min-[520px]:justify-end">
           {mode === 'edit' && onDelete && initialChildData?.uuid && (
             <button
               type="button"
-              className="rounded-[14px] p-3.5 text-[0.94rem] font-semibold border-none inline-flex items-center justify-center gap-2 transition-[transform,box-shadow] duration-[160ms] bg-[rgba(224,86,86,0.18)] text-[#ffb3b8] border border-[rgba(224,86,86,0.28)] hover:-translate-y-px hover:bg-[rgba(224,86,86,0.22)] hover:border-[rgba(224,86,86,0.36)]"
+              className="eva-button eva-button--danger flex-1 min-[520px]:flex-none"
               onClick={handleDeleteClick}
             >
               <span className="material-icons">delete</span>
@@ -116,7 +119,7 @@ const ChildFormModal = ({
 
           <button
             type="button"
-            className="rounded-[14px] p-3.5 text-[0.94rem] font-semibold border-none inline-flex items-center justify-center gap-2 transition-[transform,box-shadow] duration-[160ms] bg-white/[0.04] text-text-secondary border border-white/[0.08] hover:-translate-y-px hover:border-white/[0.16] hover:bg-white/[0.08]"
+            className="eva-button eva-button--secondary flex-1 min-[520px]:flex-none"
             onClick={handleClose}
           >
             <span className="material-icons">close</span>
@@ -124,7 +127,7 @@ const ChildFormModal = ({
           </button>
           <button
             type="button"
-            className="rounded-[14px] p-3.5 text-[0.94rem] font-semibold border-none inline-flex items-center justify-center gap-2 transition-[transform,box-shadow] duration-[160ms] bg-gradient-to-br from-[rgba(47,143,82,1)] to-[rgba(73,187,120,0.92)] text-[var(--btn-primary-text-color)] shadow-elevation-2 hover:-translate-y-px hover:shadow-elevation-3"
+            className="eva-button eva-button--primary flex-1 min-[520px]:flex-none"
             onClick={() => {
               const formElement = document.getElementById(childFormId) as HTMLFormElement | null;
               if (formElement) {

@@ -128,7 +128,7 @@ const ChildrenPage = () => {
   return (
     <div className="min-h-dvh flex flex-col bg-surface-app text-text-primary">
       <TopNavigator title="Дети" showButtons={false} />
-      <main className="flex-1 flex flex-col gap-4 p-4 pb-[calc(96px+env(safe-area-inset-bottom))] max-[360px]:p-3 max-[360px]:pb-[calc(92px+env(safe-area-inset-bottom))]">
+      <main className="eva-screen eva-screen--with-nav flex-1 flex flex-col gap-4 p-4 pb-[calc(96px+env(safe-area-inset-bottom))] max-[360px]:p-3 max-[360px]:pb-[calc(92px+env(safe-area-inset-bottom))]">
         <section className="rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-glass">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -259,7 +259,7 @@ const ChildrenPage = () => {
               const insight = childInsights.get(child.uuid);
               const hasTodayLesson = insight?.nextLesson?.dueDate === today;
               return (
-                <article key={child.uuid} className="rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-glass">
+                <article key={child.uuid} className="rounded-2xl border border-border-subtle bg-surface-glass p-4 shadow-glass backdrop-blur-[14px]">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -290,7 +290,7 @@ const ChildrenPage = () => {
                     </div>
                     <button
                       type="button"
-                      className="min-w-0 rounded-xl border border-[var(--color-lesson-border)] bg-[var(--color-lesson-bg)] p-3 text-left active:scale-[0.99]"
+                      className="min-w-0 rounded-xl border border-[var(--color-lesson-border)] bg-[var(--color-lesson-bg)] p-3 text-left transition-all duration-[160ms] hover:-translate-y-px hover:shadow-elevation-1 active:scale-[0.99]"
                       onClick={() => insight?.nextLesson ? navigate(`/day/${insight.nextLesson.dueDate}`) : openLessonForChild(child)}
                     >
                       <div className="text-[0.6875rem] text-text-secondary">Ближайшее</div>
@@ -302,7 +302,7 @@ const ChildrenPage = () => {
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      className="min-h-11 rounded-xl border border-income-border bg-income-bg text-income-primary text-sm font-semibold inline-flex items-center justify-center gap-1.5 active:scale-[0.98]"
+                      className="eva-button eva-button--income"
                       onClick={() => openIncomeForChild(child)}
                     >
                       <span className="material-icons text-[18px]" aria-hidden="true">add_card</span>
@@ -310,7 +310,7 @@ const ChildrenPage = () => {
                     </button>
                     <button
                       type="button"
-                      className="min-h-11 rounded-xl border border-[var(--color-lesson-border)] bg-[var(--color-lesson-bg)] text-[var(--color-lesson-primary)] text-sm font-semibold inline-flex items-center justify-center gap-1.5 active:scale-[0.98]"
+                      className="eva-button eva-button--lesson"
                       onClick={() => openLessonForChild(child)}
                     >
                       <span className="material-icons text-[18px]" aria-hidden="true">school</span>

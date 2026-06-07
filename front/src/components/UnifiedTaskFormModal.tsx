@@ -424,16 +424,14 @@ const UnifiedTaskFormModal = ({
   };
 
   const overlayClass = clsx(
-    'fixed inset-0 p-[clamp(12px,4vh,28px)_clamp(12px,4vw,24px)] bg-modal-overlay flex items-end justify-center z-[1050] font-[Inter,sans-serif]',
+    'eva-modal-overlay',
     isClosing ? 'animate-fade-out' : 'animate-fade-in',
-    'min-[768px]:items-center',
   );
 
   const contentClass = clsx(
-    'w-[min(480px,100%)] max-h-[calc(100dvh-40px)] bg-modal-content rounded-[20px_20px_16px_16px] shadow-elevation-3 relative flex flex-col p-4 overflow-hidden',
+    'eva-modal-content relative p-4',
     isClosing ? 'animate-scale-down' : 'animate-scale-up',
     isDragging && '!transition-none',
-    'min-[768px]:rounded-3xl min-[768px]:max-h-[min(90vh,720px)]',
   );
 
   const modalContent = (
@@ -451,13 +449,13 @@ const UnifiedTaskFormModal = ({
           <div className="w-10 h-1 rounded-sm bg-white/20 mx-auto mb-2 shrink-0" />
           <button
             type="button"
-            className="absolute top-4 right-4 size-11 rounded-xl border border-white/[0.06] bg-white/[0.04] text-text-secondary text-xl leading-none inline-flex items-center justify-center transition-all duration-[160ms] hover:rotate-[-90deg] hover:border-white/[0.12] hover:bg-white/[0.08]"
+            className="eva-button eva-button--soft eva-icon-button absolute top-4 right-4 text-xl leading-none"
             onClick={handleClose}
             aria-label="Закрыть"
           >
             &times;
           </button>
-          <form className="mt-[var(--spacing-md)] flex flex-col gap-[var(--spacing-md)] overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin" onSubmit={handleSubmit}>
+          <form className="eva-modal-body mt-[var(--spacing-md)] flex flex-col gap-[var(--spacing-md)] pr-1 flex-1 min-h-0 scrollbar-thin" onSubmit={handleSubmit}>
             <div className="pr-12">
               <h2 className="m-0 text-lg font-semibold text-text-primary leading-tight">
                 {mode === 'edit' ? 'Редактирование' : modalTitleByType[taskTypeInternal]}
@@ -467,7 +465,7 @@ const UnifiedTaskFormModal = ({
 
             <div className="flex flex-col gap-2">
               <span className={labelClass}>Что добавить</span>
-              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Тип записи">
+              <div className="task-type-grid" role="radiogroup" aria-label="Тип записи">
                 {typeOptions.map((option) => {
                   const isActive = taskTypeInternal === option.value;
                   return (
@@ -477,19 +475,18 @@ const UnifiedTaskFormModal = ({
                       role="radio"
                       aria-checked={isActive}
                       className={clsx(
-                        'min-h-[64px] rounded-xl border px-3 py-2 text-left transition-all duration-[160ms] active:scale-[0.98]',
-                        'flex items-center gap-2.5',
+                        'task-type-card',
                         option.className,
                         isActive
-                          ? 'shadow-[0_0_0_2px_currentColor,var(--elevation-1)]'
-                          : 'opacity-72 hover:opacity-100',
+                          ? 'task-type-card--active'
+                          : 'task-type-card--muted',
                       )}
                       onClick={() => handleTaskTypeChange(option.value)}
                     >
-                      <span className="material-icons text-[22px] shrink-0" aria-hidden="true">{option.icon}</span>
+                      <span className="material-icons task-type-card__icon" aria-hidden="true">{option.icon}</span>
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold leading-tight">{option.label}</span>
-                        <span className="block text-[0.6875rem] leading-tight text-text-secondary mt-0.5">{option.description}</span>
+                        <span className="task-type-card__description">{option.description}</span>
                       </span>
                     </button>
                   );
@@ -589,10 +586,10 @@ const UnifiedTaskFormModal = ({
                           key={amount}
                           type="button"
                           className={clsx(
-                            'min-h-10 rounded-xl border px-2 text-xs font-semibold active:scale-[0.98]',
+                            'eva-button min-h-10 px-2 text-xs',
                             isActive
                               ? activeTypeOption.className
-                              : 'border-border-subtle bg-surface-elevated text-text-secondary',
+                              : 'eva-button--soft',
                           )}
                           onClick={() => setAmountPreset(amount)}
                         >
@@ -638,10 +635,10 @@ const UnifiedTaskFormModal = ({
                             key={hoursWorked}
                             type="button"
                             className={clsx(
-                              'min-h-10 rounded-xl border px-2 text-xs font-semibold active:scale-[0.98]',
-                              isActive
-                                ? 'border-income-border bg-income-bg text-income-primary'
-                                : 'border-border-subtle bg-surface-elevated text-text-secondary',
+                            'eva-button min-h-10 px-2 text-xs',
+                            isActive
+                              ? 'border-income-border bg-income-bg text-income-primary'
+                              : 'eva-button--soft',
                             )}
                             onClick={() => setHoursWorkedPreset(hoursWorked)}
                           >
@@ -761,15 +758,15 @@ const UnifiedTaskFormModal = ({
               )}
             </section>
 
-            <div className="sticky bottom-0 z-10 -mx-1 flex shrink-0 flex-col gap-[var(--spacing-sm)] border-t border-border-subtle bg-modal-content px-1 pt-3 pb-1 shadow-[0_-14px_24px_rgba(8,13,24,0.28)] min-[520px]:flex-row min-[520px]:justify-end">
+            <div className="eva-modal-footer modal-sticky-actions min-[520px]:justify-end">
               {mode === 'edit' && onDelete && initialTaskData?.uuid && (
                 <button
                   type="button"
                   className={clsx(
-                    'rounded-xl p-3 text-base font-semibold border-none transition-all duration-[160ms] inline-flex justify-center items-center gap-[var(--spacing-sm)]',
+                    'eva-button flex-1 min-[520px]:flex-none',
                     confirmingDelete
-                      ? 'bg-[rgba(224,86,86,0.32)] text-[#ffb3b8] border border-[rgba(224,86,86,0.5)]'
-                      : 'bg-[rgba(224,86,86,0.18)] text-[#ffb3b8] border border-[rgba(224,86,86,0.28)] hover:-translate-y-px hover:bg-[rgba(224,86,86,0.22)] hover:border-[rgba(224,86,86,0.36)]',
+                      ? 'eva-button--danger'
+                      : 'eva-button--danger',
                   )}
                   onClick={handleDeleteClick}
                 >
@@ -780,7 +777,7 @@ const UnifiedTaskFormModal = ({
 
               <button
                 type="submit"
-                className="min-h-12 rounded-xl p-3 text-base font-semibold border-none bg-gradient-to-br from-[rgba(47,143,82,1)] to-[rgba(73,187,120,0.92)] text-[var(--btn-primary-text-color)] shadow-elevation-2 transition-all duration-[160ms] inline-flex justify-center items-center gap-[var(--spacing-sm)] hover:-translate-y-px hover:shadow-elevation-3 active:translate-y-0 active:shadow-elevation-2"
+                className="eva-button eva-button--primary flex-1 min-[520px]:flex-none"
               >
                 {mode === 'edit' ? 'Сохранить' : submitLabelByType[taskTypeInternal]}
               </button>
@@ -791,7 +788,7 @@ const UnifiedTaskFormModal = ({
       {showChildFormModal && (
         <div
           className={clsx(
-            'fixed inset-0 p-[clamp(12px,4vh,28px)_clamp(12px,4vw,24px)] bg-modal-overlay flex items-end justify-center z-[1050] font-[Inter,sans-serif] min-[768px]:items-center',
+            'eva-modal-overlay',
             isClosing && !showChildFormModal ? 'animate-fade-out' : 'animate-fade-in',
           )}
           onClick={handleChildFormCancel}
@@ -799,14 +796,15 @@ const UnifiedTaskFormModal = ({
         >
           <div
             className={clsx(
-              'w-[min(480px,100%)] max-h-[calc(100dvh-40px)] bg-modal-content rounded-[20px_20px_16px_16px] shadow-elevation-3 relative flex flex-col p-4 overflow-hidden min-[768px]:rounded-3xl',
+              'eva-modal-content relative p-4',
               isClosing && !showChildFormModal ? 'animate-scale-down' : 'animate-scale-up',
             )}
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-4 right-4 size-11 rounded-xl border border-white/[0.06] bg-white/[0.04] text-text-secondary text-xl leading-none inline-flex items-center justify-center transition-all duration-[160ms] hover:rotate-[-90deg] hover:border-white/[0.12] hover:bg-white/[0.08]"
+              className="eva-button eva-button--soft eva-icon-button absolute top-4 right-4 text-xl leading-none"
               onClick={handleChildFormCancel}
+              aria-label="Закрыть"
             >
               &times;
             </button>

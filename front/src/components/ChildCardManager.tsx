@@ -66,12 +66,7 @@ const ChildCardManager = () => {
     <div className="flex flex-col w-full gap-6">
       <button
         className={clsx(
-          'inline-flex items-center gap-2 py-2.5 px-5 min-h-11 self-start',
-          'rounded-xl border-none text-sm font-semibold cursor-pointer',
-          'bg-gradient-to-br from-btn-primary-bg to-[var(--theme-primary)] text-btn-primary-text shadow-glass',
-          'transition-all duration-[180ms]',
-          'hover:-translate-y-0.5 hover:shadow-elevation-2',
-          'active:translate-y-0 active:shadow-glass',
+          'eva-button eva-button--primary self-start',
         )}
         onClick={handleOpenCreateModal}
       >
@@ -135,11 +130,7 @@ const ChildCardManager = () => {
               <div className="mt-auto pt-3 border-t border-border-subtle flex justify-end gap-2">
                 <button
                   className={clsx(
-                    'inline-flex items-center gap-1 py-2 px-4 min-h-11',
-                    'rounded-xl cursor-pointer text-sm font-semibold',
-                    'border border-border-accent bg-income-bg text-income-primary',
-                    'transition-all duration-[160ms]',
-                    'hover:-translate-y-px hover:bg-btn-primary-bg hover:text-btn-primary-text hover:border-btn-primary-bg hover:shadow-glass',
+                    'eva-button eva-button--secondary',
                   )}
                   onClick={() => handleOpenEditModal(child)}
                 >

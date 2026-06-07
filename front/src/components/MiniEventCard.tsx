@@ -222,11 +222,11 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
       ref={ref}
       style={VARIANT_STYLES[cardVariant]}
       className={clsx(
-        'relative grid grid-cols-[6px_minmax(0,1fr)] auto-rows-auto gap-x-2.5 p-2 rounded-[14px] border backdrop-blur-[16px] shadow-glass cursor-pointer',
+        'mini-bento-event relative grid grid-cols-[4px_minmax(0,1fr)] auto-rows-auto gap-x-2 p-1.5 rounded-[12px] border backdrop-blur-[16px] cursor-pointer',
         'transition-[transform,box-shadow,border-color,background-color] duration-[160ms]',
-        'hover:-translate-y-0.5 hover:shadow-elevation-2 hover:border-border-strong hover:bg-surface-raised',
-        'active:translate-y-0 active:shadow-glass',
-        'min-[480px]:grid-cols-[6px_60px_minmax(0,1fr)] min-[480px]:p-2.5',
+        'hover:-translate-y-0.5 hover:shadow-elevation-1 hover:border-border-strong hover:bg-surface-raised',
+        'active:translate-y-0 active:scale-[0.99]',
+        'min-[480px]:grid-cols-[4px_52px_minmax(0,1fr)] min-[480px]:p-2',
         isCompletedTask && 'opacity-65',
         isDragging && 'opacity-55 scale-[0.97]',
       )}
@@ -240,9 +240,9 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
       aria-label={eventTitle}
     >
       <div className="row-span-2 rounded-full" style={ACCENT_STYLES[cardVariant]} />
-      <div className="col-start-2 min-[480px]:col-start-2 min-[480px]:col-end-3 flex items-center gap-1.5 text-xs tracking-wider text-text-tertiary uppercase min-[480px]:justify-start">
+      <div className="col-start-2 min-[480px]:col-start-2 min-[480px]:col-end-3 flex items-center gap-1 text-[0.625rem] text-text-tertiary uppercase min-[480px]:justify-start">
         {displayTime ? (
-          <span className="font-mono font-semibold text-[0.8125rem] text-text-primary tracking-[0.02em] min-[480px]:text-sm">
+          <span className="font-mono font-semibold text-[0.75rem] text-text-primary min-[480px]:text-[0.8125rem]">
             {displayTime}
           </span>
         ) : (
@@ -251,9 +251,9 @@ const MiniEventCard = ({ event, onEdit, onMoveToDay, availableDays }: MiniEventC
           </span>
         )}
       </div>
-      <div className="col-start-2 min-[480px]:col-start-3 flex items-center gap-2 mt-1">
+      <div className="col-start-2 min-[480px]:col-start-3 flex items-center gap-1.5 mt-0.5">
         <span className={clsx(
-          'flex-1 min-w-0 text-sm font-semibold leading-tight text-text-primary line-clamp-2 min-[480px]:line-clamp-1 min-[480px]:text-base',
+          'flex-1 min-w-0 text-[0.75rem] font-semibold leading-tight text-text-primary line-clamp-1 min-[480px]:text-sm',
           isCompletedTask && 'line-through decoration-text-tertiary text-text-tertiary',
         )}>
           {eventTitle}

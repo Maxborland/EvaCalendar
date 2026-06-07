@@ -9,9 +9,9 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-dvh flex flex-col bg-surface-app text-text-primary">
-      <TopNavigator title="Профиль" showButtons={false} showBackButton={true} />
+      <TopNavigator title="Профиль" showButtons={false} showBackButton={true} backTo="/settings" />
 
-      <main className="flex-1 p-4 pb-[calc(24px+env(safe-area-inset-bottom))] max-[360px]:p-3">
+      <main className="eva-screen eva-screen--plain flex-1 p-4 pb-[calc(24px+env(safe-area-inset-bottom))] max-[360px]:p-3">
         <section className="rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-glass">
           <div className="flex items-center gap-3">
             <div className="size-12 rounded-2xl border border-income-border bg-income-bg text-income-primary inline-flex items-center justify-center">

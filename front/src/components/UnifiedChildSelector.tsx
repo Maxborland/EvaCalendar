@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import * as ReactDOM from 'react-dom';
 import type { Child } from '../services/api';
 
 interface UnifiedChildSelectorProps {
@@ -38,6 +39,18 @@ const UnifiedChildSelector = ({
   const [selectedChildNameState, setSelectedChildNameState] = useState<string | null>(null);
 
   const suggestionsRef = useRef<HTMLUListElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [suggestionBox, setSuggestionBox] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const updateSuggestionBox = useCallback(() => {
+    const box = inputRef.current?.getBoundingClientRect();
+    if (!box) return;
+    setSuggestionBox({
+      top: Math.round(box.bottom + 6),
+      left: Math.round(box.left),
+      width: Math.round(box.width),
+    });
+  }, []);
 
   useEffect(() => {
     if (value && childrenList.length > 0) {
@@ -58,6 +71,7 @@ const UnifiedChildSelector = ({
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newInputValue = event.target.value;
+    updateSuggestionBox();
     setInputValue(newInputValue);
     setSelectedChildNameState(null);
 
@@ -97,10 +111,14 @@ const UnifiedChildSelector = ({
   };
 
   const handleClickOutside = useCallback((event: MouseEvent) => {
-    if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
-      if ((event.target as HTMLElement).tagName.toLowerCase() !== 'input') {
-          setShowSuggestions(false);
-      }
+    const target = event.target as Node;
+    if (
+      suggestionsRef.current &&
+      !suggestionsRef.current.contains(target) &&
+      inputRef.current &&
+      !inputRef.current.contains(target)
+    ) {
+      setShowSuggestions(false);
     }
   }, []);
 
@@ -110,6 +128,19 @@ const UnifiedChildSelector = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [handleClickOutside]);
+
+  useEffect(() => {
+    if (!showSuggestions) return undefined;
+
+    updateSuggestionBox();
+    window.addEventListener('resize', updateSuggestionBox);
+    window.addEventListener('scroll', updateSuggestionBox, true);
+
+    return () => {
+      window.removeEventListener('resize', updateSuggestionBox);
+      window.removeEventListener('scroll', updateSuggestionBox, true);
+    };
+  }, [showSuggestions, updateSuggestionBox]);
 
   const handleBlur = () => {
     setTimeout(() => {
@@ -128,7 +159,7 @@ const UnifiedChildSelector = ({
         <button
           type="button"
           onClick={onGoToCreateChildPageRequest}
-          className="self-start min-h-[44px] py-2.5 px-4 bg-btn-primary-bg text-btn-primary-text border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 ease-in-out hover:opacity-85"
+          className="eva-button eva-button--primary self-start"
         >
           Добавить ребенка
         </button>
@@ -141,11 +172,13 @@ const UnifiedChildSelector = ({
       {label && <label htmlFor="child-input" className="mb-1.5 font-bold text-text-tertiary">{label}</label>}
       <div className="relative">
         <input
+          ref={inputRef}
           type="text"
           id="child-input"
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => {
+            updateSuggestionBox();
             if (childrenList.length > 0) {
               const currentInput = inputValue.trim().toLowerCase();
               let listToShow = childrenList;
@@ -171,10 +204,15 @@ const UnifiedChildSelector = ({
           )}
           autoComplete="off"
         />
-        {showSuggestions && (
+        {showSuggestions && suggestionBox && typeof document !== 'undefined' && ReactDOM.createPortal(
           <ul
-            className="absolute top-full left-0 right-0 bg-surface-elevated border border-border-strong border-t-0 rounded-b-xl list-none p-0 m-0 max-h-[200px] overflow-y-auto z-[1000] shadow-elevation-1 scrollbar-thin text-text-secondary"
+            className="eva-suggestion-list scrollbar-thin"
             ref={suggestionsRef}
+            style={{
+              top: suggestionBox.top,
+              left: suggestionBox.left,
+              width: suggestionBox.width,
+            }}
           >
             {filteredChildren.length > 0 ? (
               filteredChildren.map(child => {
@@ -186,7 +224,7 @@ const UnifiedChildSelector = ({
                   <li
                     key={child.uuid}
                     onClick={() => handleSuggestionClick(child)}
-                    className="p-2 min-h-[44px] flex items-center cursor-pointer text-text-secondary hover:bg-surface-raised"
+                    className="p-2 min-h-[44px] flex items-center cursor-pointer rounded-lg text-text-secondary hover:bg-[var(--suggestion-hover-bg)] hover:text-text-primary"
                   >
                     {prefix}
                     <span className="font-bold text-income-primary">{match}</span>
@@ -196,7 +234,7 @@ const UnifiedChildSelector = ({
               })
             ) : (
               inputValue.trim() !== '' && (
-                <li className="p-2 min-h-[44px] flex items-center text-text-tertiary cursor-default italic">Дети не найдены</li>
+              <li className="p-2 min-h-[44px] flex items-center text-text-tertiary cursor-default italic">Дети не найдены</li>
               )
             )}
             {inputValue.trim() !== '' &&
@@ -205,12 +243,14 @@ const UnifiedChildSelector = ({
             (
               <li
                 onClick={handleCreateNewChildClick}
-                className="p-2 min-h-[44px] flex items-center cursor-pointer italic text-income-primary hover:bg-income-bg"
+                className="p-2 min-h-[44px] flex items-center cursor-pointer rounded-lg italic text-income-primary hover:bg-income-bg"
               >
                 Создать нового ребенка: "{inputValue.trim()}"
               </li>
             )}
           </ul>
+          ,
+          document.getElementById('modal-root') || document.body
         )}
       </div>
       {selectedChildDetails && (

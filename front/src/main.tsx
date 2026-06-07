@@ -12,6 +12,9 @@ import { AuthProvider } from './context/AuthContext.tsx';
 import './index.css';
 import { queryClient } from './lib/queryClient.ts';
 
+const initialThemeMode = window.localStorage.getItem('eva-theme-mode') || 'light';
+document.documentElement.dataset.theme = initialThemeMode;
+
 const MyMultiBackend = MultiBackend;
 
 const backends = [
